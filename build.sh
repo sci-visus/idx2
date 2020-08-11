@@ -2,7 +2,7 @@
 set -x
 
 # Parameters
-export COMPILER=g++
+export COMPILER=clang++
 export OUTPUT=$2
 export INCLUDE_PATHS=-I../src
 
@@ -15,7 +15,7 @@ if [ "$1" = "Debug" ]
       -std=gnu++2a
       -fopenmp-simd
       -Wall -Wextra -Wpedantic
-      -Wno-missing-braces
+      -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments
       -g -O0
       -lpthread"
     export CDEFS="-Dmg_Slow=1"

@@ -9,6 +9,7 @@
 #include "mg_assert.h"
 #include "mg_bitops.h"
 #include "mg_math.h"
+#include <immintrin.h>
 //#include <iostream>
 
 namespace mg {
@@ -618,7 +619,7 @@ TransposeAvx2(u64 X, int B, t* mg_Restrict Block) {
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block, Val), Add));
     //X >>= 4;
     //Block += 4;
 
@@ -626,7 +627,7 @@ TransposeAvx2(u64 X, int B, t* mg_Restrict Block) {
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 4, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 4, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 4, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 4, Val), Add));
     //X >>= 4;
     //Block += 4;
 
@@ -634,85 +635,85 @@ TransposeAvx2(u64 X, int B, t* mg_Restrict Block) {
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 8, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 8, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 8, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 8, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 12);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 12, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 12, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 12, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 12, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 16);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 16, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 16, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 16, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 16, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 20);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 20, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 20, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 20, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 20, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 24);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 24, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 24, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 24, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 24, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 28);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 28, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 28, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 28, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 28, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 32);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 32, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 32, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 32, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 32, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 36);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 36, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 36, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 36, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 36, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 40);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 40, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 40, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 40, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 40, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 44);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 44, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 44, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 44, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 44, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 48);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 48, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 48, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 48, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 48, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 52);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 52, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 52, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 52, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 52, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 56);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 56, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 56, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 56, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 56, Val), Add));
 
     Val = _mm256_set1_epi64x(X >> 60);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1);
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block + 60, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block + 60, Val), Add));
+    _mm256_maskstore_epi64((long long*)Block + 60, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 60, Val), Add));
   //}
 }
 

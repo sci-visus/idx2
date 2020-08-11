@@ -28,7 +28,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wsign-compare"
-// #pragma GCC diagnostic ignored "-Wnested-anon-types"
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wnested-anon-types"
+#endif
 #define SEXPR_IMPLEMENTATION
 #include "sexpr.h"
 #pragma GCC diagnostic pop

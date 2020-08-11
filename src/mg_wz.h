@@ -162,6 +162,9 @@ struct brick_table {
 };
 mg_T(t) void GetBrick(brick_table<t>* BrickTable, i8 Iter, u64 Brick) {
   //auto
+  (void)BrickTable;
+  (void)Iter;
+  (void)Brick;
 }
 mg_T(t) void Dealloc(brick_table<t>* BrickTable);
 

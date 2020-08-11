@@ -76,6 +76,7 @@ ToString(const error<t>& Err, bool Force) {
 #define mg_Print(PrinterPtr, Format, ...)
 mg_T(t) void
 PrintStacktrace(printer* Pr, const error<t>& Err) {
+  (void)Pr;
   mg_Print(Pr, "Stack trace:\n");
   for (i8 I = 0; I < Err.StackIdx; ++I)
     mg_Print(Pr, "File %s, line %d\n", Err.Files[I], Err.Lines[I]);
