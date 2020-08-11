@@ -47,7 +47,7 @@ u32 HighBits64(u64 V);
 #include "mg_assert.h"
 #include "mg_macros.h"
 #include "mg_common.h"
-#include "bitmap_tables.h"
+// #include "bitmap_tables.h"
 #include <x86intrin.h>
 
 namespace mg {
@@ -96,7 +96,6 @@ TakeFirstBitsNoShift(t Val, int NBits) {
   t Result = u(Val & Mask);
   return Result;
 }
-
 
 // TODO: check the return value of these intrinsics
 #if defined(__clang__) || defined(__GNUC__)
@@ -273,36 +272,36 @@ LowBits64(u64 V) { return V & 0xFFFFFFFF; }
 mg_Inline u32
 HighBits64(u64 V) { return V >> 32; }
 
-inline int
-DecodeBitmap(u64 Val, int* Out) {
-  int* OutBackup = Out;
-  __m256i BaseVec = _mm256_set1_epi32(-1);
-  __m256i IncVec = _mm256_set1_epi32(64);
-  __m256i Add8 = _mm256_set1_epi32(8);
+// inline int
+// DecodeBitmap(u64 Val, int* Out) {
+//   int* OutBackup = Out;
+//   __m256i BaseVec = _mm256_set1_epi32(-1);
+//   __m256i IncVec = _mm256_set1_epi32(64);
+//   __m256i Add8 = _mm256_set1_epi32(8);
 
-  if (Val == 0) {
-    BaseVec = _mm256_add_epi32(BaseVec, IncVec);
-  } else {
-    for (int K = 0; K < 4; ++K) {
-      uint8_t ByteA = (uint8_t)Val;
-      uint8_t ByteB = (uint8_t)(Val >> 8);
-      Val >>= 16;
-      __m256i VecA = _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteA])));
-      __m256i VecB = _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteB])));
-      uint8_t AdvanceA = lengthTable[ByteA];
-      uint8_t AdvanceB = lengthTable[ByteB];
-      VecA = _mm256_add_epi32(BaseVec, VecA);
-      BaseVec = _mm256_add_epi32(BaseVec, Add8);
-      VecB = _mm256_add_epi32(BaseVec, VecB);
-      BaseVec = _mm256_add_epi32(BaseVec, Add8);
-      _mm256_storeu_si256((__m256i*)Out, VecA);
-      Out += AdvanceA;
-      _mm256_storeu_si256((__m256i*)Out, VecB);
-      Out += AdvanceB;
-    }
-  }
-  return Out - OutBackup;
-}
+//   if (Val == 0) {
+//     BaseVec = _mm256_add_epi32(BaseVec, IncVec);
+//   } else {
+//     for (int K = 0; K < 4; ++K) {
+//       uint8_t ByteA = (uint8_t)Val;
+//       uint8_t ByteB = (uint8_t)(Val >> 8);
+//       Val >>= 16;
+//       __m256i VecA = _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteA])));
+//       __m256i VecB = _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteB])));
+//       uint8_t AdvanceA = lengthTable[ByteA];
+//       uint8_t AdvanceB = lengthTable[ByteB];
+//       VecA = _mm256_add_epi32(BaseVec, VecA);
+//       BaseVec = _mm256_add_epi32(BaseVec, Add8);
+//       VecB = _mm256_add_epi32(BaseVec, VecB);
+//       BaseVec = _mm256_add_epi32(BaseVec, Add8);
+//       _mm256_storeu_si256((__m256i*)Out, VecA);
+//       Out += AdvanceA;
+//       _mm256_storeu_si256((__m256i*)Out, VecB);
+//       Out += AdvanceB;
+//     }
+//   }
+//   return Out - OutBackup;
+// }
 //
 } // namespace mg
 

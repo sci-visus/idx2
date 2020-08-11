@@ -16,21 +16,19 @@
 #include "mg_wz.h"
 #include "mg_zfp.h"
 #include <string.h>
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wlanguage-extension-token"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-//#include <lz4/lz4.h>
-//#include <lz4/lz4_all.c>
-//#include <lz4/xxhash.c>
-#pragma clang diagnostic pop
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #include <zstd/zstd.h>
 #include <zstd/zstd.c>
+#pragma GCC diagnostic pop
 #include <algorithm> // TODO: write my own quicksort
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Wnested-anon-types"
+// #pragma GCC diagnostic ignored "-Wnested-anon-types"
 #define SEXPR_IMPLEMENTATION
 #include "sexpr.h"
 #pragma GCC diagnostic pop
@@ -140,7 +138,7 @@ void Dealloc(params* P) { Dealloc(&P->RdoLevels); }
 void SetName(wz* Wz, cstr Name) { snprintf(Wz->Name, sizeof(Wz->Name), "%s", Name); }
 void SetField(wz* Wz, cstr Field) { snprintf(Wz->Field, sizeof(Wz->Field), "%s", Field); }
 void SetVersion(wz* Wz, const v2i& Ver) { Wz->Version = Ver; }
-void SetDimensions(wz* Wz, const v3i& Dims3) { Wz->Dims3 = Dims3; };
+void SetDimensions(wz* Wz, const v3i& Dims3) { Wz->Dims3 = Dims3; }
 void SetDataType(wz* Wz, dtype DType) { Wz->DType = DType; }
 void SetBrickSize(wz* Wz, const v3i& BrickDims3) { Wz->BrickDims3 = BrickDims3; }
 void SetNumIterations(wz* Wz, i8 NIterations) { Wz->NIterations = NIterations; }
@@ -717,7 +715,7 @@ ConstructFilePath(const wz& Wz, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
   #define mg_PrintBrick\
     for (int Depth = 0; Depth + 1 < Wz.FileDirDepths[Iter].Len; ++Depth) {\
       int BitLen = mg_BitSizeOf(u64) - Wz.BrickOrderStrs[Iter].Len + Wz.FileDirDepths[Iter][Depth];\
-      mg_Print(&Pr, "/B%llx", TakeFirstBits(Brick, BitLen));\
+      mg_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));\
       Brick <<= Wz.FileDirDepths[Iter][Depth];\
       Shift += Wz.FileDirDepths[Iter][Depth];\
     }
@@ -749,7 +747,7 @@ ConstructFilePathExponents(const wz& Wz, u64 Brick, i8 Iter, i8 Level) {
   #define mg_PrintBrick\
     for (int Depth = 0; Depth + 1 < Wz.FileDirDepths[Iter].Len; ++Depth) {\
       int BitLen = mg_BitSizeOf(u64) - Wz.BrickOrderStrs[Iter].Len + Wz.FileDirDepths[Iter][Depth];\
-      mg_Print(&Pr, "/B%llx", TakeFirstBits(Brick, BitLen));\
+      mg_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));\
       Brick <<= Wz.FileDirDepths[Iter][Depth];\
       Shift += Wz.FileDirDepths[Iter][Depth];\
     }
@@ -777,7 +775,7 @@ ConstructFilePathRdos(const wz& Wz, u64 Brick, i8 Iter) {
   #define mg_PrintBrick\
     for (int Depth = 0; Depth + 1 < Wz.FileDirDepths[Iter].Len; ++Depth) {\
       int BitLen = mg_BitSizeOf(u64) - Wz.BrickOrderStrs[Iter].Len + Wz.FileDirDepths[Iter][Depth];\
-      mg_Print(&Pr, "/B%llx", TakeFirstBits(Brick, BitLen));\
+      mg_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));\
       Brick <<= Wz.FileDirDepths[Iter][Depth];\
       Shift += Wz.FileDirDepths[Iter][Depth];\
     }
@@ -1278,7 +1276,7 @@ RateDistortionOpt(const wz& Wz, encode_data* E) {
     extent VolExtentInFiles(VolFileFirst3, VolFileLast3 - VolFileFirst3 + 1);
     mg_FileTraverse(
       u64 FileAddr = FileTop.Address;
-      int ChunkInFile = 0;
+      // int ChunkInFile = 0;
       u64 FirstBrickAddr = ((FileAddr * Wz.ChunksPerFiles[Iter]) + 0) * Wz.BricksPerChunks[Iter] + 0;
       file_id FileId = ConstructFilePathRdos(Wz, FirstBrickAddr, Iter);
       int NumChunks = 0;
@@ -1286,7 +1284,7 @@ RateDistortionOpt(const wz& Wz, encode_data* E) {
       mg_ChunkTraverse(
         ++NumChunks;
         u64 ChunkAddr = (FileAddr * Wz.ChunksPerFiles[Iter]) + ChunkTop.Address;
-        ChunkInFile = ChunkTop.ChunkInFile;
+        // ChunkInFile = ChunkTop.ChunkInFile;
         mg_For(i8, Level, 0, Size(Wz.Subbands)) {
           const auto& Rdo = RdoPrecomputes[Pos];
           i8 RdoIter = (Rdo.Address >> 60) & 0xF;
@@ -1403,12 +1401,12 @@ EncodeSubband(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
       mg_Assert(ChannelIt);
       channel* C = ChannelIt.Val;
       /* write block id */
-      u32 BlockDelta = Block;
+      // u32 BlockDelta = Block;
       int I = 0;
       for (; I < Size(E->BlockSigs); ++I) {
         if (E->BlockSigs[I].BitPlane == RealBp) {
           mg_Assert(Block > E->BlockSigs[I].Block);
-          BlockDelta = Block - E->BlockSigs[I].Block - 1;
+          // BlockDelta = Block - E->BlockSigs[I].Block - 1;
           E->BlockSigs[I].Block = Block;
           break;
         }
@@ -1495,7 +1493,7 @@ EncodeBrick(wz* Wz, const params& P, encode_data* E, bool IncIter = false) {
   mg_Assert(Wz->NIterations <= wz::MaxIterations);
   i8 Iter = E->Iter += IncIter;
   u64 Brick = E->Brick[Iter];
-  printf("iteration %d brick " mg_PrStrV3i " %llu\n", Iter, mg_PrV3i(E->Bricks3[Iter]), Brick);
+  printf("iteration %d brick " mg_PrStrV3i " %" PRIu64 "\n", Iter, mg_PrV3i(E->Bricks3[Iter]), Brick);
   auto BIt = Lookup(&E->BrickPool, GetBrickKey(Iter, Brick));
   mg_Assert(BIt);
   volume& BVol = BIt.Val->Vol;
@@ -1670,9 +1668,9 @@ Encode(wz* Wz, const params& P, const volume& Vol) {
   printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
 
   WriteMetaFile(*Wz, P, mg_PrintScratch("%s/%s/%s.idx", P.OutDir, P.Meta.Name, P.Meta.Field));
-  printf("num channels            = %lld\n", Size(E.Channels));
-  printf("num sub channels        = %lld\n", Size(E.SubChannels));
-  printf("num chunks              = %lld\n", ChunkStreamStat.Count());
+  printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
+  printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
+  printf("num chunks              = %" PRIi64 "\n", ChunkStreamStat.Count());
   printf("brick deltas      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickDeltasStat.Sum(), BrickDeltasStat.Avg(), BrickDeltasStat.StdDev());
   printf("brick sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickSzsStat.Sum(), BrickSzsStat.Avg(), BrickSzsStat.StdDev());
   printf("brick stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickStreamStat.Sum(), BrickStreamStat.Avg(), BrickStreamStat.StdDev());
@@ -2295,10 +2293,10 @@ Decode(const wz& Wz, const params& P, decode_what* Dw) {
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
   printf("io time             = %f\n", Seconds(DecodeIOTime_));
   printf("data movement time  = %f\n", Seconds(DataMovementTime_));
-  printf("rdo   bytes read    = %lld\n", BytesRdos_);
-  printf("exp   bytes read    = %lld\n", BytesExps_);
-  printf("data  bytes read    = %lld\n", BytesData_);
-  printf("total bytes read    = %lld\n", BytesRdos_ + BytesExps_ + BytesData_);
+  printf("rdo   bytes read    = %" PRIi64 "\n", BytesRdos_);
+  printf("exp   bytes read    = %" PRIi64 "\n", BytesExps_);
+  printf("data  bytes read    = %" PRIi64 "\n", BytesData_);
+  printf("total bytes read    = %" PRIi64 "\n", BytesRdos_ + BytesExps_ + BytesData_);
 }
 
 } // namespace mg

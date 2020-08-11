@@ -412,7 +412,7 @@ mg_Inline v3i  Frst(const grid& Grid) { return From(Grid); }
 mg_Inline v3i  Last(const grid& Grid) { return To(Grid) - Strd(Grid); }
 mg_Inline v3i  Dims(const grid& Grid) { return Unpack3i64(Grid.Dims); }
 mg_Inline v3i  Strd(const grid& Grid) { return Unpack3i64(Grid.Strd); }
-mg_Inline i64  Size(const grid& Grid) { return Prod<i64>(Dims(Grid)); };
+mg_Inline i64  Size(const grid& Grid) { return Prod<i64>(Dims(Grid)); }
 mg_Inline void SetFrom(grid* Grid, const v3i& From3) { Grid->From = Pack3i64(From3); }
 mg_Inline void SetDims(grid* Grid, const v3i& Dims3) { Grid->Dims = Pack3i64(Dims3); }
 mg_Inline void SetStrd(grid* Grid, const v3i& Strd3) { Grid->Strd = Pack3i64(Strd3); }

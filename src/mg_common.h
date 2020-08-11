@@ -306,7 +306,7 @@ operator[](int Idx) const {
   assert(Idx < N);
   return const_cast<char&>(Data[Idx]);
 }
-mg_Ii(N) int Size(const stack_string<N>& S) { return S.Len; };
+mg_Ii(N) int Size(const stack_string<N>& S) { return S.Len; }
 
 /* v2 stuffs */
 mg_Ti(t) v2<t>::v2() {}

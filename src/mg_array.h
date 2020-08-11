@@ -154,7 +154,7 @@ PopBack(array<t>* Array) {
 mg_T(t) buffer
 ToBuffer(const array<t>& Array) {
   return buffer{Array.Buffer.Data, Size(Array) * (i64)sizeof(t), Array.Buffer.Alloc};
-};
+}
 
 mg_Ti(t) void
 Clear(array<t>* Array) { Array->Size = 0; }

@@ -1,0 +1,3 @@
+To build the library:
+
+./build.sh Debug/FastDebug/Release app_file_format_test

@@ -150,8 +150,8 @@ struct brick {
   t* Samples = nullptr; // TODO: data should stay compressed
   u8 LevelMask = 0; // TODO: need to change if we support more than one transform pass per brick
 //  stack_array<array<u8>, 8> BlockSigs; // TODO: to support more than one transform pass per brick, we need a dynamic array
-  friend v3i Dims(const brick<t>& Brick, const array<grid>& LevelGrids);
-  friend t& At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3);
+  // friend v3i Dims(const brick<t>& Brick, const array<grid>& LevelGrids);
+  // friend t& At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3);
 };
 
 mg_T(t)
