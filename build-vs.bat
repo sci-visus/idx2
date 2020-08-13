@@ -42,8 +42,6 @@ if %1==Profile   (set LDLIBS=libucrt.lib  libvcruntime.lib  libcmt.lib  libcpmt.
 if %1==FastDebug (set LDLIBS=libucrt.lib  libvcruntime.lib  libcmt.lib  libcpmt.lib  libconcrt.lib )
 if %1==Debug     (set LDLIBS=libucrtd.lib libvcruntimed.lib libcmtd.lib libcpmtd.lib libconcrtd.lib)
 
-call %1 %2 %3
-
 :: Compiling
 @echo on
 md bin
@@ -52,6 +50,7 @@ cl.exe "../src/%OUTPUT%.cpp" %INCLUDE_PATHS% %COMMON_CFLAGS% %CFLAGS% %COMMON_CD
 
 :: Linking
 ::link.exe "%OUTPUT%.o" /DEBUG -out:"%OUTPUT%.exe" %COMMON_LDFLAGS% %LDFLAGS% %COMMON_LIB_PATHS% %COMMON_LDLIBS% %LDLIBS%
+del "%OUTPUT%.obj"
 cd ..
 
 @echo off

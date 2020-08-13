@@ -44,8 +44,6 @@ if %1==Profile   (set LDLIBS=libucrt.lib  libvcruntime.lib  libcmt.lib  libcpmt.
 if %1==FastDebug (set LDLIBS=libucrt.lib  libvcruntime.lib  libcmt.lib  libcpmt.lib  libconcrt.lib )
 if %1==Debug     (set LDLIBS=libucrtd.lib libvcruntimed.lib libcmtd.lib libcpmtd.lib libconcrtd.lib)
 
-call %1 %2 %3
-
 :: Compiling
 @echo on
 md bin
