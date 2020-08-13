@@ -226,7 +226,7 @@ Insert(hash_table<k, v>* Ht, const k& Key, const v& Val) {
   if (Size(*Ht) * 10 >= Capacity(*Ht) * 7)
     IncreaseCapacity(Ht);
 
-  int H = Index(Ht, Hash(Key));
+  i64 H = Index(Ht, Hash(Key));
   while (Ht->Stats[H] == hash_table<k, v>::Occupied && !(Ht->Keys[H] == Key)) {
     ++H;
     H &= Capacity(*Ht) - 1;

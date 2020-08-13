@@ -131,7 +131,7 @@ EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
       mg_Assert(D3 + S3 < SbDims3);
       BlockFloats[J++] = BrickVol->At<f64>(SbGrid, D3 + S3);
     } mg_EndFor3 // end sample loop
-    i8 NDims = NumDims(BlockDims3);
+    i8 NDims = (i8)NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
     const i8 Prec = mg_BitSizeOf(f64) - 1 - NDims;
     // TODO: deal with Float32
@@ -182,7 +182,7 @@ DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     int NDims = NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
     const int Prec = mg_BitSizeOf(f64) - 1 - NDims;
-    i16 EMax = Read(&D->BlockStream, traits<f64>::ExpBits) - traits<f64>::ExpBias;
+    i16 EMax = i16(Read(&D->BlockStream, traits<f64>::ExpBits) - traits<f64>::ExpBias);
     i8 N = 0;
     mg_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
       i16 RealBp = Bp + EMax;

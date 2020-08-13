@@ -10,13 +10,13 @@ namespace mg {
 void
 SetBufferMode(logger* Logger, buffer_mode Mode) { Logger->Mode = Mode; }
 
-void 
+void
 SetBufferMode(buffer_mode Mode) { SetBufferMode(&GlobalLogger, Mode); }
 
-FILE* 
+FILE*
 GetFileHandle(logger* Logger, cstr FileName) {
   int MaxSlots = Size(Logger->FHandles);
-  u32 FullHash = Murmur3_32((u8*)FileName, strlen(FileName), 37);
+  u32 FullHash = Murmur3_32((u8*)FileName, (int)strlen(FileName), 37);
   int Idx = FullHash % MaxSlots;
   FILE** Fp = &Logger->FHandles[Idx];
   bool Collision = *Fp && (Logger->FNameHashes[Idx] != FullHash ||

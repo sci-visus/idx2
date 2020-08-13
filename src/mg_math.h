@@ -147,7 +147,7 @@ IsPow2(int X) {
 
 mg_Inline bool
 IsPrime(i64 X) {
-  i64 S = (i64)sqrt(X);
+  i64 S = (i64)sqrt((f64)X);
   for (i64 I = 2; I <= S; ++I) {
     if (X % I == 0)
       return false;
@@ -268,10 +268,10 @@ Prod(const v2<u>& Vec) { return t(Vec.X) * t(Vec.Y); }
 mg_TTi(u, t) t
 Prod(const v3<u>& Vec) { return t(Vec.X) * t(Vec.Y) * t(Vec.Z); }
 
-mg_TTi(u, t) t 
+mg_TTi(u, t) t
 Sum(const v2<u>& Vec) { return t(Vec.X) + t(Vec.Y); }
 
-mg_TTi(u, t) t 
+mg_TTi(u, t) t
 Sum(const v3<u>& Vec) { return t(Vec.X) + t(Vec.Y) + t(Vec.Z); }
 
 mg_Ti(t) v3<t>
@@ -449,7 +449,7 @@ Log8Floor(i64 Val) {
 mg_Inline int
 GeometricSum(int Base, int N) {
   mg_Assert(N >= 0);
-  return (Pow(Base, N + 1) - 1) / (Base - 1);
+  return int((Pow(Base, N + 1) - 1) / (Base - 1));
 }
 
 // TODO: when n is already a power of two plus one, do not increase n
@@ -458,7 +458,7 @@ NextPow2(i64 Val) {
   mg_Assert(Val >= 0);
   if (Val == 0)
     return 1;
-  return 1 << (Msb((u64)(Val - 1)) + 1);
+  return 1ll << (Msb((u64)(Val - 1)) + 1);
 }
 
 mg_Inline i64

@@ -147,7 +147,7 @@ SetParams(wz* Wz, const params& P) {
   SetBrickSize(Wz, P.BrickDims3);
   SetBricksPerChunk(Wz, P.BricksPerChunk);
   SetChunksPerFile(Wz,P.ChunksPerFile);
-  SetNumIterations(Wz, P.NIterations);
+  SetNumIterations(Wz, (i8)P.NIterations);
   SetAccuracy(Wz, P.Accuracy);
   SetFilesPerDirectory(Wz, P.FilesPerDir);
   SetDir(Wz, P.OutDir);

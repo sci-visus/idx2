@@ -17,23 +17,32 @@
 #include "mg_zfp.h"
 #include <string.h>
 #define __STDC_FORMAT_MACROS
-//#include "inttypes.h"
+
+#if defined(__clang__) || defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#endif
 #include <zstd/zstd.h>
 #include <zstd/zstd.c>
+#if defined(__clang__) || defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
+
 #include <algorithm> // TODO: write my own quicksort
 
+#if defined(__clang__) || defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wnested-anon-types"
 #endif
+#endif
 #define SEXPR_IMPLEMENTATION
 #include "sexpr.h"
+#if defined(__clang__) || defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
 
 // Get non-extrapolated dims
 #define mg_NonExtDims(P3)\
@@ -78,7 +87,7 @@ GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands) {
 }
 
 void decode_all::
-Init(const wz& Wz) { this->Wz = &Wz; Ext = extent(Wz.Dims3); }
+Init(const wz& Wz_) { this->Wz = &Wz_; Ext = extent(Wz_.Dims3); }
 extent decode_all::
 GetExtent() const { return Ext; }
 f64 decode_all::
@@ -86,15 +95,15 @@ GetAccuracy() const { return Accuracy; }
 int decode_all::
 GetQuality() const { return QualityLevel; }
 void decode_all::
-SetExtent(const extent& Ext) { this->Ext = Ext; }
+SetExtent(const extent& Ext_) { this->Ext = Ext_; }
 void decode_all::
-SetIteration(int Iter) { this->Iter = Iter; }
+SetIteration(int Iter_) { this->Iter = Iter_; }
 void decode_all::
-SetAccuracy(f64 Accuracy) { this->Accuracy = Accuracy; }
+SetAccuracy(f64 Accuracy_) { this->Accuracy = Accuracy_; }
 void decode_all::
-SetQuality(int Quality) { this->QualityLevel = Quality; }
+SetQuality(int Quality_) { this->QualityLevel = Quality_; }
 void decode_all::
-SetMask(u8 Mask) { this->Mask = Mask; }
+SetMask(u8 Mask_) { this->Mask = Mask_; }
 int decode_all::GetIteration() const { return Iter; }
 u8 decode_all::GetMask() const { return Mask; }
 void decode_all::
@@ -218,7 +227,7 @@ Finalize(wz* Wz) {
   char TformOrder[8] = {};
   { /* compute the transform order (try to repeat XYZ++) */
     int J = 0;
-    mg_For(int, D, 0, 3) { if (Wz->BrickDims3[D] > 1) TformOrder[J++] = 'X' + D; }
+    mg_For(int, D, 0, 3) { if (Wz->BrickDims3[D] > 1) TformOrder[J++] = char('X' + D); }
     TformOrder[J++] = '+';
     TformOrder[J++] = '+';
     Wz->TformOrder = EncodeTransformOrder(TformOrder);
@@ -250,8 +259,8 @@ Finalize(wz* Wz) {
       v3i LeftOver3 = LogN3 - v3i(Wz->BrickDims3.X > 1, Wz->BrickDims3.Y > 1, Wz->BrickDims3.Z > 1) * MinLogN3;
       char BrickOrder[128];
       int J = 0;
-      mg_For(int, D, 0, 3) { if (Wz->BrickDims3[D] == 1) { while (LeftOver3[D]-- > 0) BrickOrder[J++] = 'X' + D; } }
-      while (!(LeftOver3 <= 0)) { mg_For(int, D, 0, 3) { if (LeftOver3[D]-- > 0) BrickOrder[J++] = 'X' + D; } }
+      mg_For(int, D, 0, 3) { if (Wz->BrickDims3[D] == 1) { while (LeftOver3[D]-- > 0) BrickOrder[J++] = char('X' + D); } }
+      while (!(LeftOver3 <= 0)) { mg_For(int, D, 0, 3) { if (LeftOver3[D]-- > 0) BrickOrder[J++] = char('X' + D); } }
       if (J > 0) BrickOrder[J++] = '+';
       mg_For(size_t, K, 0, sizeof(TformOrder)) BrickOrder[J++] = TformOrder[K];
       Wz->BrickOrders[I] = EncodeTransformOrder(BrickOrder);
@@ -515,7 +524,7 @@ ReadMetaFile(wz* Wz, cstr FileName) {
 //          printf("Transform order = %s\n", TransformOrder);
         } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "num-iterations")) {
           mg_Assert(Expr->type == SE_INT);
-          Wz->NIterations = Expr->i;
+          Wz->NIterations = i8(Expr->i);
 //          printf("Num iterations = %d\n", Wz->NIterations);
         } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bricks-per-tile")) {
           mg_Assert(Expr->type == SE_INT);
@@ -910,9 +919,9 @@ static stat ChunkStreamStat;
 // TODO: return error
 static void
 WriteChunk(const wz& Wz, encode_data* E, channel* C, i8 Iter, i8 Level, i16 BitPlane) {
-  BrickDeltasStat.Add(Size(C->BrickDeltasStream)); // brick deltas
-  BrickSzsStat.Add(Size(C->BrickSzsStream)); // brick sizes
-  BrickStreamStat.Add(Size(C->BrickStream)); // brick data
+  BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
+  BrickSzsStat.Add((f64)Size(C->BrickSzsStream)); // brick sizes
+  BrickStreamStat.Add((f64)Size(C->BrickStream)); // brick data
   i64 ChunkSize = Size(C->BrickDeltasStream) + Size(C->BrickSzsStream) + Size(C->BrickStream) + 64;
   Rewind(&E->ChunkStream);
   GrowToAccomodate(&E->ChunkStream, ChunkSize);
@@ -921,7 +930,7 @@ WriteChunk(const wz& Wz, encode_data* E, channel* C, i8 Iter, i8 Level, i16 BitP
   WriteStream(&E->ChunkStream, &C->BrickSzsStream);
   WriteStream(&E->ChunkStream, &C->BrickStream);
   Flush(&E->ChunkStream);
-  ChunkStreamStat.Add(Size(E->ChunkStream));
+  ChunkStreamStat.Add((f64)Size(E->ChunkStream));
 
   /* we are done with these, rewind */
   Rewind(&C->BrickDeltasStream);
@@ -958,10 +967,10 @@ static void
 WriteChunkExponents(const wz& Wz, encode_data* E, sub_channel* Sc, i8 Iter, i8 Level) {
   /* brick exponents */
   Flush(&Sc->BrickEMaxesStream);
-  BrickEMaxesStat.Add(Size(Sc->BrickEMaxesStream));
+  BrickEMaxesStat.Add((f64)Size(Sc->BrickEMaxesStream));
   Rewind(&E->ChunkEMaxesStream);
   CompressBufZstd(ToBuffer(Sc->BrickEMaxesStream), &E->ChunkEMaxesStream);
-  ChunkEMaxesStat.Add(Size(E->ChunkEMaxesStream));
+  ChunkEMaxesStat.Add((f64)Size(E->ChunkEMaxesStream));
 
   /* rewind */
   Rewind(&Sc->BrickEMaxesStream);
@@ -1014,7 +1023,7 @@ FlushChunkExponents(const wz& Wz, encode_data* E) {
     /* write chunk emax sizes */
     mg_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
     Flush(ChunkEMaxSzs);
-    ChunkEMaxSzsStat.Add(Size(*ChunkEMaxSzs));
+    ChunkEMaxSzsStat.Add((f64)Size(*ChunkEMaxSzs));
     WriteBuffer(Fp, ToBuffer(*ChunkEMaxSzs));
     WritePOD(Fp, (int)Size(*ChunkEMaxSzs));
   }
@@ -1025,7 +1034,7 @@ FlushChunkExponents(const wz& Wz, encode_data* E) {
   {\
     file_traverse FileStack[StackSize];\
     int FileTopIdx = 0;\
-    v3i FileDims3Ext(NextPow2(FileDims3In.X), NextPow2(FileDims3In.Y), NextPow2(FileDims3In.Z));\
+    v3i FileDims3Ext((int)NextPow2(FileDims3In.X), (int)NextPow2(FileDims3In.Y), (int)NextPow2(FileDims3In.Z));\
     FileStack[FileTopIdx] = file_traverse{FileOrderIn, FileOrderIn, FileFrom3In, FileFrom3In + FileDims3Ext, u64(0)};\
     while (FileTopIdx >= 0) {\
       file_traverse& FileTop = FileStack[FileTopIdx];\
@@ -1056,7 +1065,7 @@ FlushChunkExponents(const wz& Wz, encode_data* E) {
   {\
     chunk_traverse ChunkStack[StackSize];\
     int ChunkTopIdx = 0;\
-    v3i ChunkDims3Ext(NextPow2(ChunkDims3In.X), NextPow2(ChunkDims3In.Y), NextPow2(ChunkDims3In.Z));\
+    v3i ChunkDims3Ext((int)NextPow2(ChunkDims3In.X), (int)NextPow2(ChunkDims3In.Y), (int)NextPow2(ChunkDims3In.Z));\
     ChunkStack[ChunkTopIdx] = chunk_traverse{ChunkOrderIn, ChunkOrderIn, ChunkFrom3In, ChunkFrom3In + ChunkDims3Ext, u64(0)};\
     while (ChunkTopIdx >= 0) {\
       chunk_traverse& ChunkTop = ChunkStack[ChunkTopIdx];\
@@ -1077,7 +1086,7 @@ FlushChunkExponents(const wz& Wz, encode_data* E) {
       Second.ChunkFrom3[CD] = ChunkTop.ChunkFrom3[CD] + (ChunkTop.ChunkTo3[CD] - ChunkTop.ChunkFrom3[CD]) / 2;\
       extent Skip(First.ChunkFrom3, First.ChunkTo3 - First.ChunkFrom3);\
       Second.NChunksBefore = First.NChunksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInChunks)));\
-      Second.ChunkInFile = First.ChunkInFile + Prod<u64>(Dims(Crop(Skip, Extent2)));\
+      Second.ChunkInFile = First.ChunkInFile + Prod<i32>(Dims(Crop(Skip, Extent2)));\
       First.Address = ChunkTop.Address;\
       Second.Address = ChunkTop.Address + Prod<u64>(First.ChunkTo3 - First.ChunkFrom3);\
       if (Second.ChunkFrom3 < To(ExtentInChunks) && From(ExtentInChunks) < Second.ChunkTo3) ChunkStack[++ChunkTopIdx] = Second;\
@@ -1089,7 +1098,7 @@ FlushChunkExponents(const wz& Wz, encode_data* E) {
   {\
     brick_traverse Stack[StackSize];\
     int TopIdx = 0;\
-    v3i BrickDims3Ext(NextPow2(BrickDims3In.X), NextPow2(BrickDims3In.Y), NextPow2(BrickDims3In.Z));\
+    v3i BrickDims3Ext((int)NextPow2(BrickDims3In.X), (int)NextPow2(BrickDims3In.Y), (int)NextPow2(BrickDims3In.Z));\
     Stack[TopIdx] = brick_traverse{BrickOrderIn, BrickOrderIn, BrickFrom3In, BrickFrom3In + BrickDims3Ext, u64(0)};\
     while (TopIdx >= 0) {\
       brick_traverse& Top = Stack[TopIdx];\
@@ -1110,7 +1119,7 @@ FlushChunkExponents(const wz& Wz, encode_data* E) {
       Second.BrickFrom3[DD] = Top.BrickFrom3[DD] + (Top.BrickTo3[DD] - Top.BrickFrom3[DD]) / 2;\
       extent Skip(First.BrickFrom3, First.BrickTo3 - First.BrickFrom3);\
       Second.NBricksBefore = First.NBricksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInBricks)));\
-      Second.BrickInChunk = First.BrickInChunk + Prod<u64>(Dims(Crop(Skip, Extent2)));\
+      Second.BrickInChunk = First.BrickInChunk + Prod<i32>(Dims(Crop(Skip, Extent2)));\
       First.Address = Top.Address;\
       Second.Address = Top.Address + Prod<u64>(First.BrickTo3 - First.BrickFrom3);\
       if (Second.BrickFrom3 < To(ExtentInBricks) && From(ExtentInBricks) < Second.BrickTo3) Stack[++TopIdx] = Second;\
@@ -1187,14 +1196,14 @@ RateDistortionOpt(const wz& Wz, encode_data* E) {
     int HLast = 0;
     mg_For(int, Z, 1, Size(RdoTile)) {
       f64 DeltaD = RdoTile[HLast].Distortion - RdoTile[Z].Distortion;
-      f64 DeltaL = RdoTile[Z].Length - RdoTile[HLast].Length;
+      f64 DeltaL = f64(RdoTile[Z].Length - RdoTile[HLast].Length);
       if (DeltaD > 0) {
         while (DeltaD >= DeltaL * RdoTile[HLast].Lambda) {
           mg_Assert(Size(Hull) > 0);
           PopBack(&Hull);
           HLast = Back(Hull);
           DeltaD = RdoTile[HLast].Distortion - RdoTile[Z].Distortion;
-          DeltaL = RdoTile[Z].Length - RdoTile[HLast].Length;
+          DeltaL = f64(RdoTile[Z].Length - RdoTile[HLast].Length);
         }
         HLast = Z; // TODO: or Z + 1?
         PushBack(&Hull, HLast);
@@ -1364,7 +1373,7 @@ EncodeSubband(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
     mg_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Wz->BlockDims3;
     v3i BlockDims3 = Min(Wz->BlockDims3, SbDims3 - D3);
-    const i8 NDims = NumDims(BlockDims3);
+    const i8 NDims = (i8)NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
     const i8 Prec = NBitPlanes - 1 - NDims;
     f64 BlockFloats[4 * 4 * 4];
@@ -1447,7 +1456,7 @@ EncodeSubband(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
   i64 BrickEMaxesSz = Size(Sc->BlockEMaxesStream);
   GrowToAccomodate(&Sc->BrickEMaxesStream, BrickEMaxesSz);
   WriteStream(&Sc->BrickEMaxesStream, &Sc->BlockEMaxesStream);
-  BlockEMaxStat.Add(Size(Sc->BlockEMaxesStream));
+  BlockEMaxStat.Add((f64)Size(Sc->BlockEMaxesStream));
   Rewind(&Sc->BlockEMaxesStream);
   Sc->LastBrick = Brick;
 
@@ -1473,7 +1482,7 @@ EncodeSubband(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
         WriteVarByte(&C->BrickDeltasStream, Brick);
       } else { // not start of a chunk
         GrowToAccomodate(&C->BrickDeltasStream, (Brick - C->LastBrick - 1 + 8) / 8);
-        WriteUnary(&C->BrickDeltasStream, Brick - C->LastBrick - 1);
+        WriteUnary(&C->BrickDeltasStream, u32(Brick - C->LastBrick - 1));
       }
       /* write brick size */
       i64 BrickSize = Size(C->BlockStream);
@@ -1482,7 +1491,7 @@ EncodeSubband(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
       /* write brick data */
       GrowToAccomodate(&C->BrickStream, BrickSize);
       WriteStream(&C->BrickStream, &C->BlockStream);
-      BlockStat.Add(Size(C->BlockStream));
+      BlockStat.Add((f64)Size(C->BlockStream));
       Rewind(&C->BlockStream);
       ++C->NBricks;
       C->LastBrick = Brick;
@@ -1536,7 +1545,7 @@ EncodeBrick(wz* Wz, const params& P, encode_data* E, bool IncIter = false) {
         Fill(mg_Range(f64, PBrickVol.Vol), 0.0);
         v3i From3 = (Brick3 / Wz->GroupBrick3) * Wz->GroupBrick3;
         v3i NChildren3 = Dims(Crop(extent(From3, Wz->GroupBrick3), extent(Wz->NBricks3s[Iter])));
-        PBrickVol.NChildrenMax = Prod(NChildren3);
+        PBrickVol.NChildrenMax = (i8)Prod(NChildren3);
         PBrickVol.ExtentLocal = extent(NChildren3 * SbDimsNonExt3);
         Insert(&PbIt, PKey, PBrickVol);
       }
@@ -1605,15 +1614,15 @@ FlushChunks(const wz& Wz, encode_data* E) {
     mg_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
     Flush(&Cm->Sizes);
     WriteBuffer(Fp, ToBuffer(Cm->Sizes));
-    ChunkSzsStat.Add(Size(Cm->Sizes));
+    ChunkSzsStat.Add((f64)Size(Cm->Sizes));
     WritePOD(Fp, (int)Size(Cm->Sizes));
     /* compress and write chunk addresses */
     CompressBufZstd(ToBuffer(Cm->Addrs), &E->CpresChunkAddrs);
     WriteBuffer(Fp, ToBuffer(E->CpresChunkAddrs));
     WritePOD(Fp, (int)Size(E->CpresChunkAddrs));
     WritePOD(Fp, (int)Size(Cm->Addrs)); // number of chunks
-    ChunkAddrsStat.Add(Size(Cm->Addrs) * sizeof(Cm->Addrs[0]));
-    CpresChunkAddrsStat.Add(Size(E->CpresChunkAddrs));
+    ChunkAddrsStat.Add((f64)Size(Cm->Addrs) * sizeof(Cm->Addrs[0]));
+    CpresChunkAddrsStat.Add((f64)Size(E->CpresChunkAddrs));
   }
   return mg_Error(wz_err_code::NoError);
 }
@@ -1866,7 +1875,7 @@ ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, con
   i64 AccumSize = 0;
   Init(&FileCache.ChunkCaches, 10);
   mg_For(int, I, 0, NChunks) {
-    int ChunkSize = ReadVarByte(&D->ChunkSzsStream);
+    i64 ChunkSize = ReadVarByte(&D->ChunkSzsStream);
     u64 ChunkAddr = *((u64*)D->ChunkAddrsStream.Stream.Data + I);
     chunk_cache ChunkCache; ChunkCache.ChunkPos = I;
     Insert(&FileCache.ChunkCaches, ChunkAddr, ChunkCache);
@@ -2056,9 +2065,9 @@ DecodeSubband(const wz& Wz, decode_data* D, f64 Accuracy, const grid& SbGrid, vo
         auto BrickIt = BinarySearch(mg_Range(ChunkCache->Bricks), Brick);
         mg_Assert(BrickIt != End(ChunkCache->Bricks));
         mg_Assert(*BrickIt == Brick);
-        int BrickInChunk = BrickIt - Begin(ChunkCache->Bricks);
+        i64 BrickInChunk = BrickIt - Begin(ChunkCache->Bricks);
         mg_Assert(BrickInChunk < Size(ChunkCache->BrickSzs));
-        i32 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSzs[BrickInChunk - 1];
+        i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSzs[BrickInChunk - 1];
         BrickOffset += Size(ChunkCache->ChunkStream);
         Insert(&StreamIt, RealBp, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
@@ -2129,7 +2138,7 @@ DecodeBrick(const wz& Wz, const params& P, decode_data* D, u8 Mask, f64 Accuracy
 
   /* recursively decode the brick, one subband at a time */
   mg_Assert(Size(Wz.Subbands) == 8);
-  mg_For(int, Sb, 0, Size(Wz.Subbands)) {
+  mg_For(i8, Sb, 0, (i8)Size(Wz.Subbands)) {
     if (!BitSet(DecodeSbMask, Sb)) continue;
     const subband& S = Wz.Subbands[Sb];
     v3i SbDimsNonExt3 = mg_NonExtDims(Dims(S.Grid));
@@ -2149,7 +2158,7 @@ DecodeBrick(const wz& Wz, const params& P, decode_data* D, u8 Mask, f64 Accuracy
       if (PbIt.Val->NChildren == 0) {
         v3i From3 = (Brick3 / Wz.GroupBrick3) * Wz.GroupBrick3;
         v3i NChildren3 = Dims(Crop(extent(From3, Wz.GroupBrick3), extent(Wz.NBricks3s[Iter])));
-        PbIt.Val->NChildrenMax = Prod(NChildren3);
+        PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
       }
       ++PbIt.Val->NChildren;
       v3i LocalBrickPos3 = Brick3 % Wz.GroupBrick3;
@@ -2208,7 +2217,7 @@ Decode(const wz& Wz, const params& P, decode_what* Dw) {
   D.EffIter = P.EffIter; // effective iteration (iterations smaller than this won't be decoded)
   f64 Accuracy = Max(Wz.Accuracy, Dw->GetAccuracy());
 //  i64 CountZeroes = 0;
-  mg_InclusiveForBackward(int, Iter, Wz.NIterations - 1, 0) {
+  mg_InclusiveForBackward(i8, Iter, Wz.NIterations - 1, 0) {
     if (Iter < Dw->GetIteration()) break;
     extent Ext = Dw->GetExtent(); // this is in unit of samples
     v3i BrickDims3 = Wz.BrickDims3 * Pow(Wz.GroupBrick3, Iter);

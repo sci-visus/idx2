@@ -40,7 +40,7 @@ FlushVals(simple8b* S8b) {
       while (Size(S8b->SavedVals) < simple8b::IntsCoded[MaxBitsIdx])
         ++MaxBitsIdx;
       Write(&(S8b->Stream), MaxBitsIdx, 4);
-      for (int I = 0; I < simple8b::IntsCoded[MaxBitsIdx]; ++I)
+      for (i16 I = 0; I < simple8b::IntsCoded[MaxBitsIdx]; ++I)
         WriteLong(&(S8b->Stream), S8b->SavedVals[I], simple8b::BitsPerInt[MaxBitsIdx]);
       PopFront(&(S8b->SavedVals), simple8b::IntsCoded[MaxBitsIdx]);
     }
@@ -57,14 +57,14 @@ FlushStream(simple8b* S8b) {
 u32
 Read(simple8b* S8b) {
   if (S8b->NSavedVals == 0) { // just starting a new sequence
-    S8b->MaxBitsIdx = Read(&(S8b->Stream), 4);
+    S8b->MaxBitsIdx = (i8)Read(&(S8b->Stream), 4);
     S8b->NSavedVals = simple8b::IntsCoded[S8b->MaxBitsIdx];
     mg_Assert(S8b->NSavedVals > 0);
     --S8b->NSavedVals;
-    return (S8b->MaxBitsIdx < 2) ? 0 : Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
+    return (S8b->MaxBitsIdx < 2) ? 0 : (u32)Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
   } else { // continue extracting values from the current sequence
     --S8b->NSavedVals;
-    return (S8b->MaxBitsIdx < 2) ? 0 : Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
+    return (S8b->MaxBitsIdx < 2) ? 0 : (u32)Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
   }
 }
 
@@ -80,27 +80,25 @@ int
 BitCount(const simple8b& S8b) {
   if (S8b.MaxBitsIdx == 0 && Size(S8b.SavedVals) >= simple8b::IntsCoded[0]) { // 240 zeros
     mg_Assert(Size(S8b.SavedVals) == simple8b::IntsCoded[0]);
-    return BitSize(S8b.Stream) + 4;
+    return (int)BitSize(S8b.Stream) + 4;
   } else if (S8b.MaxBitsIdx == 0 && Size(S8b.SavedVals) >= simple8b::IntsCoded[1]) { // 120 zeros
-    return BitSize(S8b.Stream) + 4;
-  } else {
-    int Result = BitSize(S8b.Stream);
-    i8 S = Size(S8b.SavedVals);
-    while (S > 0) {
-      i8 MaxBitsIdx = 0;
-      while (S < simple8b::IntsCoded[MaxBitsIdx])
-        ++MaxBitsIdx;
-      Result += 4 + simple8b::IntsCoded[MaxBitsIdx] * simple8b::BitsPerInt[MaxBitsIdx];
-      S -= simple8b::IntsCoded[MaxBitsIdx];
-    }
-    return Result;
+    return (int)BitSize(S8b.Stream) + 4;
   }
-  return BitSize(S8b.Stream);
+	int Result = (int)BitSize(S8b.Stream);
+	i8 S = (i8)Size(S8b.SavedVals);
+	while (S > 0) {
+		i8 MaxBitsIdx = 0;
+		while (S < simple8b::IntsCoded[MaxBitsIdx])
+		++MaxBitsIdx;
+		Result += 4 + simple8b::IntsCoded[MaxBitsIdx] * simple8b::BitsPerInt[MaxBitsIdx];
+		S -= simple8b::IntsCoded[MaxBitsIdx];
+	}
+	return Result;
 }
 
 int
 ByteCount(const simple8b& S8b) {
-  return RoundUp(BitCount(S8b), 8) / 8;
+  return (int)RoundUp(BitCount(S8b), 8) / 8;
 }
 
 // TODO: we can read faster by checking for the trailing zeros

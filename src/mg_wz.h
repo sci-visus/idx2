@@ -64,21 +64,6 @@ struct params {
 void Dealloc(params* P);
 
 
-// file meta data
-// total metadata size
-//
-// for each bit plane
-//   for each iteration
-//     for each level
-//       pointer to data segment
-//       |
-//       |
-//       v
-//       number of chunks (var byte) size (var byte)
-//       first brick, # bricks of chunk 0 (varbyte delta)
-//       first brick, # bricks of chunk 1 (varbyte delta)
-//       first brick, # bricks of chunk 2 (varbyte delta)
-
 struct wz { // wavelet zip
   // Limits:
   // Level: 6 bits
@@ -87,7 +72,7 @@ struct wz { // wavelet zip
   // BricksPerChunk: >= 512
   // ChunksPerFile: <= 4096
   // TODO: add limits to all configurable parameters
-  // TODO: use int for all params  
+  // TODO: use int for all params
   static constexpr int MaxBricksPerChunk = 32768;
   static constexpr int MaxChunksPerFile = 4906;
   static constexpr int MaxFilesPerDir = 4096;
@@ -119,7 +104,7 @@ struct wz { // wavelet zip
   stack_array<u64, MaxIterations> ChunkOrders;
   stack_array<u64, MaxIterations> FileOrders;
   f64 Accuracy = 0;
-  int NIterations = 1;
+  i8 NIterations = 1;
   int FilesPerDir = 4096; // maximum number of files (or sub-directories) per directory
   int BricksPerChunkIn = 512;
   int ChunksPerFileIn = 4096;

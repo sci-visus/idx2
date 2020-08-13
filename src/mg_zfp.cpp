@@ -23,7 +23,7 @@ Encode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs) {
   // TODO: we may be able to speed this up by getting rid of the shift of X
   // or the call bit BitSize()
   for (; BitSize(*Bs) < S && N < 64;) {
-    if ((Lb = Write(Bs, !!X))) {
+    if (1 == (Lb = Write(Bs, !!X))) {
 INNER_LOOP:
       for (; BitSize(*Bs) < S && N < 64 - 1;) {
         if (Write(Bs, X & 1u)) {
@@ -58,7 +58,7 @@ Decode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs) {
   u64 Lb = 1;
   if (In) goto INNER_LOOP;
   for (; BitSize(*Bs) < S && N < 64;) {
-    if ((Lb = Read(Bs))) {
+    if (1 == (Lb = Read(Bs))) {
 INNER_LOOP:
       for (; BitSize(*Bs) < S && N < 64 - 1;) {
         if (Read(Bs)) {
@@ -100,7 +100,7 @@ Encode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
   // TODO: we may be able to speed this up by getting rid of the shift of X
   // or the call bit BitSize()
   for (; BitSize(*Bs) < S && N < 64;) {
-    if ((Lb = Write(Bs, !!X))) { // group is significant
+    if (1 == (Lb = Write(Bs, !!X))) { // group is significant
       for (; BitSize(*Bs) < S && N < 64 - 1;) {
         if (Write(Bs, X & 1u)) { // found a significant coeff, break and retest
           break;
@@ -132,7 +132,7 @@ Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
   u64 X = P > 0 ? ReadLong(Bs, P) : 0;
   u64 Lb = 1;
   for (; BitSize(*Bs) < S && N < 64;) {
-    if ((Lb = Read(Bs))) {
+    if (1 == (Lb = Read(Bs))) {
       for (; BitSize(*Bs) < S && N < 64 - 1;) {
         if (Read(Bs)) {
           break;

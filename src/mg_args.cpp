@@ -4,7 +4,7 @@
 
 namespace mg {
 
-bool 
+bool
 OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val) {
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
@@ -30,7 +30,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val) {
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
       bool Success = ToInt(Args[I + 1], &IntVal);
-      *Val = IntVal;
+      *Val = (u8)IntVal;
       return Success;
     }
   }
@@ -116,7 +116,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val) {
   return false;
 }
 
-bool 
+bool
 OptExists(int NArgs, cstr* Args, cstr Opt) {
   for (int I = 0; I < NArgs; ++I) {
     if (strcmp(Args[I], Opt) == 0)

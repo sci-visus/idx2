@@ -17,12 +17,14 @@ void SetHandleAbortSignals(handler& Handler = AbortHandler);
 
 #include <stdio.h>
 #include <stdlib.h>
-#pragma GCC diagnostic push
 #if defined(__clang__)
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wgnu-inline-cpp-without-extern"
 #endif
 #include "mg_debugbreak.h"
+#if defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
 #include "mg_io.h"
 #include "mg_macros.h"
 #include "mg_stacktrace.h"

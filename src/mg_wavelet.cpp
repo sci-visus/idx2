@@ -33,7 +33,7 @@ namespace mg {
 // NOTE: when called with a different parameter, the old instance will be
 // invalidated
 static inline free_list_allocator& FreeListAllocator(i64 Bytes) {
-  static int LastBytes = Bytes;
+  static i64 LastBytes = Bytes;
   static free_list_allocator Instance(Bytes, &Mallocator());
   if (LastBytes != Bytes) {
     LastBytes = Bytes;
@@ -778,7 +778,7 @@ ForwardCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
       f64 W = Wx * Wy * Wz;
       #define Body(type)\
       auto ItEnd = End<type>(S.Grid, *Vol);\
-      for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It *= W;
+      for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
       mg_DispatchOnType(Vol->Type);
       #undef Body
     }
@@ -811,7 +811,7 @@ ForwardCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const tran
     f64 W = Wx * Wy * Wz;
     #define Body(type)\
     auto ItEnd = End<type>(S.Grid, *Vol);\
-    for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It *= W;
+    for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
     mg_DispatchOnType(Vol->Type);
     #undef Body
   }
@@ -829,7 +829,7 @@ InverseCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const tran
     f64 W = 1.0 / (Wx * Wy * Wz);
     #define Body(type)\
     auto ItEnd = End<type>(S.Grid, *Vol);\
-    for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It *= W;
+    for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
     mg_DispatchOnType(Vol->Type);
     #undef Body
   }
@@ -899,7 +899,7 @@ InverseCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
       f64 W = 1.0 / (Wx * Wy * Wz);
       #define Body(type)\
       auto ItEnd = End<type>(S.Grid, *Vol);\
-      for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It *= W;
+      for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
       mg_DispatchOnType(Vol->Type);
       #undef Body
     }
@@ -959,7 +959,7 @@ InverseCdf53(const extent& Ext, int NLevels, volume* Vol) {
     Strd3 = Strd3 * 2;\
     Dims3 = (Dims3 + 1) / 2;\
   }\
-  for (int I = NLevels - 1, J = Size(Grids) - 1; I >= 0; --I) {\
+  for (int I = NLevels - 1, J = (int)Size(Grids) - 1; I >= 0; --I) {\
     ILiftCdf53Z<type>(Grids[J--], M, lift_option::Normal, Vol);\
     ILiftCdf53Y<type>(Grids[J--], M, lift_option::Normal, Vol);\
     ILiftCdf53X<type>(Grids[J--], M, lift_option::Normal, Vol);\
@@ -1020,7 +1020,7 @@ AggregateSubbands(const array<grid>& Subbands, array<grid>* AggSubbands) {
     v3i NewAggFrom3 = AggFrom3, NewAggStrd3 = AggStrd3, NewAggDims3 = AggDims3;
     for (int D = 0; D < 3; ++D) {
       bool B = (From3[D] - AggFrom3[D]) % AggStrd3[D] != 0;
-      NewAggStrd3[D] /= 1 << B;
+      NewAggStrd3[D] /= 1 << (int)B;
       NewAggDims3[D] += Dims3[D] * B;
     }
     PushBack(AggSubbands, grid(NewAggFrom3, NewAggDims3, NewAggStrd3));
@@ -1202,7 +1202,7 @@ DecodeTransformOrder(u64 Input, str Output) {
   int Len = 0;
   while (Input != 0) {
     int T = Input & 0x3;
-    Output[Len++] = T == 3 ? '+' : 'X' + T;
+    Output[Len++] = T == 3 ? '+' : char('X' + T);
     Input >>= 2;
   }
   Output[Len] = '\0';
@@ -1210,7 +1210,7 @@ DecodeTransformOrder(u64 Input, str Output) {
 
 i8
 DecodeTransformOrder(u64 Input, v3i N3, str Output) {
-  N3 = v3i(NextPow2(N3.X), NextPow2(N3.Y), NextPow2(N3.Z));
+  N3 = v3i((int)NextPow2(N3.X), (int)NextPow2(N3.Y), (int)NextPow2(N3.Z));
   i8 Len = 0;
   u64 SavedInput = Input;
   while (Prod<u64>(N3) > 1) {
@@ -1222,7 +1222,7 @@ DecodeTransformOrder(u64 Input, v3i N3, str Output) {
       else
         SavedInput = Input;
     } else {
-      Output[Len++] = 'X' + T;
+      Output[Len++] = char('X' + T);
       N3[T] >>= 1;
     }
   }
@@ -1247,7 +1247,7 @@ DecodeTransformOrder(u64 Input, int Passes, str Output) {
       --Passes3[T];
       if (Passes3[T] < 0)
         break;
-      Output[Len++] = 'X' + T;
+      Output[Len++] = char('X' + T);
     }
   }
   Output[Len] = '\0';
@@ -1293,8 +1293,8 @@ BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Su
         TransformOrder = PrevOrder;
       else
         PrevOrder = TransformOrder;
-      int Sz = Size(Queue);
-      for (int I = Sz - 1; I >= 1; --I) {
+      i16 Sz = Size(Queue);
+      for (i16 I = Sz - 1; I >= 1; --I) {
         PushBack(Subbands, Queue[I]);
         PopBack(&Queue);
       }
@@ -1302,8 +1302,8 @@ BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Su
       Grids[Level] = Queue[0].Grid;
     } else {
       ++MaxLevel3[D];
-      int Sz = Size(Queue);
-      for (int I = 0; I < Sz; ++I) {
+      i16 Sz = Size(Queue);
+      for (i16 I = 0; I < Sz; ++I) {
         const grid& G = Queue[0].Grid;
         grid_split Gs = SplitAlternate(G, dimension(D));
         v3<i8> NextLevel3 = Queue[0].Level3; ++NextLevel3[D];
@@ -1317,11 +1317,11 @@ BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Su
   if (Size(Queue) > 0)
     PushBack(Subbands, Queue[0]);
   Reverse(Begin(Grids), Begin(Grids) + Level + 1);
-  int Sz = Size(*Subbands);
-  for (int I = 0; I < Sz; ++I) {
+  i64 Sz = Size(*Subbands);
+  for (i64 I = 0; I < Sz; ++I) {
     subband& Sband = (*Subbands)[I];
     Sband.Level3 = MaxLevel3 - Sband.Level3Rev;
-    Sband.Level = NLevels - Sband.Level - 1;
+    Sband.Level = i8(NLevels - Sband.Level - 1);
     Sband.AccumGrid = MergeSubbandGrids(Grids[Sband.Level], Sband.Grid);
   }
   Reverse(Begin(*Subbands), End(*Subbands));
