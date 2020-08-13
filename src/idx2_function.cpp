@@ -3,7 +3,7 @@
 #include "idx2_assert.h"
 #include "idx2_data_types.h"
 #include "idx2_math.h"
-#include "idx2_signal_processing.h"
+#include "idx2_function.h"
 #include "idx2_volume.h"
 
 namespace idx2 {

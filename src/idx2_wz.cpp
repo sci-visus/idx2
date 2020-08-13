@@ -8,7 +8,7 @@
 #include "idx2_hashtable.h"
 #include "idx2_macros.h"
 #include "idx2_scopeguard.h"
-#include "idx2_signal_processing.h"
+#include "idx2_function.h"
 #include "idx2_stats.h"
 #include "idx2_timer.h"
 #include "idx2_varint.h"

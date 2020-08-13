@@ -1,6 +1,6 @@
 #include "idx2_common.h"
 #include "idx2_filesystem.h"
-#include "idx2_signal_processing.h"
+#include "idx2_function.h"
 #include "idx2_volume.h"
 #include "idx2_wz.h"
 #include "idx2_zfp.h"

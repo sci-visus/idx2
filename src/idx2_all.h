@@ -26,7 +26,7 @@
 #include "idx2_random.h"
 //#include "idx2_rendering.h"
 #include "idx2_scopeguard.h"
-#include "idx2_signal_processing.h"
+#include "idx2_function.h"
 #include "idx2_stacktrace.h"
 #include "idx2_string.h"
 #include "idx2_test.h"
