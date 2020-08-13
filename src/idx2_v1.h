@@ -171,7 +171,7 @@ idx2_T(t) void
 Dealloc(brick<t>* Brick) { free(Brick->Samples); } // TODO: check this
 
 struct decode_what {
-  virtual void Init(const idx2_file& Wz) = 0;
+  virtual void Init(const idx2_file& Idx2) = 0;
   virtual void SetExtent(const extent& Ext) = 0;
   virtual void SetMask(u8 Mask) = 0;
   virtual void SetIteration(int Iteration) = 0;
@@ -187,13 +187,13 @@ struct decode_what {
 };
 
 struct decode_all : public decode_what {
-  const idx2_file* Wz = nullptr;
+  const idx2_file* Idx2 = nullptr;
   extent Ext;
   f64 Accuracy = 0;
   int Iter = 0;
   u8 Mask = 0xFF;
   int QualityLevel = -1;
-  void Init(const idx2_file& Wz) override;
+  void Init(const idx2_file& Idx2) override;
   void SetExtent(const extent& Ext) override;
   void SetMask(u8 Mask) override;
   void SetIteration(int Iteration) override;
@@ -386,34 +386,34 @@ struct file_id {
   u64 Id = 0;
 };
 
-void SetName(idx2_file* Wz, cstr Name);
-void SetField(idx2_file* Wz, cstr Field);
-void SetVersion(idx2_file* Wz, const v2i& Ver);
-void SetDimensions(idx2_file* Wz, const v3i& Dims3);
-void SetDataType(idx2_file* Wz, dtype DType);
-void SetBrickSize(idx2_file* Wz, const v3i& BrickDims3);
-void SetNumIterations(idx2_file* Wz, i8 NIterations);
-void SetAccuracy(idx2_file* Wz, f64 Accuracy);
-void SetChunksPerFile(idx2_file* Wz, int ChunksPerFile);
-void SetBricksPerChunk(idx2_file* Wz, int BricksPerChunk);
-void SetFilesPerDirectory(idx2_file* Wz, int FilesPerDir);
-void SetDir(idx2_file* Wz, cstr Dir);
-error<idx2_file_err_code> Finalize(idx2_file* Wz);
-void CleanUp(idx2_file* Wz);
-void SetGroupIterations(idx2_file* Wz, bool GroupIterations);
-void SetGroupLevels(idx2_file* Wz, bool GroupLevels);
-void SetGroupBitPlanes(idx2_file* Wz, bool GroupBitPlanes);
-void SetQualityLevels(idx2_file* Wz, const array<int>& QualityLevels);
+void SetName(idx2_file* Idx2, cstr Name);
+void SetField(idx2_file* Idx2, cstr Field);
+void SetVersion(idx2_file* Idx2, const v2i& Ver);
+void SetDimensions(idx2_file* Idx2, const v3i& Dims3);
+void SetDataType(idx2_file* Idx2, dtype DType);
+void SetBrickSize(idx2_file* Idx2, const v3i& BrickDims3);
+void SetNumIterations(idx2_file* Idx2, i8 NIterations);
+void SetAccuracy(idx2_file* Idx2, f64 Accuracy);
+void SetChunksPerFile(idx2_file* Idx2, int ChunksPerFile);
+void SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk);
+void SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
+void SetDir(idx2_file* Idx2, cstr Dir);
+error<idx2_file_err_code> Finalize(idx2_file* Idx2);
+void CleanUp(idx2_file* Idx2);
+void SetGroupIterations(idx2_file* Idx2, bool GroupIterations);
+void SetGroupLevels(idx2_file* Idx2, bool GroupLevels);
+void SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
+void SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels);
 
-error<idx2_file_err_code> ReadMetaFile(idx2_file* Wz, cstr FileName);
-void WriteMetaFile(const idx2_file& Wz, cstr FileName);
+error<idx2_file_err_code> ReadMetaFile(idx2_file* Idx2, cstr FileName);
+void WriteMetaFile(const idx2_file& Idx2, cstr FileName);
 
 // TODO: return an error code?
-error<idx2_file_err_code> Encode(idx2_file* Wz, const params& P, const volume& Vol);
-void Decode(const idx2_file& Wz, const params& P, decode_what* Dw);
-void EncodeSubbandV0_0(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol);
-error<idx2_file_err_code> DecodeSubbandV0_0(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol);
-void EncodeSubbandV0_1(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol);
-error<idx2_file_err_code> DecodeSubbandV0_1(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol);
+error<idx2_file_err_code> Encode(idx2_file* Idx2, const params& P, const volume& Vol);
+void Decode(const idx2_file& Idx2, const params& P, decode_what* Dw);
+void EncodeSubbandV0_0(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol);
+error<idx2_file_err_code> DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol);
+void EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol);
+error<idx2_file_err_code> DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol);
 
 } // namespace idx2

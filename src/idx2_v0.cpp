@@ -17,14 +17,14 @@ GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane
 }
 
 static file_id
-ConstructFilePathV0_0(const idx2_file& Wz, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
+ConstructFilePathV0_0(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
   #define idx2_PrintIteration idx2_Print(&Pr, "/I%02x", Iter);
   #define idx2_PrintExtension idx2_Print(&Pr, ".bin");
   thread_local static char FilePath[256];
   printer Pr(FilePath, sizeof(FilePath));
-  idx2_Print(&Pr, "%s/%s/", Wz.Name, Wz.Field);
+  idx2_Print(&Pr, "%s/%s/", Idx2.Name, Idx2.Field);
   idx2_PrintIteration; idx2_PrintExtension;
-  u64 FileId = GetFileAddressV0_0(Wz.BricksPerFiles[Iter], Brick, Iter, Level, BitPlane);
+  u64 FileId = GetFileAddressV0_0(Idx2.BricksPerFiles[Iter], Brick, Iter, Level, BitPlane);
   return file_id{stref{FilePath, Pr.Size}, FileId};
   #undef idx2_PrintIteration
   #undef idx2_PrintExtension
@@ -43,20 +43,20 @@ ConstructFilePathV0_0(const idx2_file& Wz, u64 Brick, i8 Iter, i8 Level, i16 Bit
 - write each iteration to one file
 - only support linear decoding of each file */
 void
-EncodeSubbandV0_0(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
+EncodeSubbandV0_0(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
   u64 Brick = E->Brick[E->Iter];
   v3i SbDims3 = Dims(SbGrid);
-  v3i NBlocks3 = (SbDims3 + Wz->BlockDims3 - 1) / Wz->BlockDims3;
+  v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  file_id FileId = ConstructFilePathV0_0(*Wz, Brick, E->Iter, 0, 0);
+  file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
-    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Wz->BlockDims3));
-    v3i D3 = Z3 * Wz->BlockDims3;
-    v3i BlockDims3 = Min(Wz->BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Wz->NIterations && BlockDims3 == Wz->BlockDims3;
+    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2->BlockDims3));
+    v3i D3 = Z3 * Idx2->BlockDims3;
+    v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
+    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NIterations && BlockDims3 == Idx2->BlockDims3;
     if (CodedInNextIter) continue;
     /* copy the samples to the local buffer */
     v3i S3;
@@ -70,22 +70,22 @@ EncodeSubbandV0_0(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* Bri
 
 /* NOTE: in v0.0, we only support reading the data from beginning to end on each iteration */
 error<idx2_file_err_code>
-DecodeSubbandV0_0(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol) {
+DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol) {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
-  v3i NBlocks3 = (SbDims3 + Wz.BlockDims3 - 1) / Wz.BlockDims3;
+  v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  file_id FileId = ConstructFilePathV0_0(Wz, Brick, D->Iter, 0, 0);
+  file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Iter, 0, 0);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
   idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
   /* first, read the block exponents */
   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
-    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Wz.BlockDims3));
-    v3i D3 = Z3 * Wz.BlockDims3;
-    v3i BlockDims3 = Min(Wz.BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Wz.NIterations && BlockDims3 == Wz.BlockDims3;
+    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2.BlockDims3));
+    v3i D3 = Z3 * Idx2.BlockDims3;
+    v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
+    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NIterations && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter) continue;
     ReadBuffer(Fp, &BufFloats);
     v3i S3;
@@ -103,13 +103,13 @@ DecodeSubbandV0_0(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volum
 - write each iteration to one file
 - only support linear decoding of each file */
 void
-EncodeSubbandV0_1(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
+EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
   u64 Brick = E->Brick[E->Iter];
   v3i SbDims3 = Dims(SbGrid);
   const i8 NBitPlanes = idx2_BitSizeOf(f64);
-  v3i NBlocks3 = (SbDims3 + Wz->BlockDims3 - 1) / Wz->BlockDims3;
+  v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  file_id FileId = ConstructFilePathV0_0(*Wz, Brick, E->Iter, 0, 0);
+  file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   Rewind(&E->BlockStream);
   GrowToAccomodate(&E->BlockStream, 8 * 1024 * 1024); // 8MB
@@ -117,12 +117,12 @@ EncodeSubbandV0_1(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* Bri
   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
-    v3i D3 = Z3 * Wz->BlockDims3;
-    v3i BlockDims3 = Min(Wz->BlockDims3, SbDims3 - D3);
+    v3i D3 = Z3 * Idx2->BlockDims3;
+    v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
     i64 BlockInts  [4 * 4 * 4] = {}; buffer_t BufInts  (BlockInts  , Prod(BlockDims3));
     u64 BlockUInts [4 * 4 * 4] = {}; buffer_t BufUInts (BlockUInts , Prod(BlockDims3));
-    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Wz->NIterations && BlockDims3 == Wz->BlockDims3;
+    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NIterations && BlockDims3 == Idx2->BlockDims3;
     if (CodedInNextIter) continue;
     /* copy the samples to the local buffer */
     v3i S3;
@@ -142,7 +142,7 @@ EncodeSubbandV0_1(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* Bri
     Write(&E->BlockStream, EMax + traits<f64>::ExpBias, traits<f64>::ExpBits);
     idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
       i16 RealBp = Bp + EMax;
-      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Wz->Accuracy) + 1;
+      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
       if (TooHighPrecision) break;
       GrowIfTooFull(&E->BlockStream);
       Encode(BlockUInts, NVals, Bp, N, &E->BlockStream);
@@ -154,13 +154,13 @@ EncodeSubbandV0_1(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* Bri
 }
 
 error<idx2_file_err_code>
-DecodeSubbandV0_1(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol) {
+DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol) {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
   const i8 NBitPlanes = idx2_BitSizeOf(f64);
-  v3i NBlocks3 = (SbDims3 + Wz.BlockDims3 - 1) / Wz.BlockDims3;
+  v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  file_id FileId = ConstructFilePathV0_0(Wz, Brick, D->Iter, 0, 0);
+  file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Iter, 0, 0);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
   idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
   int Sz = 0; ReadPOD(Fp, &Sz);
@@ -172,12 +172,12 @@ DecodeSubbandV0_1(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volum
   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
-    v3i D3 = Z3 * Wz.BlockDims3;
-    v3i BlockDims3 = Min(Wz.BlockDims3, SbDims3 - D3);
+    v3i D3 = Z3 * Idx2.BlockDims3;
+    v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
     i64 BlockInts  [4 * 4 * 4] = {}; buffer_t BufInts  (BlockInts  , Prod(BlockDims3));
     u64 BlockUInts [4 * 4 * 4] = {}; buffer_t BufUInts (BlockUInts , Prod(BlockDims3));
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Wz.NIterations && BlockDims3 == Wz.BlockDims3;
+    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NIterations && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter) continue;
     int NDims = NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
@@ -186,7 +186,7 @@ DecodeSubbandV0_1(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volum
     i8 N = 0;
     idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
       i16 RealBp = Bp + EMax;
-      if (NBitPlanes - 6 > RealBp - Exponent(Wz.Accuracy) + 1) break;
+      if (NBitPlanes - 6 > RealBp - Exponent(Idx2.Accuracy) + 1) break;
       Decode(BlockUInts, NVals, Bp, N, &D->BlockStream);
     }
     InverseShuffle(BlockUInts, BlockInts, NDims);

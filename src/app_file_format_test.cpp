@@ -138,24 +138,24 @@ ParseParams(int Argc, cstr* Argv) {
 }
 
 static error<idx2_file_err_code>
-SetParams(idx2_file* Wz, const params& P) {
-  SetName(Wz, P.Meta.Name);
-  SetField(Wz, P.Meta.Field);
-  SetVersion(Wz, P.Version);
-  SetDimensions(Wz, P.Meta.Dims3);
-  SetDataType(Wz, P.Meta.DType);
-  SetBrickSize(Wz, P.BrickDims3);
-  SetBricksPerChunk(Wz, P.BricksPerChunk);
-  SetChunksPerFile(Wz,P.ChunksPerFile);
-  SetNumIterations(Wz, (i8)P.NIterations);
-  SetAccuracy(Wz, P.Accuracy);
-  SetFilesPerDirectory(Wz, P.FilesPerDir);
-  SetDir(Wz, P.OutDir);
-  SetGroupIterations(Wz, P.GroupIterations);
-  SetGroupBitPlanes(Wz, P.GroupBitPlanes);
-  SetGroupLevels(Wz, P.GroupLevels);
-  SetQualityLevels(Wz, P.RdoLevels);
-  return Finalize(Wz);
+SetParams(idx2_file* Idx2, const params& P) {
+  SetName(Idx2, P.Meta.Name);
+  SetField(Idx2, P.Meta.Field);
+  SetVersion(Idx2, P.Version);
+  SetDimensions(Idx2, P.Meta.Dims3);
+  SetDataType(Idx2, P.Meta.DType);
+  SetBrickSize(Idx2, P.BrickDims3);
+  SetBricksPerChunk(Idx2, P.BricksPerChunk);
+  SetChunksPerFile(Idx2,P.ChunksPerFile);
+  SetNumIterations(Idx2, (i8)P.NIterations);
+  SetAccuracy(Idx2, P.Accuracy);
+  SetFilesPerDirectory(Idx2, P.FilesPerDir);
+  SetDir(Idx2, P.OutDir);
+  SetGroupIterations(Idx2, P.GroupIterations);
+  SetGroupBitPlanes(Idx2, P.GroupBitPlanes);
+  SetGroupLevels(Idx2, P.GroupLevels);
+  SetQualityLevels(Idx2, P.RdoLevels);
+  return Finalize(Idx2);
 }
 
 // TODO: handle float/int/int64/etc
@@ -196,29 +196,29 @@ main(int Argc, cstr* Argv) {
 
   { /* Perform the action */
     idx2_RAII(timer, Timer, StartTimer(&Timer), printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer))));
-    idx2_file Wz;
+    idx2_file Idx2;
     if (P.Action == action::Encode) {
-      idx2_ExitIfError(SetParams(&Wz, P));
+      idx2_ExitIfError(SetParams(&Idx2, P));
       idx2_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));
 //      error Result = ReadVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol.Vol);
       idx2_ExitIfError(MapVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
-      idx2_ExitIfError(Encode(&Wz, P, Vol.Vol));
+      idx2_ExitIfError(Encode(&Idx2, P, Vol.Vol));
     } else if (P.Action == action::Decode) {
-      SetDir(&Wz, P.InDir);
+      SetDir(&Idx2, P.InDir);
 //      brick_table<f64> BrickTable;
-      idx2_ExitIfError(ReadMetaFile(&Wz, idx2_PrintScratch("%s", P.InputFile)));
-      idx2_ExitIfError(Finalize(&Wz));
+      idx2_ExitIfError(ReadMetaFile(&Idx2, idx2_PrintScratch("%s", P.InputFile)));
+      idx2_ExitIfError(Finalize(&Idx2));
       decode_all Dw;
-      Dw.Init(Wz);
+      Dw.Init(Idx2);
       Dw.SetExtent(P.DecodeExtent);
       Dw.SetMask(P.DecodeMask);
       Dw.SetIteration(P.DecodeUpToIteration);
       Dw.SetAccuracy(P.DecodeAccuracy);
       Dw.SetQuality(P.QualityLevel);
-      Decode(Wz, P, &Dw);
+      Decode(Idx2, P, &Dw);
       // TODO: convert the brick table to a regular volume
     }
-    CleanUp(&Wz);
+    CleanUp(&Idx2);
   }
   if (P.Pause) {
     printf("Press any key to end...\n");

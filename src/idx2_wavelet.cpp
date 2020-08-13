@@ -774,8 +774,8 @@ ForwardCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
       subband& S = Subbands[I];
       f64 Wx = Dims3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
       f64 Wy = Dims3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
-      f64 Wz = Dims3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
-      f64 W = Wx * Wy * Wz;
+      f64 Idx2 = Dims3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
+      f64 W = Wx * Wy * Idx2;
       #define Body(type)\
       auto ItEnd = End<type>(S.Grid, *Vol);\
       for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
@@ -807,8 +807,8 @@ ForwardCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const tran
     subband& S = Subbands[I];
     f64 Wx = M3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
     f64 Wy = M3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
-    f64 Wz = M3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
-    f64 W = Wx * Wy * Wz;
+    f64 Idx2 = M3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
+    f64 W = Wx * Wy * Idx2;
     #define Body(type)\
     auto ItEnd = End<type>(S.Grid, *Vol);\
     for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
@@ -825,8 +825,8 @@ InverseCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const tran
     subband& S = Subbands[I];
     f64 Wx = M3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
     f64 Wy = M3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
-    f64 Wz = M3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
-    f64 W = 1.0 / (Wx * Wy * Wz);
+    f64 Idx2 = M3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
+    f64 W = 1.0 / (Wx * Wy * Idx2);
     #define Body(type)\
     auto ItEnd = End<type>(S.Grid, *Vol);\
     for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
@@ -895,8 +895,8 @@ InverseCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
       subband& S = Subbands[I];
       f64 Wx = Dims3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
       f64 Wy = Dims3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
-      f64 Wz = Dims3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
-      f64 W = 1.0 / (Wx * Wy * Wz);
+      f64 Idx2 = Dims3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
+      f64 W = 1.0 / (Wx * Wy * Idx2);
       #define Body(type)\
       auto ItEnd = End<type>(S.Grid, *Vol);\
       for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
