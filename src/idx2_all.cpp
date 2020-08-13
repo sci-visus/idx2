@@ -1,0 +1,24 @@
+//#define _CRTDBG_MAP_ALLOC
+//#include <stdlib.h>
+//#include <crtdbg.h>
+
+#include "idx2_args.cpp"
+#include "idx2_assert.cpp"
+#include "idx2_dataset.cpp"
+//#include "idx2_file_format.cpp"
+#include "idx2_filesystem.cpp"
+#include "idx2_io.cpp"
+#include "idx2_logger.cpp"
+#include "idx2_math.cpp"
+#include "idx2_memory.cpp"
+#include "idx2_memory_map.cpp"
+#include "idx2_signal_processing.cpp"
+#include "idx2_stacktrace.cpp"
+#include "idx2_string.cpp"
+#include "idx2_utils.cpp"
+#include "idx2_wavelet.cpp"
+#include "idx2_wz.cpp"
+#include "wz_v0.cpp"
+#include "idx2_varint.cpp"
+#include "idx2_volume.cpp"
+#include "idx2_zfp.cpp"

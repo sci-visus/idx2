@@ -1,13 +1,13 @@
-#include "mg_common.h"
-#include "mg_filesystem.h"
-#include "mg_signal_processing.h"
-#include "mg_volume.h"
-#include "mg_wz.h"
-#include "mg_zfp.h"
+#include "idx2_common.h"
+#include "idx2_filesystem.h"
+#include "idx2_signal_processing.h"
+#include "idx2_volume.h"
+#include "idx2_wz.h"
+#include "idx2_zfp.h"
 
 namespace idx2 {
 
-static mg_Inline u64
+static idx2_Inline u64
 GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
   (void)BricksPerFile;
   (void)Brick;
@@ -18,22 +18,22 @@ GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane
 
 static file_id
 ConstructFilePathV0_0(const wz& Wz, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
-  #define mg_PrintIteration mg_Print(&Pr, "/I%02x", Iter);
-  #define mg_PrintExtension mg_Print(&Pr, ".bin");
+  #define idx2_PrintIteration idx2_Print(&Pr, "/I%02x", Iter);
+  #define idx2_PrintExtension idx2_Print(&Pr, ".bin");
   thread_local static char FilePath[256];
   printer Pr(FilePath, sizeof(FilePath));
-  mg_Print(&Pr, "%s/%s/", Wz.Name, Wz.Field);
-  mg_PrintIteration; mg_PrintExtension;
+  idx2_Print(&Pr, "%s/%s/", Wz.Name, Wz.Field);
+  idx2_PrintIteration; idx2_PrintExtension;
   u64 FileId = GetFileAddressV0_0(Wz.BricksPerFiles[Iter], Brick, Iter, Level, BitPlane);
   return file_id{stref{FilePath, Pr.Size}, FileId};
-  #undef mg_PrintIteration
-  #undef mg_PrintExtension
+  #undef idx2_PrintIteration
+  #undef idx2_PrintExtension
 }
 
-#define mg_NextMorton(Morton, Row3, Dims3)\
+#define idx2_NextMorton(Morton, Row3, Dims3)\
   if (!(Row3 < Dims3)) {\
     int B = Lsb(Morton);\
-    mg_Assert(B >= 0);\
+    idx2_Assert(B >= 0);\
     Morton = (((Morton >> (B + 1)) + 1) << (B + 1)) - 1;\
     continue;\
   }
@@ -49,10 +49,10 @@ EncodeSubbandV0_0(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
   v3i NBlocks3 = (SbDims3 + Wz->BlockDims3 - 1) / Wz->BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   file_id FileId = ConstructFilePathV0_0(*Wz, Brick, E->Iter, 0, 0);
-  mg_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
-  mg_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+  idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
+  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
-    mg_NextMorton(Block, Z3, NBlocks3);
+    idx2_NextMorton(Block, Z3, NBlocks3);
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Wz->BlockDims3));
     v3i D3 = Z3 * Wz->BlockDims3;
     v3i BlockDims3 = Min(Wz->BlockDims3, SbDims3 - D3);
@@ -60,10 +60,10 @@ EncodeSubbandV0_0(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
     if (CodedInNextIter) continue;
     /* copy the samples to the local buffer */
     v3i S3;
-    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-      mg_Assert(D3 + S3 < SbDims3);
+    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+      idx2_Assert(D3 + S3 < SbDims3);
       BlockFloats[Row(BlockDims3, S3)] = BrickVol->At<f64>(SbGrid, D3 + S3);
-    } mg_EndFor3 // end sample loop
+    } idx2_EndFor3 // end sample loop
     WriteBuffer(Fp, BufFloats);
   }
 }
@@ -76,12 +76,12 @@ DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
   v3i NBlocks3 = (SbDims3 + Wz.BlockDims3 - 1) / Wz.BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   file_id FileId = ConstructFilePathV0_0(Wz, Brick, D->Iter, 0, 0);
-  mg_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
-  mg_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
+  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
+  idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
   /* first, read the block exponents */
-  mg_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
-    mg_NextMorton(Block, Z3, NBlocks3);
+    idx2_NextMorton(Block, Z3, NBlocks3);
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Wz.BlockDims3));
     v3i D3 = Z3 * Wz.BlockDims3;
     v3i BlockDims3 = Min(Wz.BlockDims3, SbDims3 - D3);
@@ -89,13 +89,13 @@ DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     if (CodedInNextIter) continue;
     ReadBuffer(Fp, &BufFloats);
     v3i S3;
-    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-      mg_Assert(D3 + S3 < SbDims3);
+    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+      idx2_Assert(D3 + S3 < SbDims3);
       BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[Row(BlockDims3, S3)];
-    } mg_EndFor3 // end sample loop
+    } idx2_EndFor3 // end sample loop
   }
-  D->Offsets[D->Iter] = mg_FTell(Fp);
-  return mg_Error(wz_err_code::NoError);
+  D->Offsets[D->Iter] = idx2_FTell(Fp);
+  return idx2_Error(wz_err_code::NoError);
 }
 
 /* V0_1:
@@ -106,17 +106,17 @@ void
 EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
   u64 Brick = E->Brick[E->Iter];
   v3i SbDims3 = Dims(SbGrid);
-  const i8 NBitPlanes = mg_BitSizeOf(f64);
+  const i8 NBitPlanes = idx2_BitSizeOf(f64);
   v3i NBlocks3 = (SbDims3 + Wz->BlockDims3 - 1) / Wz->BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   file_id FileId = ConstructFilePathV0_0(*Wz, Brick, E->Iter, 0, 0);
-  mg_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
+  idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   Rewind(&E->BlockStream);
   GrowToAccomodate(&E->BlockStream, 8 * 1024 * 1024); // 8MB
   InitWrite(&E->BlockStream, E->BlockStream.Stream);
-  mg_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
-    mg_NextMorton(Block, Z3, NBlocks3);
+    idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Wz->BlockDims3;
     v3i BlockDims3 = Min(Wz->BlockDims3, SbDims3 - D3);
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
@@ -127,20 +127,20 @@ EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
     /* copy the samples to the local buffer */
     v3i S3;
     int J = 0;
-    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-      mg_Assert(D3 + S3 < SbDims3);
+    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+      idx2_Assert(D3 + S3 < SbDims3);
       BlockFloats[J++] = BrickVol->At<f64>(SbGrid, D3 + S3);
-    } mg_EndFor3 // end sample loop
+    } idx2_EndFor3 // end sample loop
     i8 NDims = (i8)NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
-    const i8 Prec = mg_BitSizeOf(f64) - 1 - NDims;
+    const i8 Prec = idx2_BitSizeOf(f64) - 1 - NDims;
     // TODO: deal with Float32
     const i16 EMax = (i16)Quantize(Prec, BufFloats, &BufInts);
     ForwardZfp(BlockInts, NDims);
     ForwardShuffle(BlockInts, BlockUInts, NDims);
     i8 N = 0; // number of significant coefficients in the block so far
     Write(&E->BlockStream, EMax + traits<f64>::ExpBias, traits<f64>::ExpBits);
-    mg_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
+    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
       i16 RealBp = Bp + EMax;
       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Wz->Accuracy) + 1;
       if (TooHighPrecision) break;
@@ -157,21 +157,21 @@ error<wz_err_code>
 DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol) {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
-  const i8 NBitPlanes = mg_BitSizeOf(f64);
+  const i8 NBitPlanes = idx2_BitSizeOf(f64);
   v3i NBlocks3 = (SbDims3 + Wz.BlockDims3 - 1) / Wz.BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   file_id FileId = ConstructFilePathV0_0(Wz, Brick, D->Iter, 0, 0);
-  mg_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
-  mg_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
+  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
+  idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
   int Sz = 0; ReadPOD(Fp, &Sz);
   Rewind(&D->BlockStream);
   GrowToAccomodate(&D->BlockStream, Max(Sz, 8 * 1024 * 1024));
   ReadBuffer(Fp, &D->BlockStream.Stream, Sz);
   InitRead(&D->BlockStream, D->BlockStream.Stream);
   /* first, read the block exponents */
-  mg_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
-    mg_NextMorton(Block, Z3, NBlocks3);
+    idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Wz.BlockDims3;
     v3i BlockDims3 = Min(Wz.BlockDims3, SbDims3 - D3);
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
@@ -181,10 +181,10 @@ DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     if (CodedInNextIter) continue;
     int NDims = NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
-    const int Prec = mg_BitSizeOf(f64) - 1 - NDims;
+    const int Prec = idx2_BitSizeOf(f64) - 1 - NDims;
     i16 EMax = i16(Read(&D->BlockStream, traits<f64>::ExpBits) - traits<f64>::ExpBias);
     i8 N = 0;
-    mg_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
+    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
       i16 RealBp = Bp + EMax;
       if (NBitPlanes - 6 > RealBp - Exponent(Wz.Accuracy) + 1) break;
       Decode(BlockUInts, NVals, Bp, N, &D->BlockStream);
@@ -194,15 +194,15 @@ DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     Dequantize(EMax, Prec, BufInts, &BufFloats);
     v3i S3;
     int J = 0;
-    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-      mg_Assert(D3 + S3 < SbDims3);
+    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+      idx2_Assert(D3 + S3 < SbDims3);
       BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[J++];
-    } mg_EndFor3 // end sample loop
+    } idx2_EndFor3 // end sample loop
   }
-  D->Offsets[D->Iter] = mg_FTell(Fp);
-  return mg_Error(wz_err_code::NoError);
+  D->Offsets[D->Iter] = idx2_FTell(Fp);
+  return idx2_Error(wz_err_code::NoError);
 }
 
-#undef mg_NextMorton
+#undef idx2_NextMorton
 
 } // namespace idx2

@@ -1,8 +1,8 @@
 //#define _CRTDBG_MAP_ALLOC
 //#include <stdlib.h>
 //#include <crtdbg.h>
-#include "mg_all.h"
-#include "mg_all.cpp"
+#include "idx2_all.h"
+#include "idx2_all.cpp"
 
 using namespace idx2;
 
@@ -195,19 +195,19 @@ main(int Argc, cstr* Argv) {
   }
 
   { /* Perform the action */
-    mg_RAII(timer, Timer, StartTimer(&Timer), printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer))));
+    idx2_RAII(timer, Timer, StartTimer(&Timer), printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer))));
     wz Wz;
     if (P.Action == action::Encode) {
-      mg_ExitIfError(SetParams(&Wz, P));
-      mg_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));
+      idx2_ExitIfError(SetParams(&Wz, P));
+      idx2_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));
 //      error Result = ReadVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol.Vol);
-      mg_ExitIfError(MapVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
-      mg_ExitIfError(Encode(&Wz, P, Vol.Vol));
+      idx2_ExitIfError(MapVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
+      idx2_ExitIfError(Encode(&Wz, P, Vol.Vol));
     } else if (P.Action == action::Decode) {
       SetDir(&Wz, P.InDir);
 //      brick_table<f64> BrickTable;
-      mg_ExitIfError(ReadMetaFile(&Wz, mg_PrintScratch("%s", P.InputFile)));
-      mg_ExitIfError(Finalize(&Wz));
+      idx2_ExitIfError(ReadMetaFile(&Wz, idx2_PrintScratch("%s", P.InputFile)));
+      idx2_ExitIfError(Finalize(&Wz));
       decode_all Dw;
       Dw.Init(Wz);
       Dw.SetExtent(P.DecodeExtent);

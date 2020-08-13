@@ -20,11 +20,11 @@ if %1==FastDebug (set CFLAGS=            )
 if %1==Debug     (set CFLAGS=/Od /D_DEBUG)
 
 :: Compiler defs
-set COMMON_CDEFS=/D_CRT_SECURE_NO_WARNINGS /Dmg_Avx2
+set COMMON_CDEFS=/D_CRT_SECURE_NO_WARNINGS /Didx2_Avx2
 if %1==Release   (set CDEFS=                          )
-if %1==FastDebug (set CDEFS=/Dmg_Slow=1 /Dmg_Verbose=1)
+if %1==FastDebug (set CDEFS=/Didx2_Slow=1 /Didx2_Verbose=1)
 if %1==Profile   (set CDEFS=                          )
-if %1==Debug     (set CDEFS=/Dmg_Slow=1 /Dmg_Verbose=1)
+if %1==Debug     (set CDEFS=/Didx2_Slow=1 /Didx2_Verbose=1)
 
 :: Linker flags
 set COMMON_LDFLAGS=/machine:x64 /nodefaultlib /subsystem:console /incremental:no /debug:full /opt:ref,icf
