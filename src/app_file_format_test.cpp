@@ -137,8 +137,8 @@ ParseParams(int Argc, cstr* Argv) {
   return P;
 }
 
-static error<wz_err_code>
-SetParams(wz* Wz, const params& P) {
+static error<idx2_file_err_code>
+SetParams(idx2_file* Wz, const params& P) {
   SetName(Wz, P.Meta.Name);
   SetField(Wz, P.Meta.Field);
   SetVersion(Wz, P.Version);
@@ -196,7 +196,7 @@ main(int Argc, cstr* Argv) {
 
   { /* Perform the action */
     idx2_RAII(timer, Timer, StartTimer(&Timer), printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer))));
-    wz Wz;
+    idx2_file Wz;
     if (P.Action == action::Encode) {
       idx2_ExitIfError(SetParams(&Wz, P));
       idx2_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));

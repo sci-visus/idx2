@@ -10,7 +10,7 @@
 #include "idx2_volume.h"
 
 idx2_Enum(action, u8, Encode, Decode)
-idx2_Enum(wz_err_code, u8, idx2_CommonErrs,
+idx2_Enum(idx2_file_err_code, u8, idx2_CommonErrs,
   BrickSizeNotPowerOfTwo, BrickSizeTooBig, TooManyIterations, TooManyTransformPassesPerIteration,
   TooManyIterationsOrTransformPasses, TooManyBricksPerFile, TooManyFilesPerDir, NotSupportedInVersion,
   CannotCreateDirectory, SyntaxError, TooManyBricksPerChunk, TooManyChunksPerFile, ChunksPerFileNotPowerOf2,
@@ -64,7 +64,7 @@ struct params {
 void Dealloc(params* P);
 
 
-struct wz { // wavelet zip
+struct idx2_file { // wavelet zip
   // Limits:
   // Level: 6 bits
   // BitPlane: 12 bits
@@ -171,7 +171,7 @@ idx2_T(t) void
 Dealloc(brick<t>* Brick) { free(Brick->Samples); } // TODO: check this
 
 struct decode_what {
-  virtual void Init(const wz& Wz) = 0;
+  virtual void Init(const idx2_file& Wz) = 0;
   virtual void SetExtent(const extent& Ext) = 0;
   virtual void SetMask(u8 Mask) = 0;
   virtual void SetIteration(int Iteration) = 0;
@@ -187,13 +187,13 @@ struct decode_what {
 };
 
 struct decode_all : public decode_what {
-  const wz* Wz = nullptr;
+  const idx2_file* Wz = nullptr;
   extent Ext;
   f64 Accuracy = 0;
   int Iter = 0;
   u8 Mask = 0xFF;
   int QualityLevel = -1;
-  void Init(const wz& Wz) override;
+  void Init(const idx2_file& Wz) override;
   void SetExtent(const extent& Ext) override;
   void SetMask(u8 Mask) override;
   void SetIteration(int Iteration) override;
@@ -261,8 +261,8 @@ struct encode_data {
   hash_table<u16, sub_channel> SubChannels; // only consider level and iteration
   i8 Iter = 0;
   i8 Level = 0;
-  stack_array<u64, wz::MaxIterations> Brick;
-  stack_array<v3i, wz::MaxIterations> Bricks3;
+  stack_array<u64, idx2_file::MaxIterations> Brick;
+  stack_array<v3i, idx2_file::MaxIterations> Bricks3;
   hash_table<u64, chunk_meta_info> ChunkMeta; // map from file address to chunk info
   hash_table<u64, bitstream> ChunkEMaxesMeta; // map from file address to a stream of chunk emax sizes
   bitstream CpresEMaxes;
@@ -340,11 +340,11 @@ struct decode_data {
   hash_table<u64, brick_volume> BrickPool;
   i8 Iter = 0;
   i8 Level = 0;
-  stack_array<u64, wz::MaxIterations> Brick;
-  stack_array<v3i, wz::MaxIterations> Bricks3;
+  stack_array<u64, idx2_file::MaxIterations> Brick;
+  stack_array<v3i, idx2_file::MaxIterations> Bricks3;
   i32 ChunkInFile = 0;
   i32 BrickInChunk = 0;
-  stack_array<u64, wz::MaxIterations> Offsets = {{}}; // used by v0.0 only
+  stack_array<u64, idx2_file::MaxIterations> Offsets = {{}}; // used by v0.0 only
   bitstream BlockStream; // used only by v0.1
   hash_table<i16, bitstream> Streams;
   buffer CompressedChunkExps;
@@ -386,34 +386,34 @@ struct file_id {
   u64 Id = 0;
 };
 
-void SetName(wz* Wz, cstr Name);
-void SetField(wz* Wz, cstr Field);
-void SetVersion(wz* Wz, const v2i& Ver);
-void SetDimensions(wz* Wz, const v3i& Dims3);
-void SetDataType(wz* Wz, dtype DType);
-void SetBrickSize(wz* Wz, const v3i& BrickDims3);
-void SetNumIterations(wz* Wz, i8 NIterations);
-void SetAccuracy(wz* Wz, f64 Accuracy);
-void SetChunksPerFile(wz* Wz, int ChunksPerFile);
-void SetBricksPerChunk(wz* Wz, int BricksPerChunk);
-void SetFilesPerDirectory(wz* Wz, int FilesPerDir);
-void SetDir(wz* Wz, cstr Dir);
-error<wz_err_code> Finalize(wz* Wz);
-void CleanUp(wz* Wz);
-void SetGroupIterations(wz* Wz, bool GroupIterations);
-void SetGroupLevels(wz* Wz, bool GroupLevels);
-void SetGroupBitPlanes(wz* Wz, bool GroupBitPlanes);
-void SetQualityLevels(wz* Wz, const array<int>& QualityLevels);
+void SetName(idx2_file* Wz, cstr Name);
+void SetField(idx2_file* Wz, cstr Field);
+void SetVersion(idx2_file* Wz, const v2i& Ver);
+void SetDimensions(idx2_file* Wz, const v3i& Dims3);
+void SetDataType(idx2_file* Wz, dtype DType);
+void SetBrickSize(idx2_file* Wz, const v3i& BrickDims3);
+void SetNumIterations(idx2_file* Wz, i8 NIterations);
+void SetAccuracy(idx2_file* Wz, f64 Accuracy);
+void SetChunksPerFile(idx2_file* Wz, int ChunksPerFile);
+void SetBricksPerChunk(idx2_file* Wz, int BricksPerChunk);
+void SetFilesPerDirectory(idx2_file* Wz, int FilesPerDir);
+void SetDir(idx2_file* Wz, cstr Dir);
+error<idx2_file_err_code> Finalize(idx2_file* Wz);
+void CleanUp(idx2_file* Wz);
+void SetGroupIterations(idx2_file* Wz, bool GroupIterations);
+void SetGroupLevels(idx2_file* Wz, bool GroupLevels);
+void SetGroupBitPlanes(idx2_file* Wz, bool GroupBitPlanes);
+void SetQualityLevels(idx2_file* Wz, const array<int>& QualityLevels);
 
-error<wz_err_code> ReadMetaFile(wz* Wz, cstr FileName);
-void WriteMetaFile(const wz& Wz, cstr FileName);
+error<idx2_file_err_code> ReadMetaFile(idx2_file* Wz, cstr FileName);
+void WriteMetaFile(const idx2_file& Wz, cstr FileName);
 
 // TODO: return an error code?
-error<wz_err_code> Encode(wz* Wz, const params& P, const volume& Vol);
-void Decode(const wz& Wz, const params& P, decode_what* Dw);
-void EncodeSubbandV0_0(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol);
-error<wz_err_code> DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol);
-void EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol);
-error<wz_err_code> DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol);
+error<idx2_file_err_code> Encode(idx2_file* Wz, const params& P, const volume& Vol);
+void Decode(const idx2_file& Wz, const params& P, decode_what* Dw);
+void EncodeSubbandV0_0(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol);
+error<idx2_file_err_code> DecodeSubbandV0_0(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol);
+void EncodeSubbandV0_1(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol);
+error<idx2_file_err_code> DecodeSubbandV0_1(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol);
 
 } // namespace idx2

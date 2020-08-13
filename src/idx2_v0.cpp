@@ -2,7 +2,7 @@
 #include "idx2_filesystem.h"
 #include "idx2_function.h"
 #include "idx2_volume.h"
-#include "idx2_wz.h"
+#include "idx2_v1.h"
 #include "idx2_zfp.h"
 
 namespace idx2 {
@@ -17,7 +17,7 @@ GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane
 }
 
 static file_id
-ConstructFilePathV0_0(const wz& Wz, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
+ConstructFilePathV0_0(const idx2_file& Wz, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
   #define idx2_PrintIteration idx2_Print(&Pr, "/I%02x", Iter);
   #define idx2_PrintExtension idx2_Print(&Pr, ".bin");
   thread_local static char FilePath[256];
@@ -43,7 +43,7 @@ ConstructFilePathV0_0(const wz& Wz, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) 
 - write each iteration to one file
 - only support linear decoding of each file */
 void
-EncodeSubbandV0_0(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
+EncodeSubbandV0_0(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
   u64 Brick = E->Brick[E->Iter];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Wz->BlockDims3 - 1) / Wz->BlockDims3;
@@ -69,8 +69,8 @@ EncodeSubbandV0_0(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
 }
 
 /* NOTE: in v0.0, we only support reading the data from beginning to end on each iteration */
-error<wz_err_code>
-DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol) {
+error<idx2_file_err_code>
+DecodeSubbandV0_0(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol) {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Wz.BlockDims3 - 1) / Wz.BlockDims3;
@@ -95,7 +95,7 @@ DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     } idx2_EndFor3 // end sample loop
   }
   D->Offsets[D->Iter] = idx2_FTell(Fp);
-  return idx2_Error(wz_err_code::NoError);
+  return idx2_Error(idx2_file_err_code::NoError);
 }
 
 /* V0_1:
@@ -103,7 +103,7 @@ DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
 - write each iteration to one file
 - only support linear decoding of each file */
 void
-EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
+EncodeSubbandV0_1(idx2_file* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
   u64 Brick = E->Brick[E->Iter];
   v3i SbDims3 = Dims(SbGrid);
   const i8 NBitPlanes = idx2_BitSizeOf(f64);
@@ -153,8 +153,8 @@ EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
   WriteBuffer(Fp, ToBuffer(E->BlockStream));
 }
 
-error<wz_err_code>
-DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol) {
+error<idx2_file_err_code>
+DecodeSubbandV0_1(const idx2_file& Wz, decode_data* D, const grid& SbGrid, volume* BVol) {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
   const i8 NBitPlanes = idx2_BitSizeOf(f64);
@@ -200,7 +200,7 @@ DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     } idx2_EndFor3 // end sample loop
   }
   D->Offsets[D->Iter] = idx2_FTell(Fp);
-  return idx2_Error(wz_err_code::NoError);
+  return idx2_Error(idx2_file_err_code::NoError);
 }
 
 #undef idx2_NextMorton

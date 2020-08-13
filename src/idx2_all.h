@@ -33,7 +33,7 @@
 #include "idx2_timer.h"
 #include "idx2_utils.h"
 #include "idx2_wavelet.h"
-#include "idx2_wz.h"
+#include "idx2_v1.h"
 #include "idx2_varint.h"
 #include "idx2_volume.h"
 #include "idx2_zfp.h"
