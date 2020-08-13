@@ -74,7 +74,7 @@
   mg_BinaryByte((Val) >> 40), mg_BinaryByte((Val) >> 32), mg_BinaryByte((Val) >> 24),\
   mg_BinaryByte((Val) >> 16), mg_BinaryByte((Val) >>  8), mg_BinaryByte((Val))
 
-namespace mg {
+namespace idx2 {
 /* Count the number of times a character appears in a string. Return -1 for an
  * empty string. */
 inline constexpr int
@@ -86,7 +86,7 @@ CountChar(const char* str, char c) {
     count += (*str++ == c);
   return count;
 }
-} // namespace mg
+} // namespace idx2
 
 #undef mg_Restrict
 #if defined(__clang__) || defined(__GNUC__)

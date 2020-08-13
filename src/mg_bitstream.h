@@ -10,7 +10,7 @@ order. */
 #include "mg_common.h"
 #include "mg_memory.h"
 
-namespace mg {
+namespace idx2 {
 
 /* Support only either reading or writing, not both at the same time */
 struct bitstream {
@@ -90,13 +90,13 @@ buffer ToBuffer(const bitstream& Bs);
 // Only call this if the bit stream itself manages its memory
 void Dealloc(bitstream* Bs);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_assert.h"
 #include "mg_algorithm.h"
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Inline void
 Rewind(bitstream* Bs) {
@@ -341,5 +341,5 @@ IncreaseCapacity(bitstream* Bs, i64 NewCapacity) {
   }
 }
 
-} // namespace mg
+} // namespace idx2
 

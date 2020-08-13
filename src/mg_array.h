@@ -6,7 +6,7 @@
 #include "mg_memory.h"
 #include <initializer_list>
 
-namespace mg {
+namespace idx2 {
 
 /*
 Only works for POD types. For other types, use std::vector.
@@ -52,12 +52,12 @@ mg_T(t) void Print(printer* Pr, const array<t>& Array);
 
 mg_T(t) void Dealloc(array<t>* Array);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_algorithm.h"
 #include "mg_assert.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Ti(t) array<t>::
 array(allocator* Alloc) :
@@ -194,4 +194,4 @@ Dealloc(array<t>* Array) {
   Array->Size = Array->Capacity = 0;
 }
 
-} // namespace mg
+} // namespace idx2

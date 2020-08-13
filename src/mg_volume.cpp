@@ -5,7 +5,7 @@
 #include "mg_scopeguard.h"
 #include "mg_volume.h"
 
-namespace mg {
+namespace idx2 {
 
 void Unmap(mmap_volume* Vol) {
   if (Vol->MMap.Buf) {
@@ -163,5 +163,5 @@ BoundingBox(const extent& Ext1, const extent& Ext2) {
   return extent(From3, To3 - From3);
 }
 
-} // namespace mg
+} // namespace idx2
 

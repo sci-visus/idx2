@@ -2,7 +2,7 @@
 
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_T(func_t)
 struct scope_guard {
@@ -13,14 +13,14 @@ struct scope_guard {
   ~scope_guard() { if (!Dismissed) { Func(); } }
 };
 
-} // namespace mg
+} // namespace idx2
 
 #define mg_BeginCleanUp(...) mg_MacroOverload(mg_BeginCleanUp, __VA_ARGS__)
 #define mg_BeginCleanUp_0() auto mg_Cat(__CleanUpFunc__, __LINE__) = [&]()
 #define mg_BeginCleanUp_1(N) auto __CleanUpFunc__##N = [&]()
 #define mg_EndCleanUp(...) mg_MacroOverload(mg_EndCleanUp, __VA_ARGS__)
-#define mg_EndCleanUp_0() mg::scope_guard mg_Cat(__ScopeGuard__, __LINE__)(mg_Cat(__CleanUpFunc__, __LINE__));
-#define mg_EndCleanUp_1(N) mg::scope_guard __ScopeGuard__##N(__CleanUpFunc__##N);
+#define mg_EndCleanUp_0() idx2::scope_guard mg_Cat(__ScopeGuard__, __LINE__)(mg_Cat(__CleanUpFunc__, __LINE__));
+#define mg_EndCleanUp_1(N) idx2::scope_guard __ScopeGuard__##N(__CleanUpFunc__##N);
 
 //#define mg_BeginCleanUp(n) auto __CleanUpFunc__##n = [&]()
 #define mg_CleanUp(...) mg_MacroOverload(mg_CleanUp, __VA_ARGS__)

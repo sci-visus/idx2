@@ -5,7 +5,7 @@
 #include "mg_common.h"
 #include "mg_array.h"
 
-namespace mg {
+namespace idx2 {
 
 bool OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, int * Val);
@@ -18,4 +18,4 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals);
 bool OptExists(int NArgs, cstr* Args, cstr Opt);
 
-} // namespace mg
+} // namespace idx2

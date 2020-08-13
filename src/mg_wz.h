@@ -17,7 +17,7 @@ mg_Enum(wz_err_code, u8, mg_CommonErrs,
   BricksPerChunkNotPowerOf2, ChunkNotFound, BrickNotFound, FileNotFound)
 mg_Enum(func_level, u8, Subband, Sum, Max)
 
-namespace mg {
+namespace idx2 {
 
 // By default, decode everything
 struct decode_params {
@@ -416,4 +416,4 @@ error<wz_err_code> DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& S
 void EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol);
 error<wz_err_code> DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol);
 
-} // namespace mg
+} // namespace idx2

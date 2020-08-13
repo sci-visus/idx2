@@ -3,7 +3,7 @@
 #include "mg_common.h"
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 constexpr f64 Pi = 3.14159265358979323846;
 
@@ -107,7 +107,7 @@ mg_T(t) t TriLerp(
   t V000, t V100, t V010, t V110, t V001,
   t V101, t V011, t V111, const v3d& T);
 
-} // namespace mg
+} // namespace idx2
 
 #include <math.h>
 #include "mg_algorithm.h"
@@ -115,7 +115,7 @@ mg_T(t) t TriLerp(
 #include "mg_bitops.h"
 #include "mg_common.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Inline bool
 IsEven(i64 X) { return (X & 1) == 0; }
@@ -503,4 +503,4 @@ mg_T(t) t TriLerp(
   return Lerp(V0, V1, T.Z);
 }
 
-} // namespace mg
+} // namespace idx2

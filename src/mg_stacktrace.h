@@ -1,8 +1,8 @@
 #pragma once
 
-namespace mg {
+namespace idx2 {
 
 struct printer;
 bool PrintStacktrace(printer* Pr);
 
-} // namespace mg
+} // namespace idx2

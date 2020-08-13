@@ -4,7 +4,7 @@
 #include "mg_array.h"
 #include "mg_volume.h"
 
-namespace mg {
+namespace idx2 {
 
 struct wavelet_block {
   v3i Levels;
@@ -139,7 +139,7 @@ wav_grids ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& W
 /* Return the footprint (influence range) of a block of wavelet coefficients */
 extent WavFootprint(int NDims, int Sb, const grid& WavGrid);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_algorithm.h"
 #include "mg_assert.h"
@@ -498,7 +498,7 @@ ILiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L) {\
   return ILiftCdf53Old##x(F, NBig, L);\
 }
 
-namespace mg {
+namespace idx2 {
 
 inline stack_array<v3i, 2>
 DimsAtLevel(v3i N, int L) {
@@ -537,7 +537,7 @@ mg_ILiftCdf53Const(Y, X, Z) // Z inverse lifting
 // mg_ILiftExtCdf53(Z, X, Y) // Y forward lifting
 // mg_ILiftExtCdf53(Y, X, Z) // Z forward lifting
 
-} // namespace mg
+} // namespace idx2
 
 #undef mg_FLiftCdf53Old
 #undef mg_ILiftCdf53Old

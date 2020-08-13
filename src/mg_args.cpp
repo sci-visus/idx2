@@ -2,7 +2,7 @@
 #include "mg_args.h"
 #include "mg_string.h"
 
-namespace mg {
+namespace idx2 {
 
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val) {
@@ -125,4 +125,4 @@ OptExists(int NArgs, cstr* Args, cstr Opt) {
   return false;
 }
 
-} // namespace mg
+} // namespace idx2

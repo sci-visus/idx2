@@ -2,7 +2,7 @@
 #include "mg_bitstream.h"
 #include "mg_zfp.h"
 
-namespace mg {
+namespace idx2 {
 
 const v3i ZDims(4, 4, 4);
 
@@ -157,5 +157,5 @@ Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
   return ((N == 64 && M == N)|| Lb == 0);
 }
 
-} // namespace mg
+} // namespace idx2
 

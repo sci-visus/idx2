@@ -4,7 +4,7 @@
 #include "mg_data_types.h"
 #include "mg_error.h"
 
-namespace mg {
+namespace idx2 {
 
 /*
 In string form:
@@ -27,4 +27,4 @@ cstr ToRawFileName(const metadata& Meta);
 error<> ReadMeta(cstr FileName, metadata* Meta);
 error<> ParseMeta(stref FilePath, metadata* Meta);
 
-} // namespace mg
+} // namespace idx2

@@ -9,7 +9,7 @@ NOTE: No checking is done for duplicate values. */
 #include "mg_string.h"
 
 #define mg_Enum(enum_name, type, ...)\
-namespace mg {\
+namespace idx2 {\
 struct enum_name {\
   enum : type { __Invalid__, __VA_ARGS__ };\
   type Val;\
@@ -21,9 +21,9 @@ struct enum_name {\
 }; /* struct enum_name */\
 \
 stref ToString(enum_name Enum);\
-} // namespace mg
+} // namespace idx2
 
-namespace mg {
+namespace idx2 {
 /* Construct an enum from a string */
 mg_T(t) struct StringTo { t operator()(stref Name); };
 }
@@ -36,7 +36,7 @@ mg_T(t) struct StringTo { t operator()(stref Name); };
 
 #undef mg_Enum
 #define mg_Enum(enum_name, type, ...)\
-namespace mg {\
+namespace idx2 {\
 \
 enum class enum_name : type { __VA_ARGS__, __Invalid__ };\
 \
@@ -123,5 +123,5 @@ struct StringTo<enum_name> {\
   }\
 };\
 \
-} // namespace mg
+} // namespace idx2
 

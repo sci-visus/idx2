@@ -2,7 +2,7 @@
 
 #include "mg_common.h"
 
-namespace mg {
+namespace idx2 {
 
 struct timer;
 void StartTimer (timer* Timer);
@@ -11,13 +11,13 @@ i64  ResetTimer (timer* Timer); // return nanoseconds
 f64  Milliseconds(i64 Nanosecs);
 f64  Seconds(i64 Nanosecs);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_macros.h"
 
 #if defined(mg_CTimer)
 #include <time.h>
-namespace mg {
+namespace idx2 {
 
 struct timer {
   clock_t Start = 0;
@@ -37,7 +37,7 @@ ElapsedTime(timer* Timer) {
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-namespace mg {
+namespace idx2 {
 
 struct timer {
   inline const static i64 PCFreq = []() {
@@ -63,11 +63,11 @@ ElapsedTime(timer* Timer) {
   return (Li.QuadPart - Timer->CounterStart) * 1000000000 / Timer->PCFreq;
 }
 
-} // namespace mg
+} // namespace idx2
 #elif defined(__linux__) || defined(__APPLE__)
 #include <time.h>
 
-namespace mg {
+namespace idx2 {
 
 struct timer {
   timespec Start;
@@ -84,10 +84,10 @@ ElapsedTime(timer* Timer) {
   clock_gettime(CLOCK_MONOTONIC, &End);
   return 1e9 * (End.tv_sec - Timer->Start.tv_sec) + (End.tv_nsec - Timer->Start.tv_nsec);
 }
-} // namespace mg
+} // namespace idx2
 #endif
 
-namespace mg {
+namespace idx2 {
 
 mg_Inline i64
 ResetTimer(timer* Timer) {
@@ -102,5 +102,5 @@ Milliseconds(i64 Nanosecs) { return f64(Nanosecs) / 1e6; }
 mg_Inline f64
 Seconds(i64 Nanosecs) { return f64(Nanosecs) / 1e9; }
 
-} // namespace mg
+} // namespace idx2
 

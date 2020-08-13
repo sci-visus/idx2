@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mg {
+namespace idx2 {
 
 struct mutex;
 /*
@@ -23,7 +23,7 @@ bool Unlock(mutex* Mutex);
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-namespace mg {
+namespace idx2 {
 struct mutex {
   CRITICAL_SECTION Crit;
   mutex();
@@ -63,10 +63,10 @@ Unlock(mutex* Mutex) {
   return true;
 }
 
-} // namespace mg
+} // namespace idx2
 #elif defined(__linux__) || defined(__APPLE__)
 #include <pthread.h>
-namespace mg {
+namespace idx2 {
 struct mutex {
   pthread_mutex_t Mx;
 };
@@ -92,6 +92,6 @@ TryLock(mutex* Mutex) { return pthread_mutex_trylock(&Mutex->Mx) == 0; }
 mg_Inline bool
 Unlock(mutex* Mutex) { return pthread_mutex_unlock(&Mutex->Mx) == 0; }
 
-} // namespace mg
+} // namespace idx2
 #endif
 

@@ -4,7 +4,7 @@
 
 // TODO: some of these functions can be made inline
 
-namespace mg {
+namespace idx2 {
 
 i64
 MemCopy(const buffer& Src, buffer* Dst) {
@@ -216,5 +216,5 @@ Clone(const buffer& Src, buffer* Dst, allocator* Alloc) {
   MemCopy(Src, Dst);
 }
 
-} // namespace mg
+} // namespace idx2
 

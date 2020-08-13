@@ -7,7 +7,7 @@
 #include "mg_memory.h"
 #include "mg_memory_map.h"
 
-namespace mg {
+namespace idx2 {
 
 enum dimension { X, Y, Z };
 
@@ -230,13 +230,13 @@ int NumDims(const v3i& N);
 #define mg_BeginGridLoop2(GI, VI, GJ, VJ) // loop through two grids in lockstep
 #define mg_EndGridLoop2
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_assert.h"
 #include "mg_bitops.h"
 #include "mg_math.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Inline extent::
 extent() = default;
@@ -352,7 +352,7 @@ subvol_grid(const grid& GridIn, const volume& VolIn)
 
 mg_Ti(t) t& volume::
 At(const v3i& P) const {
-  v3i D3 = mg::Dims(*this);
+  v3i D3 = idx2::Dims(*this);
   mg_Assert(P < D3);
   return (const_cast<t*>((const t*)Buffer.Data))[Row(D3, P)];
 }
@@ -854,4 +854,4 @@ Contain(const extent& Ext, const v3i& P) {
   return From(Ext) <= P && P < To(Ext);
 }
 
-} // namespace mg
+} // namespace idx2

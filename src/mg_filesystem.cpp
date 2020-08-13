@@ -19,7 +19,7 @@
   #define Access(Dir) access(Dir, F_OK)
 #endif
 
-namespace mg {
+namespace idx2 {
 
 path::
 path() = default;
@@ -98,7 +98,7 @@ DirExists(const stref& Path) {
   return Access(PathCopy) == 0;
 }
 
-} // namespace mg
+} // namespace idx2
 
 #undef GetCurrentDir
 #undef MkDir

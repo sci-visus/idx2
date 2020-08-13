@@ -6,7 +6,7 @@
 #include "mg_signal_processing.h"
 #include "mg_volume.h"
 
-namespace mg {
+namespace idx2 {
 
 // TODO: think of a way that does not require writing a function three times
 
@@ -254,5 +254,5 @@ Convolve(const c& F, const c& G, c* H) {
   }
 }
 
-} // namespace mg
+} // namespace idx2
 

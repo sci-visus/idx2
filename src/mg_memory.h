@@ -10,7 +10,7 @@
 #include "mg_common.h"
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 /* General purpose buffer for string-related operations */
 inline thread_local char ScratchBuf[1024];
@@ -170,11 +170,11 @@ struct buffer_t {
 mg_T(t) i64 Size(const buffer_t<t>& Buf);
 mg_T(t) i64 Bytes(const buffer_t<t>& Buf);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_scopeguard.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_T(t) void
 AllocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc) {
@@ -303,25 +303,25 @@ Bytes(const buffer_t<t>& Buf) { return Buf.Size * sizeof(t); }
 mg_Ti(t) buffer_t<t>::
 operator bool() const { return Data && Size; }
 
-} // namespace mg
+} // namespace idx2
 
 #undef mg_MallocArray
 #define mg_MallocArray(Name, Type, Size)\
-  using namespace mg;\
+  using namespace idx2;\
   buffer_t<Type> Name;\
   AllocBufT(&Name, (Size));\
   mg_CleanUp(__LINE__, DeallocBufT(&Name))
 
 #undef mg_CallocArray
 #define mg_CallocArray(Name, Type, Size)\
-  using namespace mg;\
+  using namespace idx2;\
   buffer_t<Type> Name;\
   CallocBufT(&Name, (Size));\
   mg_CleanUp(__LINE__, DeallocBufT(&Name))
 
 #undef mg_ArrayOfMallocArrays
 #define mg_ArrayOfMallocArrays(Name, Type, SizeOuter, SizeInner)\
-  using namespace mg;\
+  using namespace idx2;\
   buffer_t<Type> Name[SizeOuter] = {}; \
   for (int I = 0; I < (SizeOuter); ++I)\
     AllocBufT(&Name[I], (SizeInner));\
@@ -330,7 +330,7 @@ operator bool() const { return Data && Size; }
 
 #undef mg_MallocArrayOfArrays
 #define mg_MallocArrayOfArrays(Name, Type, SizeOuter, SizeInner)\
-  using namespace mg;\
+  using namespace idx2;\
   buffer_t<buffer_t<Type>> Name;\
   AllocBufT(&Name, (SizeOuter));\
   for (int I = 0; I < (SizeOuter); ++I) \

@@ -218,7 +218,7 @@
 
 #endif // __STDC_FORMAT_MACROS ]
 
-namespace mg {
+namespace idx2 {
 
 #define mg_NumberTypes\
   int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64
@@ -400,12 +400,12 @@ using v3d  = v3<f64>;
 #define mg_EndFor3
 #define mg_BeginFor3Lockstep(C1, B1, E1, S1, C2, B2, E2, S2)
 
-} // namespace mg
+} // namespace idx2
 
 #include <assert.h>
 #include <stdio.h>
 
-namespace mg {
+namespace idx2 {
 
 mg_Ti(t) auto&
 Value(t&& T) {
@@ -559,6 +559,6 @@ mg_T(t) mg_Ti(u) v3<t>& v3<t>::operator=(const v3<u>& Rhs) { X = Rhs.X; Y = Rhs.
   for (C1.Y = (B1).Y, C2.Y = (B2).Y; C1.Y < (E1).Y; C1.Y += (S1).Y, C2.Y += (S2).Y) {\
   for (C1.X = (B1).X, C2.X = (B2).X; C1.X < (E1).X; C1.X += (S1).X, C2.X += (S2).X)
 
-} // namespace mg
+} // namespace idx2
 
 

@@ -5,7 +5,7 @@
 
 // TODO: make some functions inline
 
-namespace mg {
+namespace idx2 {
 
 // Base-128 varint
 // Encode Vals in groups of 64 bits each, with 4-bit control
@@ -119,4 +119,4 @@ ReadUnaryWithBoundaryCheck(bitstream* Bs) {
 
 // TODO: write golomb-2 encoder
 
-} // namespace mg
+} // namespace idx2

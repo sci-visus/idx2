@@ -5,7 +5,7 @@
 #include "mg_wz.h"
 #include "mg_zfp.h"
 
-namespace mg {
+namespace idx2 {
 
 static mg_Inline u64
 GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
@@ -205,4 +205,4 @@ DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
 
 #undef mg_NextMorton
 
-} // namespace mg
+} // namespace idx2

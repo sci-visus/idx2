@@ -3,7 +3,7 @@
 #include "mg_memory.h"
 #include "mg_scopeguard.h"
 
-namespace mg {
+namespace idx2 {
 
 printer::
 printer() = default;
@@ -72,4 +72,4 @@ WriteBuffer(cstr FileName, const buffer& Buf) {
   return mg_Error(err_code::NoError);
 }
 
-} // namespace mg
+} // namespace idx2

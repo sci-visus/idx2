@@ -50,7 +50,7 @@
 #define mg_ExtDims(P3)\
   v3i(P3.X + (P3.X > 1), P3.Y + (P3.Y > 1), P3.Z + (P3.Z > 1))
 
-namespace mg {
+namespace idx2 {
 // TODO: translate the bit plane range to the correct range
 // TODO: store min/max values in the metadata
 
@@ -2310,7 +2310,7 @@ Decode(const wz& Wz, const params& P, decode_what* Dw) {
   printf("total bytes read    = %" PRIi64 "\n", BytesRdos_ + BytesExps_ + BytesData_);
 }
 
-} // namespace mg
+} // namespace idx2
 //
 #undef mg_NextMorton
 #undef mg_NonExtDims

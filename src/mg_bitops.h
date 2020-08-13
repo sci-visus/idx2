@@ -6,7 +6,7 @@
 #include <x86intrin.h>
 #endif
 
-namespace mg {
+namespace idx2 {
 
 /* Set the I(th) least significant bit of val to 1. Index starts at 0. */
 mg_T(t) t    SetBit  (t Val, int I);
@@ -45,14 +45,14 @@ v3i Unpack3i64(u64 V);
 u32 LowBits64 (u64 V);
 u32 HighBits64(u64 V);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_assert.h"
 #include "mg_macros.h"
 #include "mg_common.h"
 // #include "bitmap_tables.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Ti(t) t
 SetBit(t Val, int I) {
@@ -306,5 +306,5 @@ HighBits64(u64 V) { return V >> 32; }
 //   return Out - OutBackup;
 // }
 //
-} // namespace mg
+} // namespace idx2
 

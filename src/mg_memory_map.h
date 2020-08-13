@@ -24,7 +24,7 @@
 mg_Enum(mmap_err_code, int, mg_CommonErrs,
   MappingFailed, MapViewFailed, AllocateFailed, FlushFailed, SyncFailed, UnmapFailed)
 
-namespace mg {
+namespace idx2 {
 
 enum class map_mode { Read, Write };
 
@@ -68,11 +68,11 @@ Write(mmap_file* MMap, const t* Data, i64 Size);
 mg_T(t) void
 Write(mmap_file* MMap, t Val);
 
-} // namespace mg
+} // namespace idx2
 
 #include "string.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Ti(t) void
 Write(mmap_file* MMap, const t* Data, i64 Size) {
@@ -91,5 +91,5 @@ Write(mmap_file* MMap, t Val) {
   Write(MMap, &Val, sizeof(t));
 }
 
-} // namespace mg
+} // namespace idx2
 

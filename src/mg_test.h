@@ -5,7 +5,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-namespace mg {
+namespace idx2 {
 
 // TODO: use array instead of map
 using TestFunc = void(*)();
@@ -44,4 +44,4 @@ int main() {\
   return 0;\
 }
 
-} // namespace mg
+} // namespace idx2

@@ -9,7 +9,7 @@
 
 #define mg_MaxSlots 16
 
-namespace mg {
+namespace idx2 {
 
 enum class buffer_mode { Full, Line, None };
 
@@ -26,7 +26,7 @@ inline logger GlobalLogger;
 void SetBufferMode(logger* Logger, buffer_mode Mode);
 void SetBufferMode(buffer_mode Mode); // set buffer mode for the global logger
 
-} // namespace mg
+} // namespace idx2
 
 /*
 Use the following macro for logging as follows
@@ -34,7 +34,7 @@ mg_Log("log.txt", "Message %d", A)
 mg_Log(stderr, "Message %f", B) */
 #define mg_Log(FileName, Format, ...)
 
-namespace mg {
+namespace idx2 {
 
 constexpr inline bool
 IsStdErr(cstr Input) {
@@ -54,7 +54,7 @@ CastCStr(t Input) {
   return nullptr;
 }
 
-} // namespace mg
+} // namespace idx2
 
 #undef mg_Log
 #if defined(mg_Verbose)
@@ -65,8 +65,8 @@ CastCStr(t Input) {
   else if constexpr (IsStdOut(#FileName))\
     Fp = stdout;\
   else\
-    Fp = mg::GetFileHandle(&mg::GlobalLogger, CastCStr(FileName));\
-  mg::printer Pr(Fp);\
+    Fp = idx2::GetFileHandle(&idx2::GlobalLogger, CastCStr(FileName));\
+  idx2::printer Pr(Fp);\
   mg_Print(&Pr, Format, __VA_ARGS__);\
 }
 #else

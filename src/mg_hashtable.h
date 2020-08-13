@@ -11,7 +11,7 @@
 #include "mg_math.h"
 #include "mg_memory.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_TT(k, v)
 struct hash_table {
@@ -331,4 +331,4 @@ Clone(const hash_table<k, v>& Src, hash_table<k, v>* Dst) {
   memcpy(Dst->Stats, Src.Stats, sizeof(typename hash_table<k, v>::bucket_status) * (Capacity + 1));
 }
 
-} // end namespace mg
+} // end namespace idx2

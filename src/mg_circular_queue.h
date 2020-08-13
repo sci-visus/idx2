@@ -2,7 +2,7 @@
 
 #include "mg_common.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_TI(t, N)
 struct circular_queue {
@@ -56,4 +56,4 @@ Clear(circular_queue<t, N>* Queue) {
   Queue->Start = Queue->End = 0;
 }
 
-} // namespace mg
+} // namespace idx2

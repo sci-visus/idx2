@@ -1,7 +1,7 @@
 #include "mg_memory_map.h"
 #include "mg_file_utils.h"
 
-namespace mg {
+namespace idx2 {
 
 error<mmap_err_code>
 OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
@@ -155,5 +155,5 @@ CloseFile(mmap_file* MMap) {
   return mg_Error(mmap_err_code::NoError);
 }
 
-} // namespace mg
+} // namespace idx2
 

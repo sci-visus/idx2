@@ -4,7 +4,7 @@
 #include "mg_error.h"
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 /* Store either a value or an error */
 mg_TT(t, u = err_code)
@@ -29,11 +29,11 @@ struct expected {
 mg_TT(t, u) t& Value(expected<t, u>& E);
 mg_TT(t, u) error<u>& Error(expected<t, u>& E);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_assert.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_TTi(t, u) expected<t, u>::
 expected() : Ok(false) {}
@@ -62,6 +62,6 @@ Error(expected<t, u>& E) { mg_Assert(!E.Ok); return E.Err; }
 mg_TTi(t, u) expected<t, u>::
 operator bool() const { return Ok; }
 
-} // namespace mg
+} // namespace idx2
 
 

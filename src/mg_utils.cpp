@@ -1,6 +1,6 @@
 #include "mg_utils.h"
 
-namespace mg {
+namespace idx2 {
 
 u32 
 Murmur3_32(u8* Key, int Len, u32 Seed) {
@@ -41,5 +41,5 @@ Murmur3_32(u8* Key, int Len, u32 Seed) {
   return H;
 }
 
-} // namespace mg
+} // namespace idx2
 

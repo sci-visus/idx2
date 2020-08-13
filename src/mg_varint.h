@@ -5,7 +5,7 @@
 #include "mg_common.h"
 #include "mg_circular_queue.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Inline int
 WriteVarByte(bitstream* Bs, u64 Val) {
@@ -81,4 +81,4 @@ ReadUnary(bitstream* Bs) {
   return V;
 }
 
-} // namespace mg
+} // namespace idx2

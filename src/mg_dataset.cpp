@@ -9,7 +9,7 @@
 #include "mg_stacktrace.h"
 #include "mg_string.h"
 
-namespace mg {
+namespace idx2 {
 
 cstr
 ToRawFileName(const metadata& Meta) {
@@ -104,4 +104,4 @@ ReadMeta(cstr FileName, metadata* Meta) {
   return mg_Error(err_code::NoError);
 }
 
-} // namespace mg
+} // namespace idx2

@@ -7,7 +7,7 @@
 #define mg_FSeek
 #define mg_FTell
 
-namespace mg {
+namespace idx2 {
 
 /* Print formatted strings into a buffer */
 struct printer {
@@ -36,7 +36,7 @@ error<> WriteBuffer(cstr FileName, const buffer& Buf);
 /* Dump a range of stuffs into a text file */
 mg_T(i) error<> DumpText(cstr FileName, i Begin, i End, cstr Format);
 
-} // namespace mg
+} // namespace idx2
 
 #include <assert.h>
 #include <stdio.h>
@@ -54,7 +54,7 @@ mg_T(i) error<> DumpText(cstr FileName, i Begin, i End, cstr Format);
   #define mg_FTell ftello
 #endif
 
-namespace mg {
+namespace idx2 {
 
 #undef mg_Print
 #define mg_Print(PrinterPtr, Format, ...) {\
@@ -138,4 +138,4 @@ ReadBackwardBuffer(FILE* Fp, buffer* Buf, i64 Sz) {
   mg_FSeek(Fp, Where, SEEK_SET);
 }
 
-} // namespace mg
+} // namespace idx2

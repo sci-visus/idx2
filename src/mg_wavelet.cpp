@@ -23,7 +23,7 @@
 //#include <condition_variable>
 //#include <mutex>
 
-namespace mg {
+namespace idx2 {
 
 //static i64 Counter;
 //static std::mutex Mutex;
@@ -1529,4 +1529,4 @@ Extrapolate(v3i D3, volume* Vol) {
   }
 }
 
-} // namespace mg
+} // namespace idx2

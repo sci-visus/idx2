@@ -4,7 +4,7 @@
 #include "mg_all.h"
 #include "mg_all.cpp"
 
-using namespace mg;
+using namespace idx2;
 
 // TODO: when decoding, construct the raw file name from info embedded inside the compressed file
 params

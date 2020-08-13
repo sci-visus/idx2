@@ -4,7 +4,7 @@
 #include "mg_error_codes.h"
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 /* There should be only one error in-flight on each thread */
 template <typename t = err_code>
@@ -26,7 +26,7 @@ struct printer;
 mg_T(t) void PrintStacktrace(printer* Pr, const error<t>& Err);
 mg_T(t) bool ErrorExists(const error<t>& Err);
 
-} // namespace mg
+} // namespace idx2
 
 /* Use this to quickly return an error with line number and file name */
 #define mg_Error(ErrCode, ...)
@@ -43,7 +43,7 @@ mg_T(t) bool ErrorExists(const error<t>& Err);
 #include <string.h>
 #include "mg_memory.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_T(t) error<t>::
 error() {}
@@ -86,12 +86,12 @@ PrintStacktrace(printer* Pr, const error<t>& Err) {
 mg_T(t) bool
 ErrorExists(const error<t>& Err) { return Err.Code != t::NoError; }
 
-} // namespace mg
+} // namespace idx2
 
 #undef mg_Error
 #define mg_Error(ErrCode, ...)\
   [&]() {\
-    mg::error Err(ErrCode);\
+    idx2::error Err(ErrCode);\
     Err.Files[0] = __FILE__;\
     Err.Lines[0] = __LINE__;\
     return Err;\

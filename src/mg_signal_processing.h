@@ -6,7 +6,7 @@
 #include "mg_macros.h"
 #include "mg_memory.h"
 
-namespace mg {
+namespace idx2 {
 
 struct grid;
 struct volume;
@@ -120,5 +120,5 @@ mg_T(t) f64 Norm(const t& Begin, const t& End);
 mg_T(c) void Upsample(const c& In, c* Out);
 mg_T(c) void Convolve(const c& F, const c& G, c* H);
 
-} // namespace mg
+} // namespace idx2
 

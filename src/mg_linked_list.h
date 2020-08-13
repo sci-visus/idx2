@@ -4,7 +4,7 @@
 #include "mg_macros.h"
 #include "mg_memory.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_T(t)
 struct list_node {
@@ -39,11 +39,11 @@ mg_T(t) mg_Li PushBack(list<t>* List, const t& Payload);
 mg_T(t) void Dealloc(list<t>* List);
 mg_T(t) i64 Size(const list<t>& List);
 
-} // namespace mg
+} // namespace idx2
 
 #include "mg_assert.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Ti(t) list<t>::
 list(allocator* Alloc) : Alloc(Alloc) {}
@@ -125,6 +125,6 @@ End(const list<t>& List) { (void)List; return list_iterator<t>(); }
 
 #undef mg_Li
 
-} // namespace mg
+} // namespace idx2
 
 

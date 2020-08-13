@@ -4,10 +4,10 @@
 
 #include "mg_common.h"
 
-namespace mg {
+namespace idx2 {
 
 /* Useful to create a string_ref out of a literal string */
-#define mg_StRef(x) mg::stref((x), sizeof(x) - 1)
+#define mg_StRef(x) idx2::stref((x), sizeof(x) - 1)
 
 /*
 A "view" into a (usually bigger) null-terminated string. A string_ref itself is
@@ -72,13 +72,13 @@ void  Init (tokenizer* Tk, const stref& Input, const stref& Delims = " \n\t");
 stref Next (tokenizer* Tk);
 void  Reset(tokenizer* Tk);
 
-} // namespace mg
+} // namespace idx2
 
 #include <assert.h>
 #include <string.h>
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Inline stref::
 stref() = default;
@@ -119,4 +119,4 @@ Init(tokenizer* Tk, const stref& Input, const stref& Delims) {
   Tk->Pos = 0;
 }
 
-} // namespace mg
+} // namespace idx2

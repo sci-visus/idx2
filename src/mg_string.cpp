@@ -5,7 +5,7 @@
 #include "mg_memory.h"
 #include "mg_string.h"
 
-namespace mg {
+namespace idx2 {
 
 cstr
 ToString(const stref& Str) {

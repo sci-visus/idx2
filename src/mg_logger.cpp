@@ -5,7 +5,7 @@
 #include "mg_io.h"
 #include "mg_utils.h"
 
-namespace mg {
+namespace idx2 {
 
 void
 SetBufferMode(logger* Logger, buffer_mode Mode) { Logger->Mode = Mode; }
@@ -50,5 +50,5 @@ GetFileHandle(logger* Logger, cstr FileName) {
   return *Fp;
 }
 
-} // namespace mg
+} // namespace idx2
 

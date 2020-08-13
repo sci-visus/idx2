@@ -12,7 +12,7 @@
 #include <immintrin.h>
 //#include <iostream>
 
-namespace mg {
+namespace idx2 {
 
 extern const v3i ZDims; /* 4 x 4 x 4 */
 
@@ -63,10 +63,10 @@ mg_TII(t, D = 3, K = 4) void Decode2(t* Block, int B, i64 S, i8& N, bitstream* B
 mg_TII(t, D = 3, K = 4) void Decode3(t* Block, int B, i64 S, i8& N, bitstream* Bs);
 mg_TII(t, D = 3, K = 4) void Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs);
 
-} // namespace mg
+} // namespace idx2
 
 
-namespace mg {
+namespace idx2 {
 
 /*
 zfp lifting transform for 4 samples in 1D.
@@ -1472,5 +1472,5 @@ DONE:
   //}
 }
 
-} // namespace mg
+} // namespace idx2
 

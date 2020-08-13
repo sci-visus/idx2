@@ -4,7 +4,7 @@
 #include "mg_algorithm.h"
 #include "math.h"
 
-namespace mg {
+namespace idx2 {
 
 struct stat {
   f64 MinV = traits<f64>::Max;

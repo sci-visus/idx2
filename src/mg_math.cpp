@@ -1,5 +1,5 @@
 #include "mg_math.h"
 
-namespace mg {
+namespace idx2 {
 
-} // namespace mg
+} // namespace idx2

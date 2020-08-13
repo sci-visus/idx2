@@ -7,13 +7,13 @@
 #define mg_AbortIf(Cond, ...)
 #define mg_Abort(...)
 
-namespace mg {
+namespace idx2 {
 
 using handler = void (int);
 void AbortHandler(int Signum);
 void SetHandleAbortSignals(handler& Handler = AbortHandler);
 
-} // namespace mg
+} // namespace idx2
 
 #include <stdio.h>
 #include <stdlib.h>

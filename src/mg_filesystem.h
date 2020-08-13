@@ -3,7 +3,7 @@
 #include "mg_common.h"
 #include "mg_string.h"
 
-namespace mg {
+namespace idx2 {
 
 /* Only support the forward slash '/' separator. */
 struct path {
@@ -26,4 +26,4 @@ bool IsRelative(const stref& Path);
 bool CreateFullDir(const stref& Path);
 bool DirExists(const stref& Path);
 
-} // namespace mg
+} // namespace idx2

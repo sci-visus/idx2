@@ -9,7 +9,7 @@
 #include "mg_io.h"
 #include "mg_mutex.h"
 
-namespace mg {
+namespace idx2 {
 
 static mutex StacktraceMutex;
 bool
@@ -60,7 +60,7 @@ PrintStacktrace(printer* Pr) {
   return SymCleanup(Process);
 }
 
-} // namespace mg
+} // namespace idx2
 #elif defined(__linux__) || defined(__APPLE__)
 // Adapted from
 // stacktrace.h (c) 2008, Timo Bingmann from http://idlebox.net/
@@ -72,7 +72,7 @@ PrintStacktrace(printer* Pr) {
 #include "mg_io.h"
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 // TODO: get the line number (add2line)
 bool
@@ -144,5 +144,5 @@ PrintStacktrace(printer* Pr) {
   return true;
 }
 
-} // namespace mg
+} // namespace idx2
 #endif

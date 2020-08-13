@@ -29,7 +29,7 @@
 #include "mg_common.h"
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 // PCG32 Pseudorandom number generator
 struct pcg32 {
@@ -87,7 +87,7 @@ bool operator==(const pcg32& First, const pcg32& Second);
 // Inequality operator
 bool operator!=(const pcg32& First, const pcg32& Second);
 
-} // namespace mg
+} // namespace idx2
 
 /*
  * Tiny self-contained version of the PCG Random Number Generation for C++
@@ -120,7 +120,7 @@ bool operator!=(const pcg32& First, const pcg32& Second);
 #include "mg_assert.h"
 #include "mg_random.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_Inline pcg32::pcg32() : State(Pcg32DefaultState), Inc(Pcg32DefaultStream) {}
 mg_Inline pcg32::pcg32(u64 InitState, u64 InitSeq) : pcg32() { Seed(this, InitState, InitSeq); }
@@ -265,4 +265,4 @@ operator!=(const pcg32& First, const pcg32& Second) {
   return First.State != Second.State || First.Inc != Second.Inc;
 }
 
-} // namespace mg
+} // namespace idx2

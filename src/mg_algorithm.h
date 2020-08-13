@@ -3,7 +3,7 @@
 
 #include "mg_macros.h"
 
-namespace mg {
+namespace idx2 {
 
 mg_T(t) t Min(const t& a, const t& b);
 mg_T(t) t Min(const t& a, const t& b, const t& c);
@@ -35,9 +35,9 @@ mg_T(i) void Reverse(i Beg, i End);
 
 mg_T(i) int FwdDist(i Beg, i End);
 
-} // namespace mg
+} // namespace idx2
 
-namespace mg {
+namespace idx2 {
 
 mg_Ti(t) t Min(const t& a, const t& b) { return b < a ? b : a; }
 mg_Ti(t) t Max(const t& a, const t& b) { return a < b ? b : a; }
@@ -201,4 +201,4 @@ FwdDist(i Beg, i End) {
   return Dist;
 }
 
-} // namespace mg
+} // namespace idx2

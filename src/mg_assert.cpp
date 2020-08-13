@@ -2,7 +2,7 @@
 #include "mg_assert.h"
 #include "mg_common.h"
 
-namespace mg {
+namespace idx2 {
 
 void AbortHandler(int Signum) {
   cstr Name = nullptr;
@@ -35,4 +35,4 @@ void SetHandleAbortSignals(handler& Handler) {
   signal(SIGFPE,  Handler);
 }
 
-} // namespace mg
+} // namespace idx2
