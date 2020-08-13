@@ -33,7 +33,7 @@ ReadFile(cstr FileName, buffer* Buf) {
   mg_Assert((Buf->Data && Buf->Bytes) || (!Buf->Data && !Buf->Bytes));
 
   FILE* Fp = fopen(FileName, "rb");
-  mg_CleanUp(0, if (Fp) fclose(Fp));
+  mg_CleanUp(if (Fp) fclose(Fp));
   if (!Fp)
     return mg_Error(err_code::FileOpenFailed, "%s", FileName);
 
@@ -62,7 +62,7 @@ WriteBuffer(cstr FileName, const buffer& Buf) {
   mg_Assert(Buf.Data && Buf.Bytes);
 
   FILE* Fp = fopen(FileName, "wb");
-  mg_CleanUp(0, if (Fp) fclose(Fp));
+  mg_CleanUp(if (Fp) fclose(Fp));
   if (!Fp)
     return mg_Error(err_code::FileCreateFailed, "%s", FileName);
 

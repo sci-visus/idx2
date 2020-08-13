@@ -201,7 +201,7 @@ mg_T(t) struct slabs1 {
   t Slabs[4];
 };
 
-mg_T(t) slabs1<t> 
+mg_T(t) slabs1<t>
 TakeSlabs1(const t& Grid) {
   v3i D3 = Dims(Grid);
   mg_Assert((D3.X < D3.Y && D3.Y == D3.Z) || (D3.Y < D3.Z && D3.Z == D3.X) || (D3.Z < D3.X && D3.X == D3.Y));
@@ -258,12 +258,12 @@ extent(const v3i& From3, const v3i& Dims3)
 
 mg_Inline extent::
 operator bool() const {
-  return Unpack3i64(Dims) > v3i::Zero;
+  return Unpack3i64(Dims) > v3i(0);
 }
 
 mg_Inline extent extent::
 Invalid() {
-  return extent(v3i::Zero, v3i::Zero);
+  return extent(v3i(0), v3i(0));
 }
 
 mg_Inline grid::
@@ -272,12 +272,12 @@ grid() = default;
 mg_Inline grid::
 grid(const v3i& Dims3)
   : extent(Dims3)
-  , Strd(Pack3i64(v3i::One)) {}
+  , Strd(Pack3i64(v3i(1))) {}
 
 mg_Inline grid::
 grid(const v3i& From3, const v3i& Dims3)
   : extent(From3, Dims3)
-  , Strd(Pack3i64(v3i::One)) {}
+  , Strd(Pack3i64(v3i(1))) {}
 
 mg_Inline grid::
 grid(const v3i& From3, const v3i& Dims3, const v3i& Strd3)
@@ -287,21 +287,21 @@ grid(const v3i& From3, const v3i& Dims3, const v3i& Strd3)
 mg_Inline grid::
 grid(const extent& Ext)
   : extent(Ext)
-  , Strd(Pack3i64(v3i::One)) {}
+  , Strd(Pack3i64(v3i(1))) {}
 
 mg_Inline grid::
 grid(const volume& Vol)
   : extent(Vol)
-  , Strd(Pack3i64(v3i::One)) {}
+  , Strd(Pack3i64(v3i(1))) {}
 
 mg_Inline grid::
 operator bool() const {
-  return Unpack3i64(Dims) > v3i::Zero;
+  return Unpack3i64(Dims) > v3i(0);
 }
 
 mg_Inline grid grid::
 Invalid() {
-  return grid(v3i::Zero, v3i::Zero, v3i::Zero);
+  return grid(v3i(0), v3i(0), v3i(0));
 }
 
 mg_Inline volume::
@@ -401,7 +401,7 @@ mg_Inline v3i  To(const extent& Ext) { return From(Ext) + Dims(Ext); }
 mg_Inline v3i  Frst(const extent& Ext) { return From(Ext); }
 mg_Inline v3i  Last(const extent& Ext) { return To(Ext) - 1; }
 mg_Inline v3i  Dims(const extent& Ext) { return Unpack3i64(Ext.Dims); }
-mg_Inline v3i  Strd(const extent& Ext) { (void)Ext; return v3i::One; }
+mg_Inline v3i  Strd(const extent& Ext) { (void)Ext; return v3i(1); }
 mg_Inline i64  Size(const extent& Ext) { return Prod<i64>(Dims(Ext)); }
 mg_Inline void SetFrom(extent* Ext, const v3i& From3) { Ext->From = Pack3i64(From3); }
 mg_Inline void SetDims(extent* Ext, const v3i& Dims3) { Ext->Dims = Pack3i64(Dims3); }
@@ -417,7 +417,7 @@ mg_Inline void SetFrom(grid* Grid, const v3i& From3) { Grid->From = Pack3i64(Fro
 mg_Inline void SetDims(grid* Grid, const v3i& Dims3) { Grid->Dims = Pack3i64(Dims3); }
 mg_Inline void SetStrd(grid* Grid, const v3i& Strd3) { Grid->Strd = Pack3i64(Strd3); }
 
-mg_Inline v3i  From(const volume& Vol) { (void)Vol; return v3i::Zero; }
+mg_Inline v3i  From(const volume& Vol) { (void)Vol; return v3i(0); }
 mg_Inline v3i  To(const volume& Vol) { return Dims(Vol); }
 mg_Inline v3i  Frst(const volume& Vol) { return From(Vol); }
 mg_Inline v3i  Last(const volume& Vol) { return Dims(Vol) - 1; }
@@ -428,7 +428,7 @@ mg_Inline void SetDims(volume* Vol, const v3i& Dims3) { Vol->Dims = Pack3i64(Dim
 mg_Ti(t) volume_iterator<t>
 Begin(const volume& Vol) {
   volume_iterator<t> Iter;
-  Iter.P = v3i::Zero; Iter.N = Dims(Vol);
+  Iter.P = v3i(0); Iter.N = Dims(Vol);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data);
   return Iter;
 }
@@ -569,7 +569,7 @@ NumDims(const v3i& N) { return (N.X > 1) + (N.Y > 1) + (N.Z > 1); }
     v3i FromI = From(GI), FromJ = From(GJ);\
     v3i Dims3 = Dims(GI), DimsI = Dims(VI), DimsJ = Dims(VJ);\
     v3i StrdI = Strd(GI), StrdJ = Strd(GJ);\
-    mg_BeginFor3(Pos, v3i::Zero, Dims3, v3i::One) {\
+    mg_BeginFor3(Pos, v3i(0), Dims3, v3i(1)) {\
       i64 I = Row(DimsI, FromI + Pos * StrdI);\
       i64 J = Row(DimsJ, FromJ + Pos * StrdJ);\
 
@@ -628,7 +628,7 @@ CopyExtentExtentMinMax(const extent& SGrid, const volume& SVol, const extent& DG
   const stype* mg_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* mg_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
   v3i S3, D3;
-  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i::One, D3, DstFrom3, DstTo3, v3i::One) {
+  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, v3i(1)) {
     f64 V = (f64)SrcPtr[Row(SrcDims3, S3)];
     DstPtr[Row(DstDims3, D3)] = (dtype)V;
     MinMax.Min = Min(MinMax.Min, V);
@@ -650,7 +650,7 @@ CopyExtentGrid(const extent& SGrid, const volume& SVol, const grid& DGrid, volum
   const stype* mg_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* mg_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
   v3i S3, D3;
-  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i::One, D3, DstFrom3, DstTo3, DstStrd3) {
+  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, DstStrd3) {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   } mg_EndFor3
 }
@@ -668,7 +668,7 @@ CopyGridExtent(const grid& SGrid, const volume& SVol, const extent& DGrid, volum
   const stype* mg_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* mg_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
   v3i S3, D3;
-  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, v3i::One) {
+  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, v3i(1)) {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   } mg_EndFor3
 }
@@ -704,7 +704,7 @@ CopyExtentExtent(const extent& SGrid, const volume& SVol, const extent& DGrid, v
   const stype* mg_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* mg_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
   v3i S3, D3;
-  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i::One, D3, DstFrom3, DstTo3, v3i::One) {
+  mg_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, v3i(1)) {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   } mg_EndFor3
 }
@@ -814,13 +814,13 @@ Crop(const t1& Grid1, const t2& Grid2) {
   Last3 = ((Last3 - Grid1Frst3) / Strd3) * Strd3 + Grid1Frst3;
   t1 OutGrid = Grid1;
   SetFrom(&OutGrid, Frst3);
-  SetDims(&OutGrid, Frst3 <= Last3 ? (Last3 - Frst3) / Strd3 + 1 : v3i::Zero);
+  SetDims(&OutGrid, Frst3 <= Last3 ? (Last3 - Frst3) / Strd3 + 1 : v3i(0));
   return OutGrid;
 }
 
 mg_Ti(t) bool
 IsInGrid(const t& Grid, const v3i& Point) {
-  return (Point - From(Grid)) % Strd(Grid) == v3i::Zero;
+  return (Point - From(Grid)) % Strd(Grid) == v3i(0);
 }
 
 // TODO: this can be turned into a slice function ala Python[start:stop]

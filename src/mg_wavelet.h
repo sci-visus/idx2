@@ -81,12 +81,12 @@ dims of Vol. The original volume is stored in the D3 sub-volume of Vol. */
 void Extrapolate(v3i D3, volume* Vol);
 
 /* Lifting with extrapolation */
-mg_T(t) void FLiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-mg_T(t) void FLiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-mg_T(t) void FLiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-mg_T(t) void ILiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-mg_T(t) void ILiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-mg_T(t) void ILiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// mg_T(t) void FLiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// mg_T(t) void FLiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// mg_T(t) void FLiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// mg_T(t) void ILiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// mg_T(t) void ILiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// mg_T(t) void ILiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
 
 //#define mg_Cdf53TileDebug
 
@@ -530,12 +530,12 @@ mg_ILiftCdf53Const(Z, Y, X) // X inverse lifting
 mg_ILiftCdf53Const(Z, X, Y) // Y inverse lifting
 mg_ILiftCdf53Const(Y, X, Z) // Z inverse lifting
 
-mg_FLiftExtCdf53(Z, Y, X) // X forward lifting
-mg_FLiftExtCdf53(Z, X, Y) // Y forward lifting
-mg_FLiftExtCdf53(Y, X, Z) // Z forward lifting
-mg_ILiftExtCdf53(Z, Y, X) // X forward lifting
-mg_ILiftExtCdf53(Z, X, Y) // Y forward lifting
-mg_ILiftExtCdf53(Y, X, Z) // Z forward lifting
+// mg_FLiftExtCdf53(Z, Y, X) // X forward lifting
+// mg_FLiftExtCdf53(Z, X, Y) // Y forward lifting
+// mg_FLiftExtCdf53(Y, X, Z) // Z forward lifting
+// mg_ILiftExtCdf53(Z, Y, X) // X forward lifting
+// mg_ILiftExtCdf53(Z, X, Y) // Y forward lifting
+// mg_ILiftExtCdf53(Y, X, Z) // Z forward lifting
 
 } // namespace mg
 

@@ -3377,7 +3377,7 @@ int ZSTD_pthread_cond_destroy(ZSTD_pthread_cond_t* cond)
  *
  * You can contact the author at :
  * - xxHash source repository : https://github.com/Cyan4973/xxHash
- * 
+ *
  * This source code is licensed under both the BSD-style license (found in the
  * LICENSE file in the root directory of this source tree) and the GPLv2 (found
  * in the COPYING file in the root directory of this source tree).
@@ -3654,7 +3654,7 @@ XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src
  *  You can contact the author at :
  *  - xxHash homepage: http://www.xxhash.com
  *  - xxHash source repository : https://github.com/Cyan4973/xxHash
- * 
+ *
  * This source code is licensed under both the BSD-style license (found in the
  * LICENSE file in the root directory of this source tree) and the GPLv2 (found
  * in the COPYING file in the root directory of this source tree).
@@ -4701,7 +4701,7 @@ typedef enum {
  *         - ZSTD_overlap_src_before_dst: The src and dst may overlap, but they MUST be at least 8 bytes apart.
  *           The src buffer must be before the dst buffer.
  */
-MEM_STATIC FORCE_INLINE_ATTR 
+MEM_STATIC FORCE_INLINE_ATTR
 void ZSTD_wildcopy(void* dst, const void* src, ptrdiff_t length, ZSTD_overlap_e const ovtype)
 {
     ptrdiff_t diff = (BYTE*)dst - (const BYTE*)src;
@@ -15670,9 +15670,9 @@ ZSTD_compressBlock_fast_generic(
 
     /* Main Search Loop */
 #ifdef __INTEL_COMPILER
-    /* From intel 'The vector pragma indicates that the loop should be 
-     * vectorized if it is legal to do so'. Can be used together with 
-     * #pragma ivdep (but have opted to exclude that because intel 
+    /* From intel 'The vector pragma indicates that the loop should be
+     * vectorized if it is legal to do so'. Can be used together with
+     * #pragma ivdep (but have opted to exclude that because intel
      * warns against using it).*/
     #pragma vector always
 #endif
@@ -19499,8 +19499,8 @@ typedef struct {
     ZSTD_window_t ldmWindow;  /* A thread-safe copy of ldmState.window */
 } serialState_t;
 
-static int ZSTDMT_serialState_reset(serialState_t* serialState, 
-                        ZSTDMT_seqPool* seqPool, ZSTD_CCtx_params params, 
+static int ZSTDMT_serialState_reset(serialState_t* serialState,
+                        ZSTDMT_seqPool* seqPool, ZSTD_CCtx_params params,
                         size_t jobSize, const void* dict, size_t const dictSize)
 {
     /* Adjust parameters */
@@ -24455,7 +24455,7 @@ static void ZSTD_DCtx_updateOversizedDuration(ZSTD_DStream* zds, size_t const ne
 {
     if (ZSTD_DCtx_isOverflow(zds, neededInBuffSize, neededOutBuffSize))
         zds->oversizedDuration++;
-    else 
+    else
         zds->oversizedDuration = 0;
 }
 
@@ -24597,7 +24597,7 @@ size_t ZSTD_decompressStream(ZSTD_DStream* zds, ZSTD_outBuffer* output, ZSTD_inB
 
                 {   int const tooSmall = (zds->inBuffSize < neededInBuffSize) || (zds->outBuffSize < neededOutBuffSize);
                     int const tooLarge = ZSTD_DCtx_isOversizedTooLong(zds);
-                    
+
                     if (tooSmall || tooLarge) {
                         size_t const bufferSize = neededInBuffSize + neededOutBuffSize;
                         DEBUGLOG(4, "inBuff  : from %u to %u",

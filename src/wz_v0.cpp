@@ -60,7 +60,7 @@ EncodeSubbandV0_0(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
     if (CodedInNextIter) continue;
     /* copy the samples to the local buffer */
     v3i S3;
-    mg_BeginFor3(S3, v3i::Zero, BlockDims3, v3i::One) { // sample loop
+    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
       mg_Assert(D3 + S3 < SbDims3);
       BlockFloats[Row(BlockDims3, S3)] = BrickVol->At<f64>(SbGrid, D3 + S3);
     } mg_EndFor3 // end sample loop
@@ -89,7 +89,7 @@ DecodeSubbandV0_0(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     if (CodedInNextIter) continue;
     ReadBuffer(Fp, &BufFloats);
     v3i S3;
-    mg_BeginFor3(S3, v3i::Zero, BlockDims3, v3i::One) { // sample loop
+    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
       mg_Assert(D3 + S3 < SbDims3);
       BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[Row(BlockDims3, S3)];
     } mg_EndFor3 // end sample loop
@@ -127,7 +127,7 @@ EncodeSubbandV0_1(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) 
     /* copy the samples to the local buffer */
     v3i S3;
     int J = 0;
-    mg_BeginFor3(S3, v3i::Zero, BlockDims3, v3i::One) { // sample loop
+    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
       mg_Assert(D3 + S3 < SbDims3);
       BlockFloats[J++] = BrickVol->At<f64>(SbGrid, D3 + S3);
     } mg_EndFor3 // end sample loop
@@ -194,7 +194,7 @@ DecodeSubbandV0_1(const wz& Wz, decode_data* D, const grid& SbGrid, volume* BVol
     Dequantize(EMax, Prec, BufInts, &BufFloats);
     v3i S3;
     int J = 0;
-    mg_BeginFor3(S3, v3i::Zero, BlockDims3, v3i::One) { // sample loop
+    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
       mg_Assert(D3 + S3 < SbDims3);
       BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[J++];
     } mg_EndFor3 // end sample loop

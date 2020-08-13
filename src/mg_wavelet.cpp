@@ -210,7 +210,7 @@ struct tile_buf {
 //  if (LvlNxt > NLevels) { // last level, no need to add to the next level
 //#if defined(mg_Cdf53TileDebug)
 //    v3i CopyM = Min(M, TDims3);
-//    if (CopyM > v3i::Zero)
+//    if (CopyM > v3i(0))
 //      Copy(extent(CopyM), Vol, extent(Pos3 * TDims3, CopyM), BigVol);
 //#endif
 //    {
@@ -230,7 +230,7 @@ struct tile_buf {
 //    v3i D01 = Pos3 - (Pos3 / 2) * 2; // either 0 or 1 in each dimension
 //    v3i D11 = D01 * 2 - 1; // map [0, 1] to [-1, 1]
 //    grid SrcG = Sbands[Sb];
-//    extent DstG(v3i::Zero, Dims(SrcG));
+//    extent DstG(v3i(0), Dims(SrcG));
 //    v2i L = SubbandToLevel(2, Sb).XY;
 //    v2i Nb(0); // neighbor
 //    for (int Iy = 0; Iy < 2; Nb.Y += D11.Y, ++Iy) {
@@ -262,7 +262,7 @@ struct tile_buf {
 //          DstGX = Translate(DstGX, dimension::X, TDims3.X / 2);
 //        }
 //        /* locate the finer tile */
-//        if (!(Pos3Nxt >= v3i::Zero && Pos3Nxt < NTiles3Nxt))
+//        if (!(Pos3Nxt >= v3i(0) && Pos3Nxt < NTiles3Nxt))
 //          continue; // tile outside the domain
 //        tile_buf* TileNxt = nullptr;
 //        volume* VolNxt = nullptr;
@@ -306,7 +306,7 @@ struct tile_buf {
 //            // NOTE: for subbands other than 0, F3 can be outside of the big volume
 //            mg_Assert(VolNxt->Buffer);
 //            v3i CopyDims3 = Min(From(BigSbands[BigSb]) + Dims(BigSbands[BigSb]) - F3, TDims3);
-//            if (CopyDims3 > v3i::Zero) {
+//            if (CopyDims3 > v3i(0)) {
 //              mg_Assert(F3 + CopyDims3 <= Dims(*BigVol));
 //              Copy(extent(CopyDims3), *VolNxt, extent(F3, CopyDims3), BigVol);
 //            }
@@ -385,7 +385,7 @@ struct tile_buf {
 //    SetDims(&E, Dims3);
 //    if (!(From3 < M)) // tile outside domain
 //      continue;
-//    Copy(E, Vol, extent(v3i::Zero, Dims(E)), &TileVol);
+//    Copy(E, Vol, extent(v3i(0), Dims(E)), &TileVol);
 //    ForwardCdf53Tile2D(TDims3, 0, Pos3, Dims3s, &Vols
 //#if defined(mg_Cdf53TileDebug)
 //      , OutVol, BigSbands
@@ -450,7 +450,7 @@ struct tile_buf {
 //  if (LvlNxt > NLevels) { // last level, no need to add to the next level
 //#if defined(mg_Cdf53TileDebug)
 //    v3i CopyM = Min(M, TDims3);
-//    if (CopyM > v3i::Zero)
+//    if (CopyM > v3i(0))
 //      Copy(extent(CopyM), Vol, extent(Pos3 * TDims3, CopyM), BigVol);
 //#endif
 //    { // TODO: consider using a spin lock here
@@ -471,7 +471,7 @@ struct tile_buf {
 //    v3i D01 = Pos3 - (Pos3 / 2) * 2; // either 0 or 1 in each dimension
 //    v3i D11 = D01 * 2 - 1; // map [0, 1] to [-1, 1]
 //    grid SrcG = Sbands[Sb];
-//    extent DstG(v3i::Zero, Dims(SrcG));
+//    extent DstG(v3i(0), Dims(SrcG));
 //    v3i L = SubbandToLevel(3, Sb);
 //    v3i Nb(0); // neighbor
 //    for (int Iz = 0; Iz < 2; Nb.Z += D11.Z, ++Iz) { // through (next-level) neighbors
@@ -517,7 +517,7 @@ struct tile_buf {
 //            DstGX = Translate(DstGX, dimension::X, TDims3.X / 2);
 //          }
 //          /* locate the finer tile */
-//          if (!(Pos3Nxt >= v3i::Zero && Pos3Nxt < NTiles3Nxt))
+//          if (!(Pos3Nxt >= v3i(0) && Pos3Nxt < NTiles3Nxt))
 //            continue; // tile outside the domain
 //          tile_buf* TileNxt = nullptr;
 //          volume* VolNxt = nullptr;
@@ -563,7 +563,7 @@ struct tile_buf {
 //              // NOTE: for subbands other than 0, F3 can be outside of the big volume
 //              mg_Assert(VolNxt->Buffer);
 //              v3i CopyDims3 = Min(From(BigSbands[BigSb]) + Dims(BigSbands[BigSb]) - F3, TDims3);
-//              if (CopyDims3 > v3i::Zero) {
+//              if (CopyDims3 > v3i(0)) {
 //                mg_Assert(F3 + CopyDims3 <= Dims(*BigVol));
 //                Copy(extent(CopyDims3), *VolNxt, extent(F3, CopyDims3), BigVol);
 //              }
@@ -595,7 +595,7 @@ struct tile_buf {
 //) {
 //  /* calculate the power-of-two dimensions encompassing the volume */
 //  v3i M = Dims(Vol);
-//  v3i N = v3i::One;
+//  v3i N = v3i(1);
 //  while (N.X < M.X || N.Y < M.Y || N.Z < M.Z)
 //    N = N * 2;
 //  /* loop through the tiles in Z (morton) order */
@@ -644,7 +644,7 @@ struct tile_buf {
 //    SetDims(&E, Dims3);
 //    if (!(From3 < M)) // tile outside domain
 //      continue;
-//    Copy(E, Vol, extent(v3i::Zero, Dims(E)), &TileVol);
+//    Copy(E, Vol, extent(v3i(0), Dims(E)), &TileVol);
 //    {
 //      std::unique_lock<std::mutex> Lock(Mutex);
 //      ++Counter;
@@ -923,14 +923,14 @@ InverseCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
 void
 ForwardCdf53(const extent& Ext, int NLevels, volume* Vol) {
   #define Body(type)\
-  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i::One;\
+  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i(1);\
   array<grid> Grids;\
   for (int I = 0; I < NLevels; ++I) {\
-    PushBack(&Grids, grid(v3i::Zero, Dims3, Strd3));\
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
     Dims3.X += IsEven(Dims3.X); /* extrapolate */\
-    PushBack(&Grids, grid(v3i::Zero, Dims3, Strd3));\
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
     Dims3.Y += IsEven(Dims3.Y); /* extrapolate */\
-    PushBack(&Grids, grid(v3i::Zero, Dims3, Strd3));\
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
     Dims3.Z += IsEven(Dims3.Z); /* extrapolate */\
     Strd3 = Strd3 * 2;\
     Dims3 = (Dims3 + 1) / 2;\
@@ -947,14 +947,14 @@ ForwardCdf53(const extent& Ext, int NLevels, volume* Vol) {
 void
 InverseCdf53(const extent& Ext, int NLevels, volume* Vol) {
   #define Body(type)\
-  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i::One;\
+  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i(1);\
   array<grid> Grids;\
   for (int I = 0; I < NLevels; ++I) {\
-    PushBack(&Grids, grid(v3i::Zero, Dims3, Strd3));\
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
     Dims3.X += IsEven(Dims3.X); /* extrapolate */\
-    PushBack(&Grids, grid(v3i::Zero, Dims3, Strd3));\
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
     Dims3.Y += IsEven(Dims3.Y); /* extrapolate */\
-    PushBack(&Grids, grid(v3i::Zero, Dims3, Strd3));\
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
     Dims3.Z += IsEven(Dims3.Z); /* extrapolate */\
     Strd3 = Strd3 * 2;\
     Dims3 = (Dims3 + 1) / 2;\
@@ -986,25 +986,25 @@ InverseCdf53Old(volume* Vol, int NLevels) {
 }
 
 // TODO: this won't work for a general (sub)volume
-void
-ForwardCdf53Ext(const extent& Ext, volume* Vol) {
-#define Body(type)\
-  v3i N = Dims(Ext);\
-  v3i NN = Dims(*Vol);\
-  if (NN.Y > 1) mg_Assert(NN.X == NN.Y);\
-  if (NN.Z > 1) mg_Assert(NN.Y == NN.Z);\
-  mg_Assert(IsPow2(NN.X - 1));\
-  type* FPtr = (type*)(Vol->Buffer.Data);\
-  int NLevels = Log2Floor(NN.X - 1) + 1;\
-  for (int I = 0; I < NLevels; ++I) {\
-    FLiftExtCdf53X(FPtr, N, NN, v3i(I));\
-    FLiftExtCdf53Y(FPtr, N, NN, v3i(I));\
-    FLiftExtCdf53Z(FPtr, N, NN, v3i(I));\
-  }
+// void
+// ForwardCdf53Ext(const extent& Ext, volume* Vol) {
+// #define Body(type)\
+  // v3i N = Dims(Ext);\
+  // v3i NN = Dims(*Vol);\
+  // if (NN.Y > 1) mg_Assert(NN.X == NN.Y);\
+  // if (NN.Z > 1) mg_Assert(NN.Y == NN.Z);\
+  // mg_Assert(IsPow2(NN.X - 1));\
+  // type* FPtr = (type*)(Vol->Buffer.Data);\
+  // int NLevels = Log2Floor(NN.X - 1) + 1;\
+  // for (int I = 0; I < NLevels; ++I) {\
+    // FLiftExtCdf53X(FPtr, N, NN, v3i(I));\
+    // FLiftExtCdf53Y(FPtr, N, NN, v3i(I));\
+    // FLiftExtCdf53Z(FPtr, N, NN, v3i(I));\
+  // }
 
-  mg_DispatchOnType(Vol->Type)
-#undef Body
-}
+  // mg_DispatchOnType(Vol->Type)
+// #undef Body
+// }
 
 // TODO: test this code
 void
@@ -1071,7 +1071,7 @@ ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, co
     Output.WavGrid = grid(WavFrst3, Dims(WavFrst3, WavLast3, WavStrd3), WavStrd3);
     Output.ValGrid = grid(NewFrst3, Dims(NewFrst3, NewLast3, NewStrd3), NewStrd3);
     /* for the work grid, first sample has to be even, and the dims have to be odd */
-    v3i WrkFrst3 = Max(WavFrst3 - S3, v3i::Zero);
+    v3i WrkFrst3 = Max(WavFrst3 - S3, v3i(0));
     WrkFrst3 = WrkFrst3 - IsOdd(WrkFrst3 / NewStrd3) * NewStrd3;
     v3i WrkLast3 = WavLast3 + S3;
     v3i WrkDims3 = Dims(WrkFrst3, WrkLast3, NewStrd3);
@@ -1094,25 +1094,25 @@ ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, co
 //}
 
 // TODO: this won't work for a general (sub)volume
-void
-InverseCdf53Ext(const extent& Ext, volume* Vol) {
-#define Body(type)\
-  v3i N = Dims(Ext);\
-  v3i NN = Dims(*Vol);\
-  if (NN.Y > 1) mg_Assert(NN.X == NN.Y);\
-  if (NN.Z > 1) mg_Assert(NN.Y == NN.Z);\
-  mg_Assert(IsPow2(NN.X - 1));\
-  type* FPtr = (type*)(Vol->Buffer.Data);\
-  int NLevels = Log2Floor(NN.X - 1) + 1;\
-  for (int I = NLevels - 1; I >= 0; --I) {\
-    ILiftExtCdf53Z(FPtr, N, NN, v3i(I));\
-    ILiftExtCdf53Y(FPtr, N, NN, v3i(I));\
-    ILiftExtCdf53X(FPtr, N, NN, v3i(I));\
-  }
+// void
+// InverseCdf53Ext(const extent& Ext, volume* Vol) {
+// #define Body(type)\
+  // v3i N = Dims(Ext);\
+  // v3i NN = Dims(*Vol);\
+  // if (NN.Y > 1) mg_Assert(NN.X == NN.Y);\
+  // if (NN.Z > 1) mg_Assert(NN.Y == NN.Z);\
+  // mg_Assert(IsPow2(NN.X - 1));\
+  // type* FPtr = (type*)(Vol->Buffer.Data);\
+  // int NLevels = Log2Floor(NN.X - 1) + 1;\
+  // for (int I = NLevels - 1; I >= 0; --I) {\
+    // ILiftExtCdf53Z(FPtr, N, NN, v3i(I));\
+    // ILiftExtCdf53Y(FPtr, N, NN, v3i(I));\
+    // ILiftExtCdf53X(FPtr, N, NN, v3i(I));\
+  // }
 
-  mg_DispatchOnType(Vol->Type)
-#undef Body
-}
+  // mg_DispatchOnType(Vol->Type)
+// #undef Body
+// }
 
 stack_array<u8, 8>
 SubbandOrders[4] = {
@@ -1399,7 +1399,7 @@ LevelToSubband(const v3i& Lvl3) {
 v3i
 SubbandToLevel(int NDims, int Sb, bool Norm) {
   if (Sb == 0)
-    return v3i::Zero;
+    return v3i(0);
   /* handle level 0 which has only 1 subband (other levels have 7 subbands) */
   int N = (1 << NDims) - 1; // 3 for 2D, 7 for 3D
   int Lvl = (Sb + N - 1) / N;

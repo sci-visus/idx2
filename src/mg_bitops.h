@@ -2,6 +2,9 @@
 
 #include "mg_macros.h"
 #include "mg_common.h"
+#if defined(__clang__) || defined(__GNUC__)
+#include <x86intrin.h>
+#endif
 
 namespace mg {
 
@@ -48,7 +51,6 @@ u32 HighBits64(u64 V);
 #include "mg_macros.h"
 #include "mg_common.h"
 // #include "bitmap_tables.h"
-#include <x86intrin.h>
 
 namespace mg {
 
@@ -99,6 +101,7 @@ TakeFirstBitsNoShift(t Val, int NBits) {
 
 // TODO: check the return value of these intrinsics
 #if defined(__clang__) || defined(__GNUC__)
+#include <x86intrin.h>
 mg_Inline i8
 Msb(u32 V, i8 Default) {
   return (V == 0) ? Default : i8(sizeof(u32) * 8 - 1 - __builtin_clz(V));
@@ -115,8 +118,8 @@ mg_Inline i8
 Lsb(u64 V, i8 Default) {
   return (V == 0) ? Default : i8(__builtin_ctzll(V));
 }
-#elif defined(_MSVC)
-#include <intrin.h>
+#elif defined(_MSC_VER)
+//#include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
 #pragma intrinsic(_BitScanReverse64)
 mg_Inline i8

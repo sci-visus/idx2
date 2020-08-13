@@ -8,10 +8,11 @@
 
 /* Return the number of comma-separated arguments */
 #define mg_NumArgs(...) (CountChar(#__VA_ARGS__, ',') + 1)
+//#define mg_NumArgs2(...) mg_NumArgsUpTo6(__VA_ARGS__)
 
 #define mg_Expand(...) __VA_ARGS__
 /* Macro overloading feature support */
-#define mg_NumArgsUpTo6(...) mg_NumArgsHelper(0, ## __VA_ARGS__, 5,4,3,2,1,0)
+#define mg_NumArgsUpTo6(...) mg_Expand(mg_NumArgsHelper(0, ## __VA_ARGS__, 5,4,3,2,1,0))
 #define mg_NumArgsHelper(_0,_1,_2,_3,_4,_5,N,...) N
 #define mg_OverloadSelect(Name, Num) mg_Cat(Name ## _, Num)
 #define mg_MacroOverload(Name, ...) mg_OverloadSelect(Name, mg_NumArgsUpTo6(__VA_ARGS__))(__VA_ARGS__)
@@ -30,12 +31,9 @@
 #define mg_Cat(A, ...) mg_CatHelper(A, __VA_ARGS__)
 #define mg_CatHelper(A, ...) A ## __VA_ARGS__
 
-#define mg_FPrintHelper(Stream, ...)\
-  __VA_OPT__(fprintf(Stream, __VA_ARGS__))
+#define mg_FPrintHelper(Stream, ...) fprintf(Stream, ##__VA_ARGS__)
 
-#define mg_SPrintHelper(Buf, L, ...)\
-  __VA_OPT__(snprintf(Buf + L, sizeof(Buf) - size_t(L), __VA_ARGS__));\
-  mg_Unused(L)
+#define mg_SPrintHelper(Buf, L, ...) snprintf(Buf + L, sizeof(Buf) - size_t(L), ##__VA_ARGS__); mg_Unused(L)
 
 #define mg_ExtractFirst(X, ...) X
 
@@ -46,7 +44,7 @@
 #define mg_Inline
 
 /* Short for template <typename ...> which sometimes can get too verbose */
-#define mg_T(...) template <__VA_OPT__(typename) __VA_ARGS__>
+#define mg_T(...) template <typename __VA_ARGS__>
 #define mg_I(N) template <int N>
 #define mg_Ii(N) mg_I(N) mg_Inline
 #define mg_TI(t, N) template <typename t, int N>

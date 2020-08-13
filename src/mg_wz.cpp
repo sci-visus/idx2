@@ -17,7 +17,7 @@
 #include "mg_zfp.h"
 #include <string.h>
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h>
+//#include "inttypes.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #include <zstd/zstd.h>
@@ -1214,15 +1214,15 @@ RateDistortionOpt(const wz& Wz, encode_data* E) {
     printf("optimizing for rdo level %d\n", R);
     f64 LowLambda = -2, HighLambda = -1, Lambda = 1;
     int Count = 0;
-    do { // search for the best Lambda (TruncationPoints stores the output)      
-      if (LowLambda > 0 && HighLambda > 0) { 
+    do { // search for the best Lambda (TruncationPoints stores the output)
+      if (LowLambda > 0 && HighLambda > 0) {
         ++Count;
         if (Count >= 20) { Lambda = HighLambda; break; }
-        Lambda = 0.5 * LowLambda + 0.5 * HighLambda; 
+        Lambda = 0.5 * LowLambda + 0.5 * HighLambda;
       } else if (Lambda == 0) {
         Lambda = HighLambda;
         break;
-      }      
+      }
       i64 TotalLength = 0;
       mg_ForEach(TIt, RdoPrecomputes) { // for each tile
         int J = 0;
@@ -1378,7 +1378,7 @@ EncodeSubband(wz* Wz, encode_data* E, const grid& SbGrid, volume* BrickVol) {
     v3i S3;
     int J = 0;
     v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
-    mg_BeginFor3(S3, v3i::Zero, BlockDims3, v3i::One) { // sample loop
+    mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
       mg_Assert(D3 + S3 < SbDims3);
       BlockFloats[J++] = BrickVol->At<f64>(From3, Strd3, D3 + S3);
     } mg_EndFor3 // end sample loop
@@ -2089,7 +2089,7 @@ DecodeSubband(const wz& Wz, decode_data* D, f64 Accuracy, const grid& SbGrid, vo
       v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
       timer DataTimer;
       StartTimer(&DataTimer);
-      mg_BeginFor3(S3, v3i::Zero, BlockDims3, v3i::One) { // sample loop
+      mg_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
         mg_Assert(D3 + S3 < SbDims3);
         BVol->At<f64>(From3, Strd3, D3 + S3) = BlockFloats[J++];
       } mg_EndFor3 // end sample loop

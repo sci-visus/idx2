@@ -7,7 +7,7 @@
 namespace mg {
 
 /* There should be only one error in-flight on each thread */
-mg_T(t = err_code)
+template <typename t = err_code>
 struct error {
   cstr Msg = "";
   t Code = {};
@@ -91,16 +91,6 @@ ErrorExists(const error<t>& Err) { return Err.Code != t::NoError; }
 #undef mg_Error
 #define mg_Error(ErrCode, ...)\
   [&]() {\
-    if (mg_NumArgs(__VA_ARGS__) > 0) {\
-      mg::error Err(ErrCode, true __VA_OPT__(,) mg_ExtractFirst(__VA_ARGS__));\
-      Err.Files[0] = __FILE__;\
-      Err.Lines[0] = __LINE__;\
-      auto ErrStr = ToString(Err.Code);\
-      int L = snprintf(ScratchBuf, sizeof(ScratchBuf), "%.*s (file %s, line %d): ",\
-                       ErrStr.Size, ErrStr.Ptr, __FILE__, __LINE__);\
-      mg_SPrintHelper(ScratchBuf, L, __VA_ARGS__);\
-      return Err;\
-    }\
     mg::error Err(ErrCode);\
     Err.Files[0] = __FILE__;\
     Err.Lines[0] = __LINE__;\
