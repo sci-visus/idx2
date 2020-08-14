@@ -1,7 +1,7 @@
 # What is idx2?
 idx2 is a compressed file format for scientific data represented as regular grids of data samples. idx2 supports adaptive, coarse-scale data retrieval in both resolution and precision.
 Currently there is only an executable for 2-way conversion between raw binary and the idx2 format, but there will soon be a library for working with the format at a lower level.
-idx2 is the next version of the idx file format, which is handled by [OpenVisus](https://github.com/sci-visus/OpenVisus). However, if you just want to read an idx file, a fast and lightweight reader is [hana](https://github.com/hoangthaiduong/hana). Compared to idx, idx2 adds the compression capability (through the wavelet transform and [zfp](https://github.com/LLNL/zfp) ), as well as the capability to retrieve coarse-precision data (idx only allows coarse-resolution retrieval).
+idx2 is the next version of the idx file format, which is handled by [OpenVisus](https://github.com/sci-visus/OpenVisus) (alternatively, a fast and lightweight idx reader and writer is [hana](https://github.com/hoangthaiduong/hana)). Compared to idx, idx2 adds the compression capability (through the wavelet transform and [zfp](https://github.com/LLNL/zfp)), as well as the capability to retrieve coarse-precision data (idx only allows coarse-resolution retrieval).
 
 # Compilation
 1. On Mac:
