@@ -91,6 +91,16 @@ ErrorExists(const error<t>& Err) { return Err.Code != t::NoError; }
 #undef idx2_Error
 #define idx2_Error(ErrCode, ...)\
   [&]() {\
+    if constexpr(idx2_NumArgs(__VA_ARGS__) > 0) {\
+      idx2::error Err(ErrCode, true, "" idx2_ExtractFirst(__VA_ARGS__));\
+      Err.Files[0] = __FILE__;\
+      Err.Lines[0] = __LINE__;\
+      auto ErrStr = ToString(Err.Code);\
+      int L = snprintf(ScratchBuf, sizeof(ScratchBuf), "%.*s (file %s, line %d): ",\
+                       ErrStr.Size, ErrStr.Ptr, __FILE__, __LINE__);\
+      idx2_SPrintHelper(ScratchBuf, L, "" __VA_ARGS__);\
+      return Err;\
+    }\
     idx2::error Err(ErrCode);\
     Err.Files[0] = __FILE__;\
     Err.Lines[0] = __LINE__;\

@@ -8,7 +8,6 @@
 
 /* Return the number of comma-separated arguments */
 #define idx2_NumArgs(...) (CountChar(#__VA_ARGS__, ',') + 1)
-//#define idx2_NumArgs2(...) idx2_NumArgsUpTo6(__VA_ARGS__)
 
 #define idx2_Expand(...) __VA_ARGS__
 /* Macro overloading feature support */
