@@ -4,7 +4,7 @@ Currently there is only an executable (named `idx2`) for 2-way conversion betwee
 idx2 is the next version of the idx file format, which is handled by [OpenVisus](https://github.com/sci-visus/OpenVisus) (alternatively, a fast and lightweight idx reader and writer is [hana](https://github.com/hoangthaiduong/hana)). Compared to idx, idx2 adds the compression capability (by leveraging [zfp](https://github.com/LLNL/zfp)), as well as the capability to retrieve coarse-precision data.
 
 # Compilation
-All output binaries are under the `bin` directory.
+You will need a C++ compiler that supports C++17. All output binaries are under the `bin` directory.
 
 1. On Mac:
 `./build-clang.sh Release idx2`
