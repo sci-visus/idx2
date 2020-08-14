@@ -17,7 +17,7 @@ After that, run `./my-build-vs.bat Release idx2`.
 Alternatively, if you use Clang instead of MSVC, use `build-clang.bat` (after possibly updating the variables `ClangPath` and `ClangInclude` beside the other three variables).
 
 # Converting from raw to idx2
-`idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --version 1 0 --accuracy 1e-16 --brick_size 64 64 64 --files_per_dir 512 --num_iterations 2 --tiles_per_file 8 --bricks_per_tile 8 --out_dir .`
+`idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_iterations 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .`
 
 Make sure the input raw file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.raw` format, where `Name` and `Field` can be anything, `DimX`, `DimY`, `DimZ` are the field's dimensions (any of which can be 1), and `Type` is either `Float32` or `Float64` (currently idx2 only supports floating-point scalar fields). Most of the time, the only options that should be customized are `--input` (the input raw file), `--out_dir` (the output directory), `--num_iterations` (the number of resolution levels) and `--accuracy` (the absolute error tolerance). The output will be multiple files written to the `out_dir/Name` directory, and the main metadata file is `out_dir/Name/Field.idx`.
 

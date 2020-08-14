@@ -70,11 +70,7 @@ ParseParams(int Argc, cstr* Argv) {
       exit(1);
     }
     OptVal(Argc, Argv, "--quality_levels", &P.RdoLevels);
-    if (!OptVal(Argc, Argv, "--version", &P.Version)) {
-      fprintf(stderr, "Provide --version\n");
-      fprintf(stderr, "Example: --version 0 0\n");
-      exit(1);
-    }
+    OptVal(Argc, Argv, "--version", &P.Version);
     P.GroupIterations = OptExists(Argc, Argv, "--group_iterations");
     P.GroupBitPlanes = OptExists(Argc, Argv, "--group_bit_planes");
     P.GroupLevels = OptExists(Argc, Argv, "--group_levels");

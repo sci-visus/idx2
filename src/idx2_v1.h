@@ -30,7 +30,7 @@ struct decode_params {
 struct params {
   action Action = action::Encode;
   metadata Meta;
-  v2i Version = v2i(0);
+  v2i Version = v2i(1, 0);
   v3i Dims3 = v3i(256);
   v3i BrickDims3 = v3i(32);
   cstr InputFile = nullptr;
@@ -113,7 +113,7 @@ struct idx2_file { // wavelet zip
   stack_array<int, MaxIterations> BricksPerFiles = {{512 * 4096}};
   stack_array<int, MaxIterations> FilesPerVol = {{4096}}; // power of two
   stack_array<int, MaxIterations> ChunksPerVol = {{4096 * 4096}}; // power of two
-  v2i Version;
+  v2i Version = v2i(1, 0);
   array<subband> Subbands; // based on BrickDimsExt3
   array<subband> SubbandsNonExt; // based on BrickDims3
   v3i GroupBrick3; // how many bricks in the current iteration form a brick in the next iteration
