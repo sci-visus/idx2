@@ -34,13 +34,13 @@ void SetHandleAbortSignals(handler& Handler = AbortHandler);
     if (!(Cond)) {\
       fprintf(stderr, "Condition \"%s\" failed, ", #Cond);\
       fprintf(stderr, "in file %s, line %d\n", __FILE__, __LINE__);\
-      if (idx2_NumArgs(__VA_ARGS__) > 0) {\
-        idx2_FPrintHelper(stderr, __VA_ARGS__);\
+      if constexpr(idx2_NumArgs(__VA_ARGS__) > 0) {\
+        idx2_FPrintHelper(stderr, "" __VA_ARGS__);\
         fprintf(stderr, "\n");\
       }\
       printer Pr(stderr);\
       PrintStacktrace(&Pr);\
-      if (Debug)\
+      if constexpr (Debug)\
         debug_break();\
       else\
         exit(EXIT_FAILURE);\
@@ -49,8 +49,7 @@ void SetHandleAbortSignals(handler& Handler = AbortHandler);
 
 #undef idx2_Assert
 #if defined(idx2_Slow)
-  //#define idx2_Assert(Cond, ...) idx2_AssertHelper(true, (Cond), __VA_ARGS__)
-  #define idx2_Assert(Cond, ...) do {} while (0)
+  #define idx2_Assert(Cond, ...) idx2_AssertHelper(true, (Cond), __VA_ARGS__)
 #else
   #define idx2_Assert(Cond, ...) do {} while (0)
 #endif

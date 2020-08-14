@@ -273,7 +273,7 @@ FLiftCdf53Old##x(t* F, const v3i& N, const v3i& L) {\
   v3i M = (N + P - 1) / P;\
   if (M.x <= 1)\
     return;\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -283,7 +283,7 @@ FLiftCdf53Old##x(t* F, const v3i& N, const v3i& L) {\
     Val -= F[idx2_Row##x(XLeft, y, z, N)] / 2;\
     Val -= F[idx2_Row##x(XRight, y, z, N)] / 2;\
   }}}\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -329,7 +329,7 @@ ILiftCdf53Old##x(t* F, const v3i& N, const v3i& L) {\
       F[idx2_Row##x(x    , y, z, N)] = Temp[x / 2];\
     }\
   }}\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -339,7 +339,7 @@ ILiftCdf53Old##x(t* F, const v3i& N, const v3i& L) {\
     F[idx2_Row##x(XLeft, y, z, N)] -= Val / 4;\
     F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;\
   }}}\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -358,7 +358,7 @@ FLiftCdf53Const##x(t* F, const v3i& N, const v3i& L) {\
   v3i M = (N + P - 1) / P;\
   if (M.x <= 1)\
     return;\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -367,7 +367,7 @@ FLiftCdf53Const##x(t* F, const v3i& N, const v3i& L) {\
     t & Val = F[idx2_Row##x(x, y, z, N)];\
     Val -= (F[idx2_Row##x(XLeft , y, z, N)] + F[idx2_Row##x(XRight , y, z, N)]) / 2;\
   }}}\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -413,7 +413,7 @@ ILiftCdf53Const##x(t* F, const v3i& N, const v3i& L) {\
       F[idx2_Row##x(x    , y, z, N)] = Temp[x / 2];\
     }\
   }}\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -423,7 +423,7 @@ ILiftCdf53Const##x(t* F, const v3i& N, const v3i& L) {\
     F[idx2_Row##x(XLeft , y, z, N)] -= Val / 4;\
     F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;\
   }}}\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < M.x; x += 2) {\
@@ -447,7 +447,7 @@ FLiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L) {\
   /* linearly extrapolate */\
   if (D[0].x < D[1].x) {\
     idx2_Assert(D[0].x + 1 == D[1].x);\
-    _Pragma("omp parallel for")\
+    /*_Pragma("omp parallel for")*/\
     for (int z = 0; z < D[1].z; ++z) {\
     for (int y = 0; y < D[1].y; ++y) {\
       t A = F[idx2_Row##x(D[0].x - 2, y, z, NBig)];\
@@ -459,7 +459,7 @@ FLiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L) {\
   v3i M = (NBig + P - 1) / P;\
   if (M.x <= 1)\
     return;\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < D[1].x; x += 2) {\
@@ -467,7 +467,7 @@ FLiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L) {\
     Val -= F[idx2_Row##x(x - 1, y, z, NBig)] / 2;\
     Val -= F[idx2_Row##x(x + 1, y, z, NBig)] / 2;\
   }}}\
-  _Pragma("omp parallel for collapse(2)")\
+  /*_Pragma("omp parallel for collapse(2)")*/\
   for (int z = 0; z < M.z; ++z   ) {\
   for (int y = 0; y < M.y; ++y   ) {\
   for (int x = 1; x < D[1].x; x += 2) {\
