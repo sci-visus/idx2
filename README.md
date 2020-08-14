@@ -10,8 +10,10 @@ idx2 is the next version of the idx file format, which is handled by [OpenVisus]
 `./build-gcc.sh Release idx2` or `./build-clang.sh Release idx2`
 3. On Windows:
 If you are using the MSVC compiler (`cl.exe`), make sure the three paths in `build-vs.bat` (`VSPath`, `WinSDKLibrary`, and `WinSDKInclude`) are correct for your system.
-You may want to copy `build-vs.bat` to another file (say `my-build-vs.bat`) and modify these paths to suite your system. After that, run `./my-build-vs.bat Release idx2`.
-Alternatively, if you use Clang instead of MSVC, use `build-clang.bat` (after possibly updating the four variables `LLVMPath`, `ClangInclude`, `WinSDKLibrary`, and `WinSDKInclude`).
+You may want to use `find-paths.bat` to locate these paths in common install locations.
+You may want to copy `build-vs.bat` to another file (say `my-build-vs.bat`) and modify these paths to suite your system.
+After that, run `./my-build-vs.bat Release idx2`.
+Alternatively, if you use Clang instead of MSVC, use `build-clang.bat` (after possibly updating the variables `ClangPath` and `ClangInclude` beside the other three variables).
 
 # Converting from raw to idx2
 Use the command: `./bin/idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --version 1 0 --accuracy 1e-16 --brick_size 64 64 64 --files_per_dir 512 --num_passes_per_iteration 1 --num_iterations 2 --tiles_per_file 8 --bricks_per_tile 8 --group_levels --group_bit_planes --out_dir .`

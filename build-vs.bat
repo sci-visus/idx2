@@ -11,7 +11,7 @@ set "OLD_PATH=%PATH%"
 set "PATH=%VSPath%\bin\Hostx64\x64;%VSBasePath%\bin\Hostx64\x64;%PATH%"
 
 :: Compiler flags
-set INCLUDE_PATHS=/I"%WinSDKInclude%\ucrt" /I"%WinSDKInclude%\um" /I"%WinSDKInclude%\shared" /I"%VSPATH%\include" /I..\src
+set INCLUDE_PATHS=/I"%WinSDKInclude%\ucrt" /I"%WinSDKInclude%\um" /I"%WinSDKInclude%\shared" /I"%VSPath%\include" /I..\src
 set CFLAGS="Please provide a build config: Debug, FastDebug, Profile, Release"
 set COMMON_CFLAGS=/std:c++latest /FC /Zi /nologo /EHsc /GR- /Zo /Oi /W4 /wd4201 /wd4100 /wd4189 /wd4505 /wd4127 /arch:AVX2
 if %1==Release   (set CFLAGS=/O2         )
