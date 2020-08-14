@@ -7,7 +7,7 @@ export OUTPUT=$2
 export INCLUDE_PATHS=-I../src
 
 # Compiler flags
-export CFLAGS="-std=gnu++2a -fopenmp-simd -Wall -Wextra -Wpedantic -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments -g -lpthread"
+export CFLAGS="-std=gnu++17 -fopenmp-simd -Wall -Wextra -Wpedantic -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments -g -lpthread"
 
 if [ "$1" = "Debug" ]
   then
@@ -15,12 +15,12 @@ if [ "$1" = "Debug" ]
     export CDEFS="-Dmg_Slow=1"
 fi
 
-if [ "$1" = "FastDebug" ] 
+if [ "$1" = "FastDebug" ]
   then
     export CFLAGS="$CFLAGS -Og -DNDEBUG -ftree-vectorize -march=native"
 fi
 
-if [ "$1" = "Release" ] 
+if [ "$1" = "Release" ]
   then
     export CFLAGS="$CFLAGS -gno-column-info -O2 -DNDEBUG -ftree-vectorize -march=native"
 fi
