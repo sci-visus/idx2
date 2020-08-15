@@ -985,26 +985,28 @@ InverseCdf53Old(volume* Vol, int NLevels) {
 #undef Body
 }
 
-// TODO: this won't work for a general (sub)volume
-// void
-// ForwardCdf53Ext(const extent& Ext, volume* Vol) {
-// #define Body(type)\
-  // v3i N = Dims(Ext);\
-  // v3i NN = Dims(*Vol);\
-  // if (NN.Y > 1) idx2_Assert(NN.X == NN.Y);\
-  // if (NN.Z > 1) idx2_Assert(NN.Y == NN.Z);\
-  // idx2_Assert(IsPow2(NN.X - 1));\
-  // type* FPtr = (type*)(Vol->Buffer.Data);\
-  // int NLevels = Log2Floor(NN.X - 1) + 1;\
-  // for (int I = 0; I < NLevels; ++I) {\
-    // FLiftExtCdf53X(FPtr, N, NN, v3i(I));\
-    // FLiftExtCdf53Y(FPtr, N, NN, v3i(I));\
-    // FLiftExtCdf53Z(FPtr, N, NN, v3i(I));\
-  // }
+/*
+//TODO: this won't work for a general (sub)volume
+void
+ForwardCdf53Ext(const extent& Ext, volume* Vol) {
+#define Body(type)\
+  v3i N = Dims(Ext);\
+  v3i NN = Dims(*Vol);\
+  if (NN.Y > 1) idx2_Assert(NN.X == NN.Y);\
+  if (NN.Z > 1) idx2_Assert(NN.Y == NN.Z);\
+  idx2_Assert(IsPow2(NN.X - 1));\
+  type* FPtr = (type*)(Vol->Buffer.Data);\
+  int NLevels = Log2Floor(NN.X - 1) + 1;\
+  for (int I = 0; I < NLevels; ++I) {\
+    FLiftExtCdf53X(FPtr, N, NN, v3i(I));\
+    FLiftExtCdf53Y(FPtr, N, NN, v3i(I));\
+    FLiftExtCdf53Z(FPtr, N, NN, v3i(I));\
+  }
 
-  // idx2_DispatchOnType(Vol->Type)
-// #undef Body
-// }
+  idx2_DispatchOnType(Vol->Type)
+#undef Body
+}
+*/
 
 // TODO: test this code
 void
@@ -1093,26 +1095,27 @@ ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, co
 //
 //}
 
-// TODO: this won't work for a general (sub)volume
-// void
-// InverseCdf53Ext(const extent& Ext, volume* Vol) {
-// #define Body(type)\
-  // v3i N = Dims(Ext);\
-  // v3i NN = Dims(*Vol);\
-  // if (NN.Y > 1) idx2_Assert(NN.X == NN.Y);\
-  // if (NN.Z > 1) idx2_Assert(NN.Y == NN.Z);\
-  // idx2_Assert(IsPow2(NN.X - 1));\
-  // type* FPtr = (type*)(Vol->Buffer.Data);\
-  // int NLevels = Log2Floor(NN.X - 1) + 1;\
-  // for (int I = NLevels - 1; I >= 0; --I) {\
-    // ILiftExtCdf53Z(FPtr, N, NN, v3i(I));\
-    // ILiftExtCdf53Y(FPtr, N, NN, v3i(I));\
-    // ILiftExtCdf53X(FPtr, N, NN, v3i(I));\
-  // }
+/* //TODO: this won't work for a general (sub)volume
+void
+InverseCdf53Ext(const extent& Ext, volume* Vol) {
+#define Body(type)\
+  v3i N = Dims(Ext);\
+  v3i NN = Dims(*Vol);\
+  if (NN.Y > 1) idx2_Assert(NN.X == NN.Y);\
+  if (NN.Z > 1) idx2_Assert(NN.Y == NN.Z);\
+  idx2_Assert(IsPow2(NN.X - 1));\
+  type* FPtr = (type*)(Vol->Buffer.Data);\
+  int NLevels = Log2Floor(NN.X - 1) + 1;\
+  for (int I = NLevels - 1; I >= 0; --I) {\
+    ILiftExtCdf53Z(FPtr, N, NN, v3i(I));\
+    ILiftExtCdf53Y(FPtr, N, NN, v3i(I));\
+    ILiftExtCdf53X(FPtr, N, NN, v3i(I));\
+  }
 
-  // idx2_DispatchOnType(Vol->Type)
-// #undef Body
-// }
+  idx2_DispatchOnType(Vol->Type)
+#undef Body
+}
+*/
 
 stack_array<u8, 8>
 SubbandOrders[4] = {

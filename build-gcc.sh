@@ -7,7 +7,7 @@ export OUTPUT=$2
 export INCLUDE_PATHS=-I../src
 
 # Compiler flags
-export CFLAGS="-std=gnu++17 -fopenmp-simd -Wall -Wextra -Wpedantic -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments -g -lpthread"
+export CFLAGS="-std=gnu++17 -fopenmp-simd -Wall -Wextra -Wpedantic -Wno-missing-braces -Wno-format-zero-length -g -lpthread"
 
 if [ "$1" = "Debug" ]
   then
