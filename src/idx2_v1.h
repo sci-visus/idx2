@@ -44,14 +44,15 @@ struct params {
   extent DecodeExtent;
   f64 DecodeAccuracy = 0;
   int DecodePrecision = 0;
-  int DecodeUpToIteration = 0;
+  int DecodeUpToLevel = 0;
   u8 DecodeMask = 0xFF;
   int QualityLevel = -1;
   cstr OutDir = ".";
   cstr InDir = ".";
   cstr OutFile = nullptr;
   bool Pause = false;
-  bool DryRun = false;
+  enum class out_mode { WriteToFile, KeepInMemory, NoOutput };
+  out_mode OutMode = out_mode::NoOutput;
   bool GroupIterations = false;
   bool GroupBitPlanes = false;
   bool GroupLevels = true;
@@ -64,7 +65,7 @@ struct params {
 void Dealloc(params* P);
 
 
-struct idx2_file { // wavelet zip
+struct idx2_file {
   // Limits:
   // Level: 6 bits
   // BitPlane: 12 bits

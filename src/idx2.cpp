@@ -26,7 +26,10 @@ ParseParams(int Argc, cstr* Argv) {
   P.Pause = OptExists(Argc, Argv, "--pause");
   OptVal(Argc, Argv, "--out_dir", &P.OutDir);
   OptVal(Argc, Argv, "--out_file", &P.OutFile);
-  P.DryRun = OptExists(Argc, Argv, "--dry");
+  if (OptExists(Argc, Argv, "--dry"))
+    P.OutMode = params::out_mode::NoOutput;
+  else
+    P.OutMode = params::out_mode::WriteToFile;
   if (P.Action == action::Encode) {
     error Err = ParseMeta(P.InputFile, &P.Meta);
     if (ErrorExists(Err)) {
@@ -87,13 +90,13 @@ ParseParams(int Argc, cstr* Argv) {
       exit(1);
     }
     P.DecodeExtent = extent(First3, Last3 - First3 + 1);
-    if (!OptVal(Argc, Argv, "--iteration", &P.DecodeUpToIteration)) {
+    if (!OptVal(Argc, Argv, "--iteration", &P.DecodeUpToLevel)) {
       fprintf(stderr, "Provide --iteration (0 means full resolution)\n");
       fprintf(stderr, "The decoder will not decode iterations less than this (finer resolutions)\n");
       fprintf(stderr, "Example: --iteration 0\n");
       exit(1);
     }
-    P.EffIter = P.DecodeUpToIteration;
+    P.EffIter = P.DecodeUpToLevel;
     u8 Mask = 0;
     if (!OptVal(Argc, Argv, "--mask", &Mask)) {
       fprintf(stderr, "Provide --mask (8-bit mask, 128 (0x80) means full resolution)\n");
@@ -208,7 +211,7 @@ main(int Argc, cstr* Argv) {
       Dw.Init(Idx2);
       Dw.SetExtent(P.DecodeExtent);
       Dw.SetMask(P.DecodeMask);
-      Dw.SetIteration(P.DecodeUpToIteration);
+      Dw.SetIteration(P.DecodeUpToLevel);
       Dw.SetAccuracy(P.DecodeAccuracy);
       Dw.SetQuality(P.QualityLevel);
       Decode(Idx2, P, &Dw);

@@ -2192,12 +2192,12 @@ void
 Decode(const idx2_file& Idx2, const params& P, decode_what* Dw) {
   timer DecodeTimer; StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
-  u8 OutMask = P.EffIter == P.DecodeUpToIteration ? Dw->GetMask() : 128;
+  u8 OutMask = P.EffIter == P.DecodeUpToLevel ? Dw->GetMask() : 128;
   grid OutGrid = GetGrid(Dw->GetExtent(), Dw->GetIteration(), OutMask, Idx2.Subbands);
   printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
-  idx2_CleanUp(if (!P.DryRun) { Unmap(&OutVol); });
-  if (!P.DryRun) {
+  idx2_CleanUp(if (P.OutMode == params::out_mode::WriteToFile) { Unmap(&OutVol); });
+  if (P.OutMode == params::out_mode::WriteToFile) {
     metadata Met;
     memcpy(Met.Name, Idx2.Name, sizeof(Met.Name));
     memcpy(Met.Field, Idx2.Field, sizeof(Met.Field));
@@ -2268,7 +2268,7 @@ Decode(const idx2_file& Idx2, const params& P, decode_what* Dw) {
             grid BrickGrid(Top.BrickFrom3 * BrickDims3, Idx2.BrickDims3, v3i(1 << Iter)); // TODO: the 1 << Iter is only true for 1 transform pass per iteration
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
-            if (!P.DryRun) {
+            if (P.OutMode == params::out_mode::WriteToFile) {
               if (OutVol.Vol.Type == dtype::float32)
                 (CopyGridGrid<f64, f32>(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), &OutVol.Vol));
               else if (OutVol.Vol.Type == dtype::float64)
