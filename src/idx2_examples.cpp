@@ -13,7 +13,7 @@ Decode1() {
 
   P.OutputLevel = 0; // Level 0 is the finest, level 1 is half of level 0 in each dimension, etc
   P.DecodeLevel = P.OutputLevel; // most of the time we want this to be the same as OutputLevel
-  P.DecodeMask = 32; // controls the exact sub-level to extract (by default is 128)
+  P.DecodeMask = 128; // controls the exact sub-level to extract (by default is 128)
   // For example, if the volume is 256 x 256 x 256 and there are 2 iterations
   // Level 0, mask 128 = 256 x 256 x 256
   // Level 0, mask 64  = 256 x 256 x 128
