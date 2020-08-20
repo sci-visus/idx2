@@ -5,7 +5,16 @@
 namespace idx2 {
 
 error<idx2_file_err_code>
+Init(idx2_file* Idx2, const params& P);
+
+idx2::grid
+GetOutputGrid(const idx2_file& Idx2, const params& P);
+
+error<idx2_file_err_code>
 Decode(idx2_file* Idx2, const params& P, buffer* OutBuf);
+
+error<idx2_file_err_code>
+Destroy(idx2_file* Idx2);
 
 }
 
@@ -15,21 +24,30 @@ Decode(idx2_file* Idx2, const params& P, buffer* OutBuf);
 
 namespace idx2 {
 
-/* Need P.InDir, P.InputFile, P.DecodeMask, P.DecodeUpToLevel, P.DecodeAccuracy */
 error<idx2_file_err_code>
-Decode(idx2_file* Idx2, const params& P, buffer* OutBuf) {
+Init(idx2_file* Idx2, const params& P) {
   SetDir(Idx2, P.InDir);
   idx2_PropagateIfError(ReadMetaFile(Idx2, idx2_PrintScratch("%s", P.InputFile)));
   idx2_PropagateIfError(Finalize(Idx2));
-  decode_all Dw;
-  Dw.Init(*Idx2);
-  Dw.SetExtent(P.DecodeExtent);
-  Dw.SetMask(P.DecodeMask);
-  Dw.SetIteration(P.DecodeUpToLevel);
-  Dw.SetAccuracy(P.DecodeAccuracy);
-  Decode(*Idx2, P, &Dw);
+  return idx2_Error(idx2_file_err_code::NoError);
+}
 
-  return idx2_file_err_code::NoError;
+idx2::grid
+GetOutputGrid(const idx2_file& Idx2, const params& P) {
+  u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128; // TODO: check this
+  return GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands);
+}
+
+error<idx2_file_err_code>
+Decode(idx2_file* Idx2, const params& P, buffer* OutBuf) {
+  Decode(*Idx2, P, OutBuf);
+  return idx2_Error(idx2_file_err_code::NoError);
+}
+
+error<idx2_file_err_code>
+Destroy(idx2_file* Idx2) {
+  Dealloc(Idx2);
+  return idx2_Error(idx2_file_err_code::NoError);
 }
 
 } // end namespace idx2

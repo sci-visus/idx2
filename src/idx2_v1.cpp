@@ -376,7 +376,7 @@ Finalize(idx2_file* Idx2) {
   return idx2_Error(idx2_file_err_code::NoError);
 }
 
-void CleanUp(idx2_file* Idx2) {
+void Dealloc(idx2_file* Idx2) {
   Dealloc(&Idx2->BrickOrderStrs);
   Dealloc(&Idx2->ChunkOrderStrs);
   Dealloc(&Idx2->FileOrderStrs);
@@ -2189,13 +2189,14 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64
 
 /* TODO: dealloc chunks after we are done with them */
 void
-Decode(const idx2_file& Idx2, const params& P, decode_what* Dw) {
+Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf) {
   timer DecodeTimer; StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
-  u8 OutMask = P.EffIter == P.DecodeUpToLevel ? Dw->GetMask() : 128;
-  grid OutGrid = GetGrid(Dw->GetExtent(), Dw->GetIteration(), OutMask, Idx2.Subbands);
+  u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128;
+  grid OutGrid = GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands);
   printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
+  volume OutVolMem;
   idx2_CleanUp(if (P.OutMode == params::out_mode::WriteToFile) { Unmap(&OutVol); });
   if (P.OutMode == params::out_mode::WriteToFile) {
     metadata Met;
@@ -2209,17 +2210,22 @@ Decode(const idx2_file& Idx2, const params& P, decode_what* Dw) {
 //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);
+  } else if (P.OutMode == params::out_mode::KeepInMemory) {
+    OutVolMem.Buffer = *OutBuf;
+    SetDims(&OutVolMem, Dims(OutGrid));
+    OutVolMem.Type = Idx2.DType;
   }
   const int BrickBytes = Prod(Idx2.BrickDimsExt3) * sizeof(f64);
   BrickAlloc_ = free_list_allocator(BrickBytes);
+  // TODO: move the decode_data into idx2_file itself
   idx2_RAII(decode_data, D, Init(&D, &BrickAlloc_));
-  D.QualityLevel = Dw->GetQuality();
-  D.EffIter = P.EffIter; // effective iteration (iterations smaller than this won't be decoded)
-  f64 Accuracy = Max(Idx2.Accuracy, Dw->GetAccuracy());
+//  D.QualityLevel = Dw->GetQuality();
+  D.EffIter = P.DecodeLevel; // effective iteration (iterations smaller than this won't be decoded)
+  f64 Accuracy = Max(Idx2.Accuracy, P.DecodeAccuracy);
 //  i64 CountZeroes = 0;
   idx2_InclusiveForBackward(i8, Iter, Idx2.NIterations - 1, 0) {
-    if (Iter < Dw->GetIteration()) break;
-    extent Ext = Dw->GetExtent(); // this is in unit of samples
+    if (Iter < P.OutputLevel) break;
+    extent Ext = P.DecodeExtent; // this is in unit of samples
     v3i BrickDims3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Iter);
     v3i BrickFirst3 = From(Ext) / BrickDims3;
     v3i BrickLast3 = Last(Ext) / BrickDims3;
@@ -2262,9 +2268,9 @@ Decode(const idx2_file& Idx2, const params& P, decode_what* Dw) {
           D.Brick[Iter] = GetLinearBrick(Idx2, Iter, Top.BrickFrom3);
           u64 BrickKey = GetBrickKey(Iter, D.Brick[Iter]);
           Insert(&D.BrickPool, BrickKey, BVol);
-          u8 Mask = Iter == P.EffIter ? Dw->GetMask() : (Iter < P.EffIter ? 0x1 : 0xFF);
+          u8 Mask = Iter == P.DecodeLevel ? P.DecodeMask : (Iter < P.DecodeLevel ? 0x1 : 0xFF);
           DecodeBrick(Idx2, P, &D, Mask, Accuracy);
-          if (Iter == Dw->GetIteration()) {
+          if (Iter == P.OutputLevel) {
             grid BrickGrid(Top.BrickFrom3 * BrickDims3, Idx2.BrickDims3, v3i(1 << Iter)); // TODO: the 1 << Iter is only true for 1 transform pass per iteration
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
@@ -2274,6 +2280,11 @@ Decode(const idx2_file& Idx2, const params& P, decode_what* Dw) {
               else if (OutVol.Vol.Type == dtype::float64)
                 (CopyGridGrid<f64, f64>(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), &OutVol.Vol));
 //              CountZeroes += CopyGridGridCountZeroes(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), &OutVol.Vol);
+            } else if (P.OutMode == params::out_mode::KeepInMemory) {
+              if (OutVolMem.Type == dtype::float32)
+                (CopyGridGrid<f64, f32>(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), &OutVolMem));
+              else if (OutVolMem.Type == dtype::float64)
+                (CopyGridGrid<f64, f64>(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), &OutVolMem));
             }
             Dealloc(&BVol.Vol);
             Delete(&D.BrickPool, BrickKey); // TODO: also delete the parent bricks once we are done

@@ -7,7 +7,7 @@
 #define idx2_ArraySize(X) int(sizeof(X) / sizeof(X[0]))
 
 /* Return the number of comma-separated arguments */
-#define idx2_NumArgs(...) (CountChar(#__VA_ARGS__, ',') + 1)
+#define idx2_NumArgs(...) (idx2::CountChar(#__VA_ARGS__, ',') + 1)
 
 #define idx2_Expand(...) __VA_ARGS__
 /* Macro overloading feature support */

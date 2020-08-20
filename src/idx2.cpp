@@ -90,13 +90,13 @@ ParseParams(int Argc, cstr* Argv) {
       exit(1);
     }
     P.DecodeExtent = extent(First3, Last3 - First3 + 1);
-    if (!OptVal(Argc, Argv, "--iteration", &P.DecodeUpToLevel)) {
+    if (!OptVal(Argc, Argv, "--iteration", &P.OutputLevel)) {
       fprintf(stderr, "Provide --iteration (0 means full resolution)\n");
       fprintf(stderr, "The decoder will not decode iterations less than this (finer resolutions)\n");
       fprintf(stderr, "Example: --iteration 0\n");
       exit(1);
     }
-    P.EffIter = P.DecodeUpToLevel;
+    P.DecodeLevel = P.OutputLevel;
     u8 Mask = 0;
     if (!OptVal(Argc, Argv, "--mask", &Mask)) {
       fprintf(stderr, "Provide --mask (8-bit mask, 128 (0x80) means full resolution)\n");
@@ -131,7 +131,7 @@ ParseParams(int Argc, cstr* Argv) {
     }
     /* parse the quality level */
     if (!OptVal(Argc, Argv, "--quality_level", &P.QualityLevel)) {}
-    if (!OptVal(Argc, Argv, "--effective_iteration", &P.EffIter)) {}
+    if (!OptVal(Argc, Argv, "--effective_iteration", &P.DecodeLevel)) {}
   }
   return P;
 }
@@ -207,17 +207,10 @@ main(int Argc, cstr* Argv) {
 //      brick_table<f64> BrickTable;
       idx2_ExitIfError(ReadMetaFile(&Idx2, idx2_PrintScratch("%s", P.InputFile)));
       idx2_ExitIfError(Finalize(&Idx2));
-      decode_all Dw;
-      Dw.Init(Idx2);
-      Dw.SetExtent(P.DecodeExtent);
-      Dw.SetMask(P.DecodeMask);
-      Dw.SetIteration(P.DecodeUpToLevel);
-      Dw.SetAccuracy(P.DecodeAccuracy);
-      Dw.SetQuality(P.QualityLevel);
-      Decode(Idx2, P, &Dw);
+      Decode(Idx2, P);
       // TODO: convert the brick table to a regular volume
     }
-    CleanUp(&Idx2);
+    Dealloc(&Idx2);
   }
   if (P.Pause) {
     printf("Press any key to end...\n");

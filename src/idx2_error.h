@@ -96,9 +96,9 @@ ErrorExists(const error<t>& Err) { return Err.Code != t::NoError; }
       Err.Files[0] = __FILE__;\
       Err.Lines[0] = __LINE__;\
       auto ErrStr = ToString(Err.Code);\
-      int L = snprintf(ScratchBuf, sizeof(ScratchBuf), "%.*s (file %s, line %d): ",\
+      int L = snprintf(idx2::ScratchBuf, sizeof(idx2::ScratchBuf), "%.*s (file %s, line %d): ",\
                        ErrStr.Size, ErrStr.Ptr, __FILE__, __LINE__);\
-      idx2_SPrintHelper(ScratchBuf, L, "" __VA_ARGS__);\
+      idx2_SPrintHelper(idx2::ScratchBuf, L, "" __VA_ARGS__);\
       return Err;\
     }\
     idx2::error Err(ErrCode);\

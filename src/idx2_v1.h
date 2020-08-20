@@ -44,7 +44,7 @@ struct params {
   extent DecodeExtent;
   f64 DecodeAccuracy = 0;
   int DecodePrecision = 0;
-  int DecodeUpToLevel = 0;
+  int OutputLevel = 0;
   u8 DecodeMask = 0xFF;
   int QualityLevel = -1;
   cstr OutDir = ".";
@@ -52,12 +52,12 @@ struct params {
   cstr OutFile = nullptr;
   bool Pause = false;
   enum class out_mode { WriteToFile, KeepInMemory, NoOutput };
-  out_mode OutMode = out_mode::NoOutput;
+  out_mode OutMode = out_mode::KeepInMemory;
   bool GroupIterations = false;
   bool GroupBitPlanes = false;
   bool GroupLevels = true;
   array<int> RdoLevels;
-  int EffIter = 0;
+  int DecodeLevel = 0;
   bool WaveletOnly = false;
 //  bool WaveletOnly = true;
 };
@@ -400,7 +400,7 @@ void SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk);
 void SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
 void SetDir(idx2_file* Idx2, cstr Dir);
 error<idx2_file_err_code> Finalize(idx2_file* Idx2);
-void CleanUp(idx2_file* Idx2);
+void Dealloc(idx2_file* Idx2);
 void SetGroupIterations(idx2_file* Idx2, bool GroupIterations);
 void SetGroupLevels(idx2_file* Idx2, bool GroupLevels);
 void SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
@@ -411,7 +411,7 @@ void WriteMetaFile(const idx2_file& Idx2, cstr FileName);
 
 // TODO: return an error code?
 error<idx2_file_err_code> Encode(idx2_file* Idx2, const params& P, const volume& Vol);
-void Decode(const idx2_file& Idx2, const params& P, decode_what* Dw);
+void Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf = nullptr);
 void EncodeSubbandV0_0(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol);
 error<idx2_file_err_code> DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol);
 void EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol);
