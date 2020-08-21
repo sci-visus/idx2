@@ -1,3 +1,11 @@
+// To use the library, just do the following
+// #define idx2_Implementation
+// #include <idx2_lib.hpp>
+//
+// idx2_lib.hpp can be included in multiple places, but the #define line should appear only once in your code
+// Using MSVC (cl.exe), you need these flags: /std:c++17 /Zc:preprocessor
+// Using Clang and GCC, you need -std=gnu++17
+
 #pragma once
 
 #include "idx2_all.h"

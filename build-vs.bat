@@ -13,7 +13,7 @@ set "PATH=%VSPath%\bin\Hostx64\x64;%VSBasePath%\bin\Hostx64\x64;%PATH%"
 :: Compiler flags
 set INCLUDE_PATHS=/I"%WinSDKInclude%\ucrt" /I"%WinSDKInclude%\um" /I"%WinSDKInclude%\shared" /I"%VSPath%\include" /I..\src
 set CFLAGS="Please provide a build config: Debug, FastDebug, Profile, Release"
-set COMMON_CFLAGS=/std:c++17 /FC /Zi /nologo /EHsc /GR- /Zo /Oi /W4 /wd4702 /wd4201 /wd4100 /wd4189 /wd4505 /wd4127 /arch:AVX2 /Zc:preprocessor
+set COMMON_CFLAGS=/std:c++17 /FC /Zi /nologo /EHsc /GR- /Zo /Oi /W4 /wd4702 /wd4201 /wd4100 /wd4189 /wd4505 /wd4127 /wd4706 /arch:AVX2 /Zc:preprocessor
 if %1==Release   (set CFLAGS=/O2 /DNDEBUG)
 if %1==Profile   (set CFLAGS=/O2 /DNDEBUG)
 if %1==FastDebug (set CFLAGS=/Ox /DNDEBUG)

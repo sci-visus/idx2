@@ -104,7 +104,7 @@ void RemoveDir(cstr Path) {
   struct dirent* Entry = nullptr;
   DIR* Dir = nullptr;
   Dir = opendir(Path);
-  char AbsPath[256] = {0};
+  char AbsPath[257] = {0};
   while ((Entry = readdir(Dir))) {
     DIR* SubDir = nullptr;
     FILE* File = nullptr;
