@@ -5,6 +5,7 @@
 #include "idx2_io.h"
 
 #if defined(_WIN32)
+  #include "dirent_win.h"
   #include <direct.h>
   #include <io.h>
   #include <Windows.h>
@@ -12,6 +13,7 @@
   #define MkDir(Dir) _mkdir(Dir)
   #define Access(Dir) _access(Dir, 0)
 #elif defined(__linux__) || defined(__APPLE__)
+  #include <dirent.h>
   #include <sys/stat.h>
   #include <unistd.h>
   #define GetCurrentDir getcwd
@@ -96,6 +98,30 @@ bool
 DirExists(const stref& Path) {
   cstr PathCopy = ToString(Path);
   return Access(PathCopy) == 0;
+}
+
+void RemoveDir(cstr Path) {
+  struct dirent* Entry = nullptr;
+  DIR* Dir = nullptr;
+  Dir = opendir(Path);
+  char AbsPath[256] = {0};
+  while ((Entry = readdir(Dir))) {
+    DIR* SubDir = nullptr;
+    FILE* File = nullptr;
+    if (*(Entry->d_name) != '.') {
+      sprintf(AbsPath, "%s/%s", Path, Entry->d_name);
+      if ((SubDir = opendir(AbsPath))) {
+        closedir(SubDir);
+        RemoveDir(AbsPath);
+      } else {
+        if ((File = fopen(AbsPath, "r"))) {
+          fclose(File);
+          remove(AbsPath);
+        }
+      }
+    }
+  }
+  remove(Path);
 }
 
 } // namespace idx2

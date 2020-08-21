@@ -25,5 +25,6 @@ cstr ToString(const path& Path);
 bool IsRelative(const stref& Path);
 bool CreateFullDir(const stref& Path);
 bool DirExists(const stref& Path);
+void RemoveDir(cstr path);
 
 } // namespace idx2
