@@ -56,7 +56,7 @@ EncodeSubbandV0_0(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* B
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2->BlockDims3));
     v3i D3 = Z3 * Idx2->BlockDims3;
     v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NIterations && BlockDims3 == Idx2->BlockDims3;
+    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
     if (CodedInNextIter) continue;
     /* copy the samples to the local buffer */
     v3i S3;
@@ -85,7 +85,7 @@ DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2.BlockDims3));
     v3i D3 = Z3 * Idx2.BlockDims3;
     v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NIterations && BlockDims3 == Idx2.BlockDims3;
+    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter) continue;
     ReadBuffer(Fp, &BufFloats);
     v3i S3;
@@ -122,7 +122,7 @@ EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* B
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
     i64 BlockInts  [4 * 4 * 4] = {}; buffer_t BufInts  (BlockInts  , Prod(BlockDims3));
     u64 BlockUInts [4 * 4 * 4] = {}; buffer_t BufUInts (BlockUInts , Prod(BlockDims3));
-    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NIterations && BlockDims3 == Idx2->BlockDims3;
+    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
     if (CodedInNextIter) continue;
     /* copy the samples to the local buffer */
     v3i S3;
@@ -177,7 +177,7 @@ DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
     i64 BlockInts  [4 * 4 * 4] = {}; buffer_t BufInts  (BlockInts  , Prod(BlockDims3));
     u64 BlockUInts [4 * 4 * 4] = {}; buffer_t BufUInts (BlockUInts , Prod(BlockDims3));
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NIterations && BlockDims3 == Idx2.BlockDims3;
+    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter) continue;
     int NDims = NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);

@@ -35,7 +35,7 @@ struct params {
   v3i BrickDims3 = v3i(32);
   cstr InputFile = nullptr;
   cstr OutputFile = nullptr;
-  int NIterations = 1;
+  int NLevels = 1;
   f64 Accuracy = 1e-9;
   int BricksPerChunk = 512;
   int ChunksPerFile = 4096;
@@ -53,9 +53,9 @@ struct params {
   bool Pause = false;
   enum class out_mode { WriteToFile, KeepInMemory, NoOutput };
   out_mode OutMode = out_mode::KeepInMemory;
-  bool GroupIterations = false;
-  bool GroupBitPlanes = false;
-  bool GroupLevels = true;
+  bool GroupLevels = false;
+  bool GroupBitPlanes = true;
+  bool GroupSubLevels = true;
   array<int> RdoLevels;
   int DecodeLevel = 0;
   bool WaveletOnly = false;
@@ -78,8 +78,8 @@ struct idx2_file {
   static constexpr int MaxChunksPerFile = 4906;
   static constexpr int MaxFilesPerDir = 4096;
   static constexpr int MaxBrickDim = 256; // so max number of blocks per subband can be represented in 2 bytes
-  static constexpr int MaxIterations = 16;
-  static constexpr int MaxTformPassesPerIteration = 9;
+  static constexpr int MaxLevels = 16;
+  static constexpr int MaxTformPassesPerLevels = 9;
   static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
   char Name[32] = {};
   char Field[32] = {};
@@ -91,44 +91,44 @@ struct idx2_file {
   v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
   static constexpr int NTformPasses = 1;
   u64 TformOrder = 0;
-  stack_array<v3i, MaxIterations> NBricks3s; // number of bricks per iteration
-  stack_array<v3i, MaxIterations> NChunks3s;
-  stack_array<v3i, MaxIterations> NFiles3s;
+  stack_array<v3i, MaxLevels> NBricks3s; // number of bricks per iteration
+  stack_array<v3i, MaxLevels> NChunks3s;
+  stack_array<v3i, MaxLevels> NFiles3s;
   array<stack_string<128>> BrickOrderStrs;
   array<stack_string<128>> ChunkOrderStrs;
   array<stack_string<128>> FileOrderStrs;
   stack_string<16> TformOrderFull;
-  stack_array<stack_array<i8, MaxSpatialDepth>, MaxIterations> FileDirDepths;
-  stack_array<u64, MaxIterations> BrickOrders;
-  stack_array<u64, MaxIterations> BrickOrderChunks;
-  stack_array<u64, MaxIterations> ChunkOrderFiles;
-  stack_array<u64, MaxIterations> ChunkOrders;
-  stack_array<u64, MaxIterations> FileOrders;
+  stack_array<stack_array<i8, MaxSpatialDepth>, MaxLevels> FileDirDepths;
+  stack_array<u64, MaxLevels> BrickOrders;
+  stack_array<u64, MaxLevels> BrickOrderChunks;
+  stack_array<u64, MaxLevels> ChunkOrderFiles;
+  stack_array<u64, MaxLevels> ChunkOrders;
+  stack_array<u64, MaxLevels> FileOrders;
   f64 Accuracy = 0;
-  i8 NIterations = 1;
+  i8 NLevels = 1;
   int FilesPerDir = 4096; // maximum number of files (or sub-directories) per directory
   int BricksPerChunkIn = 512;
   int ChunksPerFileIn = 4096;
-  stack_array<int, MaxIterations> BricksPerChunks = {{512}};
-  stack_array<int, MaxIterations> ChunksPerFiles = {{4096}};
-  stack_array<int, MaxIterations> BricksPerFiles = {{512 * 4096}};
-  stack_array<int, MaxIterations> FilesPerVol = {{4096}}; // power of two
-  stack_array<int, MaxIterations> ChunksPerVol = {{4096 * 4096}}; // power of two
+  stack_array<int, MaxLevels> BricksPerChunks = {{512}};
+  stack_array<int, MaxLevels> ChunksPerFiles = {{4096}};
+  stack_array<int, MaxLevels> BricksPerFiles = {{512 * 4096}};
+  stack_array<int, MaxLevels> FilesPerVol = {{4096}}; // power of two
+  stack_array<int, MaxLevels> ChunksPerVol = {{4096 * 4096}}; // power of two
   v2i Version = v2i(1, 0);
   array<subband> Subbands; // based on BrickDimsExt3
   array<subband> SubbandsNonExt; // based on BrickDims3
   v3i GroupBrick3; // how many bricks in the current iteration form a brick in the next iteration
-  stack_array<v3i, MaxIterations> BricksPerChunk3s = {{v3i(8)}};
-  stack_array<v3i, MaxIterations> ChunksPerFile3s = {{v3i(16)}};
+  stack_array<v3i, MaxLevels> BricksPerChunk3s = {{v3i(8)}};
+  stack_array<v3i, MaxLevels> ChunksPerFile3s = {{v3i(16)}};
   transform_details Td;
   transform_details TdExtrpolate;
   cstr Dir = "./";
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
   array<int> QualityLevelsIn; // [] -> bytes
   array<i64> RdoLevels; // [] -> bytes
-  bool GroupIterations = false;
-  bool GroupBitPlanes = false;
-  bool GroupLevels = true;
+  bool GroupLevels = false;
+  bool GroupBitPlanes = true;
+  bool GroupSubLevels = true;
 };
 
 idx2_T(t)
@@ -262,8 +262,8 @@ struct encode_data {
   hash_table<u16, sub_channel> SubChannels; // only consider level and iteration
   i8 Iter = 0;
   i8 Level = 0;
-  stack_array<u64, idx2_file::MaxIterations> Brick;
-  stack_array<v3i, idx2_file::MaxIterations> Bricks3;
+  stack_array<u64, idx2_file::MaxLevels> Brick;
+  stack_array<v3i, idx2_file::MaxLevels> Bricks3;
   hash_table<u64, chunk_meta_info> ChunkMeta; // map from file address to chunk info
   hash_table<u64, bitstream> ChunkEMaxesMeta; // map from file address to a stream of chunk emax sizes
   bitstream CpresEMaxes;
@@ -341,11 +341,11 @@ struct decode_data {
   hash_table<u64, brick_volume> BrickPool;
   i8 Iter = 0;
   i8 Level = 0;
-  stack_array<u64, idx2_file::MaxIterations> Brick;
-  stack_array<v3i, idx2_file::MaxIterations> Bricks3;
+  stack_array<u64, idx2_file::MaxLevels> Brick;
+  stack_array<v3i, idx2_file::MaxLevels> Bricks3;
   i32 ChunkInFile = 0;
   i32 BrickInChunk = 0;
-  stack_array<u64, idx2_file::MaxIterations> Offsets = {{}}; // used by v0.0 only
+  stack_array<u64, idx2_file::MaxLevels> Offsets = {{}}; // used by v0.0 only
   bitstream BlockStream; // used only by v0.1
   hash_table<i16, bitstream> Streams;
   buffer CompressedChunkExps;
@@ -401,8 +401,8 @@ void SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
 void SetDir(idx2_file* Idx2, cstr Dir);
 error<idx2_file_err_code> Finalize(idx2_file* Idx2);
 void Dealloc(idx2_file* Idx2);
-void SetGroupIterations(idx2_file* Idx2, bool GroupIterations);
 void SetGroupLevels(idx2_file* Idx2, bool GroupLevels);
+void SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels);
 void SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
 void SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels);
 

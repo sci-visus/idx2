@@ -47,9 +47,9 @@ ParseParams(int Argc, cstr* Argv) {
       fprintf(stderr, "Example: --brick_size 32 32 32\n");
       exit(1);
     }
-    if (!OptVal(Argc, Argv, "--num_iterations", &P.NIterations)) {
-      fprintf(stderr, "Provide --num_iterations\n");
-      fprintf(stderr, "Example: --num_iterations 2\n");
+    if (!OptVal(Argc, Argv, "--num_levels", &P.NLevels)) {
+      fprintf(stderr, "Provide --num_levels\n");
+      fprintf(stderr, "Example: --num_levels 2\n");
       exit(1);
     }
     if (!OptVal(Argc, Argv, "--accuracy", &P.Accuracy)) {
@@ -74,9 +74,21 @@ ParseParams(int Argc, cstr* Argv) {
     }
     OptVal(Argc, Argv, "--quality_levels", &P.RdoLevels);
     OptVal(Argc, Argv, "--version", &P.Version);
-    P.GroupIterations = OptExists(Argc, Argv, "--group_iterations");
-    P.GroupBitPlanes = OptExists(Argc, Argv, "--group_bit_planes");
-    P.GroupLevels = OptExists(Argc, Argv, "--group_levels");
+    OptVal(Argc, Argv, "--out_dir", &P.OutDir);
+    char Temp[8];
+    cstr TempPtr = Temp;
+    if (OptExists(Argc, Argv, "--group_levels")) {
+      OptVal(Argc, Argv, "--group_levels", &TempPtr);
+      P.GroupLevels = strcmp(TempPtr, "yes") == 0;
+    }
+    if (OptExists(Argc, Argv, "--group_bit_planes")) {
+      OptVal(Argc, Argv, "--group_bit_planes", &TempPtr);
+      P.GroupBitPlanes = strcmp(TempPtr, "yes") == 0;
+    }
+    if (OptExists(Argc, Argv, "--group_sub_levels")) {
+      OptVal(Argc, Argv, "--group_sub_levels", &TempPtr);
+      P.GroupSubLevels = strcmp(TempPtr, "yes") == 0;
+    }
   } else if (P.Action == action::Decode) {
     v3i First3, Last3;
     if (!OptVal(Argc, Argv, "--first", &First3)) {
@@ -90,28 +102,28 @@ ParseParams(int Argc, cstr* Argv) {
       exit(1);
     }
     P.DecodeExtent = extent(First3, Last3 - First3 + 1);
-    if (!OptVal(Argc, Argv, "--iteration", &P.OutputLevel)) {
-      fprintf(stderr, "Provide --iteration (0 means full resolution)\n");
-      fprintf(stderr, "The decoder will not decode iterations less than this (finer resolutions)\n");
-      fprintf(stderr, "Example: --iteration 0\n");
+    if (!OptVal(Argc, Argv, "--level", &P.OutputLevel)) {
+      fprintf(stderr, "Provide --level (0 means full resolution)\n");
+      fprintf(stderr, "The decoder will not decode levels less than this (finer resolution levels)\n");
+      fprintf(stderr, "Example: --level 0\n");
       exit(1);
     }
     P.DecodeLevel = P.OutputLevel;
     u8 Mask = 0;
     if (!OptVal(Argc, Argv, "--mask", &Mask)) {
       fprintf(stderr, "Provide --mask (8-bit mask, 128 (0x80) means full resolution)\n");
-      fprintf(stderr, "For example, if the volume is 256 x 256 x 256 and there are 2 iterations\n");
-      fprintf(stderr, "Iteration 0, mask 128 = 256 x 256 x 256\n");
-      fprintf(stderr, "Iteration 0, mask 64  = 256 x 256 x 128\n");
-      fprintf(stderr, "Iteration 0, mask 32  = 256 x 128 x 256\n");
-      fprintf(stderr, "Iteration 0, mask 16  = 128 x 256 x 256\n");
-      fprintf(stderr, "Iteration 0, mask 8   = 256 x 128 x 128\n");
-      fprintf(stderr, "Iteration 0, mask 4   = 128 x 256 x 128\n");
-      fprintf(stderr, "Iteration 0, mask 2   = 128 x 128 x 256\n");
-      fprintf(stderr, "Iteration 0, mask 1   = 128 x 128 x 128\n");
-      fprintf(stderr, "Iteration 1, mask 128 = 128 x 128 x 128\n");
+      fprintf(stderr, "For example, if the volume is 256 x 256 x 256 and there are 2 levels\n");
+      fprintf(stderr, "Level 0, mask 128 = 256 x 256 x 256\n");
+      fprintf(stderr, "Level 0, mask 64  = 256 x 256 x 128\n");
+      fprintf(stderr, "Level 0, mask 32  = 256 x 128 x 256\n");
+      fprintf(stderr, "Level 0, mask 16  = 128 x 256 x 256\n");
+      fprintf(stderr, "Level 0, mask 8   = 256 x 128 x 128\n");
+      fprintf(stderr, "Level 0, mask 4   = 128 x 256 x 128\n");
+      fprintf(stderr, "Level 0, mask 2   = 128 x 128 x 256\n");
+      fprintf(stderr, "Level 0, mask 1   = 128 x 128 x 128\n");
+      fprintf(stderr, "Level 1, mask 128 = 128 x 128 x 128\n");
       fprintf(stderr, "and so on, until...");
-      fprintf(stderr, "Iteration 1, mask 1   =  64 x  64 x  64\n");
+      fprintf(stderr, "Level 1, mask 1   =  64 x  64 x  64\n");
       fprintf(stderr, "Example: --mask 128\n");
       exit(1);
     }
@@ -131,7 +143,7 @@ ParseParams(int Argc, cstr* Argv) {
     }
     /* parse the quality level */
     if (!OptVal(Argc, Argv, "--quality_level", &P.QualityLevel)) {}
-    if (!OptVal(Argc, Argv, "--effective_iteration", &P.DecodeLevel)) {}
+    if (!OptVal(Argc, Argv, "--decode_level", &P.DecodeLevel)) {}
   }
   return P;
 }
@@ -146,13 +158,13 @@ SetParams(idx2_file* Idx2, const params& P) {
   SetBrickSize(Idx2, P.BrickDims3);
   SetBricksPerChunk(Idx2, P.BricksPerChunk);
   SetChunksPerFile(Idx2,P.ChunksPerFile);
-  SetNumIterations(Idx2, (i8)P.NIterations);
+  SetNumIterations(Idx2, (i8)P.NLevels);
   SetAccuracy(Idx2, P.Accuracy);
   SetFilesPerDirectory(Idx2, P.FilesPerDir);
   SetDir(Idx2, P.OutDir);
-  SetGroupIterations(Idx2, P.GroupIterations);
-  SetGroupBitPlanes(Idx2, P.GroupBitPlanes);
   SetGroupLevels(Idx2, P.GroupLevels);
+  SetGroupBitPlanes(Idx2, P.GroupBitPlanes);
+  SetGroupSubLevels(Idx2, P.GroupSubLevels);
   SetQualityLevels(Idx2, P.RdoLevels);
   return Finalize(Idx2);
 }
