@@ -1,4 +1,4 @@
-#if defined(_WIN32)
+#if defined(__CYGWIN__) || defined(_WIN32)
 // Adapted from
 // http://www.rioki.org/2017/01/09/windows_stacktrace.html and
 // https://stackoverflow.com/questions/22467604/how-can-you-use-capturestackbacktrace-to-capture-the-exception-stack-not-the-ca
