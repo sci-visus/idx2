@@ -12,7 +12,7 @@
   #define GetCurrentDir _getcwd
   #define MkDir(Dir) _mkdir(Dir)
   #define Access(Dir) _access(Dir, 0)
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   #include <dirent.h>
   #include <sys/stat.h>
   #include <unistd.h>

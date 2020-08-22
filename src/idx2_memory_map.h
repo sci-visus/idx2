@@ -11,7 +11,7 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -30,7 +30,7 @@ enum class map_mode { Read, Write };
 
 #if defined(_WIN32)
 using file_handle = HANDLE;
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 using file_handle = int;
 #endif
 

@@ -48,7 +48,7 @@ idx2_T(i) error<> DumpText(cstr FileName, i Begin, i End, cstr Format);
 #if defined(_WIN32)
   #define idx2_FSeek _fseeki64
   #define idx2_FTell _ftelli64
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   #define _FILE_OFFSET_BITS 64
   #define idx2_FSeek fseeko
   #define idx2_FTell ftello

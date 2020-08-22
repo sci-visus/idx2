@@ -17,7 +17,7 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
                 NULL);
   if (MMap->File == INVALID_HANDLE_VALUE)
     return idx2_Error(mmap_err_code::FileCreateFailed);
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   MMap->File = open(Name, Mode == map_mode::Read ? O_RDONLY
                                                  : O_RDWR | O_CREAT | O_TRUNC, 0600);
   if (MMap->File == -1)
@@ -57,7 +57,7 @@ MapFile(mmap_file* MMap, i64 Bytes) {
     return idx2_Error(mmap_err_code::MapViewFailed);
   MMap->Buf.Data = (byte*)MapAddress;
   MMap->Buf.Bytes = FileSize.QuadPart;
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   size_t FileSize;
   struct stat Stat;
   if (Bytes != 0)
@@ -66,7 +66,7 @@ MapFile(mmap_file* MMap, i64 Bytes) {
     FileSize = Stat.st_size;
   if (MMap->Mode == map_mode::Write)
     // TODO: only works on Linux, not Mac OS X
-    if (fallocate(MMap->File, 0, 0, FileSize) == -1)
+    if (posix_fallocate(MMap->File, 0, FileSize) == -1)
       return idx2_Error(mmap_err_code::AllocateFailed);
   void* MapAddress =
     mmap(0,
@@ -91,7 +91,7 @@ FlushFile(mmap_file* MMap, byte* Start, i64 Bytes) {
                       : FlushViewOfFile(MMap->Buf.Data, (size_t)Bytes);
   if (!Result)
     return idx2_Error(mmap_err_code::FlushFailed);
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   int Result;
   if (Start) {
     idx2_Assert(MMap->Buf.Data <= Start && Start < MMap->Buf.Data + MMap->Buf.Bytes);
@@ -116,7 +116,7 @@ SyncFile(mmap_file* MMap) {
 #if defined(_WIN32)
   if (!FlushFileBuffers(MMap->File))
     return idx2_Error(mmap_err_code::SyncFailed);
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   if (msync(MMap->Buf.Data, MMap->Buf.Bytes, MS_SYNC) == -1)
     return idx2_Error(mmap_err_code::SyncFailed);
 #endif
@@ -133,7 +133,7 @@ UnmapFile(mmap_file* MMap) {
   }
   if (!CloseHandle(MMap->FileMapping))
     return idx2_Error(mmap_err_code::UnmapFailed);
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   if (munmap(MMap->Buf.Data, MMap->Buf.Bytes) == -1)
     return idx2_Error(mmap_err_code::UnmapFailed);
 #endif
@@ -147,7 +147,7 @@ CloseFile(mmap_file* MMap) {
 #if defined(_WIN32)
   if (!CloseHandle(MMap->File))
     return idx2_Error(mmap_err_code::FileCloseFailed);
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   if (close(MMap->File) == -1)
     return idx2_Error(mmap_err_code::FileCloseFailed);
 #endif
@@ -156,4 +156,3 @@ CloseFile(mmap_file* MMap) {
 }
 
 } // namespace idx2
-

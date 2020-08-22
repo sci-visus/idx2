@@ -64,7 +64,7 @@ Unlock(mutex* Mutex) {
 }
 
 } // namespace idx2
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <pthread.h>
 namespace idx2 {
 struct mutex {

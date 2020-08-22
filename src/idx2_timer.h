@@ -64,7 +64,7 @@ ElapsedTime(timer* Timer) {
 }
 
 } // namespace idx2
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <time.h>
 
 namespace idx2 {
