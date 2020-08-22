@@ -11,8 +11,8 @@
 
 idx2_Enum(action, u8, Encode, Decode)
 idx2_Enum(idx2_file_err_code, u8, idx2_CommonErrs,
-  BrickSizeNotPowerOfTwo, BrickSizeTooBig, TooManyIterations, TooManyTransformPassesPerIteration,
-  TooManyIterationsOrTransformPasses, TooManyBricksPerFile, TooManyFilesPerDir, NotSupportedInVersion,
+  BrickSizeNotPowerOfTwo, BrickSizeTooBig, TooManyLevels, TooManyTransformPassesPerLevel,
+  TooManyLevelsOrTransformPasses, TooManyBricksPerFile, TooManyFilesPerDir, NotSupportedInVersion,
   CannotCreateDirectory, SyntaxError, TooManyBricksPerChunk, TooManyChunksPerFile, ChunksPerFileNotPowerOf2,
   BricksPerChunkNotPowerOf2, ChunkNotFound, BrickNotFound, FileNotFound)
 idx2_Enum(func_level, u8, Subband, Sum, Max)

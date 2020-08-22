@@ -209,7 +209,7 @@ main(int Argc, cstr* Argv) {
     idx2_RAII(timer, Timer, StartTimer(&Timer), printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer))));
     idx2_file Idx2;
     if (P.Action == action::Encode) {
-      RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
+//      RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
       idx2_ExitIfError(SetParams(&Idx2, P));
       idx2_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));
 //      error Result = ReadVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol.Vol);

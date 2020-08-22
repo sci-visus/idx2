@@ -222,7 +222,7 @@ Finalize(idx2_file* Idx2) {
   if (!(Idx2->Dims3 >= Idx2->BrickDims3))
     return idx2_Error(idx2_file_err_code::BrickSizeTooBig, " total dims: " idx2_PrStrV3i ", brick dims: " idx2_PrStrV3i "\n", idx2_PrV3i(Idx2->Dims3), idx2_PrV3i(Idx2->BrickDims3));
   if (!(Idx2->NLevels <= idx2_file::MaxLevels))
-    return idx2_Error(idx2_file_err_code::TooManyIterations, "Max # of levels = %d\n", Idx2->MaxLevels);
+    return idx2_Error(idx2_file_err_code::TooManyLevels, "Max # of levels = %d\n", Idx2->MaxLevels);
 
   char TformOrder[8] = {};
   { /* compute the transform order (try to repeat XYZ++) */
@@ -266,13 +266,13 @@ Finalize(idx2_file* Idx2) {
       Idx2->BrickOrders[I] = EncodeTransformOrder(BrickOrder);
       Idx2->BrickOrderStrs[I].Len = DecodeTransformOrder(Idx2->BrickOrders[I], N3, Idx2->BrickOrderStrs[I].Data);
       idx2_Assert(Idx2->BrickOrderStrs[I].Len == Idx2->BrickOrderStrs[0].Len - I * Idx2->TformOrderFull.Len);
-      if (Idx2->BrickOrderStrs[I].Len < Idx2->TformOrderFull.Len) return idx2_Error(idx2_file_err_code::TooManyIterations);
+      if (Idx2->BrickOrderStrs[I].Len < Idx2->TformOrderFull.Len) return idx2_Error(idx2_file_err_code::TooManyLevels);
     }
     idx2_For(int, I, 1, Idx2->NLevels) {
       i8 Len = Idx2->BrickOrderStrs[I].Len - Idx2->TformOrderFull.Len;
       if (!(stref((Idx2->BrickOrderStrs[I].Data + Len), Idx2->TformOrderFull.Len) ==
             stref(Idx2->TformOrderFull.Data, Idx2->TformOrderFull.Len)))
-        return idx2_Error(idx2_file_err_code::TooManyIterationsOrTransformPasses);
+        return idx2_Error(idx2_file_err_code::TooManyLevelsOrTransformPasses);
     }
   }
 
