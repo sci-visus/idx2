@@ -28,14 +28,13 @@ Make sure the input raw file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.r
 Use `--first` and `--last` (inclusive) to specify the region of interest (which can be the whole field), `--level` and `--mask` (which should be `128` most of the time) to specify the desired resolution level (`0` is the finest level), and `--accuracy` to specify the desired absolute error tolerance. If `--mask` is not provided, a detailed instruction on how it is used will be printed. The output will be written to a `.raw` file in the directory specified by `--in_dir`.
 
 # Using the header-only library `idx2.hpp` to read data from idx2 to memory
-`idx2.hpp` is a (auto-generated) header-only library. To use it, just do
+`idx2.hpp` is a (auto-generated) single-file, header-only library. To use it, just do
 
 ```
-// Using MSVC (cl.exe), you need these flags: /std:c++17 /Zc:preprocessor
-// Using Clang and GCC, you need -std=gnu++17
 #define idx2_Implementation
 #include <idx2.hpp>
 ```
 
 The `#define` line should only appear *once* in your code. 
+Make sure you include these flags `/std:c++17` and `/Zc:preprocessor` if using MSVC (`cl.exe`), and `-std=gnu++17` if using Clang or GCC.
 For instructions on using the library, please refer to the code examples with comments in `idx2_examples.cpp`.
