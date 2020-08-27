@@ -2,7 +2,7 @@
 idx2 is a compressed file format for scientific data represented as 2D or 3D regular grids of data samples. idx2 supports adaptive, coarse-scale data retrieval in both resolution and precision.
 idx2 is the next version of the idx file format, which is handled by [OpenVisus](https://github.com/sci-visus/OpenVisus) (alternatively, a fast and lightweight idx reader and writer is [hana](https://github.com/hoangthaiduong/hana)). Compared to idx, idx2 features better compression (leveraging [zfp](https://github.com/LLNL/zfp)) and the capability to retrieve coarse-precision data.
 
-Currently there is an executable (named `idx2`) for 2-way conversion between raw binary and the idx2 format, and a header-only library (`idx2_lib`) for working with the format at a lower level.
+Currently there is an executable (named `idx2`) for 2-way conversion between raw binary and the idx2 format, and a header-only library (`idx2.hpp`) for working with the format at a lower level.
 
 # Compilation
 You will need a C++ compiler that supports C++17. All output binaries are under the `bin` directory.
@@ -27,14 +27,14 @@ Make sure the input raw file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.r
 
 Use `--first` and `--last` (inclusive) to specify the region of interest (which can be the whole field), `--level` and `--mask` (which should be `128` most of the time) to specify the desired resolution level (`0` is the finest level), and `--accuracy` to specify the desired absolute error tolerance. If `--mask` is not provided, a detailed instruction on how it is used will be printed. The output will be written to a `.raw` file in the directory specified by `--in_dir`.
 
-# Using `idx2_lib` to read data from idx2 to memory
-`idx2_lib` is a header-only library (however it is currently not single-file). To use it, just add `idx2/src` to your include directories and do
+# Using the header-only library `idx2.hpp` to read data from idx2 to memory
+`idx2.hpp` is a (auto-generated) header-only library. To use it, just do
 
 ```
 // Using MSVC (cl.exe), you need these flags: /std:c++17 /Zc:preprocessor
 // Using Clang and GCC, you need -std=gnu++17
 #define idx2_Implementation
-#include <idx2_lib.hpp>
+#include <idx2.hpp>
 ```
 
 The `#define` line should only appear *once* in your code. 

@@ -3,7 +3,7 @@ REM @echo off
 :: Parameters
 set "ClangPath=%userprofile%\scoop\shims"
 set "ClangInclude=%userprofile%\scoop\apps\llvm\10.0.0\lib\clang\10.0.0\include"
-set "VSPath=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\MSVC\14.27.29110"
+set "VSPath=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110"
 set "WinSDKLibrary=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0"
 set "WinSDKInclude=C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0"
 set "OUTPUT=%2"

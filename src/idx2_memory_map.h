@@ -70,7 +70,7 @@ Write(mmap_file* MMap, t Val);
 
 } // namespace idx2
 
-#include "string.h"
+#include <string.h>
 
 namespace idx2 {
 

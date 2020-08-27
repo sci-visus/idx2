@@ -2,7 +2,7 @@
 
 #include "idx2_common.h"
 #include "idx2_algorithm.h"
-#include "math.h"
+#include <math.h>
 
 namespace idx2 {
 

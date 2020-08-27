@@ -1,5 +1,6 @@
 #define idx2_Implementation // define this only once in your code before including idx2_lib.hpp
-#include "idx2_lib.hpp"
+//#include "idx2_lib.hpp"
+#include "idx2.hpp"
 #include "stdio.h"
 
 idx2::error<idx2::idx2_file_err_code>
@@ -48,7 +49,7 @@ int
 main() {
   auto Ok = Decode1();
   if (!Ok) {
-    fprintf(stderr, ToString(Ok));
+    fprintf(stderr, "%s\n", ToString(Ok));
     return 1;
   }
 

@@ -22,8 +22,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #endif
-#include <zstd/zstd.h>
-#include <zstd/zstd.c>
+#include "zstd/zstd.c"
+#include "zstd/zstd.h"
 #if defined(__clang__) || defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif

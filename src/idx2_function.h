@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math.h"
+#include <math.h>
 #include "idx2_assert.h"
 #include "idx2_common.h"
 #include "idx2_macros.h"
