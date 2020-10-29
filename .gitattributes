@@ -31,6 +31,8 @@
 *.la    binary
 *.a     binary
 *.lib   binary
+*.jpg   binary
+*.png   binary
 
 # Executables
 *.exe   binary
