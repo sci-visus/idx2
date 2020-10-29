@@ -1,3 +1,5 @@
+![teaser](teaser.png)
+
 # What is idx2?
 idx2 is a compressed file format for scientific data represented as 2D or 3D regular grids of data samples. idx2 supports adaptive, coarse-scale data retrieval in both resolution and precision.
 idx2 is the next version of the idx file format, which is handled by [OpenVisus](https://github.com/sci-visus/OpenVisus) (alternatively, a less extensive but lightweight idx reader and writer is [hana](https://github.com/hoangthaiduong/hana)). Compared to idx, idx2 features better compression (leveraging [zfp](https://github.com/LLNL/zfp)) and the capability to retrieve coarse-precision data.
@@ -35,7 +37,7 @@ Use `--first` and `--last` (inclusive) to specify the region of interest (which 
 #include <idx2.hpp>
 ```
 
-The `#define` line should only appear *once* in your code. 
+The `#define` line should only appear *once* in your code.
 Make sure you include these flags `/std:c++17` and `/Zc:preprocessor` if using MSVC (`cl.exe`), and `-std=gnu++17` if using Clang or GCC.
 For instructions on using the library, please refer to the code examples with comments in `idx2_examples.cpp`.
 
