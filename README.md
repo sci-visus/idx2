@@ -1,4 +1,4 @@
-![teaser](teaser.png)
+![teaser](https://github.com/sci-visus/IDX2/blob/master/teaser.png)
 
 # What is idx2?
 idx2 is a compressed file format for scientific data represented as 2D or 3D regular grids of data samples. idx2 supports adaptive, coarse-scale data retrieval in both resolution and precision.
