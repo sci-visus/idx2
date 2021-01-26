@@ -42,8 +42,8 @@ Make sure you include these flags `/std:c++17` and `/Zc:preprocessor` if using M
 For instructions on using the library, please refer to the code examples with comments in `idx2_examples.cpp`.
 
 # References
-Efficient and flexible hierarchical data layouts for a unified encoding of scalar field precision and resolution.
+[Efficient and flexible hierarchical data layouts for a unified encoding of scalar field precision and resolution](https://ieeexplore.ieee.org/document/9222049)
 D. Hoang, B. Summa, H. Bhatia, P. Lindstrom, P. Klacansky, W. Usher, P-T. Bremer, and V. Pascucci.
-2021 - IEEE Transactions on Visualization and Computer Graphics (to appear)
+2021 - IEEE Transactions on Visualization and Computer Graphics
 
-For the paper preprint and presentation slides, see http://www.visualizing-dreams.com
+For the paper preprint and presentation slides, see http://www.sci.utah.edu/~duong
