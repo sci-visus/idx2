@@ -13,8 +13,8 @@ main()
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  GLFWwindow* w = glfwCreateWindow(640, 480, "Sokol Triangle GLFW", 0, 0);
-  glfwMakeContextCurrent(w);
+  GLFWwindow* Window = glfwCreateWindow(640, 480, "Sokol Triangle GLFW", 0, 0);
+  glfwMakeContextCurrent(Window);
   glfwSwapInterval(1);
 
   /* setup sokol_gfx */
@@ -22,14 +22,14 @@ main()
   sg_setup(&SgDesc);
 
   /* a vertex buffer */
-  const float vertices[] = {
+  const float Vertices[] = {
     // positions            // colors
      0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,
      0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
     -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f
   };
-  sg_buffer_desc SgBufferDesc{.data = SG_RANGE(vertices)};
-  sg_buffer vbuf = sg_make_buffer(&SgBufferDesc);
+  sg_buffer_desc SgBufferDesc{.data = SG_RANGE(Vertices)};
+  sg_buffer Vbuf = sg_make_buffer(&SgBufferDesc);
 
   /* a shader */
   sg_shader_desc SgShaderDesc{
@@ -54,11 +54,11 @@ main()
         "}\n"
     }
   };
-  sg_shader shd = sg_make_shader(&SgShaderDesc);
+  sg_shader Shader = sg_make_shader(&SgShaderDesc);
 
   /* a pipeline state object (default render states are fine for triangle) */
   sg_pipeline_desc SgPipelineDesc{
-    .shader = shd,
+    .shader = Shader,
     .layout = {
       .attrs = {
         sg_vertex_attr_desc{.format=SG_VERTEXFORMAT_FLOAT3},
@@ -66,27 +66,25 @@ main()
       }
     }
   };
-  sg_pipeline pip = sg_make_pipeline(&SgPipelineDesc);
+  sg_pipeline Pipeline = sg_make_pipeline(&SgPipelineDesc);
 
   /* resource bindings */
-  sg_bindings bind = {
-    .vertex_buffers = { vbuf }
-  };
+  sg_bindings Binding = {.vertex_buffers = { Vbuf }};
 
   /* default pass action (clear to grey) */
-  sg_pass_action pass_action = {0};
+  sg_pass_action PassAction{};
 
   /* draw loop */
-  while (!glfwWindowShouldClose(w)) {
-    int cur_width, cur_height;
-    glfwGetFramebufferSize(w, &cur_width, &cur_height);
-    sg_begin_default_pass(&pass_action, cur_width, cur_height);
-    sg_apply_pipeline(pip);
-    sg_apply_bindings(&bind);
+  while (!glfwWindowShouldClose(Window)) {
+    int CurWidth, CurHeight;
+    glfwGetFramebufferSize(Window, &CurWidth, &CurHeight);
+    sg_begin_default_pass(&PassAction, CurWidth, CurHeight);
+    sg_apply_pipeline(Pipeline);
+    sg_apply_bindings(&Binding);
     sg_draw(0, 3, 1);
     sg_end_pass();
     sg_commit();
-    glfwSwapBuffers(w);
+    glfwSwapBuffers(Window);
     glfwPollEvents();
   }
 
