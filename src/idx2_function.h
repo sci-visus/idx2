@@ -11,6 +11,8 @@ namespace idx2 {
 struct grid;
 struct volume;
 
+// TODO: avoid having too many overloaded functions here
+
 /* Computing errors between two functions */
 idx2_T(t) f64 SqError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf);
 idx2_T(t) f64 SqError(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol);

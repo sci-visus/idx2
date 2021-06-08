@@ -2,6 +2,7 @@
 #include "idx2_array.h"
 #include "idx2_common.h"
 #include "idx2_function.h"
+#include "idx2_random.h"
 #include "idx2_timer.h"
 #include "idx2_wavelet.h"
 #include "idx2_volume.h"
@@ -547,7 +548,7 @@ TestWaveletQuantize() {
 // For 1 level of X, it is 2 (1 bit) (so 1 level of XYZ needs 3 bits)
 // NOTE: this procedure prints the transpose of the wavelet matrix
 void
-TestWaveletRangeExpansion() {
+TestWaveletMatrices() {
   {
     v3i D3(7, 1, 1); // Dims
     v3i M3 = D3;
@@ -575,6 +576,54 @@ TestWaveletRangeExpansion() {
       fprintf(Fp, "\n");
     }
   }
+}
+
+/* TODO: load a real volume from disk
+ * TODO: perform the forward transform
+ * TODO: introduce some noise to the wavelet coefficients
+ * TODO: do the inverse transform
+ * TODO: check the error
+ */
+void
+TestWaveletRangeExpansion() {
+  v3i D3(65, 1, 1); // Dims
+  int NLevels = 5;
+  v3i M3 = D3;
+  volume FloatVol(D3, dtype::float64);
+  pcg32 Pcg;
+  idx2_CleanUp(Dealloc(&FloatVol));
+  f64 MaxExpansion = 1;
+  for (int Iter = 0; Iter < 1000; ++Iter) {
+    /* generate a random vector */
+    for (int I = 0; I < M3.X; ++I) {
+      FloatVol.At<f64>(v3i(I, 0, 0)) = NextDouble(&Pcg);
+    }
+    /* compute the infinity norm */
+    auto NormBefore = fabs(FloatVol.At<f64>(v3i(0, 0, 0)));
+    for (int I = 0; I < M3.X; ++I) {
+      NormBefore = MAX(NormBefore, fabs(FloatVol.At<f64>(v3i(I, 0, 0))));
+    }
+    //printf("norm before %f\n", NormBefore);
+    D3 = M3;
+    v3i S3(1); // Strides
+    v3i R3 = D3 + IsEven(D3);
+    for (int L = 0; L < NLevels; ++L) {
+      FLiftCdf53X<f64>(grid(v3i(0), v3i(D3.X, D3.Y, D3.Z), S3), M3, lift_option::Normal, &FloatVol);
+//      FLiftCdf53Y<i64>(grid(v3i(0), v3i(R3.X, D3.Y, D3.Z), S3), M3, lift_option::Normal, &FloatVol);
+//      FLiftCdf53Z<i64>(grid(v3i(0), v3i(R3.X, R3.Y, D3.Z), S3), M3, lift_option::Normal, &FloatVol);
+      D3 = (R3 + 1) / 2;
+      R3 = D3 + IsEven(D3);
+      S3 = S3 * 2;
+    }
+    /* compute the infinity norm after the transform */
+    auto NormAfter = fabs(FloatVol.At<f64>(v3i(0, 0, 0)));
+    for (int I = 0; I < M3.X; ++I) {
+      NormAfter = MAX(NormAfter, fabs(FloatVol.At<f64>(v3i(I, 0, 0))));
+    }
+    MaxExpansion = MAX(MaxExpansion, NormAfter / NormBefore);
+    //printf("norm after %f\n", NormAfter);
+  }
+  printf("max expansion is %f\n", MaxExpansion);
 }
 
 void
@@ -1001,5 +1050,6 @@ idx2_RegisterTest(BuildSubbandsTest)
 idx2_RegisterTest(TestDecodeTransformOrder)
 idx2_RegisterTest(TestDecodeTransformOrderFull)
 //idx2_RegisterTest(TestWaveletQuantize)
+idx2_RegisterTest(TestWaveletMatrices)
 idx2_RegisterTest(TestWaveletRangeExpansion)
 //idx2_RegisterTest(TestWaveletExtrapolation)
