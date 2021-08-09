@@ -4,8 +4,9 @@
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 
-int
-main()
+/* We "archive" the GUI and graphics code here */
+void
+OldMain()
 {
   /* create window and GL context via GLFW */
   glfwInit();
@@ -24,8 +25,8 @@ main()
   /* a vertex buffer */
   const float Vertices[] = {
     // positions            // colors
-     0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,
-     0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
+    0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,
+    0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
     -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f
   };
   sg_buffer_desc SgBufferDesc{.data = SG_RANGE(Vertices)};
@@ -91,5 +92,84 @@ main()
   /* cleanup */
   sg_shutdown();
   glfwTerminate();
+}
+
+#define IDX2_IMPLEMENTATION
+#include "../idx2.hpp"
+using namespace idx2;
+
+struct edge {
+  idx2::v3<u8> Start3; // starting vertex
+  u8 DirAndLen; // last 2 bits indicate X/Y/Z, first 6 bits indicate the length
+};
+
+idx2_T(t)
+struct brick_data {
+  t* Coefficients = nullptr;
+  hash_table<u32, t> Vertices; // small vertex hashtable
+  // tree of cells
+  // TODO: make sure the data is initialized correctly
+};
+
+/* Global hashtable to manage bricks at all levels */
+struct brick_registry {
+  static hash_table<u64, brick_data<t>> BrickTable;
+};
+
+
+/* Read wavelet coefficients from an idx2 file */
+void
+ReadCoefficients()
+{
+  // Call the Decode function in idx_v1 but request only the wavelet coefficients
+}
+
+/* Read a .raw field, compute wavelet coefficients per brick, then set some to 0 */
+void
+FilterCoefficients()
+{
+
+}
+
+/* Splat the wavelet coefficients to create vertices */
+void
+SplatCoefficients(const v3i& BrickDims3, brick_data* Brick)
+{
+  const v3i TrueBrickDims3 = BrickDims3 + 1;
+  v3i P3;
+  for (P3.Z = 0; P3.Z < TrueBrickDims3.z; ++P3.Z) {
+  for (P3.Y = 0; P3.Y < TrueBrickDims3.y; ++P3.Y) {
+  for (P3.X = 0; P3.X < TrueBrickDims3.x; ++P3.X) {
+    i32 I = idx2::Row(BrickDims3, P3);
+    if (Brick->Coefficients[I] == 0) continue;
+
+  }}}
+  // TODO: remember to copy to children bricks
+  // Read from Brick->Coefficients and write to Brick->Vertices
+  // TODO: also output a set of edges
+  //
+}
+
+/* Extract cells from the vertices */
+void
+VerticesToCells(brick_data* Brick)
+{
+  // Make one pass through the buffer and gather all the vertex positions in an array
+  // Go through that array and construct a k-d tree of cells (each leaf has 8 vertices)
+  // NOTE: sometimes we have cells with more or less than 8 vertices (T-junctions and vertices that need to be created hat this step)
+}
+
+// TODO: IMPORTANT: once the list of vertices is computed, we need to go to the parent to fetch the vertices' values
+// TODO: how to query vertex neighbors?
+// TODO: how to query cell neighbors?
+// TODO: inverse transform to regular grid (half done already in idx_v1)
+// TODO: given a point, locate the smallest enclosing cell
+// TODO: enumerate the cells
+// TODO: how to "propagate" boundary vertices from one brick to another
+
+/* Main */
+int
+main()
+{
   return 0;
 }
