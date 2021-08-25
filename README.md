@@ -10,14 +10,17 @@ Currently there is an executable (named `idx2`) for 2-way conversion between raw
 You will need a C++ compiler that supports C++17. All output binaries are under the `bin` directory.
 
 1. On Mac:
-`./build-clang.sh Release idx2`
+`./build-clang.sh Release idx2` (Release) or `./build-clang.sh Debug idx2` (Debug)
 2. On Linux:
-`./build-gcc.sh Release idx2` or `./build-clang.sh Release idx2`
-3. On Windows:
-If you are using the MSVC compiler (`cl.exe`), make sure the three paths in `build-vs.bat` (`VSPath`, `WinSDKLibrary`, and `WinSDKInclude`) are correct for your system (`find-paths.bat` can be used to locate these paths in common install locations).
-You might want to copy `build-vs.bat` to another file (say `my-build-vs.bat`) and modify these paths to suite your system.
-After that, run `./my-build-vs.bat Release idx2`.
-Alternatively, if you use Clang instead of MSVC, use `build-clang.bat` (after possibly updating the variables `ClangPath` and `ClangInclude` beside the other three variables).
+`./build-gcc.sh Release idx2` (Release) or `./build-gcc.sh Debug idx2` (Debug)
+3. On Windows using Visual Studio (MSVC):
+- Copy `build-vs.bat` to another file (say `my-build-vs.bat`)
+- Open `my-build-vs.bat` with a text editor, update the variables `VSPath`, `WinSDKLibrary` and `WinSDKInclude` to match your system (`find-paths.bat` can be used to help locate these paths)
+- Run `./my-build-vs.bat Release idx2` (Release) or `./my-build-vs.bat Debug idx2` (Debug)
+4. On Windows using Clang:
+- Copy `build-clang.bat` to another file (say `my-build-clang.bat`)
+- Open `my-build-clang.bat` with a text editor, update the variables `ClangPath` and `ClangInclude` to point to your installation of Clang
+- Run `./my-build-clang.bat Release idx2` (Release) or `./my-build-clang.bat Debug idx2` (Debug)
 
 # Using `idx2` to convert from raw to idx2
 `idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_levels 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .`
