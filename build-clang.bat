@@ -2,10 +2,10 @@
 
 :: Parameters
 set "ClangPath=%userprofile%\scoop\shims"
-set "ClangInclude=%userprofile%\scoop\apps\llvm\12.0.0\lib\clang\12.0.0\include"
-set "VSPath=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910"
-set "WinSDKLibrary=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0"
-set "WinSDKInclude=C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0"
+set "ClangInclude=%userprofile%\scoop\apps\llvm\12.0.1\lib\clang\12.0.1\include"
+set "VSPath=C:\Program Files\Microsoft Visual Studio\2022\VC\Tools\MSVC\14.30.30423"
+set "WinSDKLibrary=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0"
+set "WinSDKInclude=C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0"
 set "OUTPUT=%2"
 
 :: Setup
@@ -13,9 +13,9 @@ set "OLD_PATH=%PATH%"
 set "PATH=%ClangPath%\bin;%VSBasePath%\bin\Hostx64\x64;%PATH%"
 
 :: Compiler flags
-set INCLUDE_PATHS=-I%ClangInclude% -I"%WinSDKInclude%\ucrt" -I"%WinSDKInclude%\um" -I"%WinSDKInclude%\shared" -I"%VSPath%\include" -I..\src
+set INCLUDE_PATHS= -I"%WinSDKInclude%\ucrt" -I"%WinSDKInclude%\um" -I"%WinSDKInclude%\shared" -I"%VSPath%\include" -I%ClangInclude% -I..\src
 set CFLAGS="Please provide a build config: Debug, FastDebug, Release"
-set COMMON_CFLAGS=-Xclang -flto-visibility-public-std -std=gnu++17 -pedantic -g -gcodeview -gno-column-info -march=native -ftime-trace -fdiagnostics-absolute-paths -fopenmp-simd -fms-extensions -Wall -Wextra -Wfatal-errors -Wno-nested-anon-types -Wno-vla-extension -Wno-gnu-anonymous-struct -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments
+set COMMON_CFLAGS=-Xclang -flto-visibility-public-std -std=c++17 -pedantic -g -gcodeview -gno-column-info -march=native -ftime-trace -fdiagnostics-absolute-paths -fopenmp-simd -fms-extensions -Wall -Wextra -Wfatal-errors -Wno-nested-anon-types -Wno-vla-extension -Wno-gnu-anonymous-struct -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments
 if %1==Release   (set CFLAGS=-O2 -funroll-loops -DNDEBUG -ftree-vectorize)
 if %1==Profile   (set CFLAGS=-Og -funroll-loops -DNDEBUG -ftree-vectorize)
 if %1==FastDebug (set CFLAGS=-Og                -DNDEBUG -ftree-vectorize)
