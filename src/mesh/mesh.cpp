@@ -103,19 +103,64 @@ struct edge {
   u8 DirAndLen; // last 2 bits indicate X/Y/Z, first 6 bits indicate the length
 };
 
-idx2_T(t)
+// Octree node
+struct node {
+  u8 Config = 0;
+};
+
+//idx2_T(t)
 struct brick_data {
-  t* Coefficients = nullptr;
-  hash_table<u32, t> Vertices; // small vertex hashtable
-  // tree of cells
+//  t* Coefficients = nullptr;
+//  hash_table<u32, t> Vertices; // small vertex hashtable
+  hash_table<u32, node> Nodes; // octree nodes stored using location codes
   // TODO: make sure the data is initialized correctly
 };
 
 /* Global hashtable to manage bricks at all levels */
 struct brick_registry {
-  static hash_table<u64, brick_data<t>> BrickTable;
+  hash_table<u64, brick_data> BrickTable;
 };
 
+struct block_data {
+  hash_table<u32, node> Nodes;
+};
+
+struct mesh {
+  hash_table<u32, block_data> Blocks;
+};
+
+// a single wavelet coefficient
+idx2_T(t)
+struct wave_coeff {
+  u64 Pos = 0; // position (packed X/Y/Z)
+  u8 Subband = 0; // TODO: technically the subband can be computed from the position
+  t Val = 0;
+};
+
+enum recursive_update : u8 { Yes, No };
+/* Update a node from a wavelet coefficient
+ * Recursive update means we also updates the descendant nodes */
+idx2_T(t) void
+UpdateNode(node* Node, const wave_coeff<t>& W, recursive_update = No) {
+  // TODO: change the node's config
+  // TODO: update the vertices' values depending on the cofficient stencil
+}
+
+/* Update a mesh from a single wavelet coefficient */
+idx2_T(t) void
+UpdateMesh(mesh* Mesh, const wave_coeff<t>& W) {
+  // TODO: query for the neighboring nodes to be updated
+  // TODO: update each neighboring node, potentially recursively
+  //
+}
+
+/* Update a mesh from an array of wavelet coefficients */
+idx2_T(t) void
+UpdateMesh(mesh* Mesh, const array<wave_coeff<t>>& Coeffs) {
+  idx2_ForEach(W, Coeffs) {
+    UpdateMesh(Mesh, *W);
+  }
+}
 
 /* Read wavelet coefficients from an idx2 file */
 void
@@ -135,15 +180,15 @@ FilterCoefficients()
 void
 SplatCoefficients(const v3i& BrickDims3, brick_data* Brick)
 {
-  const v3i TrueBrickDims3 = BrickDims3 + 1;
-  v3i P3;
-  for (P3.Z = 0; P3.Z < TrueBrickDims3.z; ++P3.Z) {
-  for (P3.Y = 0; P3.Y < TrueBrickDims3.y; ++P3.Y) {
-  for (P3.X = 0; P3.X < TrueBrickDims3.x; ++P3.X) {
-    i32 I = idx2::Row(BrickDims3, P3);
-    if (Brick->Coefficients[I] == 0) continue;
+//  const v3i TrueBrickDims3 = BrickDims3 + 1;
+//  v3i P3;
+//  for (P3.Z = 0; P3.Z < TrueBrickDims3.z; ++P3.Z) {
+//  for (P3.Y = 0; P3.Y < TrueBrickDims3.y; ++P3.Y) {
+//  for (P3.X = 0; P3.X < TrueBrickDims3.x; ++P3.X) {
+//    i32 I = idx2::Row(BrickDims3, P3);
+//    if (Brick->Coefficients[I] == 0) continue;
 
-  }}}
+//  }}}
   // TODO: remember to copy to children bricks
   // Read from Brick->Coefficients and write to Brick->Vertices
   // TODO: also output a set of edges
