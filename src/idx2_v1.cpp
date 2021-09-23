@@ -1,3 +1,5 @@
+#include "idx2_lib.h"
+
 #include "idx2_common.h"
 #include "idx2_algorithm.h"
 #include "idx2_array.h"
@@ -15,6 +17,7 @@
 #include "idx2_wavelet.h"
 #include "idx2_v1.h"
 #include "idx2_zfp.h"
+
 #include <string.h>
 #define __STDC_FORMAT_MACROS
 

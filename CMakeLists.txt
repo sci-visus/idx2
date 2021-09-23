@@ -25,18 +25,46 @@ endif()
 FILE(GLOB HEADERS src/*.h src/*.hpp)
 source_group("Headers" FILES ${HEADERS})
 
-FILE(GLOB SOURCES src/idx2.cpp )
-source_group("" FILES ${SOURCES})
-ADD_EXECUTABLE(idx2 ${SOURCES} ${HEADERS})
+FILE(GLOB SOURCES 
+	src/idx2_args.cpp
+	src/idx2_assert.cpp
+	src/idx2_dataset.cpp
+	src/idx2_filesystem.cpp
+	src/idx2_io.cpp
+	src/idx2_logger.cpp
+	src/idx2_math.cpp
+	src/idx2_memory.cpp
+	src/idx2_memory_map.cpp
+	src/idx2_stacktrace.cpp
+	src/idx2_string.cpp
+	src/idx2_utils.cpp
+	src/idx2_v1.cpp
+	src/idx2_v0.cpp
+	src/idx2_varint.cpp
+	src/idx2_volume.cpp
+	src/idx2_zfp.cpp
+	src/idx2_wavelet.cpp
 
-target_compile_definitions(idx2 PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow=1>")
-target_compile_definitions(idx2 PUBLIC "$<$<CONFIG:DEBUG>:idx2_Verbose=1>")
+	src/idx2_lib.cpp
+)
+source_group("" FILES ${SOURCES})
+ADD_LIBRARY(idx2_lib STATIC ${SOURCES} ${HEADERS})
+
+target_compile_definitions(idx2_lib PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow=1>")
+target_compile_definitions(idx2_lib PUBLIC "$<$<CONFIG:DEBUG>:idx2_Verbose=1>")
 
 if (MSVC)
-	target_compile_definitions(idx2 PUBLIC -Didx2_Avx2 -D_CRT_SECURE_NO_WARNINGS)
-	target_compile_options(idx2 PUBLIC /Zc:preprocessor)
-	target_compile_options(idx2 PUBLIC /arch:AVX2)
-	target_link_libraries(idx2 PRIVATE dbghelp.lib)
+	target_compile_definitions(idx2_lib PUBLIC -Didx2_Avx2 -D_CRT_SECURE_NO_WARNINGS)
+	target_compile_options(idx2_lib PUBLIC /Zc:preprocessor /wd5105)
+	target_compile_options(idx2_lib PUBLIC /arch:AVX2)
+	target_link_libraries(idx2_lib PUBLIC dbghelp.lib)
 else()
-	target_link_libraries(idx2 PRIVATE pthread)
+	target_link_libraries(idx2_lib PUBLIC pthread)
 endif()
+
+ADD_EXECUTABLE(idx2 src/idx2.cpp)
+target_link_libraries(idx2 PUBLIC idx2_lib)
+
+# broken
+# ADD_EXECUTABLE(idx2_tests src/idx2_tests.cpp)
+# target_link_libraries(idx2 PUBLIC idx2_lib)

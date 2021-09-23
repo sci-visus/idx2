@@ -1,3 +1,6 @@
+#ifndef _IDX2_LIB_H__
+#define _IDX2_LIB_H__
+
 #include "idx2_array.h"
 #include "idx2_args.h"
 #include "idx2_assert.h"
@@ -35,3 +38,5 @@
 #include "idx2_varint.h"
 #include "idx2_volume.h"
 #include "idx2_zfp.h"
+
+#endif // _IDX2_LIB_H__

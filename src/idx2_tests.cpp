@@ -2,8 +2,7 @@
 #define idx2_Slow
 #endif
 
-#include "idx2_all.h"
-#include "idx2_all.cpp"
+#include "idx2_lib.h"
 //#include "idx2_algorithm_test.cpp"
 //#include "idx2_bitops_test.cpp"
 //#include "idx2_hashtable_test.cpp"
