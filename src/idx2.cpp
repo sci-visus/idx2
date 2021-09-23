@@ -2,7 +2,6 @@
 //#include <stdlib.h>
 //#include <crtdbg.h>
 
-#define  idx2_Implementation
 #include "idx2_lib.h"
 
 using namespace idx2;

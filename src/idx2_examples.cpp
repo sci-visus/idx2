@@ -1,4 +1,4 @@
-#define idx2_Implementation // define this only once in your code before including idx2.hpp
+
 #include "idx2_lib.h"
 #include "stdio.h"
 

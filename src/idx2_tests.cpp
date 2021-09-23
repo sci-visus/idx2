@@ -2,7 +2,6 @@
 #define idx2_Slow
 #endif
 
-#define  idx2_Implementation
 #include "idx2_lib.h"
 
 using namespace idx2;

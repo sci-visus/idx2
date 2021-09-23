@@ -1,4 +1,3 @@
-#define  idx2_Implementation
 #include "idx2_lib.h"
 
 #include <stdio.h>
