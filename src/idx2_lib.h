@@ -39,4 +39,38 @@
 #include "idx2_volume.h"
 #include "idx2_zfp.h"
 
+namespace idx2 {
+  error<idx2_file_err_code> Init(idx2_file* Idx2, const params& P);
+
+  idx2::grid GetOutputGrid(const idx2_file& Idx2, const params& P);
+
+  error<idx2_file_err_code> Decode(idx2_file* Idx2, const params& P, buffer* OutBuf);
+
+  error<idx2_file_err_code> Destroy(idx2_file* Idx2);
+
+}
+
+//if you don't want to create a lib but just use a single merged header
+#ifdef idx2_Implementation
+#include "idx2_args.cpp"
+#include "idx2_assert.cpp"
+#include "idx2_dataset.cpp"
+#include "idx2_filesystem.cpp"
+#include "idx2_io.cpp"
+#include "idx2_logger.cpp"
+#include "idx2_math.cpp"
+#include "idx2_memory.cpp"
+#include "idx2_memory_map.cpp"
+#include "idx2_stacktrace.cpp"
+#include "idx2_string.cpp"
+#include "idx2_utils.cpp"
+#include "idx2_v1.cpp"
+#include "idx2_v0.cpp"
+#include "idx2_varint.cpp"
+#include "idx2_volume.cpp"
+#include "idx2_zfp.cpp"
+#include "idx2_wavelet.cpp"
+#include "idx2_lib.cpp"
+#endif
+
 #endif // _IDX2_LIB_H__

@@ -417,4 +417,7 @@ error<idx2_file_err_code> DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* 
 void EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol);
 error<idx2_file_err_code> DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol);
 
+
+grid GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands);
+
 } // namespace idx2
