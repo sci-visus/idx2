@@ -1,9 +1,8 @@
-#define idx2_Implementation // define this only once in your code before including idx2_lib.hpp
-//#include "idx2_lib.hpp"
-#include "idx2.hpp"
-#include "stdio.h"
+#include "idx2_lib.h"
 
-void
+#include <stdio.h>
+
+idx2::error<idx2::idx2_file_err_code>
 Decode1() {
   idx2::params P;
   P.InputFile = "MIRANDA/VISCOSITY.idx"; // name of data set and field

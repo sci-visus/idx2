@@ -85,18 +85,7 @@ Dealloc(wav_basis_norms* WbN) {
   Dealloc(&WbN->WaveNorms);
 }
 
-idx2_I(N) wav_basis_norms_static<N>
-GetCdf53NormsFast() {
-  wav_basis_norms_static<N> Result;
-  f64 Num1 = 3, Num2 = 23;
-  for (int I = 0; I < N; ++I) {
-    Result.ScalNorms[I] = sqrt(Num1 / (1 << (I + 1)));
-    Num1 = Num1 * 4 - 1;
-    Result.WaveNorms[I] = sqrt(Num2 / (1 << (I + 5)));
-    Num2 = Num2 * 4 - 33;
-  }
-  return Result;
-}
+
 
 void
 ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NPasses, u64 TformOrder) {

@@ -9,6 +9,14 @@
 #include <math.h>
 #include <string.h>
 
+#ifndef MIN
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
+#endif
+
+#ifndef MAX
+#define MAX(a,b) ((a)>(b) ? (a) : (b))
+#endif
+
 #define Array10x10\
  { 56, 40, 8, 24, 48, 48, 40, 16, 30, 32, 0,\
    40, 8, 24, 48, 48, 40, 16, 30, 32, 56, 0,\

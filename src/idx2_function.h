@@ -124,3 +124,5 @@ idx2_T(c) void Convolve(const c& F, const c& G, c* H);
 
 } // namespace idx2
 
+//template implementation
+#include "idx2_function.hxx"
