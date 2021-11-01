@@ -530,7 +530,7 @@ Encode(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
   }
 }
 
-int MyCounter = 0;
+extern int MyCounter;
 idx2_TII(t, D, K) void
 Decode(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
   static_assert(is_unsigned<t>::Value);

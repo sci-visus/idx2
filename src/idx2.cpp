@@ -1,8 +1,8 @@
 //#define _CRTDBG_MAP_ALLOC
 //#include <stdlib.h>
 //#include <crtdbg.h>
-#include "idx2_all.h"
-#include "idx2_all.cpp"
+
+#include "idx2_lib.h"
 
 using namespace idx2;
 

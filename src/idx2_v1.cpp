@@ -1,3 +1,5 @@
+#include "idx2_lib.h"
+
 #include "idx2_common.h"
 #include "idx2_algorithm.h"
 #include "idx2_array.h"
@@ -15,6 +17,7 @@
 #include "idx2_wavelet.h"
 #include "idx2_v1.h"
 #include "idx2_zfp.h"
+
 #include <string.h>
 #define __STDC_FORMAT_MACROS
 
@@ -68,7 +71,7 @@ GetPartialResolution(const v3i& Dims3, u8 Mask, const array<subband>& Subbands) 
   return OutDims3;
 }*/
 
-static grid
+grid
 GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands) {
   v3i Strd3(1); // start with stride (1, 1, 1)
   idx2_For(int, D, 0, 3) Strd3[D] <<= Iter; // TODO: only work with 1 transform pass per level

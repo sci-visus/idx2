@@ -1,7 +1,7 @@
 @echo off
 
 :: Parameters
-set "VSPath=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037"
+set "VSPath=C:\Program Files\Microsoft Visual Studio\2022\VC\Tools\MSVC\14.30.30423"
 set "WinSDKLibrary=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0"
 set "WinSDKInclude=C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0"
 set "OUTPUT=%2"
@@ -34,9 +34,9 @@ if %1==FastDebug (set LDFLAGS=-dynamicbase:no)
 if %1==Debug     (set LDFLAGS=-dynamicbase:no)
 
 :: Linker lib paths
-set COMMON_LIB_PATHS=/libpath:"%VSPath%\lib\x64" /libpath:"%WinSDKLibrary%\ucrt\x64" /libpath:"%WinSDKLibrary%\um\x64" /libpath:..\glfw\lib-vc2019
+set COMMON_LIB_PATHS=/libpath:"%VSPath%\lib\x64" /libpath:"%WinSDKLibrary%\ucrt\x64" /libpath:"%WinSDKLibrary%\um\x64" /libpath:..\glfw\lib-vc2019 /libpath:..\raylib\lib
 :: Linker libs
-set COMMON_LDLIBS=kernel32.lib user32.lib gdi32.lib shell32.lib legacy_stdio_definitions.lib oldnames.lib legacy_stdio_wide_specifiers.lib dbghelp.lib ws2_32.lib glfw3_mt.lib
+set COMMON_LDLIBS=kernel32.lib user32.lib gdi32.lib shell32.lib legacy_stdio_definitions.lib oldnames.lib legacy_stdio_wide_specifiers.lib dbghelp.lib ws2_32.lib glfw3_mt.lib raylibdll.lib
 if %1==Release   (set LDLIBS=libucrt.lib  libvcruntime.lib  libcmt.lib  libcpmt.lib  libconcrt.lib )
 if %1==Profile   (set LDLIBS=libucrt.lib  libvcruntime.lib  libcmt.lib  libcpmt.lib  libconcrt.lib )
 if %1==FastDebug (set LDLIBS=libucrt.lib  libvcruntime.lib  libcmt.lib  libcpmt.lib  libconcrt.lib )
