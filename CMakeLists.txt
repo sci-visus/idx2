@@ -41,7 +41,7 @@ macro(SetupIdx2Target target_name)
 	endif()
 endmacro()
 
-option(IDX2_BUILD_LIB OFF)
+option(IDX2_BUILD_LIB ON)
 
 if (IDX2_BUILD_LIB)
 
@@ -77,7 +77,7 @@ endif()
 
 macro(ADD_IDX2_EXECUTABLE target_name)
 	ADD_EXECUTABLE(${target_name} ${ARGN})
-	set_target_properties(${target_name} PROPERTIES FOLDER "Executable/")
+	set_target_properties(${target_name} PROPERTIES FOLDER "bin/")
 	if (IDX2_BUILD_LIB)
 		target_link_libraries(${target_name} PUBLIC idx2_lib)
 	else()
