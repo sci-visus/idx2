@@ -2,10 +2,10 @@
 
 :: Parameters
 set "ClangPath=%userprofile%\scoop\shims"
-set "ClangInclude=%userprofile%\scoop\apps\llvm\12.0.1\lib\clang\12.0.1\include"
-set "VSPath=C:\Program Files\Microsoft Visual Studio\2022\VC\Tools\MSVC\14.30.30423"
-set "WinSDKLibrary=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0"
+set "ClangInclude=%userprofile%\scoop\apps\llvm\13.0.0\lib\clang\13.0.0\include"
+set "VSPath=C:\Program Files\Microsoft Visual Studio\2022\VC\Tools\MSVC\14.30.30705"
 set "WinSDKInclude=C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0"
+set "WinSDKLibrary=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0"
 set "OUTPUT=%2"
 
 :: Setup
@@ -13,7 +13,7 @@ set "OLD_PATH=%PATH%"
 set "PATH=%ClangPath%\bin;%VSBasePath%\bin\Hostx64\x64;%PATH%"
 
 :: Compiler flags
-set INCLUDE_PATHS= -I"%WinSDKInclude%\ucrt" -I"%WinSDKInclude%\um" -I"%WinSDKInclude%\shared" -I"%VSPath%\include" -I%ClangInclude% -I..\src
+set INCLUDE_PATHS= -I"%WinSDKInclude%\ucrt" -I"%WinSDKInclude%\um" -I"%WinSDKInclude%\shared" -I"%VSPath%\include" -I%ClangInclude% -I..\..\src
 set CFLAGS="Please provide a build config: Debug, FastDebug, Release"
 set COMMON_CFLAGS=-Xclang -flto-visibility-public-std -std=c++17 -pedantic -g -gcodeview -gno-column-info -march=native -ftime-trace -fdiagnostics-absolute-paths -fopenmp-simd -fms-extensions -Wall -Wextra -Wfatal-errors -Wno-nested-anon-types -Wno-vla-extension -Wno-gnu-anonymous-struct -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments
 if %1==Release   (set CFLAGS=-O2 -funroll-loops -DNDEBUG -ftree-vectorize)
@@ -48,7 +48,7 @@ if %1==Debug     (set LDLIBS=libucrtd.lib libvcruntimed.lib libcmtd.lib libcpmtd
 @echo on
 md bin
 cd bin
-clang++.exe "../src/%OUTPUT%.cpp" -o "%OUTPUT%.o" -c %INCLUDE_PATHS% %COMMON_CFLAGS% %CFLAGS% %COMMON_CDEFS% %CDEFS%
+clang++.exe "../../src/%OUTPUT%.cpp" -o "%OUTPUT%.o" -c %INCLUDE_PATHS% %COMMON_CFLAGS% %CFLAGS% %COMMON_CDEFS% %CDEFS%
 
 :: Linking
 lld-link.exe "%OUTPUT%.o" /DEBUG -out:"%OUTPUT%.exe" %COMMON_LDFLAGS% %LDFLAGS% %COMMON_LIB_PATHS% %COMMON_LDLIBS% %LDLIBS%

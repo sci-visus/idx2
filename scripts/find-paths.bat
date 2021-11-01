@@ -2,6 +2,7 @@
 
 echo VSPATH (only use this part C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\MSVC\14.27.29110)
 for /r "C:\Program Files (x86)\Microsoft Visual Studio" %%a in (*) do if "%%~nxa"=="cl.exe" echo %%~dpnxa
+for /r "C:\Program Files\Microsoft Visual Studio" %%a in (*) do if "%%~nxa"=="cl.exe" echo %%~dpnxa
 
 echo.
 

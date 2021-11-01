@@ -5,6 +5,7 @@
 #include "idx2_common.h"
 #include "idx2_macros.h"
 #include "idx2_memory.h"
+#include "idx2_volume.h"
 
 namespace idx2 {
 

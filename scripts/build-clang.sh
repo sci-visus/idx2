@@ -4,7 +4,7 @@ set -x
 # Parameters
 export COMPILER=clang++
 export OUTPUT=$2
-export INCLUDE_PATHS=-I../src
+export INCLUDE_PATHS=-I../../src
 
 # Compiler flags
 export CFLAGS="-std=gnu++17 -fopenmp-simd -Wall -Wextra -Wpedantic -Wno-missing-braces -Wno-gnu-zero-variadic-macro-arguments -g -lpthread"
@@ -28,5 +28,5 @@ fi
 # Compiling
 mkdir -p bin
 cd bin
-${COMPILER} "../src/$2.cpp" ${INCLUDE_PATHS} -o ${OUTPUT} ${CFLAGS} ${CDEFS}
+${COMPILER} "../../src/$2.cpp" ${INCLUDE_PATHS} -o ${OUTPUT} ${CFLAGS} ${CDEFS}
 cd ..
