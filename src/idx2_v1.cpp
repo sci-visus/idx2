@@ -452,7 +452,7 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName) {
     SExprPool Pool = { Result.count, Data };
     Result = ParseSExpr((cstr)Buf.Data, Size(Buf), &Pool);
     // result.expr contains the successfully parsed SExpr
-//    printf("parse .idx file successfully\n");
+//    printf("parse .idx2 file successfully\n");
     PushBack(&Stack, Result.expr);
     bool GotId = false;
     SExpr* LastExpr = nullptr;
@@ -1682,7 +1682,7 @@ Encode(idx2_file* Idx2, const params& P, const volume& Vol) {
   TotalTime_ += Seconds(ElapsedTime(&Timer));
   printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
 
-  WriteMetaFile(*Idx2, P, idx2_PrintScratch("%s/%s/%s.idx", P.OutDir, P.Meta.Name, P.Meta.Field));
+  WriteMetaFile(*Idx2, P, idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field));
   printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
   printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
   printf("num chunks              = %" PRIi64 "\n", ChunkStreamStat.Count());

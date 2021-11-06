@@ -21,7 +21,11 @@ bool Unlock(mutex* Mutex);
 #include "idx2_macros.h"
 
 #if defined(_WIN32)
+
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+
 #include <Windows.h>
 namespace idx2 {
 struct mutex {

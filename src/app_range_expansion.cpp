@@ -5,7 +5,7 @@
 idx2::error<idx2::idx2_file_err_code>
 Decode1() {
   idx2::params P;
-  P.InputFile = "MIRANDA/VISCOSITY.idx"; // name of data set and field
+  P.InputFile = "MIRANDA/VISCOSITY.idx2"; // name of data set and field
   P.InDir = "."; // the directory containing the InputFile
   idx2::idx2_file Idx2;
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error

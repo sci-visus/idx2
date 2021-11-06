@@ -139,7 +139,7 @@ ParseParams(int Argc, cstr* Argv) {
     if (BitSet(Mask, 4)) P.DecodeMask = SetBit(P.DecodeMask, 3); else P.DecodeMask = UnsetBit(P.DecodeMask, 3);
     if (!OptVal(Argc, Argv, "--in_dir", &P.InDir)) {
       fprintf(stderr, "Provide --in_dir (input directory)\n");
-      fprintf(stderr, "For example, if the input file is C:/Data/MIRANDA/DENSITY.idx, the --in_dir is C:/Data\n");
+      fprintf(stderr, "For example, if the input file is C:/Data/MIRANDA/DENSITY.idx2, the --in_dir is C:/Data\n");
       exit(1);
     }
     /* parse the quality level */

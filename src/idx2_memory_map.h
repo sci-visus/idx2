@@ -9,7 +9,11 @@
 #include "idx2_error.h"
 
 #if defined(_WIN32)
+
+#ifndef WIN32_LEAN_AND_MEAN 
 #define WIN32_LEAN_AND_MEAN
+#endif 
+
 #include <Windows.h>
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
