@@ -1,6 +1,7 @@
 if (PROJECT_SOURCE_DIR)
 
 	MESSAGE(STATUS "IDX2 is a submodule")
+	set(IDX2_BUILD_LIB 1)
 
 else()
 
@@ -81,9 +82,9 @@ if (IDX2_BUILD_LIB)
 		src/idx2_lib.cpp
 	)
 	source_group("" FILES ${SOURCES} ${HEADERS})
-	ADD_LIBRARY(VisusIdx2 STATIC ${SOURCES} ${HEADERS})
-	target_include_directories(VisusIdx2 PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/src)
-	SetupIdx2Target(VisusIdx2)
+	ADD_LIBRARY(idx2_lib STATIC ${SOURCES} ${HEADERS})
+	target_include_directories(idx2_lib PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+	SetupIdx2Target(idx2_lib)
 endif()
 
 
@@ -91,7 +92,7 @@ macro(ADD_IDX2_EXECUTABLE target_name)
 	ADD_EXECUTABLE(${target_name} ${ARGN})
 	set_target_properties(${target_name} PROPERTIES FOLDER "bin/")
 	if (IDX2_BUILD_LIB)
-		target_link_libraries(${target_name} PUBLIC VisusIdx2)
+		target_link_libraries(${target_name} PUBLIC idx2_lib)
 	else()
 		SetupIdx2Target(${target_name})
 		target_compile_definitions(${target_name} PUBLIC -Didx2_Implementation)
