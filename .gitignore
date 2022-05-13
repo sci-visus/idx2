@@ -1,0 +1,12 @@
+.ccls-cache
+.vscode
+.vs
+*.o
+*.exe
+*.pdb
+*.dll
+*.swp
+*.raw
+bin
+build
+CMakeFiles
