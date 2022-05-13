@@ -5,28 +5,19 @@ idx2 is the next version of the idx file format, which is handled by [OpenVisus]
 Currently there is an executable (named `idx2`) for 2-way conversion between raw binary and the idx2 format, and a header-only library (`idx2.hpp`) for working with the format at a lower level.
 
 # Compilation
-You will need a C++ compiler that supports C++17. All output binaries are under the `bin` directory.
-
-1. On Mac:
-`./build-clang.sh Release idx2` (Release) or `./build-clang.sh Debug idx2` (Debug)
-2. On Linux:
-`./build-gcc.sh Release idx2` (Release) or `./build-gcc.sh Debug idx2` (Debug)
-3. On Windows using Visual Studio (MSVC):
-- Copy `build-vs.bat` to another file (say `my-build-vs.bat`)
-- Open `my-build-vs.bat` with a text editor, update the variables `VSPath`, `WinSDKLibrary` and `WinSDKInclude` to match your system (`find-paths.bat` can be used to help locate these paths)
-- Run `./my-build-vs.bat Release idx2` (Release) or `./my-build-vs.bat Debug idx2` (Debug)
-4. On Windows using Clang:
-- Copy `build-clang.bat` to another file (say `my-build-clang.bat`)
-- Open `my-build-clang.bat` with a text editor, update the variables `ClangPath` and `ClangInclude` to point to your installation of Clang
-- Run `./my-build-clang.bat Release idx2` (Release) or `./my-build-clang.bat Debug idx2` (Debug)
+You will need CMake and a C++ compiler that supports C++17. All output binaries are under the `bin` directory.
 
 # Using `idx2` to convert from raw to idx2
-`idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_levels 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .`
+```
+idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_levels 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .
+```
 
 Make sure the input raw file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.raw` format, where `Name` and `Field` can be anything, `DimX`, `DimY`, `DimZ` are the field's dimensions (any of which can be 1), and `Type` is either `Float32` or `Float64` (currently idx2 only supports **floating-point** scalar fields). Most of the time, the only options that should be customized are `--input` (the input raw file), `--out_dir` (the output directory), `--num_levels` (the number of resolution levels) and `--accuracy` (the absolute error tolerance). The output will be multiple files written to the `out_dir/Name` directory, and the main metadata file is `out_dir/Name/Field.idx2`.
 
 # Using `idx2` to convert from idx2 to raw
-`idx2 --decode --input MIRANDA/VISCOSITY.idx2 --in_dir . --first 0 0 0 --last 383 383 255 --level 1 --mask 128 --accuracy 0.001`.
+```
+idx2 --decode --input MIRANDA/VISCOSITY.idx2 --in_dir . --first 0 0 0 --last 383 383 255 --level 1 --mask 128 --accuracy 0.001
+```
 
 Use `--first` and `--last` (inclusive) to specify the region of interest (which can be the whole field), `--level` and `--mask` (which should be `128` most of the time) to specify the desired resolution level (`0` is the finest level), and `--accuracy` to specify the desired absolute error tolerance. If `--mask` is not provided, a detailed instruction on how it is used will be printed. The output will be written to a `.raw` file in the directory specified by `--in_dir`.
 
