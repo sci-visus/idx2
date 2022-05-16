@@ -87,6 +87,7 @@ struct encode_data {
 
 void 
 WriteMetaFile(const idx2_file& Idx2, cstr FileName);
+
 error<idx2_err_code> 
 Encode(idx2_file* Idx2, const params& P, const volume& Vol);
 

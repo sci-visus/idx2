@@ -81,6 +81,7 @@ EXPORT_FUNCTION(grid, GetGrid)
   
   idx2_For(int, D, 0, 3) 
     if (Div[D] == 0) Strd3[D] <<= 1;
+ 
   v3i First3 = From(Ext), Last3 = Last(Ext);
   First3 = ((First3 + Strd3 - 1) / Strd3) * Strd3;
   Last3 = (Last3 / Strd3) * Strd3;

@@ -25,35 +25,35 @@
   }
 
 /* ---------------------- ENUMS ----------------------*/
-idx2_Enum(action, u8, 
-  Encode, 
+idx2_Enum(action, u8,
+  Encode,
   Decode
 )
 
 idx2_Enum(idx2_err_code, u8, idx2_CommonErrs,
-  BrickSizeNotPowerOfTwo, 
-  BrickSizeTooBig, 
-  TooManyLevels, 
+  BrickSizeNotPowerOfTwo,
+  BrickSizeTooBig,
+  TooManyLevels,
   TooManyTransformPassesPerLevel,
-  TooManyLevelsOrTransformPasses, 
-  TooManyBricksPerFile, 
-  TooManyFilesPerDir, 
+  TooManyLevelsOrTransformPasses,
+  TooManyBricksPerFile,
+  TooManyFilesPerDir,
   NotSupportedInVersion,
-  CannotCreateDirectory, 
-  SyntaxError, 
-  TooManyBricksPerChunk, 
-  TooManyChunksPerFile, 
+  CannotCreateDirectory,
+  SyntaxError,
+  TooManyBricksPerChunk,
+  TooManyChunksPerFile,
   ChunksPerFileNotPowerOf2,
-  BricksPerChunkNotPowerOf2, 
-  ChunkNotFound, 
-  BrickNotFound, 
-  FileNotFound, 
+  BricksPerChunkNotPowerOf2,
+  ChunkNotFound,
+  BrickNotFound,
+  FileNotFound,
   UnsupportedScheme
 )
 
-idx2_Enum(func_level, u8, 
-  Subband, 
-  Sum, 
+idx2_Enum(func_level, u8,
+  Subband,
+  Sum,
   Max
 )
 
@@ -182,48 +182,48 @@ extern free_list_allocator BrickAlloc_;
 grid
 GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands);
 
-void 
+void
 Dealloc(params* P);
 
-idx2_Inline i64 
+idx2_Inline i64
 Size(const brick_volume& B) { return Prod(Dims(B.Vol)) * SizeOf(B.Vol.Type); }
 
-void 
+void
 SetName(idx2_file* Idx2, cstr Name);
-void 
+void
 SetField(idx2_file* Idx2, cstr Field);
-void 
+void
 SetVersion(idx2_file* Idx2, const v2i& Ver);
-void 
+void
 SetDimensions(idx2_file* Idx2, const v3i& Dims3);
-void 
+void
 SetDataType(idx2_file* Idx2, dtype DType);
-void 
+void
 SetBrickSize(idx2_file* Idx2, const v3i& BrickDims3);
-void 
+void
 SetNumIterations(idx2_file* Idx2, i8 NIterations);
-void 
+void
 SetAccuracy(idx2_file* Idx2, f64 Accuracy);
-void 
+void
 SetChunksPerFile(idx2_file* Idx2, int ChunksPerFile);
-void 
+void
 SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk);
-void 
+void
 SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
-void 
+void
 SetDir(idx2_file* Idx2, cstr Dir);
-void 
+void
 SetGroupLevels(idx2_file* Idx2, bool GroupLevels);
-void 
+void
 SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels);
-void 
+void
 SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
-void 
+void
 SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels);
-error<idx2_err_code> 
+error<idx2_err_code>
 Finalize(idx2_file* Idx2);
 
-void 
+void
 Dealloc(idx2_file* Idx2);
 
 /* -------- VERSION 0 : UNUSED ---------*/

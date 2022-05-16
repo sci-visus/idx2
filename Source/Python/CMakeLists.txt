@@ -1,7 +1,7 @@
 project(idx2Py)
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.3)
 
-find_package (Python COMPONENTS Development)
+find_package (Python COMPONENTS Development Module)
 add_subdirectory(nanobind)
 
 nanobind_add_module(
