@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.8)
 project(idx2Core CXX)
 
 set(IDX2_CORE_SOURCE_FILES
