@@ -2,14 +2,20 @@
 //#include <stdlib.h>
 //#include <crtdbg.h>
 
-#define idx2_Implementation
-#include "../idx2.hpp"
+//#define idx2_Implementation
+//#include "../idx2.hpp"
+#include "../idx2Lib.h"
 
 using namespace idx2;
 
 // TODO: when decoding, construct the raw file name from info embedded inside the compressed file
 params
-ParseParams(int Argc, cstr* Argv) {
+ParseParams
+(
+  int Argc,
+  cstr* Argv
+)
+{
   params P;
   char Temp[128];
   cstr NasaMaskFile = Temp;
@@ -215,17 +221,17 @@ main(int Argc, cstr* Argv) {
   { /* Perform the action */
     idx2_RAII(timer, Timer, StartTimer(&Timer), printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer))));
     idx2_file Idx2;
-    if (P.Action == action::Encode) {
+    idx2_Case_1 (P.Action == action::Encode)
+    {
 //      RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
       idx2_ExitIfError(SetParams(&Idx2, P));
       idx2_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));
 //      error Result = ReadVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol.Vol);
       idx2_ExitIfError(MapVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
-      //if (P.ComputeMinMax)
-      //	idx2_ExitIfError(EncodeWithMinMax(&Idx2, P, Vol.Vol));
-      //else
-			idx2_ExitIfError(Encode(&Idx2, P, Vol.Vol));
-    } else if (P.Action == action::Decode) {
+			idx2_ExitIfError(Encode(&Idx2, P, brick_copier(&Vol.Vol)));
+    }
+    idx2_Case_2 (P.Action == action::Decode)
+    {
       SetDir(&Idx2, P.InDir);
 //      brick_table<f64> BrickTable;
       idx2_ExitIfError(ReadMetaFile(&Idx2, idx2_PrintScratch("%s", P.InputFile)));
@@ -243,3 +249,4 @@ main(int Argc, cstr* Argv) {
   //_CrtDumpMemoryLeaks();
   return 0;
 }
+

@@ -58,30 +58,30 @@ void Dealloc(idx2_file* Idx2) {
 
 EXPORT_FUNCTION(grid, GetGrid)
 (
-  const extent& Ext, 
-  int Iter, 
-  u8 Mask, 
+  const extent& Ext,
+  int Iter,
+  u8 Mask,
   const array<subband>& Subbands
-) 
+)
 {
   v3i Strd3(1); // start with stride (1, 1, 1)
-  idx2_For(int, D, 0, 3) 
+  idx2_For(int, D, 0, 3)
     Strd3[D] <<= Iter; // TODO: only work with 1 transform pass per level
   v3i Div(0);
-  
-  idx2_For(u8, Sb, 0, 8) 
+
+  idx2_For(u8, Sb, 0, 8)
   {
-    if (!BitSet(Mask, Sb)) 
+    if (!BitSet(Mask, Sb))
       continue;
     v3i Lh3 = Subbands[Sb].LowHigh3;
-    
-    idx2_For(int, D, 0, 3) 
+
+    idx2_For(int, D, 0, 3)
       Div[D] = Max(Div[D], Lh3[D]);
   }
-  
-  idx2_For(int, D, 0, 3) 
+
+  idx2_For(int, D, 0, 3)
     if (Div[D] == 0) Strd3[D] <<= 1;
- 
+
   v3i First3 = From(Ext), Last3 = Last(Ext);
   First3 = ((First3 + Strd3 - 1) / Strd3) * Strd3;
   Last3 = (Last3 / Strd3) * Strd3;

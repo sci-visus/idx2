@@ -37,8 +37,8 @@
 
 #define ELSE else
 #define CASE if
-#define CASE1 if
-#define CASE2 else if
+#define idx2_Case_1 if
+#define idx2_Case_2 else if
 #define SUBCASE1 if
 #define SUBCASE2 else if
 

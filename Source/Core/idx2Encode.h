@@ -83,13 +83,47 @@ struct encode_data {
   hash_table<u64, u32> ChunkRDOLengths;
 };
 
+/*
+By default, copy brick data from a volume to a local brick buffer.
+Can be extended polymorphically to provide other ways of copying.
+*/
+struct
+brick_copier
+{
+  const volume* Volume = nullptr;
+
+  brick_copier
+  (
+    const volume* InputVolume
+  );
+
+  virtual v2d // {Min, Max} values of brick
+  Copy
+  (
+    const extent& ExtentGlobal,
+    const extent& ExtentLocal,
+    brick_volume* Brick
+  ) const;
+};
+
+
 /* ---------------------- FUNCTIONS ----------------------*/
 
-void 
+void
 WriteMetaFile(const idx2_file& Idx2, cstr FileName);
 
-error<idx2_err_code> 
-Encode(idx2_file* Idx2, const params& P, const volume& Vol);
+/* Encode a whole volume, assuming the volume is available  */
+error<idx2_err_code>
+Encode
+(
+  idx2_file* Idx2,
+  const params& P,
+  const brick_copier& Copier
+);
+
+/* Encode a brick. Use this when the input data is not in the form of a big volume. */
+error<idx2_err_code>
+EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3);
 
 idx2_Inline void
 Init(channel* C) {
@@ -119,7 +153,7 @@ Dealloc(sub_channel* Sc) {
   Dealloc(&Sc->BrickEMaxesStream);
 }
 
-idx2_Inline void 
+idx2_Inline void
 Dealloc(chunk_meta_info* Cm) {
   Dealloc(&Cm->Addrs);
   Dealloc(&Cm->Sizes);
