@@ -56,7 +56,8 @@ void Dealloc(idx2_file* Idx2) {
   Dealloc(&Idx2->RdoLevels);
 }
 
-EXPORT_FUNCTION(grid, GetGrid)
+grid
+GetGrid
 (
   const extent& Ext,
   int Iter,

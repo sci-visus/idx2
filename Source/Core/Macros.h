@@ -1,10 +1,17 @@
 #pragma once
 
-#define IF if
-#define THEN {
-#define ELSEIF(_) } else if (_)
-#define ENDIF }
-#define VAR(x, _) x
+#define idx2_If if
+#define idx2_Then {
+#define idx2_ElseIf(_) } else if (_)
+#define idx2_EndIf }
+#define idx2_Else else
+#define idx2_Case if
+#define idx2_Case_1 if
+#define idx2_Case_2 else if
+#define idx2_SubCase_1 if
+#define idx2_SubCase_2 else if
+
+#define idx2_Var(x, _) x
 
 /* Avoid compiler warning about unused variable */
 #define idx2_Unused(X) do { (void)sizeof(X); } while(0)
@@ -27,20 +34,6 @@
 // #define FOO_1(X)        "One"
 // #define FOO_2(X, Y)     "Two"
 // #define FOO_3(X, Y, Z)  "Three"
-
-#define FUNCTION(...)        idx2_MacroOverload(FUNCTION, __VA_ARGS__)
-#define FUNCTION_2(r, X)     static r X
-#define FUNCTION_3(r, t, X)  template <t> static r X
-#define EXPORT_FUNCTION(...)        idx2_MacroOverload(EXPORT_FUNCTION, __VA_ARGS__)
-#define EXPORT_FUNCTION_2(r, X)     r X
-#define EXPORT_FUNCTION_3(t, r, X)  template <t> r X
-
-#define ELSE else
-#define CASE if
-#define idx2_Case_1 if
-#define idx2_Case_2 else if
-#define SUBCASE1 if
-#define SUBCASE2 else if
 
 /* 2-level stringify */
 #define idx2_Str(...) idx2_StrHelper(__VA_ARGS__)

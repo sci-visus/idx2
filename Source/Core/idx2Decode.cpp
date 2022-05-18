@@ -153,11 +153,12 @@ DecompressBufZstd(const buffer& Input, bitstream* Output) {
   }
 }
 
-FUNCTION(error<idx2_err_code>, ReadFileExponents)
+static error<idx2_err_code>
+ReadFileExponents
 (
-  decode_data                                *  D              ,
-  hash_table<u64, file_exp_cache>::iterator  *  FileExpCacheIt ,
-  const file_id                              &  FileId
+  decode_data* D,
+  hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
+  const file_id& FileId
 )
 {
   timer IOTimer;
@@ -481,13 +482,14 @@ static error<idx2_err_code> DecodeSubband
   return idx2_Error(idx2_err_code::NoError);
 }
 
-FUNCTION(void, DecodeBrick)
+static void
+DecodeBrick
 (/*----------------------------*/
-  const idx2_file  &  Idx2     ,
-  const params     &  P        ,
-  decode_data      *  D        ,
-  u8                  Mask     ,
-  f64                 Accuracy
+  const idx2_file& Idx2,
+  const params& P,
+  decode_data* D,
+  u8 Mask,
+  f64 Accuracy
 )/*----------------------------*/
 {
   i8 Iter = D->Iter;
@@ -578,11 +580,12 @@ FUNCTION(void, DecodeBrick)
 
 
 /* TODO: dealloc chunks after we are done with them */
-EXPORT_FUNCTION(void, Decode)
+void
+Decode
 (/*--------------------------*/
-  const idx2_file  &  Idx2   ,
-  const params     &  P      ,
-  buffer           *  OutBuf
+  const idx2_file& Idx2,
+  const params& P,
+  buffer* OutBuf
 )/*--------------------------*/
 {
   timer DecodeTimer; StartTimer(&DecodeTimer);
@@ -793,12 +796,13 @@ EXPORT_FUNCTION(void, Decode)
 // +-------> x
 
 
-FUNCTION(void, DecompressChunk)
+static void
+DecompressChunk
 ( /*---------------------------*/
-  bitstream    *  ChunkStream  ,
-  chunk_cache  *  ChunkCache   ,
-  u64             ChunkAddress ,
-  int             L
+  bitstream* ChunkStream,
+  chunk_cache* ChunkCache,
+  u64 ChunkAddress,
+  int L
 ) /*---------------------------*/
 {
   (void)L; u64 Brk = ((ChunkAddress >> 18) & 0x3FFFFFFFFFFull); (void)Brk;
@@ -826,8 +830,12 @@ FUNCTION(void, DecompressChunk)
 }
 
 // TODO: return error type
-EXPORT_FUNCTION(error<idx2_err_code>, ReadMetaFile)
-(idx2_file* Idx2, cstr FileName)
+error<idx2_err_code>
+ReadMetaFile
+(
+  idx2_file* Idx2,
+  cstr FileName
+)
 {
   buffer Buf;
   idx2_CleanUp(DeallocBuf(&Buf));
@@ -1033,14 +1041,16 @@ GetLinearFile(const idx2_file& Idx2, int Iter, v3i File3) {
 
 /* Upscale a single brick to a given resolution level */
 // TODO: upscale across levels
-FUNCTION(void, typename t, UpscaleBrick)
+template <typename t>
+static void
+UpscaleBrick
 ( /*-----------------------------*/
-  const grid      &  Grid        ,
-  int                TformOrder  ,
-  const brick<t>  &  Brick       ,
-  int                Level       ,
-  const grid      &  OutGrid     ,
-  volume          *  OutBrickVol
+  const grid& Grid,
+  int TformOrder,
+  const brick<t>& Brick,
+  int Level,
+  const grid& OutGrid,
+  volume* OutBrickVol
 ) /*-----------------------------*/
 { // BODY
   idx2_Assert(Level >= Brick.Level);
@@ -1056,12 +1066,13 @@ FUNCTION(void, typename t, UpscaleBrick)
 
 /* Flatten a brick table. the function allocates memory for its output. */
 // TODO: upscale across levels
-FUNCTION(void, typename t, FlattenBrickTable)
+template <typename t>
+static void FlattenBrickTable
 ( /*----------------------------------*/
-  const array<grid>     &  LevelGrids ,
-  int                      TformOrder ,
-  const brick_table<t>  &  BrickTable ,
-  volume                *  VolOut
+  const array<grid>& LevelGrids,
+  int TformOrder,
+  const brick_table<t>& BrickTable,
+  volume* VolOut
 ) /*----------------------------------*/
 { // BODY
   idx2_Assert(Size(BrickTable.Bricks) > 0);

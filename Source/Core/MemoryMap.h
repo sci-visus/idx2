@@ -9,9 +9,9 @@
 
 #if defined(_WIN32)
 
-#ifndef WIN32_LEAN_AND_MEAN 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#endif 
+#endif
 
 #include <Windows.h>
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
@@ -27,15 +27,15 @@
 idx2_Enum
 (
   mmap_err_code, int, idx2_CommonErrs,
-  MappingFailed, 
-  MapViewFailed, 
-  AllocateFailed, 
-  FlushFailed, 
-  SyncFailed, 
+  MappingFailed,
+  MapViewFailed,
+  AllocateFailed,
+  FlushFailed,
+  SyncFailed,
   UnmapFailed
 )
 
-namespace idx2 
+namespace idx2
 {
 
 enum class map_mode { Read, Write };
@@ -46,7 +46,7 @@ using file_handle = HANDLE;
 using file_handle = int;
 #endif
 
-struct mmap_file 
+struct mmap_file
 {
   file_handle File;
   file_handle FileMapping;
@@ -54,8 +54,8 @@ struct mmap_file
   buffer Buf;
 };
 
-EXPORT_FUNCTION(error<mmap_err_code>, OpenFile) 
-(mmap_file* MMap, cstr Name, map_mode Mode);
+error<mmap_err_code>
+OpenFile(mmap_file* MMap, cstr Name, map_mode Mode);
 
 error<mmap_err_code>
 MapFile(mmap_file* MMap, i64 Bytes = 0);
@@ -87,8 +87,9 @@ Write(mmap_file* MMap, t Val);
 
 namespace idx2 {
 
-EXPORT_FUNCTION(typename t, void, Write)
-(mmap_file* MMap, const t* Data, i64 Size) 
+template <typename t>
+void Write
+(mmap_file* MMap, const t* Data, i64 Size)
 {
   memcpy(MMap->Buf.Data + MMap->Buf.Bytes, Data, Size);
   MMap->Buf.Bytes += Size;

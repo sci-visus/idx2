@@ -510,14 +510,15 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E) {
 
 
 // TODO: return error
-FUNCTION(void, WriteChunk)
+static void
+WriteChunk
 ( /*---------------------------*/
-  const idx2_file  &  Idx2     ,
-  encode_data      *  E        ,
-  channel          *  C        ,
-  i8                  Iter     ,
-  i8                  Level    ,
-  i16                 BitPlane
+  const idx2_file& Idx2,
+  encode_data* E,
+  channel* C,
+  i8 Iter,
+  i8 Level,
+  i16 BitPlane
 ) /*---------------------------*/
 {
   BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
@@ -561,12 +562,13 @@ FUNCTION(void, WriteChunk)
 }
 
 // TODO: return an error code
-FUNCTION(void, EncodeSubband)
+static void
+EncodeSubband
 ( /*-----------------------*/
-  idx2_file    *  Idx2     ,
-  encode_data  *  E        ,
-  const grid   &  SbGrid   ,
-  volume       *  BrickVol
+  idx2_file* Idx2,
+  encode_data* E,
+  const grid& SbGrid,
+  volume* BrickVol
 ) /*-----------------------*/
 {
   u64 Brick = E->Brick[E->Iter];
@@ -715,12 +717,12 @@ FUNCTION(void, EncodeSubband)
       idx2_Assert(ChannelIt);
       channel* C = ChannelIt.Val;
       /* write brick delta */
-      CASE (C->NBricks == 0)
+      idx2_Case (C->NBricks == 0)
       {// start of a chunk
         GrowToAccomodate(&C->BrickDeltasStream, 8);
         WriteVarByte(&C->BrickDeltasStream, Brick);
       }
-      ELSE
+      idx2_Else
       {
         GrowToAccomodate(&C->BrickDeltasStream, (Brick - C->LastBrick - 1 + 8) / 8);
         WriteUnary(&C->BrickDeltasStream, u32(Brick - C->LastBrick - 1));
@@ -740,12 +742,13 @@ FUNCTION(void, EncodeSubband)
   } // end zfp block loop
 }
 
-FUNCTION(void, EncodeBrick)
+static void
+EncodeBrick
 ( /*-------------------------------*/
-  idx2_file     *  Idx2            ,
-  const params  &  P               ,
-  encode_data   *  E               ,
-  bool             IncIter = false
+  idx2_file* Idx2,
+  const params& P,
+  encode_data* E,
+  bool IncIter = false
 ) /*-------------------------------*/
 {
   idx2_Assert(Idx2->NLevels <= idx2_file::MaxLevels);
@@ -763,14 +766,14 @@ FUNCTION(void, EncodeBrick)
   ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TformOrder, &BVol);
 
   /* do wavelet transform */
-  CASE (!P.WaveletOnly)
+  idx2_Case (!P.WaveletOnly)
   {
     if (Iter + 1 < Idx2->NLevels)
       ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
     else
       ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, true);
   }
-  ELSE
+  idx2_Else
   {
     ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
   }
@@ -936,10 +939,11 @@ struct channel_ptr {
 };
 
 // TODO: check the error path
-FUNCTION(error<idx2_err_code>, FlushChunks)
+static error<idx2_err_code>
+FlushChunks
 (
-  const idx2_file  &  Idx2 ,
-  encode_data      *  E
+  const idx2_file& Idx2,
+  encode_data* E
 )
 {
   Reserve(&E->SortedChannels, Size(E->Channels));
@@ -1086,7 +1090,8 @@ Encode
   return idx2_Error(idx2_err_code::NoError);
 }
 
-EXPORT_FUNCTION(error<idx2_err_code>, EncodeBrick)
+error<idx2_err_code>
+EncodeBrick
 (
   idx2_file* Idx2,
   const params& P,

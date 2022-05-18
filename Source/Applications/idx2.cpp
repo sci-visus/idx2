@@ -18,10 +18,6 @@ ParseParams
 {
   params P;
   char Temp[128];
-  cstr NasaMaskFile = Temp;
-  //if (OptVal(Argc, Argv, "--nasa_mask", &NasaMaskFile)) {
-  //  ReadVolume(NasaMaskFile, v3i(34, 102, 1), dtype::int8, &P.NasaMask); // TODO: stop hardcoding the dims
-  //}
   if (OptExists(Argc, Argv, "--encode"))
     P.Action = action::Encode;
   else if (OptExists(Argc, Argv, "--decode"))
