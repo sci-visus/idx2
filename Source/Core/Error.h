@@ -118,25 +118,60 @@ ErrorExists(const error<t>& Err) { return Err.Code != t::NoError; }
     return Err;\
   }();
 
+/* Return from a function if an error happens */
 #undef idx2_ReturnIfError
 #define idx2_ReturnIfError(Expr)\
-  { auto Result = Expr; if (ErrorExists(Result)) return Result; }
+  {\
+    auto Result = Expr;\
+    if (ErrorExists(Result))\
+      return Result;\
+  }
 
+/* Propagate an error up the stack */
 #undef idx2_PropagateIfError
 #define idx2_PropagateIfError(Expr)\
-  { auto Result = Expr; if (!Result) return idx2_PropagateError(Result); }
+  {\
+    auto Result = Expr;\
+    if (!Result)\
+      return idx2_PropagateError(Result);\
+  }
 
+#undef id2_PropagateIfExpectedError
+#define idx2_PropagateIfExpectedError(Expr)\
+  {\
+    auto Result = Expr;\
+    if (!Result)\
+      return idx2_PropagateError(Error(Result));\
+  }
+
+/* Exit the program if an error happens */
 #undef idx2_ExitIfError
 #define idx2_ExitIfError(Expr)\
-  { auto Result = Expr; if (ErrorExists(Result)) { fprintf(stderr, "%s\n", ToString(Result)); exit(1); } }
+  {\
+    auto Result = Expr;\
+    if (ErrorExists(Result))\
+    {\
+      fprintf(stderr, "%s\n", ToString(Result));\
+      exit(1);\
+    }\
+  }
 
+/* Return an error if a condition happens */
 #undef idx2_ReturnErrorIf
 #define idx2_ReturnErrorIf(Expr, Error, ...)\
-  { if (Expr) { return idx2_Error(Error, __VA_ARGS__); } }
+  {\
+    if (Expr)\
+      return idx2_Error(Error, __VA_ARGS__);\
+  }
 
+/* Exit the program and print a message if a condition happens */
 #undef idx2_ExitIf
-#define idx2_ExitIf(Cond, Msg) \
-  { if (Cond) { fprintf(stderr, "%s\n", Msg); exit(1); } }
+#define idx2_ExitIf(Cond, Msg)\
+  {\
+    if (Cond)\
+    {\
+      fprintf(stderr, "%s\n", Msg);\
+      exit(1);\
+    }\
+  }
 
-#define idx2_PropagateIfExpectedError(Expr)\
-  { auto Result = Expr; if (!Result) return idx2_PropagateError(Error(Result)); }

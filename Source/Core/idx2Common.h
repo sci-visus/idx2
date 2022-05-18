@@ -68,7 +68,7 @@ struct file_id {
 
 struct params {
   volume NasaMask;
-  action Action = action::Encode;
+  action Action = action::__Invalid__;
   metadata Meta;
   v2i Version = v2i(1, 0);
   v3i Dims3 = v3i(256);
