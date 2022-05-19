@@ -12,7 +12,8 @@
 #include "sexpr.h"
 #include "zstd/zstd.h"
 
-namespace idx2 {
+namespace idx2
+{
 
 /* book-keeping stuffs */
 static stat BrickDeltasStat;

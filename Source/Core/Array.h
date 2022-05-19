@@ -44,6 +44,7 @@ idx2_T(t) void Reserve(array<t>* Array, i64 Capacity);
 idx2_T(t) void Clear(array<t>* Array);
 
 idx2_T(t) void PushBack(array<t>* Array, const t& Item);
+idx2_T(t) void PushBack(array<t>* Array);
 idx2_T(t) void PopBack(array<t>* Array);
 idx2_T(t) buffer ToBuffer(const array<t>& Array);
 
@@ -140,6 +141,13 @@ PushBack(array<t>* Array, const t& Item) {
   if (Array->Size >= Array->Capacity)
     SetCapacity(Array);
   (*Array)[Array->Size++] = Item;
+}
+
+idx2_Ti(t) void
+PushBack(array<t>* Array) {
+  if (Array->Size >= Array->Capacity)
+    SetCapacity(Array);
+  ++Array->Size;
 }
 
 idx2_Ti(t) void

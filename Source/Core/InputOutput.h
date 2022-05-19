@@ -100,18 +100,20 @@ ReadBuffer(FILE* Fp, buffer_t<t>* Buf)
 { fread(Buf->Data, Bytes(*Buf), 1, Fp); }
 
 template <int N>
-idx2_Inline void
+void
 ReadLines(FILE* Fp, array<stack_array<char, N>>* Lines)
 {
   while (true)
   {
     char Temp[N];
-    if (!fgets(buffer, N, Fp))
+    if (!fgets(Temp, N, Fp))
       return;
     stref Src(Temp);
-    Temp[Src.Size - 2] = 0; // override the new line character
+    if (Temp[Src.Size - 1] == '\n')
+      Temp[Src.Size - 2] = 0; // override the new line character
+    PushBack(Lines);
     stref Dst(Back(*Lines).Arr, N);
-    Copy(Src, &Dst);
+    Copy(Src, &Dst, true);
   }
 }
 
