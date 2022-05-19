@@ -147,16 +147,13 @@ ParseEncodeOptions
   // if the previous parse fails, parse metadata from the command line
   if (!ParseOk)
   {
-    //ParseMetaData(Argc, Argv, P);
+    ParseMetaData(Argc, Argv, P);
     // If the input file is a .txt file, read all the file names in the txt into an array
     if (GetExtension(P->InputFile) == idx2_StRef("txt"))
     {
       // Parse
       idx2_RAII(FILE*, Fp = fopen(P->InputFile, "rb"),, if (Fp) fclose(Fp));
       ReadLines(Fp, &P->InputFiles);
-      idx2_ForEach(Line, P->InputFiles)
-        printf("%s\n", Line->Arr);
-      int a = 0;
     }
   }
   idx2_ExitIf(P->Meta.DType == dtype::__Invalid__, "Data type not supported\n");
