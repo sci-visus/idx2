@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "ErrorCodes.h"
+#include "Format.h"
 #include "Macros.h"
 
 namespace idx2 {
@@ -73,7 +74,6 @@ ToString(const error<t>& Err, bool Force) {
   return ScratchBuf;
 }
 
-#define idx2_Print(PrinterPtr, Format, ...)
 idx2_T(t) void
 PrintStacktrace(printer* Pr, const error<t>& Err) {
   (void)Pr;
@@ -81,7 +81,6 @@ PrintStacktrace(printer* Pr, const error<t>& Err) {
   for (i8 I = 0; I < Err.StackIdx; ++I)
     idx2_Print(Pr, "File %s, line %d\n", Err.Files[I], Err.Lines[I]);
 }
-#undef idx2_Print
 
 idx2_T(t) bool
 ErrorExists(const error<t>& Err) { return Err.Code != t::NoError; }

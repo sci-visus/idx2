@@ -24,6 +24,8 @@ set(IDX2_CORE_SOURCE_FILES
   FileUtilities.h
   Filesystem.cpp
   Filesystem.h
+  Format.cpp
+  Format.h
   Function.h
   HashSet.h
   HashTable.h

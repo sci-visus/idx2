@@ -1,6 +1,7 @@
 /* Functions that implement file/chunk/brick lookup logic */
 #include "idx2Common.h"
 #include "idx2Lookup.h"
+#include "Format.h"
 
 namespace idx2 {
 

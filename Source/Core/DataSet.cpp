@@ -4,6 +4,7 @@
 #include "DataSet.h"
 #include "Error.h"
 #include "FileSystem.h"
+#include "Format.h"
 #include "InputOutput.h"
 #include "ScopeGuard.h"
 #include "StackTrace.h"

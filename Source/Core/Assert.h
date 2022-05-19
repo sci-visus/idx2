@@ -25,7 +25,7 @@ void SetHandleAbortSignals(handler& Handler = AbortHandler);
 #if defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-#include "InputOutput.h"
+#include "Format.h"
 #include "Macros.h"
 #include "StackTrace.h"
 

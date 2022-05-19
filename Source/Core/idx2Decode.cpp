@@ -5,6 +5,7 @@
 #include "Expected.h"
 #include "Function.h"
 #include "HashTable.h"
+#include "InputOutput.h"
 #include "Memory.h"
 #include "Timer.h"
 #include "VarInt.h"

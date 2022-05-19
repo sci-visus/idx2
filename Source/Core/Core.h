@@ -16,6 +16,7 @@
 #include "Expected.h"
 #include "FileUtilities.h"
 #include "FileSystem.h"
+#include "Format.h"
 #include "HashTable.h"
 #include "InputOutput.h"
 #include "LinkedList.h"

@@ -5,6 +5,7 @@
 #include "DataSet.h"
 #include "DataTypes.h"
 #include "BitStream.h"
+#include "Format.h"
 #include "Memory.h"
 #include "Volume.h"
 #include "Wavelet.h"

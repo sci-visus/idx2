@@ -3,6 +3,7 @@
 #include "idx2Lookup.h"
 #include "FileSystem.h"
 #include "Function.h"
+#include "InputOutput.h"
 #include "Statistics.h"
 #include "Timer.h"
 #include "VarInt.h"

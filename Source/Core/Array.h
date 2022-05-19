@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.h"
-#include "InputOutput.h"
 #include "Macros.h"
 #include "Memory.h"
 #include <initializer_list>
@@ -48,8 +47,6 @@ idx2_T(t) void PushBack(array<t>* Array, const t& Item);
 idx2_T(t) void PopBack(array<t>* Array);
 idx2_T(t) buffer ToBuffer(const array<t>& Array);
 
-idx2_T(t) void Print(printer* Pr, const array<t>& Array);
-
 idx2_T(t) void Dealloc(array<t>* Array);
 
 } // namespace idx2
@@ -65,7 +62,7 @@ array(allocator* Alloc) :
 
 idx2_Ti(t) array<t>::
 array(const std::initializer_list<t>& List, allocator* Alloc) :
-  array(Alloc) 
+  array(Alloc)
 {
   idx2_Assert(Alloc);
   Init(this, List.size());
@@ -179,13 +176,6 @@ Clone(const array<t>& Src, array<t>* Dst) {
   Resize(Dst, Size(Src));
   for (int I = 0; I < Size(Src); ++I)
     (*Dst)[I] = Src[I];
-}
-
-idx2_T(t) void Print(printer* Pr, const array<t>& Array) {
-  idx2_Print(Pr, "[");
-  for (i64 I = 0; I < Size(Array); ++I) 
-    idx2_Print(Pr, "%f, ", Array[I]); // TODO
-  idx2_Print(Pr, "]");
 }
 
 idx2_Ti(t) void

@@ -152,6 +152,7 @@ ParseEncodeOptions
     if (GetExtension(P->InputFile) == idx2_StRef("txt"))
     {
       // Parse
+
     }
   }
   idx2_ExitIf(P->Meta.DType == dtype::__Invalid__, "Data type not supported\n");

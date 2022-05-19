@@ -6,6 +6,7 @@
 #include "Assert.cpp"
 #include "DataSet.cpp"
 #include "FileSystem.cpp"
+#include "Format.cpp"
 #include "InputOutput.cpp"
 #include "Logger.cpp"
 #include "Memory.cpp"
