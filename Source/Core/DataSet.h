@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Array.h"
 #include "DataTypes.h"
 #include "Error.h"
 
@@ -13,8 +14,9 @@ name = combustion
 field = o2
 dimensions = 512 512 256
 data type = float32 */
-struct metadata {
-  char File[256] = "";
+struct metadata
+{
+  //char File[256] = "";
   char Name[32] = "";
   char Field[32] = "";
   v3i Dims3 = v3i(0);
@@ -24,8 +26,8 @@ struct metadata {
 
 cstr ToString(const metadata& Meta);
 cstr ToRawFileName(const metadata& Meta);
-error<> ReadMeta(cstr FileName, metadata* Meta);
-error<> ParseMeta(stref FilePath, metadata* Meta);
+error<> ReadMetaData(cstr FileName, metadata* Meta);
+error<> StrToMetaData(stref FilePath, metadata* Meta);
 
 } // namespace idx2
 

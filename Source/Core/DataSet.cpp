@@ -12,43 +12,58 @@
 namespace idx2 {
 
 cstr
-ToRawFileName(const metadata& Meta) {
+ToRawFileName
+( /* Serialize the given metadata to a file name */
+  const metadata& Meta
+) /*---------------------------------------------*/
+{
   printer Pr(Meta.String, sizeof(Meta.String));
   idx2_Print(&Pr, "%s-", Meta.Name);
   idx2_Print(&Pr, "%s-", Meta.Field);
   idx2_Print(&Pr, "[%d-%d-%d]-", Meta.Dims3.X, Meta.Dims3.Y, Meta.Dims3.Z);
   stref TypeStr = ToString(Meta.DType);
   idx2_Print(&Pr, "%.*s.raw", TypeStr.Size, TypeStr.Ptr);
+
   return Meta.String;
 }
 
 cstr
-ToString(const metadata& Meta) {
+ToString
+( /* Serialize the given metadata to a string */
+  const metadata& Meta
+) /*------------------------------------------*/
+{
   printer Pr(Meta.String, sizeof(Meta.String));
-  idx2_Print(&Pr, "file = %s\n", Meta.File);
   idx2_Print(&Pr, "name = %s\n", Meta.Name);
   idx2_Print(&Pr, "field = %s\n", Meta.Field);
   idx2_Print(&Pr, "dimensions = %d %d %d\n", Meta.Dims3.X, Meta.Dims3.Y, Meta.Dims3.Z);
   stref TypeStr = ToString(Meta.DType);
   idx2_Print(&Pr, "data type = %.*s", TypeStr.Size, TypeStr.Ptr);
+
   return Meta.String;
 }
 
 /* MIRANDA-DENSITY-[96-96-96]-Float64.raw */
 error<>
-ParseMeta(stref FilePath, metadata* Meta) {
+StrToMetaData
+( /* Parse metadata from a file name */
+  stref FilePath,
+  metadata* Meta
+) /*---------------------------------*/
+{
   stref FileName = GetFileName(FilePath);
-  char Type[8];
-  if (6 == sscanf(FileName.ConstPtr, "%[^-]-%[^-]-[%d-%d-%d]-%[^.]", Meta->Name,
-                  Meta->Field, &Meta->Dims3.X, &Meta->Dims3.Y, &Meta->Dims3.Z, Type))
-  {
-    Type[0] = (char)tolower(Type[0]);
-    Meta->DType = StringTo<dtype>()(stref(Type));
-    stref FileStr = idx2_StRef(Meta->File);
-    Copy(FilePath, &FileStr);
-    return idx2_Error(err_code::NoError);
-  }
-  return idx2_Error(err_code::ParseFailed);
+  char DType[8];
+  idx2_ReturnErrorIf
+  (
+    6 != sscanf(FileName.ConstPtr, "%[^-]-%[^-]-[%d-%d-%d]-%[^.]",
+                Meta->Name, Meta->Field, &Meta->Dims3.X, &Meta->Dims3.Y, &Meta->Dims3.Z, DType),
+    err_code::ParseFailed
+  );
+
+  DType[0] = (char)tolower(DType[0]);
+  Meta->DType = StringTo<dtype>()(stref(DType));
+
+  return idx2_Error(err_code::NoError);
 }
 
 /*
@@ -58,7 +73,12 @@ field = DATA
 dimensions = 96 96 96
 type = float64 */
 error<>
-ReadMeta(cstr FileName, metadata* Meta) {
+ReadMetaData
+(
+  cstr FileName,
+  metadata* Meta
+)
+{
   buffer Buf;
   error Ok = ReadFile(FileName, &Buf);
   if (Ok.Code != err_code::NoError)
@@ -73,12 +93,7 @@ ReadMeta(cstr FileName, metadata* Meta) {
     if (!Attr || !Value)
       return idx2_Error(err_code::ParseFailed, "File %s", FileName);
 
-    if (Attr == "file") {
-      path Path(GetDirName(FileName));
-      Append(&Path, Trim(Value));
-      stref FileStr = idx2_StRef(Meta->File);
-      Copy(ToString(Path), &FileStr);
-    } else if (Attr == "name") {
+    if (Attr == "name") {
       stref NameStr = idx2_StRef(Meta->Name);
       Copy(Trim(Value), &NameStr);
     } else if (Attr == "field") {
@@ -105,3 +120,4 @@ ReadMeta(cstr FileName, metadata* Meta) {
 }
 
 } // namespace idx2
+

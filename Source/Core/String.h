@@ -15,10 +15,12 @@ not null-terminated.
 There are two preferred ways to construct a string_ref from a char[] array:
   - Use the idx2_StringRef macro to make string_ref refer to the entire array
   - Use the string_ref(const char*) constructor to refer up to the first NULL */
-struct stref {
-  union {
+struct stref
+{
+  union
+  {
     str Ptr = nullptr;
-    cstr ConstPtr ;
+    cstr ConstPtr;
   };
   int Size = 0;
 
@@ -84,11 +86,11 @@ idx2_Inline stref::
 stref() = default;
 
 idx2_Inline stref::
-stref(cstr PtrIn, int SizeIn) 
+stref(cstr PtrIn, int SizeIn)
   : ConstPtr(PtrIn), Size(SizeIn) {}
 
 idx2_Inline stref::
-stref(cstr PtrIn) 
+stref(cstr PtrIn)
   : ConstPtr(PtrIn), Size(int(strlen(PtrIn))) {}
 
 idx2_Inline char& stref::
@@ -112,7 +114,7 @@ idx2_Inline tokenizer::
 tokenizer(const stref& InputIn, const stref& DelimsIn)
   : Input(InputIn), Delims(DelimsIn), Pos(0) {}
 
-idx2_Inline void 
+idx2_Inline void
 Init(tokenizer* Tk, const stref& Input, const stref& Delims) {
   Tk->Input = Input;
   Tk->Delims = Delims;
@@ -120,3 +122,4 @@ Init(tokenizer* Tk, const stref& Input, const stref& Delims) {
 }
 
 } // namespace idx2
+

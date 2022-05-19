@@ -21,27 +21,47 @@
   #define Access(Dir) access(Dir, F_OK)
 #endif
 
-namespace idx2 {
+namespace idx2
+{
 
 path::
 path() = default;
 
 path::
-path(const stref& Str) { Init(this, Str); }
+path(const stref& Str)
+{ Init(this, Str); }
 
 void
-Init(path* Path, const stref& Str) {
+Init
+( /* Init a path from a string */
+  path* Path,
+  const stref& Str
+  /*---------------------------*/
+)
+{
   Path->Parts[0] = Str;
   Path->NParts = 1;
 }
 
-void Append(path* Path, const stref& Part) {
+void
+Append
+( /* Append a component to a path */
+  path* Path,
+  const stref& Part
+  /*------------------------------*/
+)
+{
   idx2_Assert(Path->NParts < Path->NPartsMax, "too many path parts");
   Path->Parts[Path->NParts++] = Part;
 }
 
 stref
-GetFileName(const stref& Path) {
+GetFileName
+( /* Get the file name (exclude the path) from a path string */
+  const stref& Path
+  /*---------------------------------------------------------*/
+)
+{
   idx2_Assert(!Contains(Path, '\\'));
   cstr LastSlash = FindLast(RevBegin(Path), RevEnd(Path), '/');
   if (LastSlash != RevEnd(Path))
@@ -51,7 +71,12 @@ GetFileName(const stref& Path) {
 }
 
 stref
-GetDirName(const stref& Path) {
+GetDirName
+( /* Get the path name (exclude the file name) from a path string */
+  const stref& Path
+  /*--------------------------------------------------------------*/
+)
+{
   idx2_Assert(!Contains(Path, '\\'));
   cstr LastSlash = FindLast(RevBegin(Path), RevEnd(Path), '/');
   if (LastSlash != RevEnd(Path))
@@ -60,9 +85,14 @@ GetDirName(const stref& Path) {
 }
 
 cstr
-ToString(const path& Path) {
+ToString
+( /* Convert a path to a string */
+  const path& Path
+) /*----------------------------*/
+{
   printer Pr(ScratchBuf, sizeof(ScratchBuf));
-  for (int I = 0; I < Path.NParts; ++I) {
+  for (int I = 0; I < Path.NParts; ++I)
+  {
     idx2_Print(&Pr, "%.*s", Path.Parts[I].Size, Path.Parts[I].Ptr);
     if (I + 1 < Path.NParts)
       idx2_Print(&Pr, "/");
@@ -71,7 +101,11 @@ ToString(const path& Path) {
 }
 
 bool
-IsRelative(const stref& Path) {
+IsRelative
+( /* return true if the given path is relative */
+  const stref& Path
+) /*-------------------------------------------*/
+{
   stref& PathR = const_cast<stref&>(Path);
   if (PathR.Size > 0 && PathR[0] == '/')  // e.g. /usr/local
     return false;
@@ -81,11 +115,22 @@ IsRelative(const stref& Path) {
 }
 
 bool
-CreateFullDir(const stref& Path) {
+CreateFullDir
+( /* Given a path, create a full hierarchy of directories */
+  const stref& Path
+  /*------------------------------------------------------*/
+)
+{
   cstr PathCopy = ToString(Path);
   int Error = 0;
   str P = (str)PathCopy;
-  for (P = (str)strchr(PathCopy, '/'); P; P = (str)strchr(P + 1, '/')) {
+  for
+  (
+    P = (str)strchr(PathCopy, '/');
+    P;
+    P = (str)strchr(P + 1, '/')
+  )
+  {
     *P = '\0';
     Error = MkDir(PathCopy);
     *P = '/';
@@ -95,33 +140,59 @@ CreateFullDir(const stref& Path) {
 }
 
 bool
-DirExists(const stref& Path) {
+DirExists
+( /* Return true if a path exists */
+  const stref& Path
+  /*------------------------------*/
+)
+{
   cstr PathCopy = ToString(Path);
   return Access(PathCopy) == 0;
 }
 
-void RemoveDir(cstr Path) {
+void
+RemoveDir
+( /* Remove a path with all files recursively from disk */
+  cstr Path
+  /*----------------------------------------------------*/
+)
+{
   struct dirent* Entry = nullptr;
   DIR* Dir = nullptr;
   Dir = opendir(Path);
   char AbsPath[257] = {0};
-  while ((Entry = readdir(Dir))) {
+  while ((Entry = readdir(Dir)))
+  {
     DIR* SubDir = nullptr;
     FILE* File = nullptr;
-    if (*(Entry->d_name) != '.') {
-      sprintf(AbsPath, "%s/%s", Path, Entry->d_name);
-      if ((SubDir = opendir(AbsPath))) {
-        closedir(SubDir);
-        RemoveDir(AbsPath);
-      } else {
-        if ((File = fopen(AbsPath, "r"))) {
-          fclose(File);
-          remove(AbsPath);
-        }
-      }
+    if (*(Entry->d_name) == '.')
+      continue;
+    sprintf(AbsPath, "%s/%s", Path, Entry->d_name);
+    if (SubDir = opendir(AbsPath))
+    {
+      closedir(SubDir);
+      RemoveDir(AbsPath);
+    }
+    else if (File = fopen(AbsPath, "r"))
+    {
+      fclose(File);
+      remove(AbsPath);
     }
   }
   remove(Path);
+}
+
+stref
+GetExtension
+( /* Get the extension from a path */
+  const stref& Path
+  /*-------------------------------*/
+)
+{
+  cstr LastDot = FindLast(RevBegin(Path), RevEnd(Path), '.');
+  if (LastDot == RevEnd(Path))
+    return stref();
+  return SubString(Path, int(LastDot + 1 - Begin(Path)), int(End(Path) - 1 - LastDot));
 }
 
 } // namespace idx2
@@ -129,3 +200,4 @@ void RemoveDir(cstr Path) {
 #undef GetCurrentDir
 #undef MkDir
 #undef Access
+

@@ -91,6 +91,50 @@ ParseDecodeOptions
 }
 
 static void
+ParseMetaData
+( /* Parse the metadata (name, field, dims, dtype) from the command line */
+  int Argc,
+  cstr* Argv,
+  params* P
+  /*---------------------------------------------------------------------*/
+)
+{
+  //stref FileStr = idx2_StRef(P->Meta.File);
+  //Copy(P->InputFile, &FileStr);
+  // Parse the dataset name (--name)
+  //idx2_ExitIf
+  //(
+  //  !OptVal(Argc, Argv, "--name", &P->Meta.Name),
+  //  "Provide --name\n"
+  //  "Example: --name Miranda\n"
+  //);
+  //// Parse the field name (--field)
+  //idx2_ExitIf
+  //(
+  //  !OptVal(Argc, Argv, "--field", &P->Meta.Field),
+  //  "Provide --field\n"
+  //  "Example: --field Density\n"
+  //);
+  // Parse the dimensions
+  idx2_ExitIf
+  (
+    !OptVal(Argc, Argv, "--dims", &P->Meta.Dims3),
+    "Provide --dims\n"
+    "Example: --dims 384 384 256\n"
+  );
+  // Parse the data type (--dtype)
+ /* char DType[8];
+  char* DTypePtr = DType;
+  idx2_ExitIf
+  (
+    !OptVal(Argc, Argv, "--field", &DTypePtr),
+    "Provide --dtype (float32 or float64)\n"
+    "Example: --dtype float32\n"
+  );*/
+  //P->Meta.DType = StringTo<dtype>()(stref(DType));
+}
+
+static void
 ParseEncodeOptions
 ( /* Parse the options specific to encoding */
   int Argc,
@@ -98,8 +142,18 @@ ParseEncodeOptions
   params* P
 ) /*----------------------------------------*/
 {
-  // Parse the metadata from the input file name
-  idx2_ExitIfError(ParseMeta(P->InputFile, &P->Meta));
+  // First, try to parse the metadata from the file name
+  auto ParseOk = StrToMetaData(P->InputFile, &P->Meta);
+  // if the previous parse fails, parse metadata from the command line
+  if (!ParseOk)
+  {
+    ParseMetaData(Argc, Argv, P);
+    // If the input file is a .txt file, read all the file names in the txt into an array
+    if (GetExtension(P->InputFile) == idx2_StRef("txt"))
+    {
+      // Parse
+    }
+  }
   idx2_ExitIf(P->Meta.DType == dtype::__Invalid__, "Data type not supported\n");
   // Parse the brick dimensions (--brick_size)
   idx2_ExitIf
@@ -238,7 +292,7 @@ main
   /* Read the parameters */
   params P = ParseParams(Argc, Argv);
   if (P.Action == action::Encode) {
-    error MetaOk = ParseMeta(P.InputFile, &P.Meta);
+    error MetaOk = StrToMetaData(P.InputFile, &P.Meta);
     if (!MetaOk) {
       cstr Str = P.Meta.Name;
       if (!OptVal(Argc, Argv, "--name", &Str)) {
@@ -276,7 +330,7 @@ main
       idx2_ExitIfError(SetParams(&Idx2, P));
       idx2_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));
 //      error Result = ReadVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol.Vol);
-      idx2_ExitIfError(MapVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
+      idx2_ExitIfError(MapVolume(P.InputFile, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
 			idx2_ExitIfError(Encode(&Idx2, P, brick_copier(&Vol.Vol)));
     }
     idx2_Case_2 (P.Action == action::Decode)

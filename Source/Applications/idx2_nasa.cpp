@@ -40,7 +40,7 @@ ParseParams
     P.OutMode = params::out_mode::WriteToFile;
   //P.ComputeMinMax = OptExists(Argc, Argv, "--minmax");
   if (P.Action == action::Encode) {
-    error Err = ParseMeta(P.InputFile, &P.Meta);
+    error Err = StrToMetaData(P.InputFile, &P.Meta);
     if (ErrorExists(Err)) {
       fprintf(stderr, "Error parsing input information\n");
       fprintf(stderr, "%s\n", ToString(Err));
@@ -186,7 +186,7 @@ main(int Argc, cstr* Argv) {
   /* Read the parameters */
   params P = ParseParams(Argc, Argv);
   if (P.Action == action::Encode) {
-    error MetaOk = ParseMeta(P.InputFile, &P.Meta);
+    error MetaOk = StrToMetaData(P.InputFile, &P.Meta);
     if (!MetaOk) {
       cstr Str = P.Meta.Name;
       if (!OptVal(Argc, Argv, "--name", &Str)) {
@@ -224,7 +224,7 @@ main(int Argc, cstr* Argv) {
       idx2_ExitIfError(SetParams(&Idx2, P));
       idx2_RAII(mmap_volume, Vol, (void)Vol, Unmap(&Vol));
       //      error Result = ReadVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol.Vol);
-      idx2_ExitIfError(MapVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
+      idx2_ExitIfError(MapVolume(P.InputFile, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
       idx2_ExitIfError(Encode(&Idx2, P, brick_copier(&Vol.Vol)));
     }
     idx2_Case_2(P.Action == action::Decode)

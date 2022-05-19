@@ -66,13 +66,15 @@ struct file_id {
   u64 Id = 0;
 };
 
-struct params {
+struct params
+{
   volume NasaMask;
   action Action = action::__Invalid__;
   metadata Meta;
   v2i Version = v2i(1, 0);
   v3i Dims3 = v3i(256);
   v3i BrickDims3 = v3i(32);
+  array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
   int NLevels = 1;
   f64 Accuracy = 1e-9;
