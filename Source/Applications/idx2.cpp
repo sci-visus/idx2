@@ -90,31 +90,32 @@ ParseDecodeOptions
   OptVal(Argc, Argv, "--decode_level", &P->DecodeLevel);
 }
 
+
+/* Parse the metadata (name, field, dims, dtype) from the command line
+--------------------------------------------------------------------------------------------*/
 static void
 ParseMetaData
-( /* Parse the metadata (name, field, dims, dtype) from the command line */
+(/*-----------------------------------------------------------------------------------------*/
   int Argc,
   cstr* Argv,
   params* P
-  /*---------------------------------------------------------------------*/
-)
+)/*-----------------------------------------------------------------------------------------*/
 {
-  //stref FileStr = idx2_StRef(P->Meta.File);
-  //Copy(P->InputFile, &FileStr);
-  // Parse the dataset name (--name)
-  //idx2_ExitIf
-  //(
-  //  !OptVal(Argc, Argv, "--name", &P->Meta.Name),
-  //  "Provide --name\n"
-  //  "Example: --name Miranda\n"
-  //);
-  //// Parse the field name (--field)
-  //idx2_ExitIf
-  //(
-  //  !OptVal(Argc, Argv, "--field", &P->Meta.Field),
-  //  "Provide --field\n"
-  //  "Example: --field Density\n"
-  //);
+  // Parse the name
+  cstr Str = P->Meta.Name;
+  idx2_ExitIf
+  (
+    !OptVal(Argc, Argv, "--name", &Str),
+    "Provide --name\n"
+    "Example: --name Miranda\n"
+  );
+  // Parse the field name (--field)
+  idx2_ExitIf
+  (
+    !OptVal(Argc, Argv, "--field", &Str),
+    "Provide --field\n"
+    "Example: --field Density\n"
+  );
   // Parse the dimensions
   idx2_ExitIf
   (
@@ -122,25 +123,28 @@ ParseMetaData
     "Provide --dims\n"
     "Example: --dims 384 384 256\n"
   );
-  // Parse the data type (--dtype)
- /* char DType[8];
-  char* DTypePtr = DType;
+  // Parse the data type (--type)
+  char DType[8];
+  cstr DTypePtr = DType;
   idx2_ExitIf
   (
     !OptVal(Argc, Argv, "--field", &DTypePtr),
-    "Provide --dtype (float32 or float64)\n"
-    "Example: --dtype float32\n"
-  );*/
-  //P->Meta.DType = StringTo<dtype>()(stref(DType));
+    "Provide --type (float32 or float64)\n"
+    "Example: --type float32\n"
+  );
+  P->Meta.DType = StringTo<dtype>()(stref(DType));
 }
 
+
+/* Parse the options specific to encoding
+--------------------------------------------------------------------------------------------*/
 static void
 ParseEncodeOptions
-( /* Parse the options specific to encoding */
+(/*-----------------------------------------------------------------------------------------*/
   int Argc,
   cstr* Argv,
   params* P
-) /*----------------------------------------*/
+)/*-----------------------------------------------------------------------------------------*/
 {
   // First, try to parse the metadata from the file name
   auto ParseOk = StrToMetaData(P->InputFile, &P->Meta);
@@ -148,6 +152,7 @@ ParseEncodeOptions
   if (!ParseOk)
   {
     ParseMetaData(Argc, Argv, P);
+
     // If the input file is a .txt file, read all the file names in the txt into an array
     if (GetExtension(P->InputFile) == idx2_StRef("txt"))
     {
@@ -156,6 +161,7 @@ ParseEncodeOptions
       ReadLines(Fp, &P->InputFiles);
     }
   }
+  // Check the data type
   idx2_ExitIf(P->Meta.DType == dtype::__Invalid__, "Data type not supported\n");
   // Parse the brick dimensions (--brick_size)
   idx2_ExitIf
@@ -220,11 +226,13 @@ ParseParams
 ) /*-----------------------------------------------------------*/
 {
   params P;
+
   P.Action = OptExists(Argc, Argv, "--encode")
            ? action::Encode
            : OptExists(Argc, Argv, "--decode")
            ? P.Action = action::Decode
            : action::__Invalid__;
+
   idx2_ExitIf(P.Action == action::__Invalid__, "Provide either --encode or --decode\n");
 
   // Parse the input file (--input)
@@ -293,34 +301,9 @@ main
   SetHandleAbortSignals();
   /* Read the parameters */
   params P = ParseParams(Argc, Argv);
-  if (P.Action == action::Encode) {
+  if (P.Action == action::Encode)
+  {
     error MetaOk = StrToMetaData(P.InputFile, &P.Meta);
-    if (!MetaOk) {
-      cstr Str = P.Meta.Name;
-      if (!OptVal(Argc, Argv, "--name", &Str)) {
-        fprintf(stderr, "Provide --name\n");
-        fprintf(stderr, "Example: --name miranda\n");
-        exit(1);
-      }
-      Str = P.Meta.Field;
-      if (!OptVal(Argc, Argv, "--field", &Str)) {
-        fprintf(stderr, "Provide --field\n");
-        fprintf(stderr, "Example: --field density\n");
-        exit(1);
-      }
-      if (!OptVal(Argc, Argv, "--dims", &P.Meta.Dims3)) {
-        fprintf(stderr, "Provide --dims\n");
-        fprintf(stderr, "Example: --dims 96 96 96\n");
-        exit(1);
-      }
-      char TypeBuf[8]; cstr Type = TypeBuf;
-      if (!OptVal(Argc, Argv, "--type", &Type)) {
-        fprintf(stderr, "Provide --type\n");
-        fprintf(stderr, "Example: --type float64\n");
-        exit(1);
-      }
-      P.Meta.DType = StringTo<dtype>()(Type);
-    }
   }
 
   { /* Perform the action */
