@@ -25,7 +25,7 @@ cstr  ToString(const path& Path);
 /* File related */
 stref GetFileName(const stref& Path);
 stref GetExtension(const stref& Path);
-i64   GetSize(const stref& Path);
+i64   GetFileSize(const stref& Path);
 
 /* Directory related */
 stref GetDirName(const stref& Path);

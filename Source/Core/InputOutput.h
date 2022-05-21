@@ -61,8 +61,7 @@ namespace idx2
 
 
 template <typename i>
-error<>
-DumpText(cstr FileName, i Begin, i End, cstr Format)
+error<> DumpText(cstr FileName, i Begin, i End, cstr Format)
 {
   FILE* Fp = fopen(FileName, "w");
   idx2_CleanUp(0, if (Fp) fclose(Fp));
@@ -78,52 +77,47 @@ DumpText(cstr FileName, i Begin, i End, cstr Format)
 
 
 template <typename t>
-void
-WritePOD(FILE* Fp, const t Var)
-{
-  fwrite(&Var, sizeof(Var), 1, Fp);
-}
-
-
-idx2_Inline void
-WriteBuffer(FILE* Fp, const buffer& Buf)
-{
-  fwrite(Buf.Data, Size(Buf), 1, Fp);
-}
-
-
-idx2_Inline void
-WriteBuffer(FILE* Fp, const buffer& Buf, i64 Sz)
-{
-  fwrite(Buf.Data, Sz, 1, Fp);
-}
-
-
-idx2_Inline void
-ReadBuffer(FILE* Fp, buffer* Buf)
-{
-  fread(Buf->Data, Size(*Buf), 1, Fp);
-}
-
-
-idx2_Inline void
-ReadBuffer(FILE* Fp, buffer* Buf, i64 Sz)
-{
-  fread(Buf->Data, Sz, 1, Fp);
-}
-
+void WritePOD(FILE* Fp, const t Var) { fwrite(&Var, sizeof(Var), 1, Fp); }
 
 template <typename t>
-idx2_Inline void
-ReadBuffer(FILE* Fp, buffer_t<t>* Buf)
+idx2_Inline void ReadPOD(FILE* Fp, t* Val) { fread(Val, sizeof(t), 1, Fp); }
+
+template <typename t>
+idx2_Inline void ReadBackwardPOD(FILE* Fp, t* Val)
 {
-  fread(Buf->Data, Bytes(*Buf), 1, Fp);
+  auto Where = idx2_FTell(Fp);
+  idx2_FSeek(Fp, Where -= sizeof(t), SEEK_SET);
+  fread(Val, sizeof(t), 1, Fp);
+  idx2_FSeek(Fp, Where, SEEK_SET);
 }
 
+idx2_Inline void WriteBuffer(FILE* Fp, const buffer& Buf) { fwrite(Buf.Data, Size(Buf), 1, Fp); }
+idx2_Inline void WriteBuffer(FILE* Fp, const buffer& Buf, i64 Sz) { fwrite(Buf.Data, Sz, 1, Fp); }
+idx2_Inline void ReadBuffer(FILE* Fp, buffer* Buf) { fread(Buf->Data, Size(*Buf), 1, Fp); }
+idx2_Inline void ReadBuffer(FILE* Fp, buffer* Buf, i64 Sz) { fread(Buf->Data, Sz, 1, Fp); }
+
+template <typename t>
+idx2_Inline void ReadBuffer(FILE* Fp, buffer_t<t>* Buf) { fread(Buf->Data, Bytes(*Buf), 1, Fp); }
+
+idx2_Inline void ReadBackwardBuffer(FILE* Fp, buffer* Buf)
+{
+  auto Where = idx2_FTell(Fp);
+  idx2_FSeek(Fp, Where -= Size(*Buf), SEEK_SET);
+  fread(Buf->Data, Size(*Buf), 1, Fp);
+  idx2_FSeek(Fp, Where, SEEK_SET);
+}
+
+idx2_Inline void ReadBackwardBuffer(FILE* Fp, buffer* Buf, i64 Sz)
+{
+  assert(Sz <= Size(*Buf));
+  auto Where = idx2_FTell(Fp);
+  idx2_FSeek(Fp, Where -= Sz, SEEK_SET);
+  fread(Buf->Data, Sz, 1, Fp);
+  idx2_FSeek(Fp, Where, SEEK_SET);
+}
 
 template <int N>
-void
-ReadLines(FILE* Fp, array<stack_array<char, N>>* Lines)
+void ReadLines(FILE* Fp, array<stack_array<char, N>>* Lines)
 {
   while (true)
   {
@@ -138,46 +132,6 @@ ReadLines(FILE* Fp, array<stack_array<char, N>>* Lines)
     stref Dst(Back(*Lines).Arr, N);
     Copy(Src, &Dst, true);
   }
-}
-
-
-template <typename t>
-idx2_Inline void
-ReadPOD(FILE* Fp, t* Val)
-{
-  fread(Val, sizeof(t), 1, Fp);
-}
-
-
-template <typename t>
-idx2_Inline void
-ReadBackwardPOD(FILE* Fp, t* Val)
-{
-  auto Where = idx2_FTell(Fp);
-  idx2_FSeek(Fp, Where -= sizeof(t), SEEK_SET);
-  fread(Val, sizeof(t), 1, Fp);
-  idx2_FSeek(Fp, Where, SEEK_SET);
-}
-
-
-idx2_Inline void
-ReadBackwardBuffer(FILE* Fp, buffer* Buf)
-{
-  auto Where = idx2_FTell(Fp);
-  idx2_FSeek(Fp, Where -= Size(*Buf), SEEK_SET);
-  fread(Buf->Data, Size(*Buf), 1, Fp);
-  idx2_FSeek(Fp, Where, SEEK_SET);
-}
-
-
-idx2_Inline void
-ReadBackwardBuffer(FILE* Fp, buffer* Buf, i64 Sz)
-{
-  assert(Sz <= Size(*Buf));
-  auto Where = idx2_FTell(Fp);
-  idx2_FSeek(Fp, Where -= Sz, SEEK_SET);
-  fread(Buf->Data, Sz, 1, Fp);
-  idx2_FSeek(Fp, Where, SEEK_SET);
 }
 
 

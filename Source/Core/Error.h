@@ -44,38 +44,44 @@ idx2_T(t) bool ErrorExists(const error<t>& Err);
 #include <string.h>
 #include "Memory.h"
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_T(t) error<t>::
-error() {}
+idx2_T(t)
+error<t>::error() {}
 
-idx2_T(t) error<t>::
-error(t CodeIn, bool StrGenedIn, cstr MsgIn) :
+idx2_T(t)
+error<t>::error(t CodeIn, bool StrGenedIn, cstr MsgIn) :
   Msg(MsgIn), Code(CodeIn), StackIdx(0), StrGened(StrGenedIn) {}
 
-idx2_T(t) idx2_T(u) error<t>::
-error(const error<u>& Err) :
+idx2_T(t) idx2_T(u)
+error<t>::error(const error<u>& Err) :
   Msg(Err.Msg), Code((t)Err.Code), StackIdx(Err.StackIdx), StrGened(Err.StrGened) {
 //  static_assert(sizeof(t) == sizeof(u));
+
 }
 
-idx2_T(t) error<t>::
-operator bool() const {
-  return Code == t::NoError;
-}
+idx2_T(t)
+error<t>::operator bool() const { return Code == t::NoError; }
 
 idx2_T(t) cstr
-ToString(const error<t>& Err, bool Force) {
-  if (Force || !Err.StrGened) {
+ToString(const error<t>& Err, bool Force)
+{
+  if (Force || !Err.StrGened)
+  {
     auto ErrStr = ToString(Err.Code);
-    snprintf(ScratchBuf, sizeof(ScratchBuf), "%.*s (file: %s, line %d): %s",
-             ErrStr.Size, ErrStr.Ptr, Err.Files[0], Err.Lines[0], Err.Msg);
+    snprintf
+    (
+      ScratchBuf, sizeof(ScratchBuf), "%.*s (file: %s, line %d): %s",
+      ErrStr.Size, ErrStr.Ptr, Err.Files[0], Err.Lines[0], Err.Msg
+    );
   }
   return ScratchBuf;
 }
 
 idx2_T(t) void
-PrintStacktrace(printer* Pr, const error<t>& Err) {
+PrintStacktrace(printer* Pr, const error<t>& Err)
+{
   (void)Pr;
   idx2_Print(Pr, "Stack trace:\n");
   for (i8 I = 0; I < Err.StackIdx; ++I)

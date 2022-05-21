@@ -8,13 +8,11 @@
 
 using namespace idx2;
 
+
+/* Parse the decode options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 static void
-ParseDecodeOptions
-(
-  int Argc,
-  cstr* Argv,
-  params* P
-)
+ParseDecodeOptions(int Argc, cstr* Argv, params* P)
 {
   v3i First3, Last3;
   // Parse the first extent coordinates (--first)
@@ -24,6 +22,7 @@ ParseDecodeOptions
     "Provide --first (the first sample of the box to decode)\n"
     "Example: --first 0 400 0\n"
   );
+
   // Parse the last extent coordinates (--last)
   idx2_ExitIf
   (
@@ -32,6 +31,7 @@ ParseDecodeOptions
     "Example: --first 919 655 719\n"
   );
   P->DecodeExtent = extent(First3, Last3 - First3 + 1);
+
   // Parse the output level (--level)
   idx2_ExitIf
   (
@@ -41,6 +41,7 @@ ParseDecodeOptions
     "Example: --level 0\n"
   );
   P->DecodeLevel = P->OutputLevel;
+
   // Parse the mask for sub level (--mask)
   u8 Mask = 0;
   idx2_ExitIf
@@ -71,6 +72,7 @@ ParseDecodeOptions
     P->DecodeMask = SetBit(P->DecodeMask, 3);
   else
     P->DecodeMask = UnsetBit(P->DecodeMask, 3);
+
   // Parse the decode accuracy (--accuracy)
   idx2_ExitIf
   (
@@ -78,6 +80,7 @@ ParseDecodeOptions
     "Provide --accuracy\n"
     "Example: --accuracy 0.01\n"
   );
+
   // Parse the input directory (--in_dir)
   idx2_ExitIf
   (
@@ -85,6 +88,7 @@ ParseDecodeOptions
     "Provide --in_dir (input directory)\n"
     "For example, if the input file is C:/Data/MIRANDA/DENSITY.idx2, the --in_dir is C:/Data\n"
   );
+
   /* Parse the optional quality and decode levels */
   OptVal(Argc, Argv, "--quality_level", &P->QualityLevel);
   OptVal(Argc, Argv, "--decode_level", &P->DecodeLevel);
@@ -94,12 +98,7 @@ ParseDecodeOptions
 /* Parse the metadata (name, field, dims, dtype) from the command line
 --------------------------------------------------------------------------------------------*/
 static void
-ParseMetaData
-(/*-----------------------------------------------------------------------------------------*/
-  int Argc,
-  cstr* Argv,
-  params* P
-)/*-----------------------------------------------------------------------------------------*/
+ParseMetaData(int Argc, cstr* Argv, params* P)
 {
   // Parse the name
   cstr Str = P->Meta.Name;
@@ -109,6 +108,7 @@ ParseMetaData
     "Provide --name\n"
     "Example: --name Miranda\n"
   );
+
   // Parse the field name (--field)
   idx2_ExitIf
   (
@@ -116,6 +116,7 @@ ParseMetaData
     "Provide --field\n"
     "Example: --field Density\n"
   );
+
   // Parse the dimensions
   idx2_ExitIf
   (
@@ -123,6 +124,7 @@ ParseMetaData
     "Provide --dims\n"
     "Example: --dims 384 384 256\n"
   );
+
   // Parse the data type (--type)
   char DType[8];
   cstr DTypePtr = DType;
@@ -136,18 +138,28 @@ ParseMetaData
 }
 
 
+/* If the files in P->InputFiles have different sizes, return false
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+static bool
+CheckFileSizes(params* P)
+{
+  i64 ConstantSize = 0;
+  idx2_For(int, I, 0, Size(P->InputFiles))
+  {
+    i64 S = GetFileSize(stref(P->InputFiles[I].Arr));
+    if (I == 0) ConstantSize = S;
+    if (S != ConstantSize)
+      return false;
+  }
 
+  return true;
+}
 
 
 /* Parse the options specific to encoding
 --------------------------------------------------------------------------------------------*/
 static void
-ParseEncodeOptions
-(/*-----------------------------------------------------------------------------------------*/
-  int Argc,
-  cstr* Argv,
-  params* P
-)/*-----------------------------------------------------------------------------------------*/
+ParseEncodeOptions(int Argc, cstr* Argv, params* P)
 {
   // First, try to parse the metadata from the file name
   auto ParseOk = StrToMetaData(P->InputFile, &P->Meta);
@@ -162,8 +174,10 @@ ParseEncodeOptions
       // Parse the file names
       idx2_RAII(FILE*, Fp = fopen(P->InputFile, "rb"),, if (Fp) fclose(Fp));
       ReadLines(Fp, &P->InputFiles);
+      idx2_ExitIf(!CheckFileSizes(P), "Input files have to be of the same size\n");
     }
   }
+
   // Check the data type
   idx2_ExitIf(P->Meta.DType == dtype::__Invalid__, "Data type not supported\n");
   // Parse the brick dimensions (--brick_size)
@@ -173,6 +187,7 @@ ParseEncodeOptions
     "Provide --brick_size\n"
     "Example: --brick_size 32 32 32\n"
   );
+
   // Parse the number of levels (--num_levels)
   idx2_ExitIf
   (
@@ -180,6 +195,7 @@ ParseEncodeOptions
     "Provide --num_levels\n"
     "Example: --num_levels 2\n"
   );
+
   // Parse the accuracy (--accuracy)
   idx2_ExitIf
   (
@@ -187,6 +203,7 @@ ParseEncodeOptions
     "Provide --accuracy\n"
     "Example: --accuracy 1e-9\n"
   );
+
   // Parse the number of bricks per tile (--bricks_per_tile)
   idx2_ExitIf
   (
@@ -194,6 +211,7 @@ ParseEncodeOptions
     "Provide --bricks_per_tile\n"
     "Example: --bricks_per_tile 512\n"
   );
+
   // Parse the number of tiles per file (--tiles_per_file)
   idx2_ExitIf
   (
@@ -201,6 +219,7 @@ ParseEncodeOptions
     "Provide --tiles_per_file\n"
     "Example: --tiles_per_file 4096\n"
   );
+
   // Parse the number of files per directory (--files_per_dir)
   idx2_ExitIf
   (
@@ -208,6 +227,7 @@ ParseEncodeOptions
     "Provide --files_per_dir\n"
     "Example: --files_per_dir 4096\n"
   );
+
   // Parse the optional RDO levels (--quality_levels)
   OptVal(Argc, Argv, "--quality_levels", &P->RdoLevels);
   // Parse the optional version (--version)
@@ -221,12 +241,11 @@ ParseEncodeOptions
   P->GroupSubLevels = OptExists(Argc, Argv, "--group_sub_levels");
 }
 
+
+/* Parse the parameters to the program from the command line
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 params
-ParseParams
-( /* Parse the parameters to the program from the command line */
-  int Argc,
-  cstr* Argv
-) /*-----------------------------------------------------------*/
+ParseParams(int Argc, cstr* Argv)
 {
   params P;
 
@@ -268,12 +287,10 @@ ParseParams
   return P;
 }
 
-static error<idx2_err_code>
-SetParams
-( /* "Copy" the parameters from the command line to the internal idx2_file struct */
-  idx2_file* Idx2,
-  const params& P
-) /*------------------------------------------------------------------------------*/
+
+/* "Copy" the parameters from the command line to the internal idx2_file struct
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+static error<idx2_err_code> SetParams(idx2_file* Idx2, const params& P)
 {
   SetName(Idx2, P.Meta.Name);
   SetField(Idx2, P.Meta.Field);
@@ -291,26 +308,26 @@ SetParams
   SetGroupBitPlanes(Idx2, P.GroupBitPlanes);
   SetGroupSubLevels(Idx2, P.GroupSubLevels);
   SetQualityLevels(Idx2, P.RdoLevels);
+
   return Finalize(Idx2);
 }
 
-int
-main
-( /* Program's entry point */
-  int Argc,
-  cstr* Argv
-) /*-----------------------*/
+
+/* Main function (entry point of the idx2 command)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+int main(int Argc, cstr* Argv)
 {
   SetHandleAbortSignals();
-  /* Read the parameters */
   params P = ParseParams(Argc, Argv);
   if (P.Action == action::Encode)
-  {
     error MetaOk = StrToMetaData(P.InputFile, &P.Meta);
-  }
 
   { /* Perform the action */
-    idx2_RAII(timer, Timer, StartTimer(&Timer), printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer))));
+    idx2_RAII
+    (
+      timer, Timer, StartTimer(&Timer),
+      printf("Total time: %f seconds\n", Seconds(ElapsedTime(&Timer)))
+    );
     idx2_file Idx2;
     idx2_Case_1 (P.Action == action::Encode)
     {
@@ -332,10 +349,13 @@ main
     }
     Dealloc(&Idx2);
   }
-  if (P.Pause) {
+
+  if (P.Pause)
+  {
     printf("Press any key to end...\n");
     getchar();
   }
+
   Dealloc(&P);
   //_CrtDumpMemoryLeaks();
   return 0;

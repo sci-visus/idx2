@@ -14,8 +14,8 @@
   #define GetCurrentDir _getcwd
   #define MkDir(Dir) _mkdir(Dir)
   #define Access(Dir) _access(Dir, 0)
-  #define Stat(Path, S) _stat(Path, S)
-  #define stat struct _stat;
+  #define Stat(Path, S) _stat64(Path, S)
+  #define stat struct _stat64
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   #include <dirent.h>
   #include <sys/stat.h>
@@ -201,10 +201,9 @@ void RemoveDir(cstr Path)
 stref GetExtension(const stref& Path)
 {
   cstr LastDot = FindLast(RevBegin(Path), RevEnd(Path), '.');
-  if (LastDot == RevEnd(Path))
-    return stref();
+  if (LastDot == RevEnd(Path)) return stref();
 
-  return SubString(Path, int(LastDot + 1 - Begin(Path)), int(End(Path) - 1 - LastDot));
+  return SubString(Path, int(LastDot+1-Begin(Path)), int(End(Path)-1-LastDot));
 }
 
 
@@ -212,8 +211,13 @@ stref GetExtension(const stref& Path)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 i64 GetFileSize(const stref& Path)
 {
-  // TODO: we need to temporarily change Path (by putting '\n' at Path[Size])
-  struct _stat S;
+  idx2_RAII
+  (
+    char, C = Path.Ptr[Path.Size],
+    Path.Ptr[Path.Size] = '\0',
+    Path.Ptr[Path.Size] = C
+  );
+  stat S;
   if (0 != Stat(Path.Ptr, &S))
     return -1;
 
@@ -226,4 +230,6 @@ i64 GetFileSize(const stref& Path)
 #undef GetCurrentDir
 #undef MkDir
 #undef Access
+#undef stat
+#undef Stat
 
