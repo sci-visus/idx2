@@ -136,6 +136,9 @@ ParseMetaData
 }
 
 
+
+
+
 /* Parse the options specific to encoding
 --------------------------------------------------------------------------------------------*/
 static void
@@ -156,7 +159,7 @@ ParseEncodeOptions
     // If the input file is a .txt file, read all the file names in the txt into an array
     if (GetExtension(P->InputFile) == idx2_StRef("txt"))
     {
-      // Parse
+      // Parse the file names
       idx2_RAII(FILE*, Fp = fopen(P->InputFile, "rb"),, if (Fp) fclose(Fp));
       ReadLines(Fp, &P->InputFiles);
     }

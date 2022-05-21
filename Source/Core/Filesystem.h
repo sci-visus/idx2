@@ -16,49 +16,22 @@ struct path
   path(const stref& Str);
 };
 
-void
-Init
-(path* Path, const stref& Str);
+/* General */
+void  Init(path* Path, const stref& Str);
+void  Append(path* Path, const stref& Part);
+bool  IsRelative(const stref& Path);
+cstr  ToString(const path& Path);
 
-/* Add a part to the end (e.g. "C:/Users" + "Meow" = "C:/Users/Meow"). */
-void
-Append
-(path* Path, const stref& Part);
+/* File related */
+stref GetFileName(const stref& Path);
+stref GetExtension(const stref& Path);
+i64   GetSize(const stref& Path);
 
-/* Get the file name from a path */
-stref
-GetFileName
-(const stref& Path);
-
-/* Remove the last part, e.g., removing the file name at the end of a path. */
-stref
-GetDirName
-(const stref& Path);
-
-cstr
-ToString
-(const path& Path);
-
-/* Get the directory where the program is launched from. */
-bool
-IsRelative
-(const stref& Path);
-
-bool
-CreateFullDir
-(const stref& Path);
-
-bool
-DirExists
-(const stref& Path);
-
-void
-RemoveDir
-(cstr path);
-
-stref
-GetExtension
-(const stref& Path);
+/* Directory related */
+stref GetDirName(const stref& Path);
+bool  CreateFullDir(const stref& Path);
+bool  DirExists(const stref& Path);
+void  RemoveDir(cstr path);
 
 } // namespace idx2
 

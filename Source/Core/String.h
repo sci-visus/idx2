@@ -4,7 +4,8 @@
 
 #include "Common.h"
 
-namespace idx2 {
+namespace idx2
+{
 
 /* Useful to create a string_ref out of a literal string */
 #define idx2_StRef(x) idx2::stref((x), sizeof(x) - 1)
@@ -61,7 +62,8 @@ bool ToInt   (const stref& Str, int* Result);
 bool ToDouble(const stref& Str, f64* Result);
 
 /* Tokenize strings without allocating memory */
-struct tokenizer {
+struct tokenizer
+{
   stref Input;
   stref Delims;
   int Pos = 0;
@@ -76,46 +78,36 @@ void  Reset(tokenizer* Tk);
 
 } // namespace idx2
 
+
 #include <assert.h>
 #include <string.h>
 #include "Macros.h"
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Inline stref::
-stref() = default;
+idx2_Inline stref::stref() = default;
+idx2_Inline stref::stref(cstr PtrIn, int SizeIn) : ConstPtr(PtrIn), Size(SizeIn) { }
+idx2_Inline stref::stref(cstr PtrIn) : ConstPtr(PtrIn), Size(int(strlen(PtrIn))) { }
 
-idx2_Inline stref::
-stref(cstr PtrIn, int SizeIn)
-  : ConstPtr(PtrIn), Size(SizeIn) {}
+idx2_Inline char& stref::operator[](int Idx) const
+{ assert(Idx < Size); return const_cast<char&>(Ptr[Idx]); }
 
-idx2_Inline stref::
-stref(cstr PtrIn)
-  : ConstPtr(PtrIn), Size(int(strlen(PtrIn))) {}
+idx2_Inline stref::operator bool() const { return Ptr != nullptr; }
 
-idx2_Inline char& stref::
-operator[](int Idx) const { assert(Idx < Size); return const_cast<char&>(Ptr[Idx]); }
+idx2_Inline int Size(const stref& Str) { return Str.Size; }
 
-idx2_Inline stref::
-operator bool() const { return Ptr != nullptr; }
-
-idx2_Inline int
-Size(const stref& Str) { return Str.Size; }
-
-idx2_Inline str Begin   (stref Str) { return Str.Ptr; }
-idx2_Inline str End     (stref Str) { return Str.Ptr + Str.Size; }
+idx2_Inline str Begin   (stref Str) { return Str.Ptr;                }
+idx2_Inline str End     (stref Str) { return Str.Ptr + Str.Size;     }
 idx2_Inline str RevBegin(stref Str) { return Str.Ptr + Str.Size - 1; }
-idx2_Inline str RevEnd  (stref Str) { return Str.Ptr - 1; }
+idx2_Inline str RevEnd  (stref Str) { return Str.Ptr - 1;            }
 
-idx2_Inline tokenizer::
-tokenizer() = default;
+idx2_Inline tokenizer::tokenizer() = default;
+idx2_Inline tokenizer::tokenizer(const stref& InputIn, const stref& DelimsIn)
+  : Input(InputIn), Delims(DelimsIn), Pos(0) { }
 
-idx2_Inline tokenizer::
-tokenizer(const stref& InputIn, const stref& DelimsIn)
-  : Input(InputIn), Delims(DelimsIn), Pos(0) {}
-
-idx2_Inline void
-Init(tokenizer* Tk, const stref& Input, const stref& Delims) {
+idx2_Inline void Init(tokenizer* Tk, const stref& Input, const stref& Delims)
+{
   Tk->Input = Input;
   Tk->Delims = Delims;
   Tk->Pos = 0;
