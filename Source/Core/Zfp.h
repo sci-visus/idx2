@@ -773,7 +773,7 @@ Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* id
     // TODO: to decode more than one bit plane, we can spread the bits of 8 bit planes (or more) to 4 lanes and then add only once
     // we can even work with 32 8-bit lanes (_epu8 unsigned char) to do bit transposing and shift the values when adding back to the results later
     //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((i64*)Block, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block, Val), Add));
+    _mm256_maskstore_epi64((long long int*)Block, Val, _mm256_add_epi64(_mm256_maskload_epi64((i64*)Block, Val), Add));
     X >>= 4;
     Block += 4;
   }
