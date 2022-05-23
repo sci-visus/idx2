@@ -24,7 +24,7 @@
   #define MkDir(Dir) mkdir(Dir, 0733)
   #define Access(Dir) access(Dir, F_OK)
   #define Stat(Path, S) stat(Path, S)
-  #define stat struct stat
+  //#define stat struct stat
 #endif
 
 namespace idx2
