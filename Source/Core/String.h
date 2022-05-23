@@ -59,6 +59,7 @@ overflowing the memory of Dst. */
 void Copy(const stref& Src, stref* Dst, bool AddNull = true);
 /* Parse a string_ref and return a number */
 bool ToInt   (const stref& Str, int* Result);
+bool ToInt64 (const stref& Str, i64* Result);
 bool ToDouble(const stref& Str, f64* Result);
 
 /* Tokenize strings without allocating memory */

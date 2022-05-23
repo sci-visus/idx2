@@ -588,24 +588,31 @@ NumDims(const v3i& N) { return (N.X > 1) + (N.Y > 1) + (N.Z > 1); }
 #undef idx2_EndGridLoop
 #define idx2_EndGridLoop }}}}
 
-idx2_T(t) void
-Copy(const grid& SGrid, const volume& SVol, volume* DVol) {
+idx2_T(t)
+void Copy(const grid& SGrid, const volume& SVol, volume* DVol) {
   idx2_Assert(Dims(SGrid) <= Dims(*DVol));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
   idx2_Assert(SVol.Type == DVol->Type);
+
   auto SIt = Begin<t>(SGrid, SVol), SEnd = End<t>(SGrid, SVol);
   auto DIt = Begin<t>(SGrid, *DVol);
   for (; SIt != SEnd; ++SIt, ++DIt)
     *DIt = *SIt;
 }
 
-idx2_TT(stype, dtype) void
-Copy(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+idx2_TT(stype, dtype)
+void Copy(
+  const grid& SGrid,
+  const volume& SVol,
+  const grid& DGrid,
+  volume* DVol)
+{
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
+
   auto SIt = Begin<stype>(SGrid, SVol), SEnd = End<stype>(SGrid, SVol);
   auto DIt = Begin<dtype>(DGrid, *DVol);
   for (; SIt != SEnd; ++SIt, ++DIt)
@@ -614,19 +621,26 @@ Copy(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
 
 //i64 CopyGridGridCountZeroes(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol);
 
-idx2_TT(stype, dtype) v2d
-CopyExtentExtentMinMax(const extent& SGrid, const volume& SVol, const extent& DGrid, volume* DVol) {
+idx2_TT(stype, dtype)
+v2d CopyExtentExtentMinMax(
+  const extent& SGrid,
+  const volume& SVol,
+  const extent& DGrid,
+  volume* DVol)
+{
   v2d MinMax = v2d(traits<f64>::Max, traits<f64>::Min);
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
+
   v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid);
   v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid);
   v3i SrcDims3 = Dims(SVol);
   v3i DstDims3 = Dims(*DVol);
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
+
   v3i S3, D3;
   idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, v3i(1)) {
     f64 V = (f64)SrcPtr[Row(SrcDims3, S3)];
@@ -634,29 +648,42 @@ CopyExtentExtentMinMax(const extent& SGrid, const volume& SVol, const extent& DG
     MinMax.Min = Min(MinMax.Min, V);
     MinMax.Max = Max(MinMax.Min, V);
   } idx2_EndFor3
+
   return MinMax;
 }
 
-idx2_TT(stype, dtype) void
-CopyExtentGrid(const extent& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+idx2_TT(stype, dtype)
+void CopyExtentGrid(
+  const extent& SGrid,
+  const volume& SVol,
+  const grid& DGrid,
+  volume* DVol)
+{
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
+
   v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid);
   v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstStrd3 = Strd(DGrid);
   v3i SrcDims3 = Dims(SVol);
   v3i DstDims3 = Dims(*DVol);
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
+
   v3i S3, D3;
   idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, DstStrd3) {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   } idx2_EndFor3
 }
 
-idx2_TT(stype, dtype) void
-CopyGridExtent(const grid& SGrid, const volume& SVol, const extent& DGrid, volume* DVol) {
+idx2_TT(stype, dtype)
+void CopyGridExtent(
+  const grid& SGrid,
+  const volume& SVol,
+  const extent& DGrid,
+  volume* DVol)
+{
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
@@ -667,14 +694,21 @@ CopyGridExtent(const grid& SGrid, const volume& SVol, const extent& DGrid, volum
   v3i DstDims3 = Dims(*DVol);
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
+
   v3i S3, D3;
   idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, v3i(1)) {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   } idx2_EndFor3
 }
 
-idx2_TT(stype, dtype) void
-CopyGridGrid(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+idx2_TT(stype, dtype)
+void
+CopyGridGrid(
+  const grid& SGrid,
+  const volume& SVol,
+  const grid& DGrid,
+  volume* DVol)
+{
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
@@ -691,8 +725,13 @@ CopyGridGrid(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* D
   } idx2_EndFor3
 }
 
-idx2_TT(stype, dtype) void
-CopyExtentExtent(const extent& SGrid, const volume& SVol, const extent& DGrid, volume* DVol) {
+idx2_TT(stype, dtype)
+void CopyExtentExtent(
+  const extent& SGrid,
+  const volume& SVol,
+  const extent& DGrid,
+  volume* DVol)
+{
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
@@ -709,24 +748,32 @@ CopyExtentExtent(const extent& SGrid, const volume& SVol, const extent& DGrid, v
   } idx2_EndFor3
 }
 
-idx2_TT(stype, dtype) i64
-CopyGridGridCountZeroes(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
-  i64 Count = 0;
+idx2_TT(stype, dtype)
+i64 CopyGridGridCountZeroes(
+  const grid& SGrid,
+  const volume& SVol,
+  const grid& DGrid,
+  volume* DVol)
+{
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
+
+  i64 Count = 0;
   v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid), SrcStrd3 = Strd(SGrid);
   v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstStrd3 = Strd(DGrid);
   v3i SrcDims3 = Dims(SVol);
   v3i DstDims3 = Dims(*DVol);
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
+
   v3i S3, D3;
   idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, DstStrd3) {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
     Count += (dtype)SrcPtr[Row(SrcDims3, S3)] == 0;
   } idx2_EndFor3
+
   return Count;
 }
 

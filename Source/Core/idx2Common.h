@@ -58,14 +58,17 @@ idx2_Enum(func_level, u8,
   Max
 )
 
-namespace idx2 {
+namespace idx2
+{
 
 /* ---------------------- TYPES ----------------------*/
 
-struct file_id {
+struct file_id
+{
   stref Name;
   u64 Id = 0;
 };
+
 
 struct params
 {
@@ -102,9 +105,16 @@ struct params
   int DecodeLevel = 0;
   bool WaveletOnly = false;
   bool ComputeMinMax = false;
+  // either LLC_LatLon or LLC_Cap can be provided, not both
+  int LLC_LatLon = 0; // = 2160 for LLC2160
+  int LLC_Cap = 0; // = 2160 for LLC2160
+  v3<i64> Strides3 = v3<i64>(0);
+  i64 Offset = -1;
+  i64 NSamplesInFile = 0;
 };
 
-struct idx2_file {
+struct idx2_file
+{
   // Limits:
   // Level: 6 bits
   // BitPlane: 12 bits

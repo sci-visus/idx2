@@ -211,9 +211,7 @@ stref GetExtension(const stref& Path)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 i64 GetFileSize(const stref& Path)
 {
-  idx2_RAII
-  (
-    char, C = Path.Ptr[Path.Size],
+  idx2_RAII(char, C = Path.Ptr[Path.Size],
     Path.Ptr[Path.Size] = '\0',
     Path.Ptr[Path.Size] = C
   );

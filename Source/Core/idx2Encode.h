@@ -87,77 +87,79 @@ struct encode_data {
 By default, copy brick data from a volume to a local brick buffer.
 Can be extended polymorphically to provide other ways of copying.
 */
-struct
-brick_copier
+struct brick_copier
 {
   const volume* Volume = nullptr;
 
-  brick_copier
-  (
-    const volume* InputVolume
-  );
+  brick_copier() {};
+  brick_copier(const volume* InputVolume);
 
   virtual v2d // {Min, Max} values of brick
-  Copy
-  (
-    const extent& ExtentGlobal,
-    const extent& ExtentLocal,
-    brick_volume* Brick
-  ) const;
+  Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_volume* Brick);
 };
 
 
-/* ---------------------- FUNCTIONS ----------------------*/
+/* FUNCTIONS
+--------------------------------------------------------------------------------------------*/
 
 void
 WriteMetaFile(const idx2_file& Idx2, cstr FileName);
 
 /* Encode a whole volume, assuming the volume is available  */
 error<idx2_err_code>
-Encode
-(
-  idx2_file* Idx2,
-  const params& P,
-  const brick_copier& Copier
-);
+Encode(idx2_file* Idx2, const params& P, brick_copier& Copier);
 
 /* Encode a brick. Use this when the input data is not in the form of a big volume. */
 error<idx2_err_code>
 EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3);
 
+
+/* INLINE FUNCTIONS
+--------------------------------------------------------------------------------------------*/
+
 idx2_Inline void
-Init(channel* C) {
+Init(channel* C)
+{
   InitWrite(&C->BrickStream, 16384);
   InitWrite(&C->BrickDeltasStream, 32);
   InitWrite(&C->BrickSzsStream, 256);
   InitWrite(&C->BlockStream, 256);
 }
 
+
 idx2_Inline void
-Dealloc(channel* C) {
+Dealloc(channel* C)
+{
   Dealloc(&C->BrickDeltasStream);
   Dealloc(&C->BrickSzsStream);
   Dealloc(&C->BrickStream);
   Dealloc(&C->BlockStream);
 }
 
+
 idx2_Inline void
-Init(sub_channel* Sc) {
+Init(sub_channel* Sc)
+{
   InitWrite(&Sc->BlockEMaxesStream, 64);
   InitWrite(&Sc->BrickEMaxesStream, 8192);
 }
 
+
 idx2_Inline void
-Dealloc(sub_channel* Sc) {
+Dealloc(sub_channel* Sc)
+{
   Dealloc(&Sc->BlockEMaxesStream);
   Dealloc(&Sc->BrickEMaxesStream);
 }
 
+
 idx2_Inline void
-Dealloc(chunk_meta_info* Cm) {
+Dealloc(chunk_meta_info* Cm)
+{
   Dealloc(&Cm->Addrs);
   Dealloc(&Cm->Sizes);
 }
 
-}
+
+} // namespace idx2
 

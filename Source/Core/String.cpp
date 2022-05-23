@@ -38,7 +38,7 @@ TrimLeft(const stref& Str) {
   return StrOut;
 }
 
-stref 
+stref
 TrimRight(const stref& Str) {
   stref StrOut = Str;
   while (StrOut.Size && isspace(StrOut[StrOut.Size - 1]))
@@ -46,17 +46,17 @@ TrimRight(const stref& Str) {
   return StrOut;
 }
 
-stref 
+stref
 Trim(const stref& Str) { return TrimLeft(TrimRight(Str)); }
 
-stref 
+stref
 SubString(const stref& Str, int Begin, int Size) {
   if (!Str || Begin >= Str.Size)
     return stref();
   return stref(Str.Ptr + Begin, Min(Size, Str.Size));
 }
 
-void 
+void
 Copy(const stref& Src, stref* Dst, bool AddNull) {
   int NumBytes = Min(Dst->Size, Src.Size);
   memcpy(Dst->Ptr, Src.Ptr, size_t(NumBytes));
@@ -64,8 +64,9 @@ Copy(const stref& Src, stref* Dst, bool AddNull) {
     Dst->Ptr[NumBytes] = 0;
 }
 
-bool 
-ToInt(const stref& Str, int* Result) {
+
+bool ToInt(const stref& Str, int* Result)
+{
   stref& StrR = const_cast<stref&>(Str);
   if (!StrR || StrR.Size <= 0)
     return false;
@@ -86,7 +87,32 @@ ToInt(const stref& Str, int* Result) {
   return true;
 }
 
-bool 
+
+bool ToInt64(const stref& Str, i64* Result)
+{
+  stref& StrR = const_cast<stref&>(Str);
+  if (!StrR || StrR.Size <= 0)
+    return false;
+
+  i64 Mult = 1, Start = 0;
+  if (StrR[0] == '-') {
+    Mult = -1;
+    Start = 1;
+  }
+  *Result = 0;
+  for (int I = 0; I < Str.Size - Start; ++I) {
+    int V = StrR[StrR.Size-I-1] - '0';
+    if (V>=0 && V<10)
+      *Result += Mult * (V * Pow(i64(10), I)); // TODO: precompute the pow table (somehow I can't use pow like for int)
+    else
+      return false;
+  }
+
+  return true;
+}
+
+
+bool
 ToDouble(const stref& Str, f64* Result) {
   if (!Str || Str.Size <= 0)
     return false;
@@ -99,7 +125,7 @@ ToDouble(const stref& Str, f64* Result) {
 
 /* tokenizer stuff */
 
-stref 
+stref
 Next(tokenizer* Tk) {
   while (Tk->Pos < Tk->Input.Size && Contains(Tk->Delims, Tk->Input[Tk->Pos]))
     ++Tk->Pos;
@@ -115,7 +141,7 @@ Next(tokenizer* Tk) {
   return stref();
 }
 
-void 
+void
 Reset(tokenizer* Tk) { Tk->Pos = 0; }
 
 }

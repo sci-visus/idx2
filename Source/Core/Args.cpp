@@ -3,42 +3,63 @@
 #include "Enum.h"
 #include "String.h"
 
-namespace idx2 {
+namespace idx2
+{
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, str Val) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
+{
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
       int J = 0;
-      while (Val[J] = Args[I + 1][J++]) { }
+      while (Val[J] = Args[I+1][J]) { ++J; }
       return true;
     }
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val)
+{
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
       *Val = Args[I + 1];
       return true;
     }
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, int* Val) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, int* Val)
+{
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0)
       return ToInt(Args[I + 1], Val);
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val) {
+
+// TODO: we need a function that parse from string to i64
+bool OptVal(int NArgs, cstr* Args, cstr Opt, i64* V)
+{
+  for (int I = 0; I + 1 < NArgs; ++I) {
+    if (strncmp(Args[I], Opt, 32) == 0) {
+      return ToInt64(Args[I+1], V);
+    }
+  }
+
+  return false;
+}
+
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val)
+{
   int IntVal;
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
@@ -47,34 +68,56 @@ OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val) {
       return Success;
     }
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val)
+{
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
       Val->First = Args[I + 1][0];
       return ToInt(Args[I + 2], &Val->Second);
     }
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, v3i* Val) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, v3i* Val)
+{
   for (int I = 0; I + 3 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
-      return ToInt(Args[I + 1], &Val->X) &&
-             ToInt(Args[I + 2], &Val->Y) &&
-             ToInt(Args[I + 3], &Val->Z);
+      return
+        ToInt(Args[I + 1], &Val->X) &&
+        ToInt(Args[I + 2], &Val->Y) &&
+        ToInt(Args[I + 3], &Val->Z);
     }
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<i64>* Val)
+{
+  for (int I = 0; I + 3 < NArgs; ++I) {
+    if (strncmp(Args[I], Opt, 32) == 0) {
+      return
+        ToInt64(Args[I+1], &Val->X) &&
+        ToInt64(Args[I+2], &Val->Y) &&
+        ToInt64(Args[I+3], &Val->Z);
+    }
+  }
+
+  return false;
+}
+
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals)
+{
   Clear(Vals);
   for (int I = 0; I < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
@@ -82,29 +125,35 @@ OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals) {
       while (true) {
         ++J;
         int X;
-        if (J < NArgs && ToInt(Args[J], &X)) { PushBack(Vals, X); }
-        else { break; }
+        if (J < NArgs && ToInt(Args[J], &X))
+          PushBack(Vals, X);
+        else
+          break;
       }
       return J > I + 1;
     }
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val)
+{
   for (int I = 0; I + 2 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
-      return ToInt(Args[I + 1], &Val->X) &&
-             ToInt(Args[I + 2], &Val->Y);
+      return
+        ToInt(Args[I + 1], &Val->X) &&
+        ToInt(Args[I + 2], &Val->Y);
     }
   }
+
   return false;
 }
 
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val) {
+bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val)
+{
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0) {
       bool Success = true;
@@ -117,35 +166,42 @@ OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val) {
       return Success;
     }
   }
+
   return false;
 }
 
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val) {
+
+bool OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val)
+{
   for (int I = 0; I + 1 < NArgs; ++I) {
     if (strncmp(Args[I], Opt, 32) == 0)
       return ToDouble(Args[I + 1], Val);
   }
+
   return false;
 }
 
-bool
-OptExists(int NArgs, cstr* Args, cstr Opt) {
+
+bool OptExists(int NArgs, cstr* Args, cstr Opt)
+{
   for (int I = 0; I < NArgs; ++I) {
     if (strcmp(Args[I], Opt) == 0)
       return true;
   }
+
   return false;
 }
 
 idx2_T(e)
-bool
-OptVal(int NArgs, cstr* Args, cstr Opt, e* Val) {
+bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val)
+{
   cstr BufPtr = nullptr;
   if (!OptVal(NArgs, Args, Opt, &BufPtr))
     return false;
   *Val = StringTo<e>()(BufPtr);
+
   return true;
 }
 
 } // namespace idx2
+

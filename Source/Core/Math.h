@@ -173,7 +173,8 @@ LogFloor(i64 Base, i64 Val) {
 }
 
 idx2_TI(t, N)
-struct power {
+struct power
+{
   static inline const stack_array<t, LogFloor(N, traits<t>::Max)> Table = []() {
     stack_array<t, LogFloor(N, traits<t>::Max)> Result;
     t Base = N;

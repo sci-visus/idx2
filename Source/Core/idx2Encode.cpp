@@ -1001,12 +1001,10 @@ brick_copier::brick_copier
 }
 
 v2d
-brick_copier::Copy
-(
+brick_copier::Copy(
   const extent& ExtentGlobal,
   const extent& ExtentLocal,
-  brick_volume* Brick
-) const
+  brick_volume* Brick)
 {
   v2d MinMax;
   idx2_Case_1 (Volume->Type == dtype::float32)
@@ -1019,12 +1017,10 @@ brick_copier::Copy
 
 
 error<idx2_err_code>
-Encode
-(
+Encode(
   idx2_file* Idx2,
   const params& P,
-  const brick_copier& Copier
-)
+  brick_copier& Copier)
 {
   const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
   BrickAlloc_ = free_list_allocator(BrickBytes);
