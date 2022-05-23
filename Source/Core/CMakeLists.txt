@@ -51,8 +51,8 @@ set(IDX2_CORE_SOURCE_FILES
   Mutex.h
   Random.h
   ScopeGuard.h
-  Stacktrace.cpp
-  Stacktrace.h
+  StackTrace.cpp
+  StackTrace.h
   Statistics.h
   String.cpp
   String.h
