@@ -3,6 +3,10 @@
 #include "Common.h"
 #include "Array.h"
 
+#define idx2_Print(PrinterPtr, Format, ...)
+#define idx2_PrintScratch(Format, ...)
+#define idx2_PrintScratchN(N, Format, ...) // Print at most N characters
+
 namespace idx2
 {
 
@@ -37,10 +41,6 @@ Print
 }
 
 }
-
-#define idx2_Print(PrinterPtr, Format, ...)
-#define idx2_PrintScratch(Format, ...)
-#define idx2_PrintScratchN(N, Format, ...) // Print at most N characters
 
 #undef idx2_Print
 #define idx2_Print(PrinterPtr, Format, ...) {\
