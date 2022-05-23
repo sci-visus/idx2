@@ -22,8 +22,8 @@ set(IDX2_CORE_SOURCE_FILES
   ErrorCodes.h
   Expected.h
   FileUtilities.h
-  Filesystem.cpp
-  Filesystem.h
+  FileSystem.cpp
+  FileSystem.h
   Format.cpp
   Format.h
   Function.h
