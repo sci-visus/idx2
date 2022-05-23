@@ -195,16 +195,13 @@ static void ParseEncodeOptions(int Argc, cstr* Argv, params* P)
   OptVal(Argc, Argv, "--strides", &P->Strides3);
   OptVal(Argc, Argv, "--offset", &P->Offset);
 
-  // Parse the --llc_latlon or --llc_cap options (for NASA datasets)
-  OptVal(Argc, Argv, "--llc_latlon", &P->LLC_LatLon);
-  OptVal(Argc, Argv, "--llc_cap", &P->LLC_Cap);
-  if (P->LLC_LatLon > 0  ||  P->LLC_Cap > 0) {
-    idx2_ExitIf(P->LLC_Cap > 0 && P->LLC_LatLon > 0,
-      "Provide only one of { --llc_latlon, --llc_cap }, not both\n");
+  // Parse the --llc (for NASA datasets)
+  OptVal(Argc, Argv, "--llc", &P->LLC);
+  if (P->LLC >= 0) {
     idx2_ExitIf(Size(P->InputFiles) == 0,
       "Provide a text file containing a list of data files with --input\n");
     idx2_ExitIf(P->Strides3 == v3<i64>(0), "Provide --strides\n");
-    idx2_ExitIf(P->Offset == -1, "Provide --offset\n");
+    idx2_ExitIf(P->Offset == -1, "Provide --offset (in number of samples)\n");
   }
 }
 
@@ -275,30 +272,27 @@ static error<idx2_err_code> SetParams(idx2_file* Idx2, const params& P)
   return Finalize(Idx2);
 }
 
-struct llc_latlon_brick_copier : public brick_copier
+struct llc_brick_copier : public brick_copier
 {
   params* P = nullptr;
   FILE* Fp = nullptr;
   int CurrentFile = -1;
 
-  llc_latlon_brick_copier() = delete;
-  llc_latlon_brick_copier(params* P) : P(P) { idx2_Assert(P->LLC_LatLon > 0); }
+  llc_brick_copier() = delete;
+  llc_brick_copier(params* P) : P(P) { idx2_Assert(P->LLC >= 0); }
 
   virtual v2d
   Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_volume* Brick);
 
-  virtual ~llc_latlon_brick_copier() { if (Fp) fclose(Fp); }
+  virtual ~llc_brick_copier() { if (Fp) fclose(Fp); }
 };
 
 
-v2d llc_latlon_brick_copier::Copy(
+v2d llc_brick_copier::Copy(
   const extent& ExtentGlobal,
   const extent& ExtentLocal,
   brick_volume* Brick)
 {
-  int N = P->LLC_LatLon;
-  v3i N12(N, N*3, P->Dims3.Z); // dimensions of the first and second face
-  v3i N45(N*3, N, P->Dims3.Z); // dimensions of the fourth and fifth face
   v3<i64> T3 = P->Strides3; // strides
   i64 Offset = P->Offset;
   i64 NSamplesInFile = P->NSamplesInFile;
@@ -306,77 +300,46 @@ v2d llc_latlon_brick_copier::Copy(
   v2d MinMax = v2d(traits<f64>::Max, traits<f64>::Min);
 
   // Check ExtentGlobal against the first face
-  {
-    extent FaceExtent{v3i(0), N12};
-    extent E = Crop(ExtentGlobal, FaceExtent);
-    if (E) {
-      extent R = Relative(E, FaceExtent);
-      extent D = Relative(E, ExtentGlobal);
-      v3i SFrom3 = From(E); // TODO = offset
-      v3i STo3   = To(E);
-      v3i DFrom3 = From(D);
-      v3i DTo3   = To(D);
-      v3i DstDims3 = Dims(Brick->Vol);
-      v3i S3, D3;
-      static i64 iter = 0;
-      idx2_BeginFor3Lockstep(S3, SFrom3, STo3, v3i(1), D3, DFrom3, DTo3, v3i(1)) {
-        ++iter;
-        i64 I = Offset + i64(S3.Z*T3.Z) + i64(S3.Y*T3.Y) + i64(S3.X*T3.X);
-        i64 J = Row(D3, DstDims3);
-        i64 F = I / NSamplesInFile; // file id
-        i64 O = I % NSamplesInFile; // offset in file (in number of samples)
-        if (F != CurrentFile) {
-          if (Fp)
-            fclose(Fp);
-          Fp = fopen(P->InputFiles[F].Arr, "rb");
-          idx2_Assert(Fp);
-          CurrentFile = F;
-          //printf("Opening file %s\n", P->InputFiles[F].Arr);
-        }
-        // TODO: branch based on the dtype
-        f64* idx2_Restrict DstPtr = (f64*)Brick->Vol.Buffer.Data;
-        idx2_FSeek(Fp, O*sizeof(f32), SEEK_SET);
-        f32 Val = 0;
-        ReadPOD<f32>(Fp, &Val);
-        DstPtr[J] = Val;
-        MinMax.Min = Min(MinMax.Min, DstPtr[J]);
-        MinMax.Max = Max(MinMax.Max, DstPtr[J]);
-      } idx2_EndFor3
-    }
-    // Copy the data over, taking into account the offset and strides
+  extent FaceExtent{v3i(0), P->Meta.Dims3};
+  extent E = Crop(ExtentGlobal, FaceExtent);
+  if (E) {
+    extent R = Relative(E, FaceExtent);
+    extent D = Relative(E, ExtentGlobal);
+    v3i SFrom3 = From(E);
+    v3i STo3   = To(E);
+    v3i DFrom3 = From(D);
+    v3i DTo3   = To(D);
+    v3i DstDims3 = Dims(Brick->Vol);
+    v3i S3, D3;
+    static i64 iter = 0;
+    idx2_BeginFor3Lockstep(S3, SFrom3, STo3, v3i(1), D3, DFrom3, DTo3, v3i(1)) {
+      ++iter;
+      i64 I = Offset + i64(S3.Z*T3.Z) + i64(S3.Y*T3.Y) + i64(S3.X*T3.X);
+      i64 J = Row(D3, DstDims3);
+      i64 F = I / NSamplesInFile; // file id
+      i64 O = I % NSamplesInFile; // offset in file (in number of samples)
+      if (F != CurrentFile) {
+        if (Fp)
+          fclose(Fp);
+        Fp = fopen(P->InputFiles[F].Arr, "rb");
+        idx2_Assert(Fp);
+        CurrentFile = F;
+        //printf("Opening file %s\n", P->InputFiles[F].Arr);
+      }
+      // TODO: branch based on the dtype
+      f64* idx2_Restrict DstPtr = (f64*)Brick->Vol.Buffer.Data;
+      idx2_FSeek(Fp, O*sizeof(f32), SEEK_SET);
+      f32 Val = 0;
+      ReadPOD<f32>(Fp, &Val);
+      u32 Val2 = idx2_ByteSwap4(*reinterpret_cast<u32*>(&Val));
+      DstPtr[J] = *reinterpret_cast<f32*>(&Val2);
+      MinMax.Min = Min(MinMax.Min, DstPtr[J]);
+      MinMax.Max = Max(MinMax.Max, DstPtr[J]);
+    } idx2_EndFor3
   }
 
-  // Check ExtentGlobal against the second face
-  {
-    // Crop ExtentGlobal against the second face
-    // Check if the cropped extent has a volume > 0
-    // Compute the relative position of ExtentGlobal in the second face
-    // Copy the data over, taking into account the offset and strides
-  }
+ // printf("minmax %f %f\n", MinMax.Min, MinMax.Max);
 
-  // The third face is the cap
-
-  // Check ExtentGlobal against the fourth face
-  {
-    // Crop ExtentGlobal against the fourth face
-    // Check if the cropped extent has a volume > 0
-    // Transform ExtentGlobal into the coordinate system of the fourth face
-    // Copy the data over, taking into account the offset and strides
-  }
-
-  // Check ExtentGlobal against the fifth face
-  {
-    // Crop ExtentGlobal against the fifth face
-    // Check if the cropped extent has a volume > 0
-    // Transform ExtentGlobal into the coordinate system of the fifth face
-    // Copy the data over, taking into account the offset and strides
-  }
-
-  //v2d MinMax;
-  //idx2_Case_1(Volume->Type == dtype::float32)
-  //  MinMax = (CopyExtentExtentMinMax<f32, f64>(ExtentGlobal, *Volume, ExtentLocal, &Brick->Vol));
-  //idx2_Case_2(Volume->Type == dtype::float64)
-  //  MinMax = (CopyExtentExtentMinMax<f64, f64>(ExtentGlobal, *Volume, ExtentLocal, &Brick->Vol));
   return MinMax;
 }
 
@@ -399,7 +362,7 @@ int main(int Argc, cstr* Argv)
 //      RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
     idx2_ExitIfError(SetParams(&Idx2, P));
     idx2_Case_1(Size(P.InputFiles) > 0) { // the input contains multiple files
-      llc_latlon_brick_copier Copier(&P);
+      llc_brick_copier Copier(&P);
       idx2_ExitIfError(Encode(&Idx2, P, Copier));
     }
     idx2_Case_2(Size(P.InputFiles) == 0) { // a single raw volume is provided

@@ -76,7 +76,7 @@ struct params
   action Action = action::__Invalid__;
   metadata Meta;
   v2i Version = v2i(1, 0);
-  v3i Dims3 = v3i(256);
+  //v3i Dims3 = v3i(256);
   v3i BrickDims3 = v3i(32);
   array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
@@ -106,10 +106,9 @@ struct params
   bool WaveletOnly = false;
   bool ComputeMinMax = false;
   // either LLC_LatLon or LLC_Cap can be provided, not both
-  int LLC_LatLon = 0; // = 2160 for LLC2160
-  int LLC_Cap = 0; // = 2160 for LLC2160
+  int LLC = -1; // one of 0, 1, 2 (the cap), 3, 4
   v3<i64> Strides3 = v3<i64>(0);
-  i64 Offset = -1;
+  i64 Offset = -1; // this can be used to specify the "depth"
   i64 NSamplesInFile = 0;
 };
 

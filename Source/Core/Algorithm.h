@@ -143,6 +143,8 @@ BinarySearch(i Beg, i End, const t& Val) {
 
 idx2_T(i) void
 InsertionSort(i Beg, i End) {
+  if (Beg == End)
+    return;
   i Last = Beg + 1;
   while (Last != End) {
     i Pos = BinarySearch(Beg, Last, *Last);
@@ -152,7 +154,7 @@ InsertionSort(i Beg, i End) {
   }
 }
 
-idx2_T(i) bool 
+idx2_T(i) bool
 AreSame(i Beg1, i End1, i Beg2) {
   bool Same = true;
   for (i It1 = Beg1, It2 = Beg2; It1 != End1; ++It1, ++It2) {
