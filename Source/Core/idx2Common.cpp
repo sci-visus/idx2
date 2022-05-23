@@ -4,7 +4,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wsign-compare"
-#if defined(__clang__)`
+#if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wnested-anon-types"
 #endif
 #endif
