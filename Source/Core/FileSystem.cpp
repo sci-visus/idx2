@@ -215,7 +215,7 @@ i64 GetFileSize(const stref& Path)
     Path.Ptr[Path.Size] = '\0',
     Path.Ptr[Path.Size] = C
   );
-  stat S;
+  struct stat S;
   if (0 != Stat(Path.Ptr, &S))
     return -1;
 
