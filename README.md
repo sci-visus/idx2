@@ -5,7 +5,12 @@ idx2 is the next version of the idx file format, which is handled by [OpenVisus]
 Currently there is an executable (named `idx2`) for 2-way conversion between raw binary and the idx2 format, and a header-only library (`idx2.hpp`) for working with the format at a lower level.
 
 # Compilation
-You will need CMake and a C++ compiler that supports C++17. All output binaries are under the `bin` directory.
+Dependencies:
+
+- nanobind (do `git submodule update --init` to pull it from GitHub)
+- CMake (>= 3.8)
+- Python 3
+- A C++ compiler supporting C++17
 
 # Using `idx2` to convert from raw to idx2
 ```
