@@ -2440,7 +2440,7 @@ GrowToAccomodate(bitstream* Bs, i64 AddedCapacity) {
 }
 
 idx2_Inline void
-IncreaseCapacity(bitstream* Bs, i64 NewCapacity) {    
+IncreaseCapacity(bitstream* Bs, i64 NewCapacity) {
   NewCapacity += sizeof(Bs->BitBuf);
   if (Size(Bs->Stream) < NewCapacity) {
     buffer NewBuf;
@@ -5235,7 +5235,7 @@ ElapsedTime(timer* Timer) {
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#endif 
+#endif
 
 #include <Windows.h>
 
@@ -7115,10 +7115,10 @@ struct decode_data {
 
 /* ---------------------- FUNCTIONS ----------------------*/
 
-error<idx2_err_code> 
+error<idx2_err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName);
 
-idx2_T(t) void 
+idx2_T(t) void
 GetBrick(brick_table<t>* BrickTable, i8 Iter, u64 Brick) {
   //auto
   (void)BrickTable;
@@ -7126,7 +7126,7 @@ GetBrick(brick_table<t>* BrickTable, i8 Iter, u64 Brick) {
   (void)Brick;
 }
 
-idx2_T(t) void 
+idx2_T(t) void
 Dealloc(brick_table<t>* BrickTable);
 
 idx2_Ti(t) v3i
@@ -7146,33 +7146,33 @@ At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3) {
 idx2_T(t) void
 Dealloc(brick<t>* Brick) { free(Brick->Samples); } // TODO: check this
 
-idx2_Inline i64 
+idx2_Inline i64
 Size(const chunk_exp_cache& ChunkExpCache) { return Size(ChunkExpCache.BrickExpsStream.Stream); }
-idx2_Inline i64 
+idx2_Inline i64
 Size(const chunk_rdo_cache& ChunkRdoCache) { return Size(ChunkRdoCache.TruncationPoints) * sizeof(i16); }
-idx2_Inline i64 
+idx2_Inline i64
 Size(const chunk_cache& C) { return Size(C.Bricks) * sizeof(u64) + Size(C.BrickSzs) * sizeof(i32) + sizeof(C.ChunkPos) + Size(C.ChunkStream.Stream); }
-idx2_Inline i64 
+idx2_Inline i64
 Size(const file_exp_cache& F) {
   i64 Result = 0;
   idx2_ForEach(It, F.ChunkExpCaches) Result += Size(*It);
   Result += Size(F.ChunkExpSzs) * sizeof(i32);
   return Result;
 }
-idx2_Inline i64 
+idx2_Inline i64
 Size(const file_rdo_cache& F) {
   i64 Result = 0;
   idx2_ForEach(It, F.TileRdoCaches) Result += Size(*It);
   return Result;
 }
-idx2_Inline i64 
+idx2_Inline i64
 Size(const file_cache& F) {
   i64 Result = 0;
   Result += Size(F.ChunkSizes) * sizeof(i64);
   idx2_ForEach(It, F.ChunkCaches) Result += Size(*It.Val);
   return Result;
 }
-idx2_Inline i64 
+idx2_Inline i64
 Size(const file_cache_table& F) {
   i64 Result = 0;
   idx2_ForEach(It, F.FileCaches) Result += Size(*It.Val);
@@ -7181,7 +7181,7 @@ Size(const file_cache_table& F) {
   return Result;
 }
 
-idx2_Inline i64 
+idx2_Inline i64
 SizeBrickPool(const decode_data& D) {
   i64 Result = 0;
   idx2_ForEach(It, D.BrickPool) Result += Size(*It.Val);
@@ -7189,7 +7189,7 @@ SizeBrickPool(const decode_data& D) {
 }
 
 // TODO: return an error code?
-void 
+void
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf = nullptr);
 
 }
@@ -11242,6 +11242,7 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
   return idx2_Error(mmap_err_code::NoError);
 }
 
+#if defined(__APPLE__)
 static bool
 mac_fallocate(file_handle fd, i64 aLength)
 {
@@ -11259,6 +11260,7 @@ mac_fallocate(file_handle fd, i64 aLength)
 
   return false;
 }
+#endif
 
 /* Size is only used when Mode is Write or ReadWrite */
 error<mmap_err_code>
@@ -11683,7 +11685,7 @@ Reset(tokenizer* Tk) { Tk->Pos = 0; }
 
 namespace idx2 {
 
-u32 
+u32
 Murmur3_32(u8* Key, int Len, u32 Seed) {
   u32 H = Seed;
   if (Len > 3) {
@@ -11771,7 +11773,7 @@ typedef struct SExpr {
         bool b;
         int i;
         float f;
-        
+
         // For strings as well as IDs
         SExprString s;
 
@@ -11793,7 +11795,7 @@ typedef enum SExprResultType {
 
 typedef struct SExprResult {
     SExprResultType type;
-    
+
     union
     {
         SExpr* expr;
@@ -11918,7 +11920,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
         } else if(SExprStringEqual(parser->src, &s, "false")) {
             static SExpr sfalse = {SE_BOOL};
             sfalse.b = false;
-            
+
             return &sfalse;
         }
 
@@ -11953,7 +11955,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
             SExpr* expr = SExprAlloc(parser, SE_FLOAT);
             expr->f = (float)strtod(buf, NULL);
             return expr;
-        }    
+        }
 
         SExpr* expr = SExprAlloc(parser, SE_INT);
         expr->i = strtol(buf, NULL, 10);
@@ -11998,7 +12000,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
 
         if(parser->last == ')' || parser->last == ']' || parser->last == '}') {
             parser->last = SExprGetChar(parser);
-            
+
             static SExpr nil = {SE_NIL};
             return &nil;
         }
@@ -12021,7 +12023,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
 				tail = elem;
             }
 
-			while(parser->last && isspace(parser->last)) {		
+			while(parser->last && isspace(parser->last)) {
 				if(parser->last == '\n') {
 					parser->lineNumber++;
 				}
@@ -15649,9 +15651,9 @@ typedef enum {
                               * Default level is ZSTD_CLEVEL_DEFAULT==3.
                               * Special: value 0 means default, which is controlled by ZSTD_CLEVEL_DEFAULT.
                               * Note 1 : it's possible to pass a negative compression level.
-                              * Note 2 : setting a level does not automatically set all other compression parameters 
-                              *   to default. Setting this will however eventually dynamically impact the compression 
-                              *   parameters which have not been manually set. The manually set 
+                              * Note 2 : setting a level does not automatically set all other compression parameters
+                              *   to default. Setting this will however eventually dynamically impact the compression
+                              *   parameters which have not been manually set. The manually set
                               *   ones will 'stick'. */
     /* Advanced compression parameters :
      * It's possible to pin down compression parameters to some specific values.
@@ -43857,7 +43859,7 @@ struct tile_buf {
 //  Cond.wait(Lock, []{ return Counter == 0; });
 //}
 
-/* 
+/*
 Extrapolate a volume to (2^N+1) x (2^N+1) x (2^N+1).
 Dims3 are the dimensions of the volume, not Dims(*Vol), which has to be (2^X+1) x (2^Y+1) x (2^Z+1).
 */
@@ -44889,7 +44891,7 @@ Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
 namespace idx2 {
 
 error<idx2_err_code>
-Init(idx2_file* Idx2, const params& P) 
+Init(idx2_file* Idx2, const params& P)
 {
   SetDir(Idx2, P.InDir);
   idx2_PropagateIfError(ReadMetaFile(Idx2, idx2_PrintScratch("%s", P.InputFile)));
@@ -44898,21 +44900,21 @@ Init(idx2_file* Idx2, const params& P)
 }
 
 idx2::grid
-GetOutputGrid(const idx2_file& Idx2, const params& P) 
+GetOutputGrid(const idx2_file& Idx2, const params& P)
 {
   u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128; // TODO: check this
   return GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands);
 }
 
 error<idx2_err_code>
-Decode(idx2_file* Idx2, const params& P, buffer* OutBuf) 
+Decode(idx2_file* Idx2, const params& P, buffer* OutBuf)
 {
   Decode(*Idx2, P, OutBuf);
   return idx2_Error(idx2_err_code::NoError);
 }
 
 error<idx2_err_code>
-Destroy(idx2_file* Idx2) 
+Destroy(idx2_file* Idx2)
 {
   Dealloc(Idx2);
   return idx2_Error(idx2_err_code::NoError);

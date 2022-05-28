@@ -28,6 +28,7 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
   return idx2_Error(mmap_err_code::NoError);
 }
 
+#if defined(__APPLE__)
 static bool
 mac_fallocate(file_handle fd, i64 aLength)
 {
@@ -45,6 +46,7 @@ mac_fallocate(file_handle fd, i64 aLength)
 
   return false;
 }
+#endif
 
 /* Size is only used when Mode is Write or ReadWrite */
 error<mmap_err_code>
