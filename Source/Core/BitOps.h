@@ -3,7 +3,7 @@
 #include "Macros.h"
 #include "Common.h"
 #if defined(__clang__) || defined(__GNUC__)
-#include <x86intrin.h>
+//#include <x86intrin.h>
 #endif
 
 namespace idx2 {
@@ -101,7 +101,7 @@ TakeFirstBitsNoShift(t Val, int NBits) {
 
 // TODO: check the return value of these intrinsics
 #if defined(__clang__) || defined(__GNUC__)
-#include <x86intrin.h>
+//#include <x86intrin.h>
 idx2_Inline i8
 Msb(u32 V, i8 Default) {
   return (V == 0) ? Default : i8(sizeof(u32) * 8 - 1 - __builtin_clz(V));

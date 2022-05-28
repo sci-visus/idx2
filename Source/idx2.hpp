@@ -1800,7 +1800,7 @@ idx2_T(e) bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val); // output to an 
 } // namespace idx2
 
 #if defined(__clang__) || defined(__GNUC__)
-#include <x86intrin.h>
+//#include <x86intrin.h>
 #endif
 
 namespace idx2 {
@@ -1895,7 +1895,7 @@ TakeFirstBitsNoShift(t Val, int NBits) {
 
 // TODO: check the return value of these intrinsics
 #if defined(__clang__) || defined(__GNUC__)
-#include <x86intrin.h>
+//#include <x86intrin.h>
 idx2_Inline i8
 Msb(u32 V, i8 Default) {
   return (V == 0) ? Default : i8(sizeof(u32) * 8 - 1 - __builtin_clz(V));
@@ -7640,7 +7640,7 @@ ReadUnary(bitstream* Bs) {
 
 /* Adapted from the zfp compression library */
 
-#include <immintrin.h>
+//#include <immintrin.h>
 //#include <iostream>
 
 namespace idx2 {
@@ -8238,6 +8238,7 @@ Encode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* id
   *BsIn = Bs;
 }
 
+#if defined(idx2_Avx2) && defined(__AVX2__)
 idx2_Ti(t) void
 TransposeAvx2(u64 X, int B, t* idx2_Restrict Block) {
   __m256i Minus1 = _mm256_set1_epi64x(-1);
@@ -8345,6 +8346,7 @@ TransposeAvx2(u64 X, int B, t* idx2_Restrict Block) {
     _mm256_maskstore_epi64((long long*)Block + 60, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 60, Val), Add));
   //}
 }
+#endif
 
 idx2_Inline void
 DecodeTest(u64* idx2_Restrict Block, int NVals, i8& N, bitstream* idx2_Restrict BsIn) {
@@ -8391,7 +8393,7 @@ Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* id
 //    for (int I = 0; I < K; ++I)
 //      Block[I] += (t)((X >> I) & 1u) << B;
 //  }
-#if defined(idx2_Avx2)
+#if defined(idx2_Avx2) && defined(__AVX2__)
   __m256i Minus1 = _mm256_set1_epi64x(-1);
   __m256i Add = _mm256_set1_epi64x(t(1) << B);
   __m256i Mask = _mm256_set_epi64x(0xfffffffffffffff7ll, 0xfffffffffffffffbll, 0xfffffffffffffffdll, 0xfffffffffffffffell);
@@ -8413,6 +8415,7 @@ Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* id
   *BsIn = Bs;
 }
 
+#if defined(idx2_Avx2) && defined(__AVX2__)
 idx2_TII(t, D, K) void
 Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
   static_assert(is_unsigned<t>::Value);
@@ -8454,6 +8457,7 @@ Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
   }
   ++MyCounter;
 }
+#endif
 
 idx2_Ti(t) void
 TransposeNormal(u64 X, int B, t* idx2_Restrict Block) {
@@ -8938,6 +8942,7 @@ A02:
   data[0x3f-0x3c] = a3c; data[0x3f-0x3d] = a3d; data[0x3f-0x3e] = a3e; data[0x3f-0x3f] = a3f;
 }
 
+#if defined(idx2_Avx2) && defined(__AVX2__)
 idx2_TII(t, D, K) void
 Decode2(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
   static_assert(is_unsigned<t>::Value);
@@ -9019,6 +9024,7 @@ DONE:
     Block += 8;
   }
 }
+#endif
 
 idx2_TII(t, D, K) void
 Decode3(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
@@ -10849,8 +10855,8 @@ i64 GetFileSize(const stref& Path)
     Path.Ptr[Path.Size] = '\0',
     Path.Ptr[Path.Size] = C
   );
-  struct stat S;
-  if (0 != Stat(Path.Ptr, &S))
+  struct ::stat S;
+  if (0 != ::Stat(Path.Ptr, &S))
     return -1;
 
   return (i64)S.st_size;
@@ -11236,6 +11242,24 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
   return idx2_Error(mmap_err_code::NoError);
 }
 
+static bool
+mac_fallocate(file_handle fd, i64 aLength)
+{
+  fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, aLength};
+  // Try to get a continous chunk of disk space
+  int ret = fcntl(fd, F_PREALLOCATE, &store);
+    if (-1 == ret) {
+    // OK, perhaps we are too fragmented, allocate non-continuous
+    store.fst_flags = F_ALLOCATEALL;
+    ret = fcntl(fd, F_PREALLOCATE, &store);
+    if (-1 == ret)
+      return false;
+  }
+  return 0 == ftruncate(fd, aLength);
+
+  return false;
+}
+
 /* Size is only used when Mode is Write or ReadWrite */
 error<mmap_err_code>
 MapFile(mmap_file* MMap, i64 Bytes) {
@@ -11268,15 +11292,19 @@ MapFile(mmap_file* MMap, i64 Bytes) {
   MMap->Buf.Bytes = FileSize.QuadPart;
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   size_t FileSize;
-  struct stat Stat;
+  struct ::stat Stat;
   if (Bytes != 0)
     FileSize = Bytes;
   else if (fstat(MMap->File, &Stat) == 0)
     FileSize = Stat.st_size;
   if (MMap->Mode == map_mode::Write)
-    // TODO: only works on Linux, not Mac OS X
-    if (posix_fallocate(MMap->File, 0, FileSize) == -1)
-      return idx2_Error(mmap_err_code::AllocateFailed);
+    #if defined(__APPLE__)
+      if (!mac_fallocate(MMap->File, FileSize))
+        return idx2_Error(mmap_err_code::AllocateFailed);
+    #else
+      if (posix_fallocate(MMap->File, 0, FileSize) == -1)
+        return idx2_Error(mmap_err_code::AllocateFailed);
+    #endif
   void* MapAddress =
     mmap(0,
          FileSize,
@@ -11512,6 +11540,7 @@ PrintStacktrace(printer* Pr) {
 #endif
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 
 namespace idx2 {

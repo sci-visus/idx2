@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #include "Algorithm.h"
 #include "Math.h"

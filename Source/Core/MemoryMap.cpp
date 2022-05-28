@@ -28,6 +28,24 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
   return idx2_Error(mmap_err_code::NoError);
 }
 
+static bool
+mac_fallocate(file_handle fd, i64 aLength)
+{
+  fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, aLength};
+  // Try to get a continous chunk of disk space
+  int ret = fcntl(fd, F_PREALLOCATE, &store);
+    if (-1 == ret) {
+    // OK, perhaps we are too fragmented, allocate non-continuous
+    store.fst_flags = F_ALLOCATEALL;
+    ret = fcntl(fd, F_PREALLOCATE, &store);
+    if (-1 == ret)
+      return false;
+  }
+  return 0 == ftruncate(fd, aLength);
+
+  return false;
+}
+
 /* Size is only used when Mode is Write or ReadWrite */
 error<mmap_err_code>
 MapFile(mmap_file* MMap, i64 Bytes) {
@@ -60,15 +78,19 @@ MapFile(mmap_file* MMap, i64 Bytes) {
   MMap->Buf.Bytes = FileSize.QuadPart;
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   size_t FileSize;
-  struct stat Stat;
+  struct ::stat Stat;
   if (Bytes != 0)
     FileSize = Bytes;
   else if (fstat(MMap->File, &Stat) == 0)
     FileSize = Stat.st_size;
   if (MMap->Mode == map_mode::Write)
-    // TODO: only works on Linux, not Mac OS X
-    if (posix_fallocate(MMap->File, 0, FileSize) == -1)
-      return idx2_Error(mmap_err_code::AllocateFailed);
+    #if defined(__APPLE__)
+      if (!mac_fallocate(MMap->File, FileSize))
+        return idx2_Error(mmap_err_code::AllocateFailed);
+    #else
+      if (posix_fallocate(MMap->File, 0, FileSize) == -1)
+        return idx2_Error(mmap_err_code::AllocateFailed);
+    #endif
   void* MapAddress =
     mmap(0,
          FileSize,
