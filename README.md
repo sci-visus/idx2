@@ -7,7 +7,7 @@ Currently there is an executable (named `idx2`) for 2-way conversion between raw
 # Compilation
 Dependencies:
 
-- nanobind (do `git submodule update --init` to pull it from GitHub)
+- nanobind (do `git submodule update --recursive --init` to pull it from GitHub)
 - CMake (>= 3.8)
 - Python 3
 - A C++ compiler supporting C++17

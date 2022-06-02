@@ -299,16 +299,11 @@ v2d llc_brick_copier::Copy(
 
   v2d MinMax = v2d(traits<f64>::Max, traits<f64>::Min);
 
-  // Check ExtentGlobal against the first face
-  extent FaceExtent{v3i(0), P->Meta.Dims3};
-  extent E = Crop(ExtentGlobal, FaceExtent);
-  if (E) {
-    extent R = Relative(E, FaceExtent);
-    extent D = Relative(E, ExtentGlobal);
-    v3i SFrom3 = From(E);
-    v3i STo3   = To(E);
-    v3i DFrom3 = From(D);
-    v3i DTo3   = To(D);
+  if (ExtentGlobal) {
+    v3i SFrom3 = From(ExtentGlobal);
+    v3i STo3   = To(ExtentGlobal);
+    v3i DFrom3 = From(ExtentLocal);
+    v3i DTo3   = To(ExtentLocal);
     v3i DstDims3 = Dims(Brick->Vol);
     v3i S3, D3;
     static i64 iter = 0;
