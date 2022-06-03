@@ -70,8 +70,8 @@ set(IDX2_CORE_SOURCE_FILES
   Zfp.h
 )
 
-add_library(idx2Core SHARED STATIC ${IDX2_CORE_SOURCE_FILES})
-
+add_library(idx2Core ${IDX2_CORE_SOURCE_FILES})
+set_target_properties(idx2Core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 if (MSVC)

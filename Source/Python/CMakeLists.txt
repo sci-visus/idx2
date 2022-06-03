@@ -12,6 +12,7 @@ nanobind_add_module(
 )
 
 include_directories(${idx2Lib_SOURCE_DIR})
+set_target_properties(idx2Py PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(idx2Py PUBLIC idx2Lib)
 
 
