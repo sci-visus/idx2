@@ -32,9 +32,11 @@ Use `--first` and `--last` (inclusive) to specify the region of interest (which 
 
 # Reading data from idx2 to memory
 
-## Using `idx2Lib`: With CMake, you can build an `idx2Lib` library and link it against your project. Then, just `#include <idx2Lib.h>` to use it.
+## Using `idx2Lib`
+With CMake, you can build an `idx2Lib` library and link it against your project. Then, just `#include <idx2Lib.h>` to use it.
 
-## Using the header-only library `idx2.hpp`: this header file can be included anywhere, but you need to `#define idx2_Implementation` in *exactly one* of your cpp files before including it.
+## Using the header-only library `idx2.hpp`
+Alternatively, you may want to just include a single header file for convenience. The `idx2.hpp` header file can be included anywhere, but you need to `#define idx2_Implementation` in *exactly one* of your cpp files before including it.
 
 ```
 #define idx2_Implementation
