@@ -1233,12 +1233,16 @@ static void
 Dealloc(encode_data* E) {
   E->Alloc->DeallocAll();
   Dealloc(&E->BrickPool);
-  idx2_ForEach(ChannelIt, E->Channels) Dealloc(ChannelIt.Val);
+  idx2_ForEach(ChannelIt, E->Channels)
+    Dealloc(ChannelIt.Val);
   Dealloc(&E->Channels);
-  idx2_ForEach(SubChannelIt, E->SubChannels) Dealloc(SubChannelIt.Val);
+  idx2_ForEach(SubChannelIt, E->SubChannels)
+    Dealloc(SubChannelIt.Val);
   Dealloc(&E->SubChannels);
-  idx2_ForEach(ChunkMetaIt, E->ChunkMeta) Dealloc(ChunkMetaIt.Val);
-  idx2_ForEach(ChunkEMaxesMetaIt, E->ChunkEMaxesMeta) Dealloc(ChunkEMaxesMetaIt.Val);
+  idx2_ForEach(ChunkMetaIt, E->ChunkMeta)
+    Dealloc(ChunkMetaIt.Val);
+  idx2_ForEach(ChunkEMaxesMetaIt, E->ChunkEMaxesMeta)
+    Dealloc(ChunkEMaxesMetaIt.Val);
   Dealloc(&E->ChunkMeta);
   Dealloc(&E->CpresEMaxes);
   Dealloc(&E->CpresChunkAddrs);

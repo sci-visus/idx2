@@ -12,6 +12,8 @@ Dependencies:
 - Python 3
 - A C++ compiler supporting C++17
 
+With the dependencies in place, you can build with CMake.
+
 # Using `idx2` to convert from raw to idx2
 ```
 idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_levels 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .
