@@ -13,7 +13,9 @@
 #include "sexpr.h"
 #include "zstd/zstd.h"
 
-namespace idx2 {
+namespace idx2
+{
+
 
 static u64 BytesRdos_ = 0;
 static u64 DecodeIOTime_ = 0;
@@ -23,65 +25,165 @@ static u64 DataMovementTime_ = 0;
 
 
 void
-Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf);
+Decode(
+  const idx2_file& Idx2,
+  const params& P,
+  buffer* OutBuf
+);
 
 static error<idx2_err_code>
-ReadFileExponents(decode_data* D, hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt, const file_id& FileId);
+ReadFileExponents(
+  decode_data* D,
+  hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
+  const file_id& FileId
+);
+
 static expected<const chunk_exp_cache*, idx2_err_code>
-ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level);
+ReadChunkExponents(
+  const idx2_file& Idx2,
+  decode_data* D,
+  u64 Brick,
+  i8 Iter,
+  i8 Level
+);
+
 static error<idx2_err_code>
-ReadFileRdos(const idx2_file& Idx2, hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt, const file_id& FileId);
+ReadFileRdos(
+  const idx2_file& Idx2,
+  hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
+  const file_id& FileId
+);
+
 static expected<const chunk_rdo_cache*, idx2_err_code>
-ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter);
+ReadChunkRdos(
+  const idx2_file& Idx2,
+  decode_data* D,
+  u64 Brick,
+  i8 Iter
+);
+
 static error<idx2_err_code>
-ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, const file_id& FileId);
+ReadFile(
+  decode_data* D,
+  hash_table<u64, file_cache>::iterator* FileCacheIt,
+  const file_id& FileId
+);
+
 static expected<const chunk_cache*, idx2_err_code>
-ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i16 BitPlane);
+ReadChunk(
+  const idx2_file& Idx2,
+  decode_data* D,
+  u64 Brick,
+  i8 Iter,
+  i8 Level,
+  i16 BitPlane
+);
+
 static error<idx2_err_code>
-DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& SbGrid, volume* BVol);
+DecodeSubband(
+  const idx2_file& Idx2,
+  decode_data* D,
+  f64 Accuracy,
+  const grid& SbGrid,
+  volume* BVol
+);
+
 static void
-DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64 Accuracy);
+DecodeBrick(
+  const idx2_file& Idx2,
+  const params& P,
+  decode_data* D,
+  u8 Mask,
+  f64 Accuracy
+);
+
 static void
-DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddress, int L);
+DecompressChunk(
+  bitstream* ChunkStream,
+  chunk_cache* ChunkCache,
+  u64 ChunkAddress,
+  int L
+);
 
 void decode_all::
-Init(const idx2_file& Idx2_) { this->Idx2 = &Idx2_; Ext = extent(Idx2_.Dims3); }
+Init(const idx2_file& Idx2_) {
+  this->Idx2 = &Idx2_;
+  Ext = extent(Idx2_.Dims3);
+}
+
 extent decode_all::
-GetExtent() const { return Ext; }
+GetExtent() const {
+  return Ext;
+}
+
 f64 decode_all::
-GetAccuracy() const { return Accuracy; }
+GetAccuracy() const {
+  return Accuracy;
+}
+
 int decode_all::
-GetQuality() const { return QualityLevel; }
+GetQuality() const {
+  return QualityLevel;
+}
+
 void decode_all::
-SetExtent(const extent& Ext_) { this->Ext = Ext_; }
+SetExtent(const extent& Ext_) {
+  this->Ext = Ext_;
+}
+
 void decode_all::
-SetIteration(int Iter_) { this->Iter = Iter_; }
+SetIteration(int Iter_) {
+  this->Iter = Iter_;
+}
+
 void decode_all::
-SetAccuracy(f64 Accuracy_) { this->Accuracy = Accuracy_; }
+SetAccuracy(f64 Accuracy_) {
+  this->Accuracy = Accuracy_;
+}
+
 void decode_all::
-SetQuality(int Quality_) { this->QualityLevel = Quality_; }
+SetQuality(int Quality_) {
+  this->QualityLevel = Quality_;
+}
+
 void decode_all::
-SetMask(u8 Mask_) { this->Mask = Mask_; }
-int decode_all::GetIteration() const { return Iter; }
-u8 decode_all::GetMask() const { return Mask; }
+SetMask(u8 Mask_) {
+  this->Mask = Mask_;
+}
+
+int decode_all::
+GetIteration() const {
+  return Iter;
+}
+
+u8 decode_all::
+GetMask() const {
+  return Mask;
+}
+
 void decode_all::
-Destroy() { return; }
+Destroy() {
+  return;
+}
 
 static idx2_Inline bool
 IsEmpty(const chunk_exp_cache& ChunkExpCache) {
   return Size(ChunkExpCache.BrickExpsStream.Stream) == 0;
 }
+
 static void
 Dealloc(chunk_exp_cache* ChunkExpCache) {
   Dealloc(&ChunkExpCache->BrickExpsStream);
 }
+
 static void
 Dealloc(chunk_rdo_cache* ChunkRdoCache) {
   Dealloc(&ChunkRdoCache->TruncationPoints);
 }
 
 static void
-Dealloc(chunk_cache* ChunkCache) {
+Dealloc(chunk_cache* ChunkCache)
+{
   Dealloc(&ChunkCache->Bricks);
   Dealloc(&ChunkCache->BrickSzs);
   Dealloc(&ChunkCache->ChunkStream);
@@ -89,19 +191,24 @@ Dealloc(chunk_cache* ChunkCache) {
 
 static void
 Dealloc(file_exp_cache* FileExpCache) {
-  idx2_ForEach(ChunkExpCacheIt, FileExpCache->ChunkExpCaches) Dealloc(ChunkExpCacheIt);
+  idx2_ForEach(ChunkExpCacheIt, FileExpCache->ChunkExpCaches)
+    Dealloc(ChunkExpCacheIt);
   Dealloc(&FileExpCache->ChunkExpCaches);
   Dealloc(&FileExpCache->ChunkExpSzs);
 }
+
 static void
 Dealloc(file_rdo_cache* FileRdoCache) {
-  idx2_ForEach(TileRdoCacheIt, FileRdoCache->TileRdoCaches) { Dealloc(TileRdoCacheIt); }
+  idx2_ForEach(TileRdoCacheIt, FileRdoCache->TileRdoCaches) {
+    Dealloc(TileRdoCacheIt);
+  }
 }
 
 static void
 Dealloc(file_cache* FileCache) {
   Dealloc(&FileCache->ChunkSizes);
-  idx2_ForEach(ChunkCacheIt, FileCache->ChunkCaches) Dealloc(ChunkCacheIt.Val);
+  idx2_ForEach(ChunkCacheIt, FileCache->ChunkCaches)
+    Dealloc(ChunkCacheIt.Val);
   Dealloc(&FileCache->ChunkCaches);
 }
 
@@ -111,12 +218,16 @@ Init(file_cache_table* FileCacheTable) {
   Init(&FileCacheTable->FileExpCaches, 5);
   Init(&FileCacheTable->FileRdoCaches, 5);
 }
+
 static void
 Dealloc(file_cache_table* FileCacheTable) {
-  idx2_ForEach(FileCacheIt, FileCacheTable->FileCaches) Dealloc(FileCacheIt.Val);
+  idx2_ForEach(FileCacheIt, FileCacheTable->FileCaches)
+    Dealloc(FileCacheIt.Val);
   Dealloc(&FileCacheTable->FileCaches);
-  idx2_ForEach(FileExpCacheIt, FileCacheTable->FileExpCaches) Dealloc(FileExpCacheIt.Val);
-  idx2_ForEach(FileRdoCacheIt, FileCacheTable->FileRdoCaches) Dealloc(FileRdoCacheIt.Val);
+  idx2_ForEach(FileExpCacheIt, FileCacheTable->FileExpCaches)
+    Dealloc(FileExpCacheIt.Val);
+  idx2_ForEach(FileRdoCacheIt, FileCacheTable->FileRdoCaches)
+    Dealloc(FileRdoCacheIt.Val);
 }
 
 static void
@@ -155,13 +266,11 @@ DecompressBufZstd(const buffer& Input, bitstream* Output) {
 }
 
 static error<idx2_err_code>
-ReadFileExponents
-(
+ReadFileExponents(
   decode_data* D,
   hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
   const file_id& FileId
-)
-{
+) {
   timer IOTimer;
   StartTimer(&IOTimer);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
@@ -190,7 +299,11 @@ ReadFileExponents
 }
 
 static error<idx2_err_code>
-ReadFileRdos(const idx2_file& Idx2, hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt, const file_id& FileId) {
+ReadFileRdos(
+  const idx2_file& Idx2,
+  hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
+  const file_id& FileId
+) {
   timer IOTimer;
   StartTimer(&IOTimer);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
@@ -211,29 +324,40 @@ ReadFileRdos(const idx2_file& Idx2, hash_table<u64, file_rdo_cache>::iterator* F
   idx2_For(int, I, 0, Size(FileRdoCache.TileRdoCaches)) {
     chunk_rdo_cache& TileRdoCache = FileRdoCache.TileRdoCaches[I];
     Resize(&TileRdoCache.TruncationPoints, Size(Idx2.RdoLevels) * Size(Idx2.Subbands));
-    idx2_ForEach(It, TileRdoCache.TruncationPoints) *It = ((const i16*)Bs.Stream.Data)[Pos++];
+    idx2_ForEach(It, TileRdoCache.TruncationPoints)
+      *It = ((const i16*)Bs.Stream.Data)[Pos++];
   }
   Insert(FileRdoCacheIt, FileId.Id, FileRdoCache);
   return idx2_Error(idx2_err_code::NoError);
 }
 
 static expected<const chunk_rdo_cache*, idx2_err_code>
-ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter) {
+ReadChunkRdos(
+  const idx2_file& Idx2,
+  decode_data* D,
+  u64 Brick,
+  i8 Iter
+) {
   file_id FileId = ConstructFilePathRdos(Idx2, Brick, Iter);
   auto FileRdoCacheIt = Lookup(&D->FcTable.FileRdoCaches, FileId.Id);
   if (!FileRdoCacheIt) {
     auto ReadFileOk = ReadFileRdos(Idx2, &FileRdoCacheIt, FileId);
-    if (!ReadFileOk) idx2_PropagateError(ReadFileOk);
+    if (!ReadFileOk)
+      idx2_PropagateError(ReadFileOk);
   }
-  if (!FileRdoCacheIt) return idx2_Error(idx2_err_code::FileNotFound);
+  if (!FileRdoCacheIt)
+    return idx2_Error(idx2_err_code::FileNotFound);
   file_rdo_cache* FileRdoCache = FileRdoCacheIt.Val;
   return &FileRdoCache->TileRdoCaches[D->ChunkInFile];
 }
 
-
 /* Given a brick address, open the file associated with the brick and cache its chunk information */
 static error<idx2_err_code>
-ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, const file_id& FileId) {
+ReadFile(
+  decode_data* D,
+  hash_table<u64, file_cache>::iterator* FileCacheIt,
+  const file_id& FileId
+) {
   timer IOTimer;
   StartTimer(&IOTimer);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
@@ -282,12 +406,19 @@ ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, con
 /* Given a brick address, read the exponent chunk associated with the brick and cache it */
 // TODO: remove the last two params (already stored in D)
 static expected<const chunk_exp_cache*, idx2_err_code>
-ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level) {
+ReadChunkExponents(
+  const idx2_file& Idx2,
+  decode_data* D,
+  u64 Brick,
+  i8 Iter,
+  i8 Level
+) {
   file_id FileId = ConstructFilePathExponents(Idx2, Brick, Iter, Level);
   auto FileExpCacheIt = Lookup(&D->FcTable.FileExpCaches, FileId.Id);
   if (!FileExpCacheIt) {
     auto ReadFileOk = ReadFileExponents(D, &FileExpCacheIt, FileId);
-    if (!ReadFileOk) idx2_PropagateError(ReadFileOk);
+    if (!ReadFileOk)
+      idx2_PropagateError(ReadFileOk);
   }
   if (!FileExpCacheIt) return idx2_Error(idx2_err_code::FileNotFound);
   file_exp_cache* FileExpCache = FileExpCacheIt.Val;
@@ -318,21 +449,31 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8
 
 /* Given a brick address, read the chunk associated with the brick and cache the chunk */
 static expected<const chunk_cache*, idx2_err_code>
-ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
+ReadChunk(
+  const idx2_file& Idx2,
+  decode_data* D,
+  u64 Brick,
+  i8 Iter,
+  i8 Level,
+  i16 BitPlane
+) {
   file_id FileId = ConstructFilePath(Idx2, Brick, Iter, Level, BitPlane);
   auto FileCacheIt = Lookup(&D->FcTable.FileCaches, FileId.Id);
   if (!FileCacheIt) {
     auto ReadFileOk = ReadFile(D, &FileCacheIt, FileId);
-    if (!ReadFileOk) idx2_PropagateError(ReadFileOk);
+    if (!ReadFileOk)
+      idx2_PropagateError(ReadFileOk);
   }
-  if (!FileCacheIt) return idx2_Error(idx2_err_code::FileNotFound);
+  if (!FileCacheIt)
+    return idx2_Error(idx2_err_code::FileNotFound);
 
   /* find the appropriate chunk */
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Iter, Level, BitPlane);
   file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
   ChunkCacheIt = Lookup(&FileCache->ChunkCaches, ChunkAddress);
-  if (!ChunkCacheIt) return idx2_Error(idx2_err_code::ChunkNotFound);
+  if (!ChunkCacheIt)
+    return idx2_Error(idx2_err_code::ChunkNotFound);
   chunk_cache* ChunkCache = ChunkCacheIt.Val;
   if (Size(ChunkCache->ChunkStream.Stream) == 0) {
     timer IOTimer;
@@ -349,6 +490,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
     DecompressChunk(&ChunkStream, ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunks[Iter])); // TODO: check for error
 //    PushBack(&D->RequestedChunks, t2<u64, u64>{ChunkAddress, FileId.Id});
   }
+
   return ChunkCacheIt.Val;
 }
 
@@ -356,8 +498,8 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
 // TODO: we can detect the precision and switch to the avx2 version that uses float for better
 // performance
 // TODO: if a block does not decode any bit plane, no need to copy data afterwards
-static error<idx2_err_code> DecodeSubband
-(
+static error<idx2_err_code>
+DecodeSubband(
   const idx2_file& Idx2,
   decode_data* D,
   f64 Accuracy,
@@ -367,38 +509,40 @@ static error<idx2_err_code> DecodeSubband
 {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
-  v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
+  v3i NBlocks3 = (SbDims3+Idx2.BlockDims3-1) / Idx2.BlockDims3;
   /* read the rdo information if present */
   int MinBitPlane = traits<i16>::Min;
-  if (Size(Idx2.RdoLevels) > 0 && D->QualityLevel >= 0)
-  {
+  if (Size(Idx2.RdoLevels)>0 && D->QualityLevel>=0) {
 //    printf("reading rdo\n");
     auto ReadChunkRdoResult = ReadChunkRdos(Idx2, D, Brick, D->Iter);
-    if (!ReadChunkRdoResult) return Error(ReadChunkRdoResult);
+    if (!ReadChunkRdoResult)
+      return Error(ReadChunkRdoResult);
     const chunk_rdo_cache* ChunkRdoCache = Value(ReadChunkRdoResult);
-    int Ql = Min(D->QualityLevel, (int)Size(Idx2.RdoLevels) - 1);
+    int Ql = Min(D->QualityLevel, (int)Size(Idx2.RdoLevels)-1);
     MinBitPlane = ChunkRdoCache->TruncationPoints[D->Level * Size(Idx2.RdoLevels) + Ql];
   }
-  if (MinBitPlane == traits<i16>::Max) return idx2_Error(idx2_err_code::NoError);
+
+  if (MinBitPlane == traits<i16>::Max)
+    return idx2_Error(idx2_err_code::NoError);
   int BlockCount = Prod(NBlocks3);
-  if (D->Level == 0 && D->Iter + 1 < Idx2.NLevels)
-  {
+  if (D->Level==0 && D->Iter+1<Idx2.NLevels)
     BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
-  }
+
   /* first, read the block exponents */
   auto ReadChunkExpResult = ReadChunkExponents(Idx2, D, Brick, D->Iter, D->Level);
-  if (!ReadChunkExpResult) return Error(ReadChunkExpResult);
+  if (!ReadChunkExpResult)
+    return Error(ReadChunkExpResult);
+
   const chunk_exp_cache* ChunkExpCache = Value(ReadChunkExpResult);
-  i32 BrickExpOffset = (D->BrickInChunk * BlockCount) * (SizeOf(Idx2.DType) > 4 ? 2 : 1);
+  i32 BrickExpOffset = (D->BrickInChunk*BlockCount) * (SizeOf(Idx2.DType)>4?2:1);
   bitstream BrickExpsStream = ChunkExpCache->BrickExpsStream;
   SeekToByte(&BrickExpsStream, BrickExpOffset);
-  u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
+  u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3-1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
   /* gather the streams (for the different bit planes) */
   auto& Streams = D->Streams;
   Clear(&Streams);
-  idx2_InclusiveFor(u32, Block, 0, LastBlock)
-  { // zfp block loop
+  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2.BlockDims3;
@@ -420,15 +564,13 @@ static error<idx2_err_code> DecodeSubband
     i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType) + (24 + NDims)), NBitPlanes);
     int NBitPlanesDecoded = Exponent(Accuracy) - 6 - EMax + 1;
     i8 NBps = 0;
-    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
-    { // bit plane loop
+    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane) { // bit plane loop
       i16 RealBp = Bp + EMax;
       if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1) break; // this bit plane is not needed to satisfy the input accuracy
       if (RealBp < MinBitPlane) break; // break due to rdo optimization
       auto StreamIt = Lookup(&Streams, RealBp);
       bitstream* Stream = nullptr;
-      if (!StreamIt)
-      { // first block in the brick
+      if (!StreamIt) { // first block in the brick
         auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Iter, D->Level, RealBp);
         if (!ReadChunkResult) { idx2_Assert(false); return Error(ReadChunkResult); }
         const chunk_cache* ChunkCache = Value(ReadChunkResult);
@@ -454,15 +596,13 @@ static error<idx2_err_code> DecodeSubband
         DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream); // delay the transpose of bits to later
 //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
     } // end bit plane loop
-    if (NBitPlanesDecoded > 8)
-    {
+    if (NBitPlanesDecoded > 8) {
 //      timer Timer; StartTimer(&Timer);
       TransposeRecursive(BlockUInts, NBps); // transpose using the recursive algorithm
 //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
     }
     /* do inverse zfp transform but only if any bit plane is decoded */
-    if (NBps > 0)
-    {
+    if (NBps > 0) {
       InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
       InverseZfp((i64*)BlockFloats, NDims);
       Dequantize(EMax, Prec, BufInts, &BufFloats);
@@ -471,10 +611,9 @@ static error<idx2_err_code> DecodeSubband
       v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
       timer DataTimer;
       StartTimer(&DataTimer);
-      idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1))
-      { // sample loop
+      idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
         idx2_Assert(D3 + S3 < SbDims3);
-        BVol->At<f64>(From3, Strd3, D3 + S3) = BlockFloats[J++];
+        BVol->At<f64>(From3, Strd3, D3+S3) = BlockFloats[J++];
       } idx2_EndFor3 // end sample loop
       DataMovementTime_ += ElapsedTime(&DataTimer);
     }
@@ -484,15 +623,13 @@ static error<idx2_err_code> DecodeSubband
 }
 
 static void
-DecodeBrick
-(/*----------------------------*/
+DecodeBrick(
   const idx2_file& Idx2,
   const params& P,
   decode_data* D,
   u8 Mask,
   f64 Accuracy
-)/*----------------------------*/
-{
+) {
   i8 Iter = D->Iter;
   u64 Brick = D->Brick[Iter];
 //  if ((Brick >> Idx2.BricksPerChunks[Iter]) != D->LastTile) {
@@ -514,25 +651,24 @@ DecodeBrick
   // TODO: test this logic
   idx2_Assert(Size(Idx2.Subbands) <= 8);
   u8 DecodeSbMask = Mask; // TODO: need change if we support more than one transform pass per brick
-  idx2_For(u8, Sb, 0, 8)
-  {
-    if (!BitSet(Mask, Sb)) continue;
-    idx2_For(u8, S, 0, 8) if ((Sb | S) <= Sb) DecodeSbMask = SetBit(DecodeSbMask, S);
+  idx2_For(u8, Sb, 0, 8) {
+    if (!BitSet(Mask, Sb))
+      continue;
+    idx2_For(u8, S, 0, 8) if ((Sb|S) <= Sb)
+      DecodeSbMask = SetBit(DecodeSbMask, S);
   } // end subband loop
 
   /* recursively decode the brick, one subband at a time */
   idx2_Assert(Size(Idx2.Subbands) == 8);
-  idx2_For(i8, Sb, 0, (i8)Size(Idx2.Subbands))
-  {
+  idx2_For(i8, Sb, 0, (i8)Size(Idx2.Subbands)) {
     if (!BitSet(DecodeSbMask, Sb)) continue;
     const subband& S = Idx2.Subbands[Sb];
     v3i SbDimsNonExt3 = idx2_NonExtDims(Dims(S.Grid));
     i8 NextIter = Iter + 1;
-    if (Sb == 0 && NextIter < Idx2.NLevels)
-    { // need to decode the parent brick first
+    if (Sb==0 && NextIter<Idx2.NLevels) { // need to decode the parent brick first
       /* find and decode the parent */
       v3i Brick3 = D->Bricks3[D->Iter];
-      v3i PBrick3 = (D->Bricks3[NextIter] = Brick3 / Idx2.GroupBrick3);
+      v3i PBrick3 = (D->Bricks3[NextIter] = Brick3/Idx2.GroupBrick3);
       u64 PBrick = (D->Brick[NextIter] = GetLinearBrick(Idx2, NextIter, PBrick3));
       u64 PKey = GetBrickKey(NextIter, PBrick);
       auto PbIt = Lookup(&D->BrickPool, PKey);
@@ -541,27 +677,25 @@ DecodeBrick
       // the parent, which won't be computed correctly by the outside code, so for now we have to
       // stick to decoding from higher level down
       /* copy data from the parent's to my buffer */
-      if (PbIt.Val->NChildren == 0)
-      {
+      if (PbIt.Val->NChildren == 0) {
         v3i From3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
         v3i NChildren3 = Dims(
-          Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3s[Iter])));
+          Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3s[Iter]))
+        );
         PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
       }
       ++PbIt.Val->NChildren;
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
       grid SbGridNonExt = S.Grid; SetDims(&SbGridNonExt, SbDimsNonExt3);
-      extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
+      extent ToGrid(LocalBrickPos3*SbDimsNonExt3, SbDimsNonExt3);
       CopyExtentGrid<f64, f64>(ToGrid, PbIt.Val->Vol, SbGridNonExt, &BVol);
-      if (PbIt.Val->NChildren == PbIt.Val->NChildrenMax)
-      { // last child
+      if (PbIt.Val->NChildren == PbIt.Val->NChildrenMax) { // last child
         Dealloc(&PbIt.Val->Vol);
         Delete(&D->BrickPool, PKey);
       }
     }
     D->Level = Sb;
-    if (Sb == 0 || Iter >= D->EffIter)
-    { // NOTE: the check for Sb == 0 prevents the output volume from having blocking artifacts
+    if (Sb==0 || Iter>=D->EffIter) { // NOTE: the check for Sb == 0 prevents the output volume from having blocking artifacts
       //if      (Idx2.Version == v2i(0, 0)) DecodeSubbandV0_0(Idx2, D, S.Grid, &BVol);
       //else if (Idx2.Version == v2i(0, 1)) DecodeSubbandV0_1(Idx2, D, S.Grid, &BVol);
       if (Idx2.Version == v2i(1, 0))
@@ -569,10 +703,9 @@ DecodeBrick
     }
   } // end subband loop
   // TODO: inverse transform only to the necessary level
-  if (!P.WaveletOnly)
-  {
+  if (!P.WaveletOnly) {
 //    printf("inverting\n");
-    if (Iter + 1 < Idx2.NLevels)
+    if (Iter+1 < Idx2.NLevels)
       InverseCdf53(Idx2.BrickDimsExt3, D->Iter, Idx2.Subbands, Idx2.Td, &BVol, false);
     else
       InverseCdf53(Idx2.BrickDimsExt3, D->Iter, Idx2.Subbands, Idx2.Td, &BVol, true);
@@ -582,13 +715,11 @@ DecodeBrick
 
 /* TODO: dealloc chunks after we are done with them */
 void
-Decode
-(/*--------------------------*/
+Decode(
   const idx2_file& Idx2,
   const params& P,
   buffer* OutBuf
-)/*--------------------------*/
-{
+) {
   timer DecodeTimer; StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
   u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128;
@@ -596,10 +727,13 @@ Decode
   printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
   volume OutVolMem;
-  idx2_CleanUp(if (P.OutMode == params::out_mode::WriteToFile) { Unmap(&OutVol); });
+  idx2_CleanUp(
+    if (P.OutMode == params::out_mode::WriteToFile) {
+      Unmap(&OutVol);
+    }
+  );
 
-  idx2_Case_1 (P.OutMode == params::out_mode::WriteToFile)
-  {
+  idx2_Case_1(P.OutMode == params::out_mode::WriteToFile) {
     metadata Met;
     memcpy(Met.Name, Idx2.Name, sizeof(Met.Name));
     memcpy(Met.Field, Idx2.Field, sizeof(Met.Field));
@@ -612,8 +746,7 @@ Decode
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);
   }
-  idx2_Case_2 (P.OutMode == params::out_mode::KeepInMemory)
-  {
+  idx2_Case_2(P.OutMode == params::out_mode::KeepInMemory) {
     OutVolMem.Buffer = *OutBuf;
     SetDims(&OutVolMem, Dims(OutGrid));
     OutVolMem.Type = Idx2.DType;
@@ -628,9 +761,9 @@ Decode
   f64 Accuracy = Max(Idx2.Accuracy, P.DecodeAccuracy);
 //  i64 CountZeroes = 0;
 
-  idx2_InclusiveForBackward(i8, Iter, Idx2.NLevels - 1, 0)
-  {
-    if (Iter < P.OutputLevel) break;
+  idx2_InclusiveForBackward(i8, Iter, Idx2.NLevels-1, 0) {
+    if (Iter < P.OutputLevel)
+      break;
 
     extent Ext = P.DecodeExtent; // this is in unit of samples
     v3i B3, Bf3, Bl3, C3, Cf3, Cl3, F3, Ff3, Fl3; // Brick dimensions, brick first, brick last
@@ -642,9 +775,9 @@ Decode
     Cf3 = From(Ext) / C3; Cl3 = Last(Ext) / C3;
     Ff3 = From(Ext) / F3; Fl3 = Last(Ext) / F3;
 
-    extent ExtentInBricks(Bf3, Bl3 - Bf3 + 1);
-    extent ExtentInChunks(Cf3, Cl3 - Cf3 + 1);
-    extent ExtentInFiles (Ff3, Fl3 - Ff3 + 1);
+    extent ExtentInBricks(Bf3, Bl3-Bf3+1);
+    extent ExtentInChunks(Cf3, Cl3-Cf3+1);
+    extent ExtentInFiles (Ff3, Fl3-Ff3+1);
 
     extent VolExt(Idx2.Dims3);
     v3i Vbf3, Vbl3, Vcf3, Vcl3, Vff3, Vfl3; // VolBrickFirst, VolBrickLast
@@ -652,21 +785,18 @@ Decode
     Vcf3 = From(VolExt) / C3; Vcl3 = Last(VolExt) / C3;
     Vff3 = From(VolExt) / F3; Vfl3 = Last(VolExt) / F3;
 
-    extent VolExtentInBricks(Vbf3, Vbl3 - Vbf3 + 1);
-    extent VolExtentInChunks(Vcf3, Vcl3 - Vcf3 + 1);
-    extent VolExtentInFiles (Vff3, Vfl3 - Vff3 + 1);
+    extent VolExtentInBricks(Vbf3, Vbl3-Vbf3+1);
+    extent VolExtentInChunks(Vcf3, Vcl3-Vcf3+1);
+    extent VolExtentInFiles (Vff3, Vfl3-Vff3+1);
 
-    idx2_FileTraverse
-    (
+    idx2_FileTraverse(
 //      u64 FileAddr = FileTop.Address;
 //      idx2_Assert(FileAddr == GetLinearFile(Idx2, Iter, FileTop.FileFrom3));
-      idx2_ChunkTraverse
-      (
+      idx2_ChunkTraverse(
 //        u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Iter]) + ChunkTop.Address;
 //        idx2_Assert(ChunkAddr == GetLinearChunk(Idx2, Iter, ChunkTop.ChunkFrom3));
         D.ChunkInFile = ChunkTop.ChunkInFile;
-        idx2_BrickTraverse
-        (
+        idx2_BrickTraverse(
           D.BrickInChunk = Top.BrickInChunk;
 //          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Iter]) + Top.Address;
 //          idx2_Assert(BrickAddr == GetLinearBrick(Idx2, Iter, Top.BrickFrom3));
@@ -683,8 +813,7 @@ Decode
             ? P.DecodeMask
             : (Iter < P.DecodeLevel ? 0x1 : 0xFF);
           DecodeBrick(Idx2, P, &D, Mask, Accuracy);
-          if (Iter == P.OutputLevel)
-          {
+          if (Iter == P.OutputLevel) {
             grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Iter)); // TODO: the 1 << Iter is only true for 1 transform pass per level
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
@@ -698,7 +827,8 @@ Decode
               BrickGridLocal,
               BVol.Vol,
               Relative(OutBrickGrid, OutGrid),
-              OutputVol);
+              OutputVol
+            );
             Dealloc(&BVol.Vol);
             Delete(&D.BrickPool, BrickKey); // TODO: also delete the parent bricks once we are done
           }
@@ -798,27 +928,26 @@ Decode
 
 
 static void
-DecompressChunk
-( /*---------------------------*/
+DecompressChunk(
   bitstream* ChunkStream,
   chunk_cache* ChunkCache,
   u64 ChunkAddress,
   int L
-) /*---------------------------*/
-{
-  (void)L; u64 Brk = ((ChunkAddress >> 18) & 0x3FFFFFFFFFFull); (void)Brk;
+) {
+  (void)L;
+  u64 Brk = ((ChunkAddress >> 18) & 0x3FFFFFFFFFFull); (void)Brk;
   InitRead(ChunkStream, ChunkStream->Stream);
-  int NBricks = (int)ReadVarByte(ChunkStream); idx2_Assert(NBricks > 0);
+  int NBricks = (int)ReadVarByte(ChunkStream);
+  idx2_Assert(NBricks > 0);
 
   /* decompress and store the brick ids */
   u64 Brick = ReadVarByte(ChunkStream);
   Resize(&ChunkCache->Bricks, NBricks);
   ChunkCache->Bricks[0] = Brick;
-  idx2_For(int, I, 1, NBricks)
-  {
+  idx2_For(int, I, 1, NBricks) {
     Brick += ReadUnary(ChunkStream) + 1;
     ChunkCache->Bricks[I] = Brick;
-    idx2_Assert(Brk == (Brick >> L));
+    idx2_Assert(Brk == (Brick>>L));
   }
   Resize(&ChunkCache->BrickSzs, NBricks);
 
@@ -832,12 +961,10 @@ DecompressChunk
 
 // TODO: return error type
 error<idx2_err_code>
-ReadMetaFile
-(
+ReadMetaFile(
   idx2_file* Idx2,
   cstr FileName
-)
-{
+) {
   buffer Buf;
   idx2_CleanUp(DeallocBuf(&Buf));
   idx2_PropagateIfError(ReadFile(FileName, &Buf));
@@ -977,16 +1104,18 @@ ReadMetaFile
 
 idx2_T(t) void
 Dealloc(brick_table<t>* BrickTable) {
-  idx2_ForEach(BrickIt, BrickTable->Bricks) BrickTable->Alloc->Dealloc(BrickIt.Val->Samples);
+  idx2_ForEach(BrickIt, BrickTable->Bricks)
+    BrickTable->Alloc->Dealloc(BrickIt.Val->Samples);
   Dealloc(&BrickTable->Bricks);
-  idx2_ForEach(BlockSig, BrickTable->BlockSigs) Dealloc(BlockSig);
+  idx2_ForEach(BlockSig, BrickTable->BlockSigs)
+    Dealloc(BlockSig);
 }
 
 struct index_key {
   u64 LinearBrick;
   u32 BitStreamKey; // key consisting of bit plane, level, and sub-level
   idx2_Inline bool operator==(const index_key& Other) const {
-    return LinearBrick == Other.LinearBrick &&  BitStreamKey == Other.BitStreamKey;
+    return LinearBrick==Other.LinearBrick && BitStreamKey==Other.BitStreamKey;
   }
 };
 
@@ -997,7 +1126,7 @@ struct brick_index {
 
 idx2_Inline u64
 Hash(const index_key& IdxKey) {
-  return (IdxKey.LinearBrick + 1) * (1 + IdxKey.BitStreamKey);
+  return (IdxKey.LinearBrick+1) * (1+IdxKey.BitStreamKey);
 }
 
 /* only used for debugging
@@ -1044,16 +1173,14 @@ GetLinearFile(const idx2_file& Idx2, int Iter, v3i File3) {
 // TODO: upscale across levels
 template <typename t>
 static void
-UpscaleBrick
-( /*-----------------------------*/
+UpscaleBrick(
   const grid& Grid,
   int TformOrder,
   const brick<t>& Brick,
   int Level,
   const grid& OutGrid,
   volume* OutBrickVol
-) /*-----------------------------*/
-{ // BODY
+) { // BODY
   idx2_Assert(Level >= Brick.Level);
   idx2_Assert(OutBrickVol->Type == dtype::float64);
   v3i Dims3 = Dims(Grid);
@@ -1061,27 +1188,32 @@ UpscaleBrick
   if (Level > Brick.Level)
     *OutBrickVol = 0;
   Copy(Relative(Grid, Grid), BrickVol, Relative(Grid, OutGrid), OutBrickVol);
-  if (Level > Brick.Level)
-    InverseCdf53(Dims(*OutBrickVol), Dims(*OutBrickVol), Level - Brick.Level, TformOrder, OutBrickVol, true);
+  if (Level > Brick.Level) {
+    InverseCdf53(
+      Dims(*OutBrickVol),
+      Dims(*OutBrickVol),
+      Level - Brick.Level,
+      TformOrder,
+      OutBrickVol,
+      true
+    );
+  }
 }
 
 /* Flatten a brick table. the function allocates memory for its output. */
 // TODO: upscale across levels
 template <typename t>
-static void FlattenBrickTable
-( /*----------------------------------*/
+static void FlattenBrickTable(
   const array<grid>& LevelGrids,
   int TformOrder,
   const brick_table<t>& BrickTable,
   volume* VolOut
-) /*----------------------------------*/
-{ // BODY
+) {
   idx2_Assert(Size(BrickTable.Bricks) > 0);
   /* determine the maximum level of all bricks in the table */
   int MaxLevel = 0;
   auto ItEnd = End(BrickTable.Bricks);
-  for (auto It = Begin(BrickTable.Bricks); It != ItEnd; ++It)
-  {
+  for (auto It = Begin(BrickTable.Bricks); It != ItEnd; ++It) {
     int Iteration = *(It.Key) & 0xF;
     idx2_Assert(Iteration == 0); // TODO: for now we only support one level
     MaxLevel = Max(MaxLevel, (int)It.Val->Level);
@@ -1092,19 +1224,24 @@ static void FlattenBrickTable
   idx2_Assert(IsPow2(Dims3.X) && IsPow2(Dims3.Y) && IsPow2(Dims3.Z));
   auto It = Begin(BrickTable.Bricks);
   extent Ext(DecodeMorton3(*(It.Key) >> 4));
-  for (++It; It != ItEnd; ++It)
-  {
+  for (++It; It != ItEnd; ++It) {
     v3i P3 = DecodeMorton3(*(It.Key) >> 4);
-    Ext = BoundingBox(Ext, extent(P3 * Dims3, Dims3));
+    Ext = BoundingBox(Ext, extent(P3*Dims3, Dims3));
   }
   Resize(VolOut, Dims(Ext));
   /* upscale every brick */
   volume BrickVol(DimsExt3, dtype::float64);
   idx2_CleanUp(Dealloc(&BrickVol));
-  for (auto It = Begin(BrickTable.Bricks); It != ItEnd; ++It)
-  {
+  for (auto It = Begin(BrickTable.Bricks); It != ItEnd; ++It) {
     v3i P3 = DecodeMorton3(*(It.Key) >> 4);
-    UpscaleBrick(LevelGrids[It.Val->Level], TformOrder, *(It.Val), MaxLevel, LevelGrids[MaxLevel], &BrickVol);
+    UpscaleBrick(
+      LevelGrids[It.Val->Level],
+      TformOrder,
+      *(It.Val),
+      MaxLevel,
+      LevelGrids[MaxLevel],
+      &BrickVol
+    );
     Copy(extent(Dims3), BrickVol, extent(P3 * Dims3, Dims3), VolOut);
   }
 }
@@ -1126,7 +1263,12 @@ GetPartialResolution(const v3i& Dims3, u8 Mask, const array<subband>& Subbands) 
 /* ----------- VERSION 0: UNUSED ----------*/
 /* NOTE: in v0.0, we only support reading the data from beginning to end on each iteration */
 error<idx2_err_code>
-DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol) {
+DecodeSubbandV0_0(
+  const idx2_file& Idx2,
+  decode_data* D,
+  const grid& SbGrid,
+  volume* BVol
+) {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
@@ -1140,14 +1282,14 @@ DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     idx2_NextMorton(Block, Z3, NBlocks3);
     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2.BlockDims3));
     v3i D3 = Z3 * Idx2.BlockDims3;
-    v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+    v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3-D3);
+    bool CodedInNextIter = D->Level==0 && D->Iter+1<Idx2.NLevels && BlockDims3==Idx2.BlockDims3;
     if (CodedInNextIter) continue;
     ReadBuffer(Fp, &BufFloats);
     v3i S3;
     idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-      idx2_Assert(D3 + S3 < SbDims3);
-      BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[Row(BlockDims3, S3)];
+      idx2_Assert(D3+S3 < SbDims3);
+      BVol->At<f64>(SbGrid, D3+S3) = BlockFloats[Row(BlockDims3, S3)];
     } idx2_EndFor3 // end sample loop
   }
   D->Offsets[D->Iter] = idx2_FTell(Fp);
@@ -1155,18 +1297,23 @@ DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
 }
 
 error<idx2_err_code>
-DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol) {
+DecodeSubbandV0_1(
+  const idx2_file& Idx2,
+  decode_data* D,
+  const grid& SbGrid,
+  volume* BVol
+) {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
   const i8 NBitPlanes = idx2_BitSizeOf(f64);
-  v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
+  v3i NBlocks3 = (SbDims3+Idx2.BlockDims3-1) / Idx2.BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Iter, 0, 0);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
   idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
   int Sz = 0; ReadPOD(Fp, &Sz);
   Rewind(&D->BlockStream);
-  GrowToAccomodate(&D->BlockStream, Max(Sz, 8 * 1024 * 1024));
+  GrowToAccomodate(&D->BlockStream, Max(Sz, 8*1024*1024));
   ReadBuffer(Fp, &D->BlockStream.Stream, Sz);
   InitRead(&D->BlockStream, D->BlockStream.Stream);
   /* first, read the block exponents */
@@ -1174,20 +1321,21 @@ DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2.BlockDims3;
-    v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
-    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
-    i64 BlockInts[4 * 4 * 4] = {}; buffer_t BufInts(BlockInts, Prod(BlockDims3));
-    u64 BlockUInts[4 * 4 * 4] = {}; buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+    v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3-D3);
+    f64 BlockFloats[4*4*4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
+    i64 BlockInts  [4*4*4] = {}; buffer_t BufInts  (BlockInts  , Prod(BlockDims3));
+    u64 BlockUInts [4*4*4] = {}; buffer_t BufUInts (BlockUInts , Prod(BlockDims3));
+    bool CodedInNextIter = D->Level==0 && D->Iter+1<Idx2.NLevels && BlockDims3==Idx2.BlockDims3;
     if (CodedInNextIter) continue;
     int NDims = NumDims(BlockDims3);
-    const int NVals = 1 << (2 * NDims);
+    const int NVals = 1 << (2*NDims);
     const int Prec = idx2_BitSizeOf(f64) - 1 - NDims;
     i16 EMax = i16(Read(&D->BlockStream, traits<f64>::ExpBits) - traits<f64>::ExpBias);
     i8 N = 0;
-    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
+    idx2_InclusiveForBackward(i8, Bp, NBitPlanes-1, 0) { // bit plane loop
       i16 RealBp = Bp + EMax;
-      if (NBitPlanes - 6 > RealBp - Exponent(Idx2.Accuracy) + 1) break;
+      if (NBitPlanes-6 > RealBp-Exponent(Idx2.Accuracy)+1)
+        break;
       Decode(BlockUInts, NVals, Bp, N, &D->BlockStream);
     }
     InverseShuffle(BlockUInts, BlockInts, NDims);
@@ -1196,12 +1344,14 @@ DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     v3i S3;
     int J = 0;
     idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-      idx2_Assert(D3 + S3 < SbDims3);
-      BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[J++];
+      idx2_Assert(D3+S3 < SbDims3);
+      BVol->At<f64>(SbGrid, D3+S3) = BlockFloats[J++];
     } idx2_EndFor3 // end sample loop
   }
   D->Offsets[D->Iter] = idx2_FTell(Fp);
+
   return idx2_Error(idx2_err_code::NoError);
 }
 
 }
+
