@@ -63,16 +63,16 @@
 #define idx2_Inline
 
 /* Short for template <typename ...> which sometimes can get too verbose */
-#define idx2_T(...) template <typename __VA_ARGS__>
-#define idx2_I(N) template <int N>
-#define idx2_Ii(N) idx2_I(N) idx2_Inline
-#define idx2_TI(t, N) template <typename t, int N>
-#define idx2_TIi(t, N) idx2_TI(t, N) idx2_Inline
-#define idx2_TTI(t, u, N) template <typename t, typename u, int N>
-#define idx2_TII(t, N, M) template <typename t, int N, int M>
-#define idx2_TT(t, u) template <typename t, typename u>
-#define idx2_Ti(t) idx2_T(t) idx2_Inline
-#define idx2_TTi(t, u) idx2_TT(t, u) idx2_Inline
+// #define idx2_T(...) template <typename __VA_ARGS__>
+// #define idx2_I(N) template <int N>
+// #define idx2_Ii(N) idx2_I(N) idx2_Inline
+// #define idx2_TI(t, N) template <typename t, int N>
+// #define idx2_TIi(t, N) idx2_TI(t, N) idx2_Inline
+// #define idx2_TTI(t, u, N) template <typename t, typename u, int N>
+// #define idx2_TII(t, N, M) template <typename t, int N, int M>
+// #define idx2_TT(t, u) template <typename t, typename u>
+// #define idx2_Ti(t) idx2_T(t) idx2_Inline
+// #define idx2_TTi(t, u) idx2_TT(t, u) idx2_Inline
 
 /* Print binary */
 #define idx2_BinPattern8 "%c%c%c%c%c%c%c%c"
@@ -2276,6 +2276,381 @@ Dealloc(array<t>* Array)
 
 } // namespace idx2
 
+/*
+An enum type that knows how to convert from and to strings.
+There is always a special __Invalid__ enum item at the end.
+NOTE: No checking is done for duplicate values.
+*/
+
+/* String processing utilities */
+
+namespace idx2
+{
+
+/* Useful to create a string_ref out of a literal string */
+#define idx2_StRef(x) idx2::stref((x), sizeof(x) - 1)
+
+/*
+A "view" into a (usually bigger) null-terminated string. A string_ref itself is not null-terminated.
+There are two preferred ways to construct a string_ref from a char[] array:
+  - Use the idx2_StringRef macro to make string_ref refer to the entire array
+  - Use the string_ref(const char*) constructor to refer up to the first NULL
+*/
+struct stref
+{
+  union
+  {
+    str Ptr = nullptr;
+    cstr ConstPtr;
+  };
+  int Size = 0;
+
+  stref();
+  stref(cstr PtrIn, int SizeIn);
+  stref(cstr PtrIn);
+  char& operator[](int Idx) const;
+  operator bool() const;
+}; // struct string_ref
+
+int
+Size(const stref& Str);
+
+cstr
+ToString(const stref& Str);
+
+str
+Begin(stref Str);
+
+str
+End(stref Str);
+
+str
+RevBegin(stref Str);
+
+str
+RevEnd(stref Str);
+
+bool
+operator==(const stref& Lhs, const stref& Rhs);
+
+/* Remove spaces at the start of a string */
+stref
+TrimLeft(const stref& Str);
+
+stref
+TrimRight(const stref& Str);
+
+stref
+Trim(const stref& Str);
+
+/*
+Return a substring of a given string. The substring starts at Begin and has
+length Size. Return the empty string if no proper substring can be constructed
+(e.g. Begin >= Str.Size).
+*/
+stref
+SubString(const stref& Str, int Begin, int Size);
+
+/*
+Copy the underlying buffer referred to by Src to the one referred to by Dst.
+AddNull should be true whenever dst represents a whole string (as opposed to a
+substring). If Src is larger than Dst, we copy as many characters as we can. We
+always assume that the null character can be optionally added without
+overflowing the memory of Dst.
+*/
+void
+Copy(const stref& Src, stref* Dst, bool AddNull = true);
+
+/* Parse a string_ref and return a number */
+bool
+ToInt(const stref& Str, int* Result);
+
+bool
+ToInt64(const stref& Str, i64* Result);
+
+bool
+ToDouble(const stref& Str, f64* Result);
+
+/* Tokenize strings without allocating memory */
+struct tokenizer
+{
+  stref Input;
+  stref Delims;
+  int Pos = 0;
+
+  tokenizer();
+  tokenizer(const stref& InputIn, const stref& DelimsIn = " \n\t");
+}; // struct tokenizer
+
+void
+Init(tokenizer* Tk, const stref& Input, const stref& Delims = " \n\t");
+stref
+Next(tokenizer* Tk);
+void
+Reset(tokenizer* Tk);
+
+} // namespace idx2
+
+#include <assert.h>
+#include <string.h>
+
+namespace idx2
+{
+
+idx2_Inline
+stref::stref() = default;
+
+idx2_Inline
+stref::stref(cstr PtrIn, int SizeIn)
+  : ConstPtr(PtrIn)
+  , Size(SizeIn)
+{
+}
+
+idx2_Inline
+stref::stref(cstr PtrIn)
+  : ConstPtr(PtrIn)
+  , Size(int(strlen(PtrIn)))
+{
+}
+
+idx2_Inline char&
+stref::operator[](int Idx) const
+{
+  assert(Idx < Size);
+  return const_cast<char&>(Ptr[Idx]);
+}
+
+idx2_Inline stref::operator bool() const
+{
+  return Ptr != nullptr;
+}
+
+idx2_Inline int
+Size(const stref& Str)
+{
+  return Str.Size;
+}
+
+idx2_Inline str
+Begin(stref Str)
+{
+  return Str.Ptr;
+}
+
+idx2_Inline str
+End(stref Str)
+{
+  return Str.Ptr + Str.Size;
+}
+
+idx2_Inline str
+RevBegin(stref Str)
+{
+  return Str.Ptr + Str.Size - 1;
+}
+
+idx2_Inline str
+RevEnd(stref Str)
+{
+  return Str.Ptr - 1;
+}
+
+idx2_Inline
+tokenizer::tokenizer() = default;
+
+idx2_Inline
+tokenizer::tokenizer(const stref& InputIn, const stref& DelimsIn)
+  : Input(InputIn)
+  , Delims(DelimsIn)
+  , Pos(0)
+{
+}
+
+idx2_Inline void
+Init(tokenizer* Tk, const stref& Input, const stref& Delims)
+{
+  Tk->Input = Input;
+  Tk->Delims = Delims;
+  Tk->Pos = 0;
+}
+
+} // namespace idx2
+
+/* Example usage: idx2_Enum(error_type, u8, OutOfMemory, FileNotFound) */
+#define idx2_Enum(enum_name, type, ...)                                                            \
+                                                                                                   \
+  namespace idx2                                                                                   \
+  {                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  struct enum_name                                                                                 \
+  {                                                                                                \
+    enum : type                                                                                    \
+    {                                                                                              \
+      __Invalid__,                                                                                 \
+      __VA_ARGS__                                                                                  \
+    };                                                                                             \
+    type Val;                                                                                      \
+    enum_name();                                                                                   \
+    enum_name(type Val);                                                                           \
+    enum_name& operator=(type Val);                                                                \
+    explicit enum_name(stref Name);                                                                \
+    explicit operator bool() const;                                                                \
+  }; /* struct enum_name */                                                                        \
+                                                                                                   \
+                                                                                                   \
+  stref ToString(enum_name Enum);                                                                  \
+                                                                                                   \
+                                                                                                   \
+  } // namespace idx2
+
+namespace idx2
+{
+
+/* Construct an enum from a string */
+template <typename t> struct StringTo
+{
+  t operator()(stref Name);
+};
+
+} // namespace idx2
+
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
+
+#undef idx2_Enum
+#define idx2_Enum(enum_name, type, ...)                                                            \
+                                                                                                   \
+  namespace idx2                                                                                   \
+  {                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  enum class enum_name : type                                                                      \
+  {                                                                                                \
+    __VA_ARGS__,                                                                                   \
+    __Invalid__                                                                                    \
+  };                                                                                               \
+                                                                                                   \
+  struct idx2_Cat(enum_name, _s)                                                                   \
+  {                                                                                                \
+    enum_name Val;                                                                                 \
+    struct enum_item                                                                               \
+    {                                                                                              \
+      stref Name;                                                                                  \
+      enum_name ItemVal;                                                                           \
+    };                                                                                             \
+                                                                                                   \
+    using name_map = stack_array<enum_item, idx2_NumArgs(__VA_ARGS__)>;                            \
+                                                                                                   \
+    inline static name_map NameMap = []()                                                          \
+    {                                                                                              \
+      name_map MyNameMap;                                                                          \
+      tokenizer Tk1(idx2_Str(__VA_ARGS__), ",");                                                   \
+      type CurrentVal = 0;                                                                         \
+      for (int I = 0;; ++I, ++CurrentVal)                                                          \
+      {                                                                                            \
+        stref Token = Next(&Tk1);                                                                  \
+        if (!Token)                                                                                \
+          break;                                                                                   \
+        tokenizer Tk2(Token, " =");                                                                \
+        stref EnumStr = Next(&Tk2);                                                                \
+        stref EnumVal = Next(&Tk2);                                                                \
+        if (EnumVal)                                                                               \
+        {                                                                                          \
+          char* EndPtr = nullptr;                                                                  \
+          errno = 0;                                                                               \
+          enum_name MyVal = enum_name(strtol(EnumVal.Ptr, &EndPtr, 10));                           \
+          if (errno == ERANGE || EndPtr == EnumVal.Ptr || !EndPtr ||                               \
+              !(isspace(*EndPtr) || *EndPtr == ',' || *EndPtr == '\0'))                            \
+            assert(false && " non-integer enum values");                                           \
+          else if (MyVal < static_cast<enum_name>(CurrentVal))                                     \
+            assert(false && " non-increasing enum values");                                        \
+          else                                                                                     \
+            CurrentVal = static_cast<type>(MyVal);                                                 \
+        }                                                                                          \
+        assert(I < Size(MyNameMap));                                                               \
+        MyNameMap[I] = enum_item{ EnumStr, static_cast<enum_name>(CurrentVal) };                   \
+      }                                                                                            \
+      return MyNameMap;                                                                            \
+    }();                                                                                           \
+                                                                                                   \
+                                                                                                   \
+    idx2_Cat(enum_name, _s)()                                                                      \
+      : idx2_Cat(enum_name, _s)(enum_name::__Invalid__)                                            \
+    {                                                                                              \
+    }                                                                                              \
+                                                                                                   \
+                                                                                                   \
+    idx2_Cat(enum_name, _s)(enum_name Value)                                                       \
+    {                                                                                              \
+      auto* It = Begin(NameMap);                                                                   \
+      while (It != End(NameMap))                                                                   \
+      {                                                                                            \
+        if (It->ItemVal == Value)                                                                  \
+          break;                                                                                   \
+        ++It;                                                                                      \
+      }                                                                                            \
+      this->Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;                     \
+    }                                                                                              \
+                                                                                                   \
+                                                                                                   \
+    explicit idx2_Cat(enum_name, _s)(stref Name)                                                   \
+    {                                                                                              \
+      auto* It = Begin(NameMap);                                                                   \
+      while (It != End(NameMap))                                                                   \
+      {                                                                                            \
+        if (It->Name == Name)                                                                      \
+          break;                                                                                   \
+        ++It;                                                                                      \
+      }                                                                                            \
+      Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;                           \
+    }                                                                                              \
+                                                                                                   \
+                                                                                                   \
+    explicit operator bool() const { return Val != enum_name::__Invalid__; }                       \
+  };                                                                                               \
+                                                                                                   \
+                                                                                                   \
+  inline stref                                                                                     \
+  ToString(enum_name Enum)                                                                         \
+  {                                                                                                \
+    idx2_Cat(enum_name, _s) EnumS(Enum);                                                           \
+    auto* It = Begin(EnumS.NameMap);                                                               \
+    while (It != End(EnumS.NameMap))                                                               \
+    {                                                                                              \
+      if (It->ItemVal == EnumS.Val)                                                                \
+        break;                                                                                     \
+      ++It;                                                                                        \
+    }                                                                                              \
+    assert(It != End(EnumS.NameMap));                                                              \
+    return It->Name;                                                                               \
+  }                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  template <> struct StringTo<enum_name>                                                           \
+  {                                                                                                \
+    enum_name                                                                                      \
+    operator()(stref Name)                                                                         \
+    {                                                                                              \
+      idx2_Cat(enum_name, _s) EnumS(Name);                                                         \
+      return EnumS.Val;                                                                            \
+    }                                                                                              \
+  };                                                                                               \
+                                                                                                   \
+                                                                                                   \
+  inline bool                                                                                      \
+  IsValid(enum_name Enum)                                                                          \
+  {                                                                                                \
+    idx2_Cat(enum_name, _s) EnumS(Enum);                                                           \
+    return EnumS.Val != enum_name::__Invalid__;                                                    \
+  }                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  } // namespace idx2
+
 namespace idx2
 {
 
@@ -3272,381 +3647,6 @@ DecodeCenteredMinimal(u32 n, bitstream* Bs)
 } // namespace idx2
 
 // TODO: add RGB types
-
-/*
-An enum type that knows how to convert from and to strings.
-There is always a special __Invalid__ enum item at the end.
-NOTE: No checking is done for duplicate values.
-*/
-
-/* String processing utilities */
-
-namespace idx2
-{
-
-/* Useful to create a string_ref out of a literal string */
-#define idx2_StRef(x) idx2::stref((x), sizeof(x) - 1)
-
-/*
-A "view" into a (usually bigger) null-terminated string. A string_ref itself is not null-terminated.
-There are two preferred ways to construct a string_ref from a char[] array:
-  - Use the idx2_StringRef macro to make string_ref refer to the entire array
-  - Use the string_ref(const char*) constructor to refer up to the first NULL
-*/
-struct stref
-{
-  union
-  {
-    str Ptr = nullptr;
-    cstr ConstPtr;
-  };
-  int Size = 0;
-
-  stref();
-  stref(cstr PtrIn, int SizeIn);
-  stref(cstr PtrIn);
-  char& operator[](int Idx) const;
-  operator bool() const;
-}; // struct string_ref
-
-int
-Size(const stref& Str);
-
-cstr
-ToString(const stref& Str);
-
-str
-Begin(stref Str);
-
-str
-End(stref Str);
-
-str
-RevBegin(stref Str);
-
-str
-RevEnd(stref Str);
-
-bool
-operator==(const stref& Lhs, const stref& Rhs);
-
-/* Remove spaces at the start of a string */
-stref
-TrimLeft(const stref& Str);
-
-stref
-TrimRight(const stref& Str);
-
-stref
-Trim(const stref& Str);
-
-/*
-Return a substring of a given string. The substring starts at Begin and has
-length Size. Return the empty string if no proper substring can be constructed
-(e.g. Begin >= Str.Size).
-*/
-stref
-SubString(const stref& Str, int Begin, int Size);
-
-/*
-Copy the underlying buffer referred to by Src to the one referred to by Dst.
-AddNull should be true whenever dst represents a whole string (as opposed to a
-substring). If Src is larger than Dst, we copy as many characters as we can. We
-always assume that the null character can be optionally added without
-overflowing the memory of Dst.
-*/
-void
-Copy(const stref& Src, stref* Dst, bool AddNull = true);
-
-/* Parse a string_ref and return a number */
-bool
-ToInt(const stref& Str, int* Result);
-
-bool
-ToInt64(const stref& Str, i64* Result);
-
-bool
-ToDouble(const stref& Str, f64* Result);
-
-/* Tokenize strings without allocating memory */
-struct tokenizer
-{
-  stref Input;
-  stref Delims;
-  int Pos = 0;
-
-  tokenizer();
-  tokenizer(const stref& InputIn, const stref& DelimsIn = " \n\t");
-}; // struct tokenizer
-
-void
-Init(tokenizer* Tk, const stref& Input, const stref& Delims = " \n\t");
-stref
-Next(tokenizer* Tk);
-void
-Reset(tokenizer* Tk);
-
-} // namespace idx2
-
-#include <assert.h>
-#include <string.h>
-
-namespace idx2
-{
-
-idx2_Inline
-stref::stref() = default;
-
-idx2_Inline
-stref::stref(cstr PtrIn, int SizeIn)
-  : ConstPtr(PtrIn)
-  , Size(SizeIn)
-{
-}
-
-idx2_Inline
-stref::stref(cstr PtrIn)
-  : ConstPtr(PtrIn)
-  , Size(int(strlen(PtrIn)))
-{
-}
-
-idx2_Inline char&
-stref::operator[](int Idx) const
-{
-  assert(Idx < Size);
-  return const_cast<char&>(Ptr[Idx]);
-}
-
-idx2_Inline stref::operator bool() const
-{
-  return Ptr != nullptr;
-}
-
-idx2_Inline int
-Size(const stref& Str)
-{
-  return Str.Size;
-}
-
-idx2_Inline str
-Begin(stref Str)
-{
-  return Str.Ptr;
-}
-
-idx2_Inline str
-End(stref Str)
-{
-  return Str.Ptr + Str.Size;
-}
-
-idx2_Inline str
-RevBegin(stref Str)
-{
-  return Str.Ptr + Str.Size - 1;
-}
-
-idx2_Inline str
-RevEnd(stref Str)
-{
-  return Str.Ptr - 1;
-}
-
-idx2_Inline
-tokenizer::tokenizer() = default;
-
-idx2_Inline
-tokenizer::tokenizer(const stref& InputIn, const stref& DelimsIn)
-  : Input(InputIn)
-  , Delims(DelimsIn)
-  , Pos(0)
-{
-}
-
-idx2_Inline void
-Init(tokenizer* Tk, const stref& Input, const stref& Delims)
-{
-  Tk->Input = Input;
-  Tk->Delims = Delims;
-  Tk->Pos = 0;
-}
-
-} // namespace idx2
-
-/* Example usage: idx2_Enum(error_type, u8, OutOfMemory, FileNotFound) */
-#define idx2_Enum(enum_name, type, ...)                                                            \
-                                                                                                   \
-  namespace idx2                                                                                   \
-  {                                                                                                \
-                                                                                                   \
-                                                                                                   \
-  struct enum_name                                                                                 \
-  {                                                                                                \
-    enum : type                                                                                    \
-    {                                                                                              \
-      __Invalid__,                                                                                 \
-      __VA_ARGS__                                                                                  \
-    };                                                                                             \
-    type Val;                                                                                      \
-    enum_name();                                                                                   \
-    enum_name(type Val);                                                                           \
-    enum_name& operator=(type Val);                                                                \
-    explicit enum_name(stref Name);                                                                \
-    explicit operator bool() const;                                                                \
-  }; /* struct enum_name */                                                                        \
-                                                                                                   \
-                                                                                                   \
-  stref ToString(enum_name Enum);                                                                  \
-                                                                                                   \
-                                                                                                   \
-  } // namespace idx2
-
-namespace idx2
-{
-
-/* Construct an enum from a string */
-template <typename t> struct StringTo
-{
-  t operator()(stref Name);
-};
-
-} // namespace idx2
-
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <stdlib.h>
-
-#undef idx2_Enum
-#define idx2_Enum(enum_name, type, ...)                                                            \
-                                                                                                   \
-  namespace idx2                                                                                   \
-  {                                                                                                \
-                                                                                                   \
-                                                                                                   \
-  enum class enum_name : type                                                                      \
-  {                                                                                                \
-    __VA_ARGS__,                                                                                   \
-    __Invalid__                                                                                    \
-  };                                                                                               \
-                                                                                                   \
-  struct idx2_Cat(enum_name, _s)                                                                   \
-  {                                                                                                \
-    enum_name Val;                                                                                 \
-    struct enum_item                                                                               \
-    {                                                                                              \
-      stref Name;                                                                                  \
-      enum_name ItemVal;                                                                           \
-    };                                                                                             \
-                                                                                                   \
-    using name_map = stack_array<enum_item, idx2_NumArgs(__VA_ARGS__)>;                            \
-                                                                                                   \
-    inline static name_map NameMap = []()                                                          \
-    {                                                                                              \
-      name_map MyNameMap;                                                                          \
-      tokenizer Tk1(idx2_Str(__VA_ARGS__), ",");                                                   \
-      type CurrentVal = 0;                                                                         \
-      for (int I = 0;; ++I, ++CurrentVal)                                                          \
-      {                                                                                            \
-        stref Token = Next(&Tk1);                                                                  \
-        if (!Token)                                                                                \
-          break;                                                                                   \
-        tokenizer Tk2(Token, " =");                                                                \
-        stref EnumStr = Next(&Tk2);                                                                \
-        stref EnumVal = Next(&Tk2);                                                                \
-        if (EnumVal)                                                                               \
-        {                                                                                          \
-          char* EndPtr = nullptr;                                                                  \
-          errno = 0;                                                                               \
-          enum_name MyVal = enum_name(strtol(EnumVal.Ptr, &EndPtr, 10));                           \
-          if (errno == ERANGE || EndPtr == EnumVal.Ptr || !EndPtr ||                               \
-              !(isspace(*EndPtr) || *EndPtr == ',' || *EndPtr == '\0'))                            \
-            assert(false && " non-integer enum values");                                           \
-          else if (MyVal < static_cast<enum_name>(CurrentVal))                                     \
-            assert(false && " non-increasing enum values");                                        \
-          else                                                                                     \
-            CurrentVal = static_cast<type>(MyVal);                                                 \
-        }                                                                                          \
-        assert(I < Size(MyNameMap));                                                               \
-        MyNameMap[I] = enum_item{ EnumStr, static_cast<enum_name>(CurrentVal) };                   \
-      }                                                                                            \
-      return MyNameMap;                                                                            \
-    }();                                                                                           \
-                                                                                                   \
-                                                                                                   \
-    idx2_Cat(enum_name, _s)()                                                                      \
-      : idx2_Cat(enum_name, _s)(enum_name::__Invalid__)                                            \
-    {                                                                                              \
-    }                                                                                              \
-                                                                                                   \
-                                                                                                   \
-    idx2_Cat(enum_name, _s)(enum_name Value)                                                       \
-    {                                                                                              \
-      auto* It = Begin(NameMap);                                                                   \
-      while (It != End(NameMap))                                                                   \
-      {                                                                                            \
-        if (It->ItemVal == Value)                                                                  \
-          break;                                                                                   \
-        ++It;                                                                                      \
-      }                                                                                            \
-      this->Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;                     \
-    }                                                                                              \
-                                                                                                   \
-                                                                                                   \
-    explicit idx2_Cat(enum_name, _s)(stref Name)                                                   \
-    {                                                                                              \
-      auto* It = Begin(NameMap);                                                                   \
-      while (It != End(NameMap))                                                                   \
-      {                                                                                            \
-        if (It->Name == Name)                                                                      \
-          break;                                                                                   \
-        ++It;                                                                                      \
-      }                                                                                            \
-      Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;                           \
-    }                                                                                              \
-                                                                                                   \
-                                                                                                   \
-    explicit operator bool() const { return Val != enum_name::__Invalid__; }                       \
-  };                                                                                               \
-                                                                                                   \
-                                                                                                   \
-  inline stref                                                                                     \
-  ToString(enum_name Enum)                                                                         \
-  {                                                                                                \
-    idx2_Cat(enum_name, _s) EnumS(Enum);                                                           \
-    auto* It = Begin(EnumS.NameMap);                                                               \
-    while (It != End(EnumS.NameMap))                                                               \
-    {                                                                                              \
-      if (It->ItemVal == EnumS.Val)                                                                \
-        break;                                                                                     \
-      ++It;                                                                                        \
-    }                                                                                              \
-    assert(It != End(EnumS.NameMap));                                                              \
-    return It->Name;                                                                               \
-  }                                                                                                \
-                                                                                                   \
-                                                                                                   \
-  template <> struct StringTo<enum_name>                                                           \
-  {                                                                                                \
-    enum_name                                                                                      \
-    operator()(stref Name)                                                                         \
-    {                                                                                              \
-      idx2_Cat(enum_name, _s) EnumS(Name);                                                         \
-      return EnumS.Val;                                                                            \
-    }                                                                                              \
-  };                                                                                               \
-                                                                                                   \
-                                                                                                   \
-  inline bool                                                                                      \
-  IsValid(enum_name Enum)                                                                          \
-  {                                                                                                \
-    idx2_Cat(enum_name, _s) EnumS(Enum);                                                           \
-    return EnumS.Val != enum_name::__Invalid__;                                                    \
-  }                                                                                                \
-                                                                                                   \
-                                                                                                   \
-  } // namespace idx2
 
 idx2_Enum(dtype, i8, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64);
 
@@ -6502,63 +6502,75 @@ Unlock(mutex* Mutex)
  *     http://www.pcg-random.org
  */
 
-namespace idx2 {
+namespace idx2
+{
 
 // PCG32 Pseudorandom number generator
-struct pcg32 {
-  static constexpr auto Pcg32DefaultState  = 0x853c49e6748fea9bull;
+struct pcg32
+{
+  static constexpr auto Pcg32DefaultState = 0x853c49e6748fea9bull;
   static constexpr auto Pcg32DefaultStream = 0xda3e39cb94b95bdbull;
-  static constexpr auto Pcg32Mult          = 0x5851f42d4c957f2dull;
-  u64 State;  // RNG state.  All values are possible.
-  u64 Inc;    // Controls which RNG sequence (stream) is selected. Must *always* be odd.
+  static constexpr auto Pcg32Mult = 0x5851f42d4c957f2dull;
+  u64 State; // RNG state.  All values are possible.
+  u64 Inc;   // Controls which RNG sequence (stream) is selected. Must *always* be odd.
   // Initialize the pseudorandom number generator with default seed
   pcg32();
   // Initialize the pseudorandom number generator with the Seed() function
   pcg32(u64 Initstate, u64 Initseq = 1);
 };
 
-/* Seed the pseudorandom number generator
-  *
-  * Specified in two parts: a state initializer and a sequence selection
-  * constant (a.k.a. stream id) */
-void Seed(pcg32* Pcg, u64 InitState, u64 InitSeq = 1);
+/*
+Seed the pseudorandom number generator
+Specified in two parts: a state initializer and a sequence selection constant (a.k.a. stream id)
+*/
+void
+Seed(pcg32* Pcg, u64 InitState, u64 InitSeq = 1);
 
 // Generate a uniformly distributed unsigned 32-bit random number
-u32 NextUInt(pcg32* Pcg);
+u32
+NextUInt(pcg32* Pcg);
 
 // Generate a uniformly distributed number, r, where 0 <= r < bound
-u32 NextUInt(pcg32* Pcg, u32 Bound);
+u32
+NextUInt(pcg32* Pcg, u32 Bound);
 
 // Generate a single precision floating point value on the interval [0, 1)
-f32 NextFloat(pcg32* Pcg);
+f32
+NextFloat(pcg32* Pcg);
 
 /* Generate a double precision floating point value on the interval [0, 1)
-  *
-  * Since the underlying random number generator produces 32 bit output,
-  * only the first 32 mantissa bits will be filled (however, the resolution is
-  * still finer than in NextFloat(), which only uses 23 mantissa bits) */
-f64 NextDouble(pcg32* Pcg);
+ *
+ * Since the underlying random number generator produces 32 bit output,
+ * only the first 32 mantissa bits will be filled (however, the resolution is
+ * still finer than in NextFloat(), which only uses 23 mantissa bits) */
+f64
+NextDouble(pcg32* Pcg);
 
 /* Multi-step advance function (jump-ahead, jump-back)
-  *
-  * The method used here is based on Brown, "Random Number Generation
-  * with Arbitrary Stride", Transactions of the American Nuclear
-  * Society (Nov. 1994). The algorithm is very similar to fast exponentiation. */
-void Advance(i64 Delta_);
+ *
+ * The method used here is based on Brown, "Random Number Generation
+ * with Arbitrary Stride", Transactions of the American Nuclear
+ * Society (Nov. 1994). The algorithm is very similar to fast exponentiation. */
+void
+Advance(i64 Delta_);
 
 /* Draw uniformly distributed permutation and permute the given STL container
-  *
-  * From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2 */
-idx2_T(it) void Shuffle(it Begin, it End);
+ *
+ * From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2 */
+template <typename it> void
+Shuffle(it Begin, it End);
 
 // Compute the distance between two PCG32 pseudorandom number generators
-i64 operator-(const pcg32& First, const pcg32& Second);
+i64
+operator-(const pcg32& First, const pcg32& Second);
 
 // Equality operator
-bool operator==(const pcg32& First, const pcg32& Second);
+bool
+operator==(const pcg32& First, const pcg32& Second);
 
 // Inequality operator
-bool operator!=(const pcg32& First, const pcg32& Second);
+bool
+operator!=(const pcg32& First, const pcg32& Second);
 
 } // namespace idx2
 
@@ -6590,13 +6602,26 @@ bool operator!=(const pcg32& First, const pcg32& Second);
 
 #include <math.h>
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Inline pcg32::pcg32() : State(Pcg32DefaultState), Inc(Pcg32DefaultStream) {}
-idx2_Inline pcg32::pcg32(u64 InitState, u64 InitSeq) : pcg32() { Seed(this, InitState, InitSeq); }
+idx2_Inline
+pcg32::pcg32()
+  : State(Pcg32DefaultState)
+  , Inc(Pcg32DefaultStream)
+{
+}
+
+idx2_Inline
+pcg32::pcg32(u64 InitState, u64 InitSeq)
+  : pcg32()
+{
+  Seed(this, InitState, InitSeq);
+}
 
 idx2_Inline void
-Seed(pcg32* Pcg, u64 InitState, u64 InitSeq) {
+Seed(pcg32* Pcg, u64 InitState, u64 InitSeq)
+{
   Pcg->State = 0u;
   Pcg->Inc = (InitSeq << 1u) | 1u;
   NextUInt(Pcg);
@@ -6605,16 +6630,18 @@ Seed(pcg32* Pcg, u64 InitState, u64 InitSeq) {
 }
 
 idx2_Inline u32
-NextUInt(pcg32* Pcg) {
+NextUInt(pcg32* Pcg)
+{
   u64 OldState = Pcg->State;
   Pcg->State = OldState * pcg32::Pcg32Mult + Pcg->Inc;
-  u32 XorShifted = (u32) (((OldState >> 18u) ^ OldState) >> 27u);
-  u32 Rot = (u32) (OldState >> 59u);
+  u32 XorShifted = (u32)(((OldState >> 18u) ^ OldState) >> 27u);
+  u32 Rot = (u32)(OldState >> 59u);
   return (XorShifted >> Rot) | (XorShifted << ((~Rot + 1u) & 31));
 }
 
 idx2_Inline u32
-NextUInt(pcg32* Pcg, u32 Bound) {
+NextUInt(pcg32* Pcg, u32 Bound)
+{
   // To avoid bias, we need to make the range of the RNG a multiple of
   // bound, which we do by dropping output less than a threshold.
   // A naive scheme to calculate the threshold would be to do
@@ -6638,7 +6665,8 @@ NextUInt(pcg32* Pcg, u32 Bound) {
   // (i.e., 2147483649), which invalidates almost 50% of the range. In
   // practice, bounds are typically small and only a tiny amount of the range
   // is eliminated.
-  for (;;) {
+  for (;;)
+  {
     u32 R = NextUInt(Pcg);
     if (R >= Threshold)
       return R % Bound;
@@ -6646,10 +6674,12 @@ NextUInt(pcg32* Pcg, u32 Bound) {
 }
 
 idx2_Inline f32
-NextFloat(pcg32* Pcg) {
+NextFloat(pcg32* Pcg)
+{
   /* Trick from MTGP: generate an uniformly distributed single precision number
   in [1,2) and subtract 1. */
-  union {
+  union
+  {
     u32 U;
     f32 F;
   } X;
@@ -6658,19 +6688,22 @@ NextFloat(pcg32* Pcg) {
 }
 
 idx2_Inline f64
-NextDouble(pcg32* Pcg) {
+NextDouble(pcg32* Pcg)
+{
   /* Trick from MTGP: generate an uniformly distributed double precision number
   in [1,2) and subtract 1. */
-  union {
+  union
+  {
     u64 U;
     f64 D;
   } X;
-  X.U = ((u64) NextUInt(Pcg) << 20) | 0x3ff0000000000000ull;
+  X.U = ((u64)NextUInt(Pcg) << 20) | 0x3ff0000000000000ull;
   return X.D - 1.0;
 }
 
 inline void
-Advance(pcg32* Pcg, i64 Delta_) {
+Advance(pcg32* Pcg, i64 Delta_)
+{
   u64 CurMult = pcg32::Pcg32Mult;
   u64 CurPlus = Pcg->Inc;
   u64 AccMult = 1u;
@@ -6680,8 +6713,10 @@ Advance(pcg32* Pcg, i64 Delta_) {
   go backwards, it just goes "the long way round". */
   u64 Delta = (u64)Delta_;
 
-  while (Delta > 0) {
-    if (Delta & 1) {
+  while (Delta > 0)
+  {
+    if (Delta & 1)
+    {
       AccMult *= CurMult;
       AccPlus = AccPlus * CurMult + CurPlus;
     }
@@ -6692,15 +6727,17 @@ Advance(pcg32* Pcg, i64 Delta_) {
   Pcg->State = AccMult * Pcg->State + AccPlus;
 }
 
-idx2_Ti(it) void
-Shuffle(pcg32* Pcg, it Begin, it End) {
+template <typename it> idx2_Inline void
+Shuffle(pcg32* Pcg, it Begin, it End)
+{
   for (it It = End - 1; It > Begin; --It)
-    IterSwap(It, Begin + NextUInt(Pcg, (u32) (It - Begin + 1)));
+    IterSwap(It, Begin + NextUInt(Pcg, (u32)(It - Begin + 1)));
 }
 
 // Compute the distance between two PCG32 pseudorandom number generators
 inline i64
-operator-(const pcg32& First, const pcg32& Second) {
+operator-(const pcg32& First, const pcg32& Second)
+{
   idx2_Assert(First.Inc == Second.Inc);
 
   u64 CurMult = pcg32::Pcg32Mult;
@@ -6709,8 +6746,10 @@ operator-(const pcg32& First, const pcg32& Second) {
   u64 TheBit = 1u;
   u64 Distance = 0u;
 
-  while (First.State != CurState) {
-    if ((First.State & TheBit) != (CurState & TheBit)) {
+  while (First.State != CurState)
+  {
+    if ((First.State & TheBit) != (CurState & TheBit))
+    {
       CurState = CurState * CurMult + CurPlus;
       Distance |= TheBit;
     }
@@ -6725,13 +6764,15 @@ operator-(const pcg32& First, const pcg32& Second) {
 
 // Equality operator
 idx2_Inline bool
-operator==(const pcg32& First, const pcg32& Second) {
+operator==(const pcg32& First, const pcg32& Second)
+{
   return First.State == Second.State && First.Inc == Second.Inc;
 }
 
 // Inequality operator
 idx2_Inline bool
-operator!=(const pcg32& First, const pcg32& Second) {
+operator!=(const pcg32& First, const pcg32& Second)
+{
   return First.State != Second.State || First.Inc != Second.Inc;
 }
 
@@ -44538,7 +44579,8 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
   return idx2_Error(idx2_err_code::NoError);
 }
 
-idx2_T(t) void Dealloc(brick_table<t>* BrickTable)
+template <typename t> void
+Dealloc(brick_table<t>* BrickTable)
 {
   idx2_ForEach (BrickIt, BrickTable->Bricks)
     BrickTable->Alloc->Dealloc(BrickIt.Val->Samples);
