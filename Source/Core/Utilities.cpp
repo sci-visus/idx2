@@ -1,14 +1,20 @@
 #include "Utilities.h"
 
-namespace idx2 {
 
-u32 
-Murmur3_32(u8* Key, int Len, u32 Seed) {
+namespace idx2
+{
+
+
+u32
+Murmur3_32(u8* Key, int Len, u32 Seed)
+{
   u32 H = Seed;
-  if (Len > 3) {
+  if (Len > 3)
+  {
     u32* Key_x4 = (u32*)Key;
     int I = Len >> 2;
-    do {
+    do
+    {
       u32 K = *Key_x4++;
       K *= 0xcc9e2d51;
       K = (K << 15) | (K >> 17);
@@ -19,11 +25,13 @@ Murmur3_32(u8* Key, int Len, u32 Seed) {
     } while (--I);
     Key = (u8*)Key_x4;
   }
-  if (Len & 3) {
+  if (Len & 3)
+  {
     int I = Len & 3;
     u32 K = 0;
     Key = &Key[I - 1];
-    do {
+    do
+    {
       K <<= 8;
       K |= *Key--;
     } while (--K);
@@ -41,5 +49,5 @@ Murmur3_32(u8* Key, int Len, u32 Seed) {
   return H;
 }
 
-} // namespace idx2
 
+} // namespace idx2

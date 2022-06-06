@@ -1,7 +1,5 @@
-#include <ctype.h>
-#include <stdio.h>
-#include "Common.h"
 #include "DataSet.h"
+#include "Common.h"
 #include "Error.h"
 #include "FileSystem.h"
 #include "Format.h"
@@ -9,14 +7,16 @@
 #include "ScopeGuard.h"
 #include "StackTrace.h"
 #include "String.h"
+#include <ctype.h>
+#include <stdio.h>
 
-namespace idx2 {
+
+namespace idx2
+{
+
 
 cstr
-ToRawFileName
-( /* Serialize the given metadata to a file name */
-  const metadata& Meta
-) /*---------------------------------------------*/
+ToRawFileName(const metadata& Meta)
 {
   printer Pr(Meta.String, sizeof(Meta.String));
   idx2_Print(&Pr, "%s-", Meta.Name);
@@ -28,11 +28,9 @@ ToRawFileName
   return Meta.String;
 }
 
+
 cstr
-ToString
-( /* Serialize the given metadata to a string */
-  const metadata& Meta
-) /*------------------------------------------*/
+ToString(const metadata& Meta)
 {
   printer Pr(Meta.String, sizeof(Meta.String));
   idx2_Print(&Pr, "name = %s\n", Meta.Name);
@@ -44,22 +42,22 @@ ToString
   return Meta.String;
 }
 
+
 /* MIRANDA-DENSITY-[96-96-96]-Float64.raw */
 error<>
-StrToMetaData
-( /* Parse metadata from a file name */
-  stref FilePath,
-  metadata* Meta
-) /*---------------------------------*/
+StrToMetaData(stref FilePath, metadata* Meta)
 {
   stref FileName = GetFileName(FilePath);
   char DType[8];
-  idx2_ReturnErrorIf
-  (
-    6 != sscanf(FileName.ConstPtr, "%[^-]-%[^-]-[%d-%d-%d]-%[^.]",
-                Meta->Name, Meta->Field, &Meta->Dims3.X, &Meta->Dims3.Y, &Meta->Dims3.Z, DType),
-    err_code::ParseFailed
-  );
+  idx2_ReturnErrorIf(6 != sscanf(FileName.ConstPtr,
+                                 "%[^-]-%[^-]-[%d-%d-%d]-%[^.]",
+                                 Meta->Name,
+                                 Meta->Field,
+                                 &Meta->Dims3.X,
+                                 &Meta->Dims3.Y,
+                                 &Meta->Dims3.Z,
+                                 DType),
+                     err_code::ParseFailed);
 
   DType[0] = (char)tolower(DType[0]);
   Meta->DType = StringTo<dtype>()(stref(DType));
@@ -67,18 +65,16 @@ StrToMetaData
   return idx2_Error(err_code::NoError);
 }
 
+
 /*
 file = MIRANDA-DENSITY-[96-96-96]-Float64.raw
 name = MIRANDA
 field = DATA
 dimensions = 96 96 96
-type = float64 */
+type = float64
+*/
 error<>
-ReadMetaData
-(
-  cstr FileName,
-  metadata* Meta
-)
+ReadMetaData(cstr FileName, metadata* Meta)
 {
   buffer Buf;
   error Ok = ReadFile(FileName, &Buf);
@@ -87,38 +83,52 @@ ReadMetaData
   idx2_CleanUp(0, DeallocBuf(&Buf));
   stref Str((cstr)Buf.Data, (int)Buf.Bytes);
   tokenizer TkLine(Str, "\r\n");
-  for (stref Line = Next(&TkLine); Line; Line = Next(&TkLine)) {
+  for (stref Line = Next(&TkLine); Line; Line = Next(&TkLine))
+  {
     tokenizer TkEq(Line, "=");
     stref Attr = Trim(Next(&TkEq));
     stref Value = Trim(Next(&TkEq));
     if (!Attr || !Value)
       return idx2_Error(err_code::ParseFailed, "File %s", FileName);
 
-    if (Attr == "name") {
+    if (Attr == "name")
+    {
       stref NameStr = idx2_StRef(Meta->Name);
       Copy(Trim(Value), &NameStr);
-    } else if (Attr == "field") {
+    }
+    else if (Attr == "field")
+    {
       stref FieldStr = idx2_StRef(Meta->Field);
       Copy(Trim(Value), &FieldStr);
-    } else if (Attr == "dimensions") {
+    }
+    else if (Attr == "dimensions")
+    {
       tokenizer TkSpace(Value, " ");
       int D = 0;
-      for (stref Dim = Next(&TkSpace); Dim && D < 4; Dim = Next(&TkSpace), ++D) {
+      for (stref Dim = Next(&TkSpace); Dim && D < 4; Dim = Next(&TkSpace), ++D)
+      {
         if (!ToInt(Dim, &Meta->Dims3[D]))
           return idx2_Error(err_code::ParseFailed, "File %s", FileName);
       }
-      if (D >= 4) return idx2_Error(err_code::DimensionsTooMany, "File %s", FileName);
-      if (D <= 2) Meta->Dims3[2] = 1;
-      if (D <= 1) Meta->Dims3[1] = 1;
-    } else if (Attr == "type") {
+      if (D >= 4)
+        return idx2_Error(err_code::DimensionsTooMany, "File %s", FileName);
+      if (D <= 2)
+        Meta->Dims3[2] = 1;
+      if (D <= 1)
+        Meta->Dims3[1] = 1;
+    }
+    else if (Attr == "type")
+    {
       if ((Meta->DType = StringTo<dtype>()(Value)) == dtype::__Invalid__)
         return idx2_Error(err_code::TypeNotSupported, "File %s", FileName);
-    } else {
+    }
+    else
+    {
       return idx2_Error(err_code::AttributeNotFound, "File %s", FileName);
     }
   }
   return idx2_Error(err_code::NoError);
 }
 
-} // namespace idx2
 
+} // namespace idx2

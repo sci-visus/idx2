@@ -1,19 +1,34 @@
-#include <signal.h>
 #include "Assert.h"
 #include "Common.h"
+#include <signal.h>
 
-namespace idx2 {
 
-void AbortHandler(int Signum) {
+namespace idx2
+{
+
+void
+AbortHandler(int Signum)
+{
   cstr Name = nullptr;
-  switch (Signum) {
-    case SIGABRT: Name = "SIGABRT"; break;
-    case SIGSEGV: Name = "SIGSEGV"; break;
+  switch (Signum)
+  {
+    case SIGABRT:
+      Name = "SIGABRT";
+      break;
+    case SIGSEGV:
+      Name = "SIGSEGV";
+      break;
 #if !defined(_WIN32)
-    case SIGBUS : Name = "SIGBUS" ; break;
+    case SIGBUS:
+      Name = "SIGBUS";
+      break;
 #endif
-    case SIGILL : Name = "SIGILL" ; break;
-    case SIGFPE : Name = "SIGFPE" ; break;
+    case SIGILL:
+      Name = "SIGILL";
+      break;
+    case SIGFPE:
+      Name = "SIGFPE";
+      break;
   };
   if (Name)
     fprintf(stderr, "Caught signal %d (%s)\n", Signum, Name);
@@ -25,14 +40,18 @@ void AbortHandler(int Signum) {
   exit(Signum);
 }
 
-void SetHandleAbortSignals(handler& Handler) {
+
+void
+SetHandleAbortSignals(handler& Handler)
+{
   signal(SIGABRT, Handler);
   signal(SIGSEGV, Handler);
 #if !defined(_WIN32)
-  signal(SIGBUS,  Handler);
+  signal(SIGBUS, Handler);
 #endif
-  signal(SIGILL,  Handler);
-  signal(SIGFPE,  Handler);
+  signal(SIGILL, Handler);
+  signal(SIGFPE, Handler);
 }
+
 
 } // namespace idx2

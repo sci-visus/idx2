@@ -1,12 +1,16 @@
-#include "Assert.h"
 #include "InputOutput.h"
+#include "Assert.h"
 #include "Memory.h"
 #include "ScopeGuard.h"
 
-namespace idx2 {
+
+namespace idx2
+{
+
 
 error<>
-ReadFile(cstr FileName, buffer* Buf) {
+ReadFile(cstr FileName, buffer* Buf)
+{
   idx2_Assert((Buf->Data && Buf->Bytes) || (!Buf->Data && !Buf->Bytes));
 
   FILE* Fp = fopen(FileName, "rb");
@@ -34,8 +38,10 @@ ReadFile(cstr FileName, buffer* Buf) {
   return idx2_Error(err_code::NoError);
 }
 
+
 error<>
-WriteBuffer(cstr FileName, const buffer& Buf) {
+WriteBuffer(cstr FileName, const buffer& Buf)
+{
   idx2_Assert(Buf.Data && Buf.Bytes);
 
   FILE* Fp = fopen(FileName, "wb");
@@ -48,5 +54,6 @@ WriteBuffer(cstr FileName, const buffer& Buf) {
     return idx2_Error(err_code::FileWriteFailed, "%s", FileName);
   return idx2_Error(err_code::NoError);
 }
+
 
 } // namespace idx2

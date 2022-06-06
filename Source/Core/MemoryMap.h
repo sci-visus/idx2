@@ -7,6 +7,7 @@
 #include "Enum.h"
 #include "Error.h"
 
+
 #if defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -17,28 +18,33 @@
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #endif
 
 // TODO: create a mapping that is not backed by a file
 
-idx2_Enum
-(
-  mmap_err_code, int, idx2_CommonErrs,
-  MappingFailed,
-  MapViewFailed,
-  AllocateFailed,
-  FlushFailed,
-  SyncFailed,
-  UnmapFailed
-)
+idx2_Enum(mmap_err_code,
+          int,
+          idx2_CommonErrs,
+          MappingFailed,
+          MapViewFailed,
+          AllocateFailed,
+          FlushFailed,
+          SyncFailed,
+          UnmapFailed);
+
 
 namespace idx2
 {
 
-enum class map_mode { Read, Write };
+
+enum class map_mode
+{
+  Read,
+  Write
+};
 
 #if defined(_WIN32)
 using file_handle = HANDLE;
@@ -72,41 +78,47 @@ UnmapFile(mmap_file* MMap);
 error<mmap_err_code>
 CloseFile(mmap_file* MMap);
 
-idx2_T(t) void
+template <typename t> void
 Write(mmap_file* MMap, const t* Data);
 
-idx2_T(t) void
+template <typename t> void
 Write(mmap_file* MMap, const t* Data, i64 Size);
 
-idx2_T(t) void
+template <typename t> void
 Write(mmap_file* MMap, t Val);
+
 
 } // namespace idx2
 
+
+
 #include <string.h>
 
-namespace idx2 {
 
-template <typename t>
-void Write
-(mmap_file* MMap, const t* Data, i64 Size)
+namespace idx2
+{
+
+
+template <typename t> void
+Write(mmap_file* MMap, const t* Data, i64 Size)
 {
   memcpy(MMap->Buf.Data + MMap->Buf.Bytes, Data, Size);
   MMap->Buf.Bytes += Size;
 }
 
-idx2_Ti(t) void
+
+template <typename t> idx2_Inline void
 Write(mmap_file* MMap, const t* Data)
 {
   Write(MMap, Data, sizeof(t));
 }
 
 
-idx2_Ti(t) void
+template <typename t> idx2_Inline void
 Write(mmap_file* MMap, t Val)
 {
   Write(MMap, &Val, sizeof(t));
 }
 
-} // namespace idx2
 
+} // namespace idx2

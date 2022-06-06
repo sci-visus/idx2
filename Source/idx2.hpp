@@ -11,23 +11,14 @@
 
 #pragma once
 
-/* Generic algorithms to replace <algorithm> */
-
-#define idx2_If if
-#define idx2_Then {
-#define idx2_ElseIf(_) } else if (_)
-#define idx2_EndIf }
-#define idx2_Else else
-#define idx2_Case if
-#define idx2_Case_1 if
-#define idx2_Case_2 else if
-#define idx2_SubCase_1 if
-#define idx2_SubCase_2 else if
-
 #define idx2_Var(x, _) x
 
 /* Avoid compiler warning about unused variable */
-#define idx2_Unused(X) do { (void)sizeof(X); } while(0)
+#define idx2_Unused(X)                                                                             \
+  do                                                                                               \
+  {                                                                                                \
+    (void)sizeof(X);                                                                               \
+  } while (0)
 
 /* Return the number of elements in a static array */
 #define idx2_ArraySize(X) int(sizeof(X) / sizeof(X[0]))
@@ -37,10 +28,11 @@
 
 #define idx2_Expand(...) __VA_ARGS__
 /* Macro overloading feature support */
-#define idx2_NumArgsUpTo6(...) idx2_Expand(idx2_NumArgsHelper(0, ## __VA_ARGS__, 5,4,3,2,1,0))
-#define idx2_NumArgsHelper(_0,_1,_2,_3,_4,_5,N,...) N
-#define idx2_OverloadSelect(Name, Num) idx2_Cat(Name ## _, Num)
-#define idx2_MacroOverload(Name, ...) idx2_OverloadSelect(Name, idx2_NumArgsUpTo6(__VA_ARGS__))(__VA_ARGS__)
+#define idx2_NumArgsUpTo6(...) idx2_Expand(idx2_NumArgsHelper(0, ##__VA_ARGS__, 5, 4, 3, 2, 1, 0))
+#define idx2_NumArgsHelper(_0, _1, _2, _3, _4, _5, N, ...) N
+#define idx2_OverloadSelect(Name, Num) idx2_Cat(Name##_, Num)
+#define idx2_MacroOverload(Name, ...)                                                              \
+  idx2_OverloadSelect(Name, idx2_NumArgsUpTo6(__VA_ARGS__))(__VA_ARGS__)
 // Examples:
 // #define FOO(...)        idx2_MacroOverload(FOO, __VA_ARGS__)
 // #define FOO_0()         "Zero"
@@ -54,11 +46,13 @@
 
 /* 2-level concat */
 #define idx2_Cat(A, ...) idx2_CatHelper(A, __VA_ARGS__)
-#define idx2_CatHelper(A, ...) A ## __VA_ARGS__
+#define idx2_CatHelper(A, ...) A##__VA_ARGS__
 
 #define idx2_FPrintHelper(Stream, ...) fprintf(Stream, ##__VA_ARGS__)
 
-#define idx2_SPrintHelper(Buf, L, ...) snprintf(Buf + L, sizeof(Buf) - size_t(L), ##__VA_ARGS__); idx2_Unused(L)
+#define idx2_SPrintHelper(Buf, L, ...)                                                             \
+  snprintf(Buf + L, sizeof(Buf) - size_t(L), ##__VA_ARGS__);                                       \
+  idx2_Unused(L)
 
 #define idx2_ExtractFirst(X, ...) X
 
@@ -82,28 +76,25 @@
 
 /* Print binary */
 #define idx2_BinPattern8 "%c%c%c%c%c%c%c%c"
-#define idx2_BinPattern16 idx2_BinPattern8  idx2_BinPattern8
+#define idx2_BinPattern16 idx2_BinPattern8 idx2_BinPattern8
 #define idx2_BinPattern32 idx2_BinPattern16 idx2_BinPattern16
 #define idx2_BinPattern64 idx2_BinPattern32 idx2_BinPattern32
-#define idx2_BinaryByte(Byte) \
-  (Byte & 0x80 ? '1' : '0'),\
-  (Byte & 0x40 ? '1' : '0'),\
-  (Byte & 0x20 ? '1' : '0'),\
-  (Byte & 0x10 ? '1' : '0'),\
-  (Byte & 0x08 ? '1' : '0'),\
-  (Byte & 0x04 ? '1' : '0'),\
-  (Byte & 0x02 ? '1' : '0'),\
-  (Byte & 0x01 ? '1' : '0')
-#define idx2_BinaryByte64(Val)\
-  idx2_BinaryByte((Val) >> 56), idx2_BinaryByte((Val) >> 48),\
-  idx2_BinaryByte((Val) >> 40), idx2_BinaryByte((Val) >> 32), idx2_BinaryByte((Val) >> 24),\
-  idx2_BinaryByte((Val) >> 16), idx2_BinaryByte((Val) >>  8), idx2_BinaryByte((Val))
+#define idx2_BinaryByte(Byte)                                                                      \
+  (Byte & 0x80 ? '1' : '0'), (Byte & 0x40 ? '1' : '0'), (Byte & 0x20 ? '1' : '0'),                 \
+    (Byte & 0x10 ? '1' : '0'), (Byte & 0x08 ? '1' : '0'), (Byte & 0x04 ? '1' : '0'),               \
+    (Byte & 0x02 ? '1' : '0'), (Byte & 0x01 ? '1' : '0')
+#define idx2_BinaryByte64(Val)                                                                     \
+  idx2_BinaryByte((Val) >> 56), idx2_BinaryByte((Val) >> 48), idx2_BinaryByte((Val) >> 40),        \
+    idx2_BinaryByte((Val) >> 32), idx2_BinaryByte((Val) >> 24), idx2_BinaryByte((Val) >> 16),      \
+    idx2_BinaryByte((Val) >> 8), idx2_BinaryByte((Val))
 
-namespace idx2 {
-/* Count the number of times a character appears in a string. Return -1 for an
- * empty string. */
+namespace idx2
+{
+
+/* Count the number of times a character appears in a string. Return -1 for an empty string. */
 inline constexpr int
-CountChar(const char* str, char c) {
+CountChar(const char* str, char c)
+{
   int count = 0;
   if (!(*str)) // empty string
     return -1;
@@ -111,6 +102,7 @@ CountChar(const char* str, char c) {
     count += (*str++ == c);
   return count;
 }
+
 } // namespace idx2
 
 #undef idx2_Restrict
@@ -136,112 +128,150 @@ CountChar(const char* str, char c) {
 #define idx2_Range_2(type, Container) Begin<type>(Container), End<type>(Container)
 //#define idx2_If(Var, Expr) auto Var = Expr; if (Var)
 
-/* Macros to swap bytes in a multi-byte value, to convert from big-endian data
- * to little-endian data and vice versa. These are taken from the Boost library.*/
+/*
+Macros to swap bytes in a multi-byte value, to convert from big-endian data to little-endian data
+and vice versa. These are taken from the Boost library.
+*/
 #ifndef __has_builtin
-    #define __has_builtin(x) 0 // Compatibility with non-clang compilers
+#define __has_builtin(x) 0 // Compatibility with non-clang compilers
 #endif
 #if defined(_MSC_VER)
-    #include <cstdlib>
-    #define idx2_ByteSwap2(x) _byteswap_ushort(x)
-    #define idx2_ByteSwap4(x) _byteswap_ulong(x)
-    #define idx2_ByteSwap8(x) _byteswap_uint64(x)
-#elif (defined(__clang__) && __has_builtin(__builtin_bswap32) && __has_builtin(__builtin_bswap64)) \
-   || (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)))
-    #if (defined(__clang__) && __has_builtin(__builtin_bswap16)) \
-      || (defined(__GNUC__) &&(__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)))
-        #define idx2_ByteSwap2(x) __builtin_bswap16(x)
-    #else
-        #define idx2_ByteSwap2(x) __builtin_bswap32((x) << 16)
-    #endif
-    #define idx2_ByteSwap4(x) __builtin_bswap32(x)
-    #define idx2_ByteSwap8(x) __builtin_bswap64(x)
+#include <cstdlib>
+#define idx2_ByteSwap2(x) _byteswap_ushort(x)
+#define idx2_ByteSwap4(x) _byteswap_ulong(x)
+#define idx2_ByteSwap8(x) _byteswap_uint64(x)
+#elif (defined(__clang__) && __has_builtin(__builtin_bswap32) &&                                   \
+       __has_builtin(__builtin_bswap64)) ||                                                        \
+  (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)))
+#if (defined(__clang__) && __has_builtin(__builtin_bswap16)) ||                                    \
+  (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)))
+#define idx2_ByteSwap2(x) __builtin_bswap16(x)
+#else
+#define idx2_ByteSwap2(x) __builtin_bswap32((x) << 16)
+#endif
+#define idx2_ByteSwap4(x) __builtin_bswap32(x)
+#define idx2_ByteSwap8(x) __builtin_bswap64(x)
 #elif defined(__linux__)
-    #include <byteswap.h>
-    #define idx2_ByteSwap2(x) bswap_16(x)
-    #define idx2_ByteSwap4(x) bswap_32(x)
-    #define idx2_ByteSwap8(x) bswap_64(x)
+#include <byteswap.h>
+#define idx2_ByteSwap2(x) bswap_16(x)
+#define idx2_ByteSwap4(x) bswap_32(x)
+#define idx2_ByteSwap8(x) bswap_64(x)
 #endif
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_T(t) t Min(const t& a, const t& b);
-idx2_T(t) t Min(const t& a, const t& b, const t& c);
-idx2_T(t) t Max(const t& a, const t& b);
-idx2_T(t) t Max(const t& a, const t& b, const t& c);
+template <typename t> t Min(const t& a, const t& b);
+template <typename t> t Min(const t& a, const t& b, const t& c);
 
-idx2_T(i) i MaxElem(i Beg, i End);
-idx2_TT(i, f) i MaxElem(i Beg, i End, const f& Comp);
-idx2_T(i) struct min_max { i Min, Max; };
-idx2_T(i) min_max<i> MinMaxElem(i Beg, i End);
-idx2_TT(i, f) min_max<i> MinMaxElem(i Beg, i End, const f& Comp);
+template <typename t> t Max(const t& a, const t& b);
+template <typename t> t Max(const t& a, const t& b, const t& c);
 
-idx2_TT(i, t) i Find(i Beg, i End, const t& Val);
-idx2_TT(i, t) i FindLast(i RevBeg, i RevEnd, const t& Val);
-idx2_TT(t1, t2) bool Contains(const t1& Collection, const t2& Elem);
-idx2_TT(i, f) i FindIf(i Beg, i End, const f& Pred);
+template <typename i> i MaxElem(i Beg, i End);
+template <typename i, typename f> i MaxElem(i Beg, i End, const f& Comp);
 
-idx2_T(i) void InsertionSort(i Beg, i End);
+template <typename i> struct min_max
+{
+  i Min, Max;
+};
+template <typename i> min_max<i> MinMaxElem(i Beg, i End);
+template <typename i, typename f> min_max<i> MinMaxElem(i Beg, i End, const f& Comp);
 
-idx2_T(i) bool AreSame(i Beg1, i End1, i Beg2, i End2);
+template <typename i, typename t> i Find(i Beg, i End, const t& Val);
+template <typename i, typename t> i FindLast(i RevBeg, i RevEnd, const t& Val);
+template <typename i, typename f> i FindIf(i Beg, i End, const f& Pred);
 
-idx2_T(t) constexpr void Swap(t* A, t* B);
-idx2_T(it) constexpr void IterSwap(it A, it B);
+template <typename t1, typename t2> bool Contains(const t1& Collection, const t2& Elem);
 
-idx2_TT(i, t) void Fill(i Beg, i End, const t& Val);
+template <typename i> void InsertionSort(i Beg, i End);
+
+template <typename i> bool AreSame(i Beg1, i End1, i Beg2, i End2);
+
+template <typename t> constexpr void Swap(t* A, t* B);
+template <typename i> constexpr void IterSwap(i A, i B);
+
+template <typename i, typename t> void Fill(i Beg, i End, const t& Val);
 
 /* Only work with random access iterator */
-idx2_T(i) void Reverse(i Beg, i End);
+template <typename i> void Reverse(i Beg, i End);
 
-idx2_T(i) int FwdDist(i Beg, i End);
+template <typename i> int FwdDist(i Beg, i End);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Ti(t) t Min(const t& a, const t& b) { return b < a ? b : a; }
-idx2_Ti(t) t Max(const t& a, const t& b) { return a < b ? b : a; }
-idx2_Ti(t) t Min(const t& a, const t& b, const t& c) { return a < b ? Min(c, a) : Min(b, c); }
-idx2_Ti(t) t Max(const t& a, const t& b, const t& c) { return a < b ? Max(b, c) : Max(a, c); }
+template <typename t> idx2_Inline t
+Min(const t& a, const t& b)
+{
+  return b < a ? b : a;
+}
 
-idx2_T(i) i
-MaxElem(i Beg, i End) {
+template <typename t> idx2_Inline t
+Max(const t& a, const t& b)
+{
+  return a < b ? b : a;
+}
+
+template <typename t> idx2_Inline t
+Min(const t& a, const t& b, const t& c)
+{
+  return a < b ? Min(c, a) : Min(b, c);
+}
+
+template <typename t> idx2_Inline t
+Max(const t& a, const t& b, const t& c)
+{
+  return a < b ? Max(b, c) : Max(a, c);
+}
+
+template <typename i> i
+MaxElem(i Beg, i End)
+{
   auto MaxElem = Beg;
-  for (i Pos = Beg; Pos != End; ++Pos) {
+  for (i Pos = Beg; Pos != End; ++Pos)
+  {
     if (*MaxElem < *Pos)
       MaxElem = Pos;
   }
   return MaxElem;
 }
 
-idx2_TT(i, f) i
-MaxElem(i Beg, i End, f& Comp) {
+template <typename i, typename f> i
+MaxElem(i Beg, i End, f& Comp)
+{
   auto MaxElem = Beg;
-  for (i Pos = Beg; Pos != End; ++Pos) {
+  for (i Pos = Beg; Pos != End; ++Pos)
+  {
     if (Comp(*MaxElem, *Pos))
       MaxElem = Pos;
   }
   return MaxElem;
 }
 
-idx2_T(i) min_max<i>
-MinMaxElem(i Beg, i End) {
+template <typename i> min_max<i>
+MinMaxElem(i Beg, i End)
+{
   auto MinElem = Beg;
   auto MaxElem = Beg;
-  for (i Pos = Beg; Pos != End; ++Pos) {
+  for (i Pos = Beg; Pos != End; ++Pos)
+  {
     if (*Pos < *MinElem)
       MinElem = Pos;
     else if (*Pos > *MaxElem)
       MaxElem = Pos;
   }
-  return min_max<i>{MinElem, MaxElem};
+  return min_max<i>{ MinElem, MaxElem };
 }
 
-idx2_TT(i, f) min_max<i>
-MinMaxElem(i Beg, i End, const f& Comp) {
+template <typename i, typename f> min_max<i>
+MinMaxElem(i Beg, i End, const f& Comp)
+{
   auto MinElem = Beg;
   auto MaxElem = Beg;
-  for (i Pos = Beg; Pos != End; ++Pos) {
+  for (i Pos = Beg; Pos != End; ++Pos)
+  {
     if (Comp(*Pos, *MinElem))
       MinElem = Pos;
     else if (Comp(*MaxElem, *Pos))
@@ -250,32 +280,39 @@ MinMaxElem(i Beg, i End, const f& Comp) {
   return min_max<i>{ MinElem, MaxElem };
 }
 
-idx2_TT(i, t) i
-Find(i Beg, i End, const t& Val) {
-  for (i Pos = Beg; Pos != End; ++Pos) {
+template <typename i, typename t> i
+Find(i Beg, i End, const t& Val)
+{
+  for (i Pos = Beg; Pos != End; ++Pos)
+  {
     if (*Pos == Val)
       return Pos;
   }
   return End;
 }
 
-idx2_TT(i, t) i
-FindLast(i RevBeg, i RevEnd, const t& Val) {
-  for (i Pos = RevBeg; Pos != RevEnd; --Pos) {
+template <typename i, typename t> i
+FindLast(i RevBeg, i RevEnd, const t& Val)
+{
+  for (i Pos = RevBeg; Pos != RevEnd; --Pos)
+  {
     if (*Pos == Val)
       return Pos;
   }
   return RevEnd;
 }
 
-idx2_TTi(t1, t2) bool
-Contains(const t1& Collection, const t2& Elem) {
+template <typename t1, typename t2> idx2_Inline bool
+Contains(const t1& Collection, const t2& Elem)
+{
   return Find(Begin(Collection), End(Collection), Elem) != End(Collection);
 }
 
-idx2_TT(i, f) i
-FindIf(i Beg, i End, const f& Pred) {
-  for (i Pos = Beg; Pos != End; ++Pos) {
+template <typename i, typename f> i
+FindIf(i Beg, i End, const f& Pred)
+{
+  for (i Pos = Beg; Pos != End; ++Pos)
+  {
     if (Pred(*Pos))
       return Pos;
   }
@@ -284,15 +321,21 @@ FindIf(i Beg, i End, const f& Pred) {
 
 /*
 Return a position where the value is Val.
-If there is no such position, return the first position k such that A[k] > Val */
-idx2_TT(t, i) i
-BinarySearch(i Beg, i End, const t& Val) {
-  while (Beg < End) {
+If there is no such position, return the first position k such that A[k] > Val
+*/
+template <typename t, typename i> i
+BinarySearch(i Beg, i End, const t& Val)
+{
+  while (Beg < End)
+  {
     i Mid = Beg + (End - Beg) / 2;
-    if (*Mid < Val) {
+    if (*Mid < Val)
+    {
       Beg = Mid + 1;
       continue;
-    } else if (Val < *Mid) {
+    }
+    else if (Val < *Mid)
+    {
       End = Mid;
       continue;
     }
@@ -301,12 +344,14 @@ BinarySearch(i Beg, i End, const t& Val) {
   return End;
 }
 
-idx2_T(i) void
-InsertionSort(i Beg, i End) {
+template <typename i> void
+InsertionSort(i Beg, i End)
+{
   if (Beg == End)
     return;
   i Last = Beg + 1;
-  while (Last != End) {
+  while (Last != End)
+  {
     i Pos = BinarySearch(Beg, Last, *Last);
     for (i It = Last; It != Pos; --It)
       Swap(It, It - 1);
@@ -314,49 +359,58 @@ InsertionSort(i Beg, i End) {
   }
 }
 
-idx2_T(i) bool
-AreSame(i Beg1, i End1, i Beg2) {
+template <typename i> bool
+AreSame(i Beg1, i End1, i Beg2)
+{
   bool Same = true;
-  for (i It1 = Beg1, It2 = Beg2; It1 != End1; ++It1, ++It2) {
+  for (i It1 = Beg1, It2 = Beg2; It1 != End1; ++It1, ++It2)
+  {
     if (!(*It1 == *It2))
       return false;
   }
   return Same;
 }
 
-idx2_Ti(t) constexpr void
-Swap(t* A, t* idx2_Restrict B) {
+template <typename t> idx2_Inline constexpr void
+Swap(t* A, t* idx2_Restrict B)
+{
   t T = *A;
   *A = *B;
   *B = T;
 }
 
-idx2_Ti(it) constexpr void
-IterSwap(it A, it B) {
+template <typename i> idx2_Inline constexpr void
+IterSwap(i A, i B)
+{
   Swap(&(*A), &(*B));
 }
 
-idx2_TT(i, t) void
-Fill(i Beg, i End, const t& Val) {
+template <typename i, typename t> void
+Fill(i Beg, i End, const t& Val)
+{
   for (i It = Beg; It != End; ++It)
     *It = Val;
 }
 
-idx2_T(i) void
-Reverse(i Beg, i End) {
+template <typename i> void
+Reverse(i Beg, i End)
+{
   auto It1 = Beg;
   auto It2 = End - 1;
-  while (It1 < It2) {
+  while (It1 < It2)
+  {
     Swap(It1, It2);
     ++It1;
     --It2;
   }
 }
 
-idx2_T(i) int
-FwdDist(i Beg, i End) {
+template <typename i> int
+FwdDist(i Beg, i End)
+{
   int Dist = 0;
-  while (Beg != End) {
+  while (Beg != End)
+  {
     ++Dist;
     ++Beg;
   }
@@ -368,10 +422,9 @@ FwdDist(i Beg, i End) {
 /* Command-line argument processing */
 // TODO: encapsulate Argc and Argv into a struct so that we can easily pass it around
 
-#include <inttypes.h>
 #include <float.h>
+#include <inttypes.h>
 #include <stdint.h>
-
 //#include <crtdbg.h>
 
 //#if !defined(__cplusplus) || defined(__STDC_FORMAT_MACROS) // [   See footnote 185 at page 198
@@ -586,38 +639,38 @@ FwdDist(i Beg, i End) {
 
 //#endif // __STDC_FORMAT_MACROS ]
 
-namespace idx2 {
+namespace idx2
+{
 
-#define idx2_NumberTypes\
-  int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64
+#define idx2_NumberTypes int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64
 
-using uint    = unsigned int;
-using byte    = uint8_t;
-using int8    = int8_t;
-using i8      = int8;
-using int16   = int16_t;
-using i16     = int16;
-using int32   = int32_t;
-using i32     = int32;
-using int64   = int64_t;
-using i64     = int64;
-using uint8   = uint8_t;
-using u8      = uint8;
-using uint16  = uint16_t;
-using u16     = uint16;
-using uint32  = uint32_t;
-using u32     = uint32;
-using uint64  = uint64_t;
-using u64     = uint64;
+using uint = unsigned int;
+using byte = uint8_t;
+using int8 = int8_t;
+using i8 = int8;
+using int16 = int16_t;
+using i16 = int16;
+using int32 = int32_t;
+using i32 = int32;
+using int64 = int64_t;
+using i64 = int64;
+using uint8 = uint8_t;
+using u8 = uint8;
+using uint16 = uint16_t;
+using u16 = uint16;
+using uint32 = uint32_t;
+using u32 = uint32;
+using uint64 = uint64_t;
+using u64 = uint64;
 using float32 = float;
-using f32     = float32;
+using f32 = float32;
 using float64 = double;
-using f64     = float64;
-using str     = char*;
-using cstr    = const char*;
+using f64 = float64;
+using str = char*;
+using cstr = const char*;
 
-idx2_T(t)
-struct traits {
+template <typename t> struct traits
+{
   // using signed_t =
   // using unsigned_t =
   // using integral_t =
@@ -628,74 +681,205 @@ struct traits {
 
 /* type traits stuffs */
 
-struct true_type { static constexpr bool Value = true; };
-struct false_type { static constexpr bool Value = false; };
-idx2_T(t) struct remove_const { typedef t type; };
-idx2_T(t) struct remove_const<const t> { typedef t type; };
-idx2_T(t) struct remove_volatile { typedef t type; };
-idx2_T(t) struct remove_volatile<volatile t> { typedef t type; };
-idx2_T(t) struct remove_cv { typedef typename remove_volatile<typename remove_const<t>::type>::type type; };
-idx2_T(t) struct remove_reference { typedef t type; };
-idx2_T(t) struct remove_reference<t&> { typedef t type; };
-idx2_T(t) struct remove_reference<t&&> { typedef t type; };
-idx2_T(t) struct remove_cv_ref { typedef typename remove_cv<typename remove_reference<t>::type>::type type; };
-idx2_TT(t1, t2) struct is_same_type : false_type {};
-idx2_T(t) struct is_same_type<t, t> : true_type {};
-idx2_T(t) struct is_pointer_helper : false_type {};
-idx2_T(t) struct is_pointer_helper<t*> : true_type {};
-idx2_T(t) struct is_pointer : is_pointer_helper<typename remove_cv<t>::type> {};
-idx2_T(t) auto& Value(t&& T);
-idx2_T(t) struct is_integral   : false_type {};
-template <> struct is_integral<i8>  : true_type  {};
-template <> struct is_integral<u8>  : true_type  {};
-template <> struct is_integral<i16> : true_type  {};
-template <> struct is_integral<u16> : true_type  {};
-template <> struct is_integral<i32> : true_type  {};
-template <> struct is_integral<u32> : true_type  {};
-template <> struct is_integral<i64> : true_type  {};
-template <> struct is_integral<u64> : true_type  {};
-template <typename t> struct is_signed   : false_type {};
-template <> struct is_signed<i8>  : true_type  {};
-template <> struct is_signed<i16> : true_type  {};
-template <> struct is_signed<i32> : true_type  {};
-template <> struct is_signed<i64> : true_type  {};
-idx2_T(t) struct is_unsigned : false_type {};
-template <> struct is_unsigned<u8>  : true_type {};
-template <> struct is_unsigned<u16> : true_type {};
-template <> struct is_unsigned<u32> : true_type {};
-template <> struct is_unsigned<u64> : true_type {};
-idx2_T(t) struct is_floating_point   : false_type {};
-template <> struct is_floating_point<f32> : true_type  {};
-template <> struct is_floating_point<f64> : true_type  {};
+struct true_type
+{
+  static constexpr bool Value = true;
+};
+
+struct false_type
+{
+  static constexpr bool Value = false;
+};
+
+template <typename t> struct remove_const
+{
+  typedef t type;
+};
+
+template <typename t> struct remove_const<const t>
+{
+  typedef t type;
+};
+
+template <typename t> struct remove_volatile
+{
+  typedef t type;
+};
+
+template <typename t> struct remove_volatile<volatile t>
+{
+  typedef t type;
+};
+
+template <typename t> struct remove_cv
+{
+  typedef typename remove_volatile<typename remove_const<t>::type>::type type;
+};
+
+template <typename t> struct remove_reference
+{
+  typedef t type;
+};
+
+template <typename t> struct remove_reference<t&>
+{
+  typedef t type;
+};
+
+template <typename t> struct remove_reference<t&&>
+{
+  typedef t type;
+};
+
+template <typename t> struct remove_cv_ref
+{
+  typedef typename remove_cv<typename remove_reference<t>::type>::type type;
+};
+
+template <typename t1, typename t2> struct is_same_type : false_type
+{
+};
+
+template <typename t> struct is_same_type<t, t> : true_type
+{
+};
+
+template <typename t> struct is_pointer_helper : false_type
+{
+};
+
+template <typename t> struct is_pointer_helper<t*> : true_type
+{
+};
+
+template <typename t> struct is_pointer : is_pointer_helper<typename remove_cv<t>::type>
+{
+};
+
+template <typename t> auto& Value(t&& T);
+
+template <typename t> struct is_integral : false_type
+{
+};
+
+template <> struct is_integral<i8> : true_type
+{
+};
+
+template <> struct is_integral<u8> : true_type
+{
+};
+
+template <> struct is_integral<i16> : true_type
+{
+};
+
+template <> struct is_integral<u16> : true_type
+{
+};
+
+template <> struct is_integral<i32> : true_type
+{
+};
+
+template <> struct is_integral<u32> : true_type
+{
+};
+
+template <> struct is_integral<i64> : true_type
+{
+};
+
+template <> struct is_integral<u64> : true_type
+{
+};
+
+template <typename t> struct is_signed : false_type
+{
+};
+
+template <> struct is_signed<i8> : true_type
+{
+};
+
+template <> struct is_signed<i16> : true_type
+{
+};
+
+template <> struct is_signed<i32> : true_type
+{
+};
+
+template <> struct is_signed<i64> : true_type
+{
+};
+
+template <typename t> struct is_unsigned : false_type
+{
+};
+
+template <> struct is_unsigned<u8> : true_type
+{
+};
+
+template <> struct is_unsigned<u16> : true_type
+{
+};
+
+template <> struct is_unsigned<u32> : true_type
+{
+};
+
+template <> struct is_unsigned<u64> : true_type
+{
+};
+
+template <typename t> struct is_floating_point : false_type
+{
+};
+
+template <> struct is_floating_point<f32> : true_type
+{
+};
+
+template <> struct is_floating_point<f64> : true_type
+{
+};
 
 /* Something to replace std::array */
-idx2_TI(t, N)
-struct stack_array {
+template <typename t, int N> struct stack_array
+{
   static_assert(N > 0);
-  //constexpr stack_array() = default;
+  // constexpr stack_array() = default;
   t Arr[N] = {};
   u8 Len = 0;
   t& operator[](int Idx) const;
 };
-idx2_TI(t, N) t* Begin(const stack_array<t, N>& A);
-idx2_TI(t, N) t* End  (const stack_array<t, N>& A);
-idx2_TI(t, N) t* RevBegin(const stack_array<t, N>& A);
-idx2_TI(t, N) t* RevEnd  (const stack_array<t, N>& A);
-idx2_TI(t, N) constexpr int Size(const stack_array<t, N>& A);
 
-idx2_I(N)
-struct stack_string {
+template <typename t, int N> t* Begin(const stack_array<t, N>& A);
+template <typename t, int N> t* End(const stack_array<t, N>& A);
+template <typename t, int N> t* RevBegin(const stack_array<t, N>& A);
+template <typename t, int N> t* RevEnd(const stack_array<t, N>& A);
+template <typename t, int N> constexpr int Size(const stack_array<t, N>& A);
+
+template <int N> struct stack_string
+{
   char Data[N] = {};
   u8 Len = 0;
   char& operator[](int Idx) const;
 };
-idx2_I(N) int Size(const stack_string<N>& S);
 
-idx2_TT(t, u)
-struct t2 {
+template <int N> int Size(const stack_string<N>& S);
+
+template <typename t, typename u> struct t2
+{
   t First;
   u Second;
-  idx2_Inline bool operator<(const t2& Other) const { return First < Other.First; }
+  idx2_Inline bool
+  operator<(const t2& Other) const
+  {
+    return First < Other.First;
+  }
 };
 
 /* Vector in 2D, supports .X, .UV, and [] */
@@ -703,12 +887,23 @@ struct t2 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
-template <typename t>
-struct v2 {
-  union {
-    struct { t X, Y; };
-    struct { t U, V; };
-    struct { t Min, Max; };
+
+template <typename t> struct v2
+{
+  union
+  {
+    struct
+    {
+      t X, Y;
+    };
+    struct
+    {
+      t U, V;
+    };
+    struct
+    {
+      t Min, Max;
+    };
     t E[2];
   };
   // inline static constexpr v2<t> Zero = v2<t>(0);
@@ -720,24 +915,51 @@ struct v2 {
   t& operator[](int Idx) const;
   template <typename u> v2& operator=(const v2<u>& Rhs);
 };
-using v2i  = v2<i32>;
-using v2u  = v2<u32>;
-using v2l  = v2<i64>;
+
+using v2i = v2<i32>;
+using v2u = v2<u32>;
+using v2l = v2<i64>;
 using v2ul = v2<u64>;
-using v2f  = v2<f32>;
-using v2d  = v2<f64>;
+using v2f = v2<f32>;
+using v2d = v2<f64>;
 
 /* Vector in 3D, supports .X, .XY, .UV, .RGB and [] */
-idx2_T(t)
-struct v3 {
-  union {
-    struct { t X, Y, Z; };
-    struct { t U, V, __; };
-    struct { t R, G, B; };
-    struct { v2<t> XY; t Ignored0_; };
-    struct { t Ignored1_; v2<t> YZ; };
-    struct { v2<t> UV; t Ignored2_; };
-    struct { t Ignored3_; v2<t> V__; };
+template <typename t> struct v3
+{
+  union
+  {
+    struct
+    {
+      t X, Y, Z;
+    };
+    struct
+    {
+      t U, V, __;
+    };
+    struct
+    {
+      t R, G, B;
+    };
+    struct
+    {
+      v2<t> XY;
+      t Ignored0_;
+    };
+    struct
+    {
+      t Ignored1_;
+      v2<t> YZ;
+    };
+    struct
+    {
+      v2<t> UV;
+      t Ignored2_;
+    };
+    struct
+    {
+      t Ignored3_;
+      v2<t> V__;
+    };
     t E[3];
   };
   // inline static const v3 Zero = v3(0);
@@ -746,19 +968,21 @@ struct v3 {
   explicit constexpr v3(t V);
   constexpr v3(t X_, t Y_, t Z_);
   v3(const v2<t>& V2, t Z_);
-  idx2_T(u) v3(const v3<u>& Other);
+  template <typename u> v3(const v3<u>& Other);
   t& operator[](int Idx) const;
-  idx2_T(u) v3& operator=(const v3<u>& Rhs);
+  template <typename u> v3& operator=(const v3<u>& Rhs);
 };
+
 #if defined(__clang__) || defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
-using v3i  = v3<i32>;
-using v3u  = v3<u32>;
-using v3l  = v3<i64>;
+
+using v3i = v3<i32>;
+using v3u = v3<u32>;
+using v3l = v3<i64>;
 using v3ul = v3<u64>;
-using v3f  = v3<f32>;
-using v3d  = v3<f64>;
+using v3f = v3<f32>;
+using v3d = v3<f64>;
 
 #define idx2_PrStrV3i "(%d %d %d)"
 #define idx2_PrV3i(P) (P).X, (P).Y, (P).Z
@@ -773,55 +997,57 @@ using v3d  = v3<f64>;
 #include <assert.h>
 #include <stdio.h>
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Ti(t) auto&
-Value(t&& T) {
+template <typename t> idx2_Inline auto&
+Value(t&& T)
+{
   if constexpr (is_pointer<typename remove_reference<t>::type>::Value)
     return *T;
   else
     return T;
 }
 
-template <>
-struct traits<i8> {
-  using signed_t   = i8;
+template <> struct traits<i8>
+{
+  using signed_t = i8;
   using unsigned_t = u8;
   static constexpr u8 NBinaryMask = 0xaa;
   static constexpr i8 Min = -(1 << 7);
   static constexpr i8 Max = (1 << 7) - 1;
 };
 
-template <>
-struct traits<u8> {
-  using signed_t   = i8;
+template <> struct traits<u8>
+{
+  using signed_t = i8;
   using unsigned_t = u8;
   static constexpr u8 NBinaryMask = 0xaa;
   static constexpr u8 Min = 0;
   static constexpr u8 Max = (1 << 8) - 1;
 };
 
-template <>
-struct traits<i16> {
-  using signed_t   = i16;
+template <> struct traits<i16>
+{
+  using signed_t = i16;
   using unsigned_t = u16;
   static constexpr u16 NBinaryMask = 0xaaaa;
   static constexpr i16 Min = -(1 << 15);
   static constexpr i16 Max = (1 << 15) - 1;
 };
 
-template <>
-struct traits<u16> {
-  using signed_t   = i16;
+template <> struct traits<u16>
+{
+  using signed_t = i16;
   using unsigned_t = u16;
   static constexpr u16 NBinaryMask = 0xaaaa;
   static constexpr u16 Min = 0;
   static constexpr u16 Max = (1 << 16) - 1;
 };
 
-template <>
-struct traits<i32> {
-  using signed_t   = i32;
+template <> struct traits<i32>
+{
+  using signed_t = i32;
   using unsigned_t = u32;
   using floating_t = f32;
   static constexpr u32 NBinaryMask = 0xaaaaaaaa;
@@ -829,18 +1055,18 @@ struct traits<i32> {
   static constexpr i32 Max = 0x7fffffff;
 };
 
-template <>
-struct traits<u32> {
-  using signed_t   = i32;
+template <> struct traits<u32>
+{
+  using signed_t = i32;
   using unsigned_t = u32;
   static constexpr u32 NBinaryMask = 0xaaaaaaaa;
   static constexpr u32 Min = 0;
   static constexpr u32 Max = 0xffffffff;
 };
 
-template <>
-struct traits<i64> {
-  using signed_t   = i64;
+template <> struct traits<i64>
+{
+  using signed_t = i64;
   using unsigned_t = u64;
   using floating_t = f64;
   static constexpr u64 NBinaryMask = 0xaaaaaaaaaaaaaaaaULL;
@@ -848,84 +1074,197 @@ struct traits<i64> {
   static constexpr i64 Max = 0x7fffffffffffffffull;
 };
 
-template <>
-struct traits<u64> {
-  using signed_t   = i64;
+template <> struct traits<u64>
+{
+  using signed_t = i64;
   using unsigned_t = u64;
   static constexpr u64 NBinaryMask = 0xaaaaaaaaaaaaaaaaULL;
   static constexpr u64 Min = 0;
   static constexpr u64 Max = 0xffffffffffffffffull;
 };
 
-template <>
-struct traits<f32> {
+template <> struct traits<f32>
+{
   using integral_t = i32;
   static constexpr int ExpBits = 8;
   static constexpr int ExpBias = (1 << (ExpBits - 1)) - 1;
   static constexpr f32 Min = -FLT_MAX;
-  static constexpr f32 Max =  FLT_MAX;
+  static constexpr f32 Max = FLT_MAX;
 };
 
-template <>
-struct traits<f64> {
+template <> struct traits<f64>
+{
   using integral_t = i64;
   static constexpr int ExpBits = 11;
   static constexpr int ExpBias = (1 << (ExpBits - 1)) - 1;
   static constexpr f64 Min = -DBL_MAX;
-  static constexpr f64 Max =  DBL_MAX;
+  static constexpr f64 Max = DBL_MAX;
 };
 
-idx2_TIi(t, N) t& stack_array<t, N>::
-operator[](int Idx) const {
+template <typename t, int N> idx2_Inline t&
+stack_array<t, N>::operator[](int Idx) const
+{
   assert(Idx < N);
   return const_cast<t&>(Arr[Idx]);
 }
-idx2_TIi(t, N) t* Begin   (const stack_array<t, N>& A) { return const_cast<t*>(&A.Arr[0]); }
-idx2_TIi(t, N) t* End     (const stack_array<t, N>& A) { return const_cast<t*>(&A.Arr[0]) + N; }
-idx2_TIi(t, N) t* RevBegin(const stack_array<t, N>& A) { return const_cast<t*>(&A.Arr[0]) + (N - 1); }
-idx2_TIi(t, N) t* RevEnd  (const stack_array<t, N>& A) { return const_cast<t*>(&A.Arr[0]) - 1; }
-idx2_TIi(t, N) constexpr int Size(const stack_array<t, N>&) { return N; }
 
-idx2_Ii(N) char& stack_string<N>::
-operator[](int Idx) const {
+template <typename t, int N> idx2_Inline t*
+Begin(const stack_array<t, N>& A)
+{
+  return const_cast<t*>(&A.Arr[0]);
+}
+
+template <typename t, int N> idx2_Inline t*
+End(const stack_array<t, N>& A)
+{
+  return const_cast<t*>(&A.Arr[0]) + N;
+}
+
+template <typename t, int N> idx2_Inline t*
+RevBegin(const stack_array<t, N>& A)
+{
+  return const_cast<t*>(&A.Arr[0]) + (N - 1);
+}
+
+template <typename t, int N> idx2_Inline t*
+RevEnd(const stack_array<t, N>& A)
+{
+  return const_cast<t*>(&A.Arr[0]) - 1;
+}
+
+template <typename t, int N> idx2_Inline constexpr int
+Size(const stack_array<t, N>&)
+{
+  return N;
+}
+
+template <int N> idx2_Inline char&
+stack_string<N>::operator[](int Idx) const
+{
   assert(Idx < N);
   return const_cast<char&>(Data[Idx]);
 }
-idx2_Ii(N) int Size(const stack_string<N>& S) { return S.Len; }
+
+template <int N> idx2_Inline int
+Size(const stack_string<N>& S)
+{
+  return S.Len;
+}
 
 /* v2 stuffs */
-idx2_Ti(t) v2<t>::v2() {}
-idx2_Ti(t) constexpr v2<t>::v2(t V): X(V), Y(V) {}
-idx2_Ti(t) constexpr v2<t>::v2(t X_, t Y_): X(X_), Y(Y_) {}
-idx2_T(t) idx2_Ti(u) v2<t>::v2(const v2<u>& Other) : X(Other.X), Y(Other.Y) {}
-idx2_Ti(t) t& v2<t>::operator[](int Idx) const { assert(Idx < 2); return const_cast<t&>(E[Idx]); }
-idx2_T(t) idx2_Ti(u) v2<t>& v2<t>::operator=(const v2<u>& other) { X = other.X; Y = other.Y; return *this; }
+template <typename t> idx2_Inline
+v2<t>::v2()
+{
+}
+
+template <typename t> idx2_Inline constexpr v2<t>::v2(t V)
+  : X(V)
+  , Y(V)
+{
+}
+
+template <typename t> idx2_Inline constexpr v2<t>::v2(t X_, t Y_)
+  : X(X_)
+  , Y(Y_)
+{
+}
+
+template <typename t> template <typename u> idx2_Inline
+v2<t>::v2(const v2<u>& Other)
+  : X(Other.X)
+  , Y(Other.Y)
+{
+}
+
+template <typename t> idx2_Inline t&
+v2<t>::operator[](int Idx) const
+{
+  assert(Idx < 2);
+  return const_cast<t&>(E[Idx]);
+}
+
+template <typename t> template <typename u> idx2_Inline v2<t>&
+v2<t>::operator=(const v2<u>& other)
+{
+  X = other.X;
+  Y = other.Y;
+  return *this;
+}
 
 /* v3 stuffs */
-idx2_Ti(t) v3<t>::v3() {}
-idx2_Ti(t) constexpr v3<t>::v3(t V): X(V), Y(V), Z(V) {}
-idx2_Ti(t) constexpr v3<t>::v3(t X_, t Y_, t Z_): X(X_), Y(Y_), Z(Z_) {}
-idx2_Ti(t) v3<t>::v3(const v2<t>& V2, t Z_) : X(V2.X), Y(V2.Y), Z(Z_) {}
-idx2_T(t) idx2_Ti(u) v3<t>::v3(const v3<u>& Other) : X(Other.X), Y(Other.Y), Z(Other.Z) {}
-idx2_Ti(t) t& v3<t>::operator[](int Idx) const { assert(Idx < 3); return const_cast<t&>(E[Idx]); }
-idx2_T(t) idx2_Ti(u) v3<t>& v3<t>::operator=(const v3<u>& Rhs) { X = Rhs.X; Y = Rhs.Y; Z = Rhs.Z; return *this; }
+template <typename t> idx2_Inline
+v3<t>::v3()
+{
+}
+
+template <typename t> idx2_Inline constexpr v3<t>::v3(t V)
+  : X(V)
+  , Y(V)
+  , Z(V)
+{
+}
+
+template <typename t> idx2_Inline constexpr v3<t>::v3(t X_, t Y_, t Z_)
+  : X(X_)
+  , Y(Y_)
+  , Z(Z_)
+{
+}
+
+template <typename t> idx2_Inline
+v3<t>::v3(const v2<t>& V2, t Z_)
+  : X(V2.X)
+  , Y(V2.Y)
+  , Z(Z_)
+{
+
+}
+template <typename t> template <typename u> idx2_Inline
+v3<t>::v3(const v3<u>& Other)
+  : X(Other.X)
+  , Y(Other.Y)
+  , Z(Other.Z)
+{
+}
+
+template <typename t> idx2_Inline t&
+v3<t>::operator[](int Idx) const
+{
+  assert(Idx < 3);
+  return const_cast<t&>(E[Idx]);
+}
+
+template <typename t> template <typename u> idx2_Inline v3<t>&
+v3<t>::operator=(const v3<u>& Rhs)
+{
+  X = Rhs.X;
+  Y = Rhs.Y;
+  Z = Rhs.Z;
+  return *this;
+}
 
 // TODO: move the following to Macros.h?
 #undef idx2_BeginFor3
-#define idx2_BeginFor3(Counter, Begin, End, Step)\
-  for (Counter.Z = (Begin).Z; Counter.Z < (End).Z; Counter.Z += (Step).Z) {\
-  for (Counter.Y = (Begin).Y; Counter.Y < (End).Y; Counter.Y += (Step).Y) {\
-  for (Counter.X = (Begin).X; Counter.X < (End).X; Counter.X += (Step).X)
+#define idx2_BeginFor3(Counter, Begin, End, Step)                                                  \
+  for (Counter.Z = (Begin).Z; Counter.Z < (End).Z; Counter.Z += (Step).Z)                          \
+  {                                                                                                \
+    for (Counter.Y = (Begin).Y; Counter.Y < (End).Y; Counter.Y += (Step).Y)                        \
+    {                                                                                              \
+      for (Counter.X = (Begin).X; Counter.X < (End).X; Counter.X += (Step).X)
 
 #undef idx2_EndFor3
-#define idx2_EndFor3 }}
+#define idx2_EndFor3                                                                               \
+  }                                                                                                \
+  }
 
 #undef idx2_BeginFor3Lockstep
-#define idx2_BeginFor3Lockstep(C1, B1, E1, S1, C2, B2, E2, S2)\
-  (void)E2;\
-  for (C1.Z = (B1).Z, C2.Z = (B2).Z; C1.Z < (E1).Z; C1.Z += (S1).Z, C2.Z += (S2).Z) {\
-  for (C1.Y = (B1).Y, C2.Y = (B2).Y; C1.Y < (E1).Y; C1.Y += (S1).Y, C2.Y += (S2).Y) {\
-  for (C1.X = (B1).X, C2.X = (B2).X; C1.X < (E1).X; C1.X += (S1).X, C2.X += (S2).X)
+#define idx2_BeginFor3Lockstep(C1, B1, E1, S1, C2, B2, E2, S2)                                     \
+  (void)E2;                                                                                        \
+  for (C1.Z = (B1).Z, C2.Z = (B2).Z; C1.Z < (E1).Z; C1.Z += (S1).Z, C2.Z += (S2).Z)                \
+  {                                                                                                \
+    for (C1.Y = (B1).Y, C2.Y = (B2).Y; C1.Y < (E1).Y; C1.Y += (S1).Y, C2.Y += (S2).Y)              \
+    {                                                                                              \
+      for (C1.X = (B1).X, C2.X = (B2).X; C1.X < (E1).X; C1.X += (S1).X, C2.X += (S2).X)
 
 } // namespace idx2
 
@@ -937,19 +1276,28 @@ idx2_T(t) idx2_Ti(u) v3<t>& v3<t>::operator=(const v3<u>& Rhs) { X = Rhs.X; Y = 
 
 #include <stdlib.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 /* General purpose buffer for string-related operations */
 inline thread_local char ScratchBuf[1024];
 
 #define idx2_RAII(...) idx2_MacroOverload(idx2_RAII, __VA_ARGS__)
-#define idx2_RAII_2(Type, Var) Type Var; idx2_CleanUp_1(Dealloc(&Var));
-#define idx2_RAII_3(Type, Var, Init) Type Var; idx2_CleanUp_1(Dealloc(&Var)); Init;
-#define idx2_RAII_4(Type, Var, Init, Clean) Type Var; idx2_CleanUp_1(Clean); Init;
+#define idx2_RAII_2(Type, Var)                                                                     \
+  Type Var;                                                                                        \
+  idx2_CleanUp_1(Dealloc(&Var));
+#define idx2_RAII_3(Type, Var, Init)                                                               \
+  Type Var;                                                                                        \
+  idx2_CleanUp_1(Dealloc(&Var));                                                                   \
+  Init;
+#define idx2_RAII_4(Type, Var, Init, Clean)                                                        \
+  Type Var;                                                                                        \
+  idx2_CleanUp_1(Clean);                                                                           \
+  Init;
 
 /*
-Quickly declare a heap-allocated array (typed_buffer) which deallocates itself
-at the end of scope. */
+Quickly declare a heap-allocated array (typed_buffer) which deallocates itself at the end of scope.
+*/
 #define idx2_MallocArray (Name, Type, Size)
 #define idx2_CallocArray(Name, Type, Size) // initialize elements to 0
 #define idx2_ArrayOfMallocArrays(Name, Type, SizeOuter, SizeInner)
@@ -957,7 +1305,8 @@ at the end of scope. */
 
 struct buffer;
 
-struct allocator {
+struct allocator
+{
   virtual bool Alloc(buffer* Buf, i64 Bytes) = 0;
   virtual void Dealloc(buffer* Buf) = 0;
   virtual void DeallocAll() = 0;
@@ -965,52 +1314,63 @@ struct allocator {
 };
 
 /* Allocators that know if they own an address/buffer */
-struct owning_allocator : allocator {
+struct owning_allocator : allocator
+{
   virtual bool Own(const buffer& Buf) const = 0;
 };
 
 struct mallocator;
+
 /* A simple allocator that allocates simply by bumping a counter */
 struct linear_allocator;
+
 /* A linear allocator that uses stack storage. */
-template <int Capacity>
-struct stack_linear_allocator;
+template <int Capacity> struct stack_linear_allocator;
+
 /*
-Whenever an allocation of a size in a specific range is made, return the block
-immediately from the head of a linked list. Otherwise forward the allocation to
-some Parent allocator. */
+Whenever an allocation of a size in a specific range is made, return the block immediately from the
+head of a linked list. Otherwise forward the allocation to some Parent allocator.
+*/
 struct free_list_allocator;
-/* Try to allocate using one allocator first (the Primary), then if that fails,
- * use another allocator (the Secondary). */
+
+/*
+Try to allocate using one allocator first (the Primary), then if that fails, use another allocator
+(the Secondary).
+*/
 struct fallback_allocator;
 
-struct mallocator : public allocator {
+struct mallocator : public allocator
+{
   bool Alloc(buffer* Buf, i64 Bytes) override;
   void Dealloc(buffer* Buf) override;
   void DeallocAll() override;
 };
 
-static inline mallocator& Mallocator() {
+static inline mallocator&
+Mallocator()
+{
   static mallocator Instance;
   return Instance;
 }
 
-idx2_T(t) struct buffer_t;
+template <typename t> struct buffer_t;
 
-struct buffer {
+struct buffer
+{
   byte* Data = nullptr;
   i64 Bytes = 0;
   allocator* Alloc = nullptr;
   buffer(allocator* AllocIn = &Mallocator());
   template <typename t, int N> buffer(t (&Arr)[N]);
   buffer(const byte* DataIn, i64 BytesIn, allocator* AllocIn = nullptr);
-  idx2_T(t) buffer(const buffer_t<t>& Buf);
+  template <typename t> buffer(const buffer_t<t>& Buf);
   byte& operator[](i64 Idx) const;
   explicit operator bool() const;
   bool operator!=(const buffer& Other) const;
 };
 
-struct linear_allocator : public owning_allocator {
+struct linear_allocator : public owning_allocator
+{
   buffer Block;
   i64 CurrentBytes = 0;
   linear_allocator();
@@ -1021,14 +1381,21 @@ struct linear_allocator : public owning_allocator {
   bool Own(const buffer& Buf) const override;
 };
 
-template <int Capacity>
-struct stack_linear_allocator : public linear_allocator {
+template <int Capacity> struct stack_linear_allocator : public linear_allocator
+{
   stack_array<byte, Capacity> Storage;
-  stack_linear_allocator() : linear_allocator(buffer{Storage.Arr, Capacity}) {}
+  stack_linear_allocator()
+    : linear_allocator(buffer{ Storage.Arr, Capacity })
+  {
+  }
 };
 
-struct free_list_allocator : public allocator {
-  struct node { node* Next = nullptr; };
+struct free_list_allocator : public allocator
+{
+  struct node
+  {
+    node* Next = nullptr;
+  };
   node* Head = nullptr;
   i64 MinBytes = 0;
   i64 MaxBytes = 0;
@@ -1041,7 +1408,8 @@ struct free_list_allocator : public allocator {
   void DeallocAll() override;
 };
 
-struct fallback_allocator : public allocator {
+struct fallback_allocator : public allocator
+{
   owning_allocator* Primary = nullptr;
   allocator* Secondary = nullptr;
   fallback_allocator();
@@ -1051,64 +1419,105 @@ struct fallback_allocator : public allocator {
   void DeallocAll() override;
 };
 
-void Clone(const buffer& Src, buffer* Dst, allocator* Alloc = &Mallocator());
+void
+Clone(const buffer& Src, buffer* Dst, allocator* Alloc = &Mallocator());
 
 /* Abstract away memory allocations/deallocations */
-idx2_T(t) void AllocPtr  (t* Ptr, i64 Size, allocator* Alloc = &Mallocator());
-idx2_T(t) void CallocPtr (t* Ptr, i64 Size, allocator* Alloc = &Mallocator());
-idx2_T(t) void DeallocPtr(t* Ptr);
+template <typename t> void
+AllocPtr(t* Ptr, i64 Size, allocator* Alloc = &Mallocator());
 
-void AllocBuf  (buffer* Buf, i64 Bytes, allocator* Alloc = &Mallocator());
-void CallocBuf (buffer* Buf, i64 Bytes, allocator* Alloc = &Mallocator());
-void DeallocBuf(buffer* Buf);
+template <typename t> void
+CallocPtr(t* Ptr, i64 Size, allocator* Alloc = &Mallocator());
 
-idx2_T(t) void AllocBufT  (buffer_t<t>* Buf, i64 Size, allocator* Alloc = &Mallocator());
-idx2_T(t) void CallocBufT (buffer_t<t>* Buf, i64 Size, allocator* Alloc = &Mallocator());
-idx2_T(t) void DeallocBufT(buffer_t<t>* Buf);
+template <typename t> void
+DeallocPtr(t* Ptr);
+
+void
+AllocBuf(buffer* Buf, i64 Bytes, allocator* Alloc = &Mallocator());
+
+void
+CallocBuf(buffer* Buf, i64 Bytes, allocator* Alloc = &Mallocator());
+
+void
+DeallocBuf(buffer* Buf);
+
+template <typename t> void
+AllocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc = &Mallocator());
+
+template <typename t> void
+CallocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc = &Mallocator());
+
+template <typename t> void
+DeallocBufT(buffer_t<t>* Buf);
 
 /* Zero out a buffer */
 // TODO: replace with the call to Fill, or Memset
-void ZeroBuf(buffer* Buf);
-idx2_T(t) void ZeroBufT(buffer_t<t>* Buf);
+void
+ZeroBuf(buffer* Buf);
+
+template <typename t> void
+ZeroBufT(buffer_t<t>* Buf);
 
 /* Copy one buffer to another. Here the order of arguments are the reverse of memcpy. */
-i64 MemCopy(const buffer& Src, buffer* Dst);
-i64 MemCopy(const buffer& Src, buffer* Dst, u64 Bytes);
+i64
+MemCopy(const buffer& Src, buffer* Dst);
 
-i64 Size(const buffer& Buf);
-void Resize(buffer* Buf, i64 Size, allocator* Alloc = &Mallocator());
+i64
+MemCopy(const buffer& Src, buffer* Dst, u64 Bytes);
 
-bool operator==(const buffer& Buf1, const buffer& Buf2);
-buffer operator+(const buffer& Buf, i64 Bytes);
+i64
+Size(const buffer& Buf);
 
-idx2_T(t)
-struct buffer_t {
+void
+Resize(buffer* Buf, i64 Size, allocator* Alloc = &Mallocator());
+
+bool
+operator==(const buffer& Buf1, const buffer& Buf2);
+
+buffer
+operator+(const buffer& Buf, i64 Bytes);
+
+template <typename t> struct buffer_t
+{
   t* Data = nullptr;
   i64 Size = 0;
   allocator* Alloc = nullptr;
   buffer_t();
-  template <int N>
-  buffer_t(t (&Arr)[N]);
+  template <int N> buffer_t(t (&Arr)[N]);
   buffer_t(const t* DataIn, i64 SizeIn, allocator* AllocIn = nullptr);
   buffer_t(const buffer& Buf);
   t& operator[](i64 Idx) const;
   explicit operator bool() const;
 };
 
-idx2_T(t) i64 Size(const buffer_t<t>& Buf);
-idx2_T(t) i64 Bytes(const buffer_t<t>& Buf);
+template <typename t> i64
+Size(const buffer_t<t>& Buf);
+
+template <typename t> i64
+Bytes(const buffer_t<t>& Buf);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_T(func_t)
-struct scope_guard {
+template <typename func_t> struct scope_guard
+{
   func_t Func;
   bool Dismissed = false;
   // TODO: std::forward FuncIn?
-  scope_guard(const func_t& FuncIn) : Func(FuncIn) {}
-  ~scope_guard() { if (!Dismissed) { Func(); } }
+  scope_guard(const func_t& FuncIn)
+    : Func(FuncIn)
+  {
+  }
+
+  ~scope_guard()
+  {
+    if (!Dismissed)
+    {
+      Func();
+    }
+  }
 };
 
 } // namespace idx2
@@ -1117,21 +1526,31 @@ struct scope_guard {
 #define idx2_BeginCleanUp_0() auto idx2_Cat(__CleanUpFunc__, __LINE__) = [&]()
 #define idx2_BeginCleanUp_1(N) auto __CleanUpFunc__##N = [&]()
 #define idx2_EndCleanUp(...) idx2_MacroOverload(idx2_EndCleanUp, __VA_ARGS__)
-#define idx2_EndCleanUp_0() idx2::scope_guard idx2_Cat(__ScopeGuard__, __LINE__)(idx2_Cat(__CleanUpFunc__, __LINE__));
+#define idx2_EndCleanUp_0()                                                                        \
+  idx2::scope_guard idx2_Cat(__ScopeGuard__, __LINE__)(idx2_Cat(__CleanUpFunc__, __LINE__));
 #define idx2_EndCleanUp_1(N) idx2::scope_guard __ScopeGuard__##N(__CleanUpFunc__##N);
 
 //#define idx2_BeginCleanUp(n) auto __CleanUpFunc__##n = [&]()
 #define idx2_CleanUp(...) idx2_MacroOverload(idx2_CleanUp, __VA_ARGS__)
-#define idx2_CleanUp_1(...) idx2_BeginCleanUp_0() { __VA_ARGS__; }; idx2_EndCleanUp_0()
-#define idx2_CleanUp_2(N, ...) idx2_BeginCleanUp_1(N) { __VA_ARGS__; }; idx2_EndCleanUp_1(N)
+#define idx2_CleanUp_1(...)                                                                        \
+  idx2_BeginCleanUp_0() { __VA_ARGS__; };                                                          \
+  idx2_EndCleanUp_0()
+#define idx2_CleanUp_2(N, ...)                                                                     \
+  idx2_BeginCleanUp_1(N) { __VA_ARGS__; };                                                         \
+  idx2_EndCleanUp_1(N)
 
 // #define idx2_CleanUp(n, ...) idx2_BeginCleanUp(n) { __VA_ARGS__; }; idx2_EndCleanUp(n)
-#define idx2_DismissCleanUp(N) { __ScopeGuard__##N.Dismissed = true; }
+#define idx2_DismissCleanUp(N)                                                                     \
+  {                                                                                                \
+    __ScopeGuard__##N.Dismissed = true;                                                            \
+  }
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_T(t) void
-AllocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc) {
+template <typename t> void
+AllocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc)
+{
   buffer RawBuf;
   AllocBuf(&RawBuf, i64(Size * sizeof(t)), Alloc);
   Buf->Data = (t*)RawBuf.Data;
@@ -1139,8 +1558,9 @@ AllocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc) {
   Buf->Alloc = Alloc;
 }
 
-idx2_T(t) void
-CallocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc) {
+template <typename t> void
+CallocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc)
+{
   buffer RawBuf;
   CallocBuf(&RawBuf, i64(Size * sizeof(t)), Alloc);
   Buf->Data = (t*)RawBuf.Data;
@@ -1148,77 +1568,103 @@ CallocBufT(buffer_t<t>* Buf, i64 Size, allocator* Alloc) {
   Buf->Alloc = Alloc;
 }
 
-idx2_T(t) void
-DeallocBufT(buffer_t<t>* Buf) {
-  buffer RawBuf{(byte*)Buf->Data, i64(Buf->Size * sizeof(t)), Buf->Alloc};
+template <typename t> void
+DeallocBufT(buffer_t<t>* Buf)
+{
+  buffer RawBuf{ (byte*)Buf->Data, i64(Buf->Size * sizeof(t)), Buf->Alloc };
   DeallocBuf(&RawBuf);
-  Buf->Data  = nullptr;
-  Buf->Size  = 0;
+  Buf->Data = nullptr;
+  Buf->Size = 0;
   Buf->Alloc = nullptr;
 }
 
-idx2_T(t) void
-AllocPtr(t** Ptr, i64 Size, allocator* Alloc = &Mallocator()) {
+template <typename t> void
+AllocPtr(t** Ptr, i64 Size, allocator* Alloc = &Mallocator())
+{
   buffer RawBuf;
   AllocBuf(&RawBuf, i64(Size * sizeof(t)), Alloc);
   *Ptr = (t*)RawBuf.Data;
 }
 
-idx2_T(t) void
-CallocPtr(t** Ptr, i64 Size, allocator* Alloc = &Mallocator()) {
+template <typename t> void
+CallocPtr(t** Ptr, i64 Size, allocator* Alloc = &Mallocator())
+{
   buffer RawBuf;
   CallocBuf(&RawBuf, i64(Size * sizeof(t)), Alloc);
   *Ptr = (t*)RawBuf.Data;
 }
 
-idx2_T(t) void
-DeallocPtr(t** Ptr, allocator* Alloc = &Mallocator()) {
-  buffer RawBuf{(byte*)(*Ptr), 1, Alloc};
+template <typename t> void
+DeallocPtr(t** Ptr, allocator* Alloc = &Mallocator())
+{
+  buffer RawBuf{ (byte*)(*Ptr), 1, Alloc };
   DeallocBuf(&RawBuf);
 }
 
-idx2_Inline buffer::
-buffer(allocator* AllocIn)
-  : Alloc(AllocIn) {}
+idx2_Inline
+buffer::buffer(allocator* AllocIn)
+  : Alloc(AllocIn)
+{
+}
 
-idx2_Inline buffer::
-buffer(const byte* DataIn, i64 BytesIn, allocator* AllocIn)
-  : Data(const_cast<byte*>(DataIn)), Bytes(BytesIn), Alloc(AllocIn) {}
+idx2_Inline
+buffer::buffer(const byte* DataIn, i64 BytesIn, allocator* AllocIn)
+  : Data(const_cast<byte*>(DataIn))
+  , Bytes(BytesIn)
+  , Alloc(AllocIn)
+{
+}
 
-idx2_TIi(t, N) buffer::
-buffer(t (&Arr)[N])
-  : Data((byte*)const_cast<t*>(&Arr[0])), Bytes(sizeof(Arr)) {}
+template <typename t, int N> idx2_Inline
+buffer::buffer(t (&Arr)[N])
+  : Data((byte*)const_cast<t*>(&Arr[0]))
+  , Bytes(sizeof(Arr))
+{
+}
 
-idx2_Ti(t) buffer::
-buffer(const buffer_t<t>& Buf)
+template <typename t> idx2_Inline
+buffer::buffer(const buffer_t<t>& Buf)
   : Data((byte*)const_cast<t*>(Buf.Data))
-  , Bytes(Buf.Size * sizeof(t)), Alloc(Buf.Alloc) {}
+  , Bytes(Buf.Size * sizeof(t))
+  , Alloc(Buf.Alloc)
+{
+}
 
-idx2_Inline byte& buffer::
-operator[](i64 Idx) const {
+idx2_Inline byte&
+buffer::operator[](i64 Idx) const
+{
   assert(Idx < Bytes);
   return const_cast<byte&>(Data[Idx]);
 }
 
-idx2_Inline bool buffer::
-operator!=(const buffer& Other) const {
+idx2_Inline bool
+buffer::operator!=(const buffer& Other) const
+{
   return Data != Other.Data || Bytes != Other.Bytes;
 }
 
-idx2_Inline buffer::
-operator bool() const { return this->Data && this->Bytes; }
+idx2_Inline buffer::operator bool() const
+{
+  return this->Data && this->Bytes;
+}
 
 idx2_Inline bool
-operator==(const buffer& Buf1, const buffer& Buf2) {
+operator==(const buffer& Buf1, const buffer& Buf2)
+{
   return Buf1.Data == Buf2.Data && Buf1.Bytes == Buf2.Bytes;
 }
 
 idx2_Inline i64
-Size(const buffer& Buf) { return Buf.Bytes; }
+Size(const buffer& Buf)
+{
+  return Buf.Bytes;
+}
 
 idx2_Inline void
-Resize(buffer* Buf, i64 NewSize, allocator* Alloc) {
-  if (Size(*Buf) < NewSize) {
+Resize(buffer* Buf, i64 NewSize, allocator* Alloc)
+{
+  if (Size(*Buf) < NewSize)
+  {
     if (Size(*Buf) > 0)
       DeallocBuf(Buf);
     AllocBuf(Buf, NewSize, Alloc);
@@ -1226,77 +1672,100 @@ Resize(buffer* Buf, i64 NewSize, allocator* Alloc) {
 }
 
 /* typed_buffer stuffs */
-idx2_Ti(t) buffer_t<t>::
-buffer_t() = default;
+template <typename t> idx2_Inline
+buffer_t<t>::buffer_t() = default;
 
-idx2_T(t) template <int N> idx2_Inline buffer_t<t>::
-buffer_t(t (&Arr)[N])
-  : Data(&Arr[0]), Size(N) {}
+template <typename t> template <int N> idx2_Inline
+buffer_t<t>::buffer_t(t (&Arr)[N])
+  : Data(&Arr[0])
+  , Size(N)
+{
+}
 
-idx2_Ti(t) buffer_t<t>::
-buffer_t(const t* DataIn, i64 SizeIn, allocator* AllocIn)
-  : Data(const_cast<t*>(DataIn)), Size(SizeIn), Alloc(AllocIn) {}
+template <typename t> idx2_Inline
+buffer_t<t>::buffer_t(const t* DataIn, i64 SizeIn, allocator* AllocIn)
+  : Data(const_cast<t*>(DataIn))
+  , Size(SizeIn)
+  , Alloc(AllocIn)
+{
+}
 
-idx2_Ti(t) buffer_t<t>::
-buffer_t(const buffer& Buf)
+template <typename t> idx2_Inline
+buffer_t<t>::buffer_t(const buffer& Buf)
   : Data((t*)const_cast<byte*>(Buf.Data))
-  , Size(Buf.Bytes / sizeof(t)), Alloc(Buf.Alloc) {}
+  , Size(Buf.Bytes / sizeof(t))
+  , Alloc(Buf.Alloc)
+{
+}
 
-idx2_Ti(t) t& buffer_t<t>::
-operator[](i64 Idx) const {
+template <typename t> idx2_Inline t&
+buffer_t<t>::operator[](i64 Idx) const
+{
   assert(Idx < Size);
   return const_cast<t&>(Data[Idx]);
 }
 
-idx2_Ti(t) i64
-Size(const buffer_t<t>& Buf) { return Buf.Size; }
+template <typename t> idx2_Inline i64
+Size(const buffer_t<t>& Buf)
+{
+  return Buf.Size;
+}
 
-idx2_Ti(t) i64
-Bytes(const buffer_t<t>& Buf) { return Buf.Size * sizeof(t); }
+template <typename t> idx2_Inline i64
+Bytes(const buffer_t<t>& Buf)
+{
+  return Buf.Size * sizeof(t);
+}
 
-idx2_Ti(t) buffer_t<t>::
-operator bool() const { return Data && Size; }
+template <typename t> idx2_Inline buffer_t<t>::operator bool() const
+{
+  return Data && Size;
+}
 
 } // namespace idx2
 
 #undef idx2_MallocArray
-#define idx2_MallocArray(Name, Type, Size)\
-  using namespace idx2;\
-  buffer_t<Type> Name;\
-  AllocBufT(&Name, (Size));\
+#define idx2_MallocArray(Name, Type, Size)                                                         \
+  using namespace idx2;                                                                            \
+  buffer_t<Type> Name;                                                                             \
+  AllocBufT(&Name, (Size));                                                                        \
   idx2_CleanUp(__LINE__, DeallocBufT(&Name))
 
 #undef idx2_CallocArray
-#define idx2_CallocArray(Name, Type, Size)\
-  using namespace idx2;\
-  buffer_t<Type> Name;\
-  CallocBufT(&Name, (Size));\
+#define idx2_CallocArray(Name, Type, Size)                                                         \
+  using namespace idx2;                                                                            \
+  buffer_t<Type> Name;                                                                             \
+  CallocBufT(&Name, (Size));                                                                       \
   idx2_CleanUp(__LINE__, DeallocBufT(&Name))
 
 #undef idx2_ArrayOfMallocArrays
-#define idx2_ArrayOfMallocArrays(Name, Type, SizeOuter, SizeInner)\
-  using namespace idx2;\
-  buffer_t<Type> Name[SizeOuter] = {}; \
-  for (int I = 0; I < (SizeOuter); ++I)\
-    AllocBufT(&Name[I], (SizeInner));\
-  idx2_CleanUp(__LINE__, {\
-    for (int I = 0; I < (SizeOuter); ++I) DeallocBufT(&Name[I]); })
+#define idx2_ArrayOfMallocArrays(Name, Type, SizeOuter, SizeInner)                                 \
+  using namespace idx2;                                                                            \
+  buffer_t<Type> Name[SizeOuter] = {};                                                             \
+  for (int I = 0; I < (SizeOuter); ++I)                                                            \
+    AllocBufT(&Name[I], (SizeInner));                                                              \
+  idx2_CleanUp(__LINE__, {                                                                         \
+    for (int I = 0; I < (SizeOuter); ++I)                                                          \
+      DeallocBufT(&Name[I]);                                                                       \
+  })
 
 #undef idx2_MallocArrayOfArrays
-#define idx2_MallocArrayOfArrays(Name, Type, SizeOuter, SizeInner)\
-  using namespace idx2;\
-  buffer_t<buffer_t<Type>> Name;\
-  AllocBufT(&Name, (SizeOuter));\
-  for (int I = 0; I < (SizeOuter); ++I) \
-    AllocBufT(&Name[I], (SizeInner));\
-  idx2_CleanUp(__LINE__, {\
-    for (int I = 0; I < (SizeOuter); ++I) DeallocBufT(&Name[I]);\
-    DeallocBufT(&Name);\
+#define idx2_MallocArrayOfArrays(Name, Type, SizeOuter, SizeInner)                                 \
+  using namespace idx2;                                                                            \
+  buffer_t<buffer_t<Type>> Name;                                                                   \
+  AllocBufT(&Name, (SizeOuter));                                                                   \
+  for (int I = 0; I < (SizeOuter); ++I)                                                            \
+    AllocBufT(&Name[I], (SizeInner));                                                              \
+  idx2_CleanUp(__LINE__, {                                                                         \
+    for (int I = 0; I < (SizeOuter); ++I)                                                          \
+      DeallocBufT(&Name[I]);                                                                       \
+    DeallocBufT(&Name);                                                                            \
   })
 
 #include <initializer_list>
 
-namespace idx2 {
+namespace idx2
+{
 
 /*
 Only works for POD types. For other types, use std::vector.
@@ -1304,9 +1773,10 @@ NOTE: elements must be explicitly initialized (they are not initialized to zero
 or anything)
 NOTE: do not make copies of a dynamic_array using operator=, then work on them
 as if they were independent from the original object (i.e., an array does not
-assume ownership of its memory buffer) */
-idx2_T(t)
-struct array {
+assume ownership of its memory buffer)
+*/
+template <typename t> struct array
+{
   buffer Buffer = {};
   i64 Size = 0;
   i64 Capacity = 0;
@@ -1316,43 +1786,41 @@ struct array {
   t& operator[](i64 Idx) const;
 };
 
-idx2_T(t) void Init(array<t>* Array, i64 Size);
-idx2_T(t) void Init(array<t>* Array, i64 Size, const t& Val);
+template <typename t> void Init(array<t>* Array, i64 Size);
+template <typename t> void Init(array<t>* Array, i64 Size, const t& Val);
 
-idx2_T(t) i64 Size(const array<t>& Array);
+template <typename t> i64 Size(const array<t>& Array);
 
-idx2_T(t) t& Front(const array<t>& Array);
-idx2_T(t) t& Back (const array<t>& Array);
-idx2_T(t) t* Begin(const array<t>& Array);
-idx2_T(t) t* End  (const array<t>& Array);
+template <typename t> t& Front(const array<t>& Array);
+template <typename t> t& Back(const array<t>& Array);
+template <typename t> t* Begin(const array<t>& Array);
+template <typename t> t* End(const array<t>& Array);
 
-idx2_T(t) void Clone(const array<t>& Src, array<t>* Dst);
-idx2_T(t) void Relocate(array<t>* Array, buffer Buf);
+template <typename t> void Clone(const array<t>& Src, array<t>* Dst);
+template <typename t> void Relocate(array<t>* Array, buffer Buf);
 
-idx2_T(t) void SetCapacity(array<t>* Array, i64 NewCapacity = 0);
-idx2_T(t) void Resize(array<t>* Array, i64 NewSize);
-idx2_T(t) void Reserve(array<t>* Array, i64 Capacity);
-idx2_T(t) void Clear(array<t>* Array);
+template <typename t> void SetCapacity(array<t>* Array, i64 NewCapacity = 0);
+template <typename t> void Resize(array<t>* Array, i64 NewSize);
+template <typename t> void Reserve(array<t>* Array, i64 Capacity);
+template <typename t> void Clear(array<t>* Array);
 
-idx2_T(t) void PushBack(array<t>* Array, const t& Item);
-idx2_T(t) void PushBack(array<t>* Array);
-idx2_T(t) void PopBack(array<t>* Array);
-idx2_T(t) buffer ToBuffer(const array<t>& Array);
+template <typename t> void PushBack(array<t>* Array, const t& Item);
+template <typename t> void PushBack(array<t>* Array);
+template <typename t> void PopBack(array<t>* Array);
+template <typename t> buffer ToBuffer(const array<t>& Array);
 
-idx2_T(t) void Dealloc(array<t>* Array);
+template <typename t> void Dealloc(array<t>* Array);
 
 } // namespace idx2
 
-/* Assert macros that carry file and line information, as well as a custom message */
-
-// TODO: add a idx2_AssertIf
 #define idx2_Assert(Cond, ...)
 #define idx2_AbortIf(Cond, ...)
 #define idx2_Abort(...)
 
-namespace idx2 {
+namespace idx2
+{
 
-using handler = void (int);
+using handler = void(int);
 void AbortHandler(int Signum);
 void SetHandleAbortSignals(handler& Handler = AbortHandler);
 
@@ -1543,18 +2011,12 @@ struct printer
   printer(FILE* FileIn);
 };
 
-void
-Reset
-(printer* Pr, char* Buf, int Size);
+void Reset(printer* Pr, char* Buf, int Size);
 
-void
-Reset
-(printer* Pr, FILE* File);
+void Reset(printer* Pr, FILE* File);
 
-template <typename t>
-void
-Print
-(printer* Pr, const array<t>& Array)
+template <typename t> void
+Print(printer* Pr, const array<t>& Array)
 {
   idx2_Print(Pr, "[");
   for (i64 I = 0; I < Size(Array); ++I)
@@ -1562,86 +2024,103 @@ Print
   idx2_Print(Pr, "]");
 }
 
-}
+} // namespace idx2
 
 #undef idx2_Print
-#define idx2_Print(PrinterPtr, Format, ...) {\
-  if ((PrinterPtr)->Buf && !(PrinterPtr)->File) {\
-    if ((PrinterPtr)->Size <= 1)\
-      assert(false && "buffer too small"); /* TODO: always abort */ \
-    int Written = snprintf((PrinterPtr)->Buf, size_t((PrinterPtr)->Size),\
-                           Format, ##__VA_ARGS__);\
-    (PrinterPtr)->Buf += Written;\
-    if (Written < (PrinterPtr)->Size)\
-      (PrinterPtr)->Size -= Written;\
-    else\
-      assert(false && "buffer overflow?");\
-  } else if (!(PrinterPtr)->Buf && (PrinterPtr)->File) {\
-    fprintf((PrinterPtr)->File, Format, ##__VA_ARGS__);\
-  } else {\
-    assert(false && "unavailable or ambiguous printer destination");\
-  }\
-}
+#define idx2_Print(PrinterPtr, Format, ...)                                                        \
+  {                                                                                                \
+    if ((PrinterPtr)->Buf && !(PrinterPtr)->File)                                                  \
+    {                                                                                              \
+      if ((PrinterPtr)->Size <= 1)                                                                 \
+        assert(false && "buffer too small"); /* TODO: always abort */                              \
+      int Written =                                                                                \
+        snprintf((PrinterPtr)->Buf, size_t((PrinterPtr)->Size), Format, ##__VA_ARGS__);            \
+      (PrinterPtr)->Buf += Written;                                                                \
+      if (Written < (PrinterPtr)->Size)                                                            \
+        (PrinterPtr)->Size -= Written;                                                             \
+      else                                                                                         \
+        assert(false && "buffer overflow?");                                                       \
+    }                                                                                              \
+    else if (!(PrinterPtr)->Buf && (PrinterPtr)->File)                                             \
+    {                                                                                              \
+      fprintf((PrinterPtr)->File, Format, ##__VA_ARGS__);                                          \
+    }                                                                                              \
+    else                                                                                           \
+    {                                                                                              \
+      assert(false && "unavailable or ambiguous printer destination");                             \
+    }                                                                                              \
+  }
 
 #undef idx2_PrintScratch
-#define idx2_PrintScratch(Format, ...) (\
-  snprintf(ScratchBuf, sizeof(ScratchBuf), Format, ##__VA_ARGS__),\
-  ScratchBuf\
-)
+#define idx2_PrintScratch(Format, ...)                                                             \
+  (snprintf(ScratchBuf, sizeof(ScratchBuf), Format, ##__VA_ARGS__), ScratchBuf)
 
 #undef idx2_PrintScratchN
-#define idx2_PrintScratchN(N, Format, ...) (\
-  snprintf(ScratchBuf, N + 1, Format, ##__VA_ARGS__),\
-  ScratchBuf\
-)
+#define idx2_PrintScratchN(N, Format, ...)                                                         \
+  (snprintf(ScratchBuf, N + 1, Format, ##__VA_ARGS__), ScratchBuf)
 
-namespace idx2 {
+namespace idx2
+{
 
 struct printer;
-bool PrintStacktrace(printer* Pr);
+
+bool
+PrintStacktrace(printer* Pr);
 
 } // namespace idx2
 
-#define idx2_AssertHelper(Debug, Cond, ...)\
-  do {\
-    if (!(Cond)) {\
-      fprintf(stderr, "Condition \"%s\" failed, ", #Cond);\
-      fprintf(stderr, "in file %s, line %d\n", __FILE__, __LINE__);\
-      if constexpr(idx2_NumArgs(__VA_ARGS__) > 0) {\
-        idx2_FPrintHelper(stderr, "" __VA_ARGS__);\
-        fprintf(stderr, "\n");\
-      }\
-      printer Pr(stderr);\
-      PrintStacktrace(&Pr);\
-      if constexpr (Debug)\
-        debug_break();\
-      else\
-        exit(EXIT_FAILURE);\
-    }\
+#define idx2_AssertHelper(Debug, Cond, ...)                                                        \
+  do                                                                                               \
+  {                                                                                                \
+    if (!(Cond))                                                                                   \
+    {                                                                                              \
+      fprintf(stderr, "Condition \"%s\" failed, ", #Cond);                                         \
+      fprintf(stderr, "in file %s, line %d\n", __FILE__, __LINE__);                                \
+      if constexpr (idx2_NumArgs(__VA_ARGS__) > 0)                                                 \
+      {                                                                                            \
+        idx2_FPrintHelper(stderr, "" __VA_ARGS__);                                                 \
+        fprintf(stderr, "\n");                                                                     \
+      }                                                                                            \
+      printer Pr(stderr);                                                                          \
+      PrintStacktrace(&Pr);                                                                        \
+      if constexpr (Debug)                                                                         \
+        debug_break();                                                                             \
+      else                                                                                         \
+        exit(EXIT_FAILURE);                                                                        \
+    }                                                                                              \
   } while (0);
 
 #undef idx2_Assert
 #if defined(idx2_Slow)
-  #define idx2_Assert(Cond, ...) idx2_AssertHelper(true, (Cond), __VA_ARGS__)
+#define idx2_Assert(Cond, ...) idx2_AssertHelper(true, (Cond), __VA_ARGS__)
 #else
-  #define idx2_Assert(Cond, ...) do {} while (0)
+#define idx2_Assert(Cond, ...)                                                                     \
+  do                                                                                               \
+  {                                                                                                \
+  } while (0)
 #endif
 
 #undef idx2_AbortIf
-#define idx2_AbortIf(Cond, ...)\
-  idx2_AssertHelper(false, !(Cond) && "Fatal error!", __VA_ARGS__)
+#define idx2_AbortIf(Cond, ...) idx2_AssertHelper(false, !(Cond) && "Fatal error!", __VA_ARGS__)
 #undef idx2_Abort
 #define idx2_Abort(...) idx2_AbortIf(true, __VA_ARGS__)
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Ti(t) array<t>::
-array(allocator* Alloc) :
-  Buffer(), Size(0), Capacity(0), Alloc(Alloc) { idx2_Assert(Alloc); }
+template <typename t> idx2_Inline
+array<t>::array(allocator* Alloc)
+  : Buffer()
+  , Size(0)
+  , Capacity(0)
+  , Alloc(Alloc)
+{
+  idx2_Assert(Alloc);
+}
 
-idx2_Ti(t) array<t>::
-array(const std::initializer_list<t>& List, allocator* Alloc) :
-  array(Alloc)
+template <typename t> idx2_Inline
+array<t>::array(const std::initializer_list<t>& List, allocator* Alloc)
+  : array(Alloc)
 {
   idx2_Assert(Alloc);
   Init(this, List.size());
@@ -1650,50 +2129,62 @@ array(const std::initializer_list<t>& List, allocator* Alloc) :
     (*this)[Count++] = Elem;
 }
 
-idx2_Ti(t) t& array<t>::
-operator[](i64 Idx) const {
+template <typename t> idx2_Inline t&
+array<t>::operator[](i64 Idx) const
+{
   idx2_Assert(Idx < Size);
   return const_cast<t&>(((t*)Buffer.Data)[Idx]);
 }
 
-idx2_Ti(t) void
-Init(array<t>* Array, i64 Size){
+template <typename t> idx2_Inline void
+Init(array<t>* Array, i64 Size)
+{
   Array->Alloc->Alloc(&Array->Buffer, Size * sizeof(t));
   Array->Size = Array->Capacity = Size;
 }
 
-idx2_Ti(t) void
-Init(array<t>* Array, i64 Size, const t& Val) {
+template <typename t> idx2_Inline void
+Init(array<t>* Array, i64 Size, const t& Val)
+{
   Init(Array, Size);
   Fill((t*)Array->Buffer.Data, (t*)Array->Buffer.Data + Size, Val);
 }
 
-idx2_Ti(t) i64
-Size(const array<t>& Array) { return Array.Size; }
+template <typename t> idx2_Inline i64
+Size(const array<t>& Array)
+{
+  return Array.Size;
+}
 
-idx2_Ti(t) t&
-Front(const array<t>& Array) {
+template <typename t> idx2_Inline t&
+Front(const array<t>& Array)
+{
   idx2_Assert(Size(Array) > 0);
   return const_cast<t&>(Array[0]);
 }
 
-idx2_Ti(t) t&
-Back(const array<t>& Array) {
+template <typename t> idx2_Inline t&
+Back(const array<t>& Array)
+{
   idx2_Assert(Size(Array) > 0);
   return const_cast<t&>(Array[Size(Array) - 1]);
 }
 
-idx2_Ti(t) t*
-Begin(const array<t>& Array) {
+template <typename t> idx2_Inline t*
+Begin(const array<t>& Array)
+{
   return (t*)const_cast<byte*>(Array.Buffer.Data);
 }
-idx2_Ti(t) t*
-End(const array<t>& Array) {
+
+template <typename t> idx2_Inline t*
+End(const array<t>& Array)
+{
   return (t*)const_cast<byte*>(Array.Buffer.Data) + Array.Size;
 }
 
-idx2_T(t) void
-Relocate(array<t>* Array, buffer Buf) {
+template <typename t> void
+Relocate(array<t>* Array, buffer Buf)
+{
   MemCopy(Array->Buffer, &Buf);
   Array->Alloc->Dealloc(&Array->Buffer);
   Array->Buffer = Buf;
@@ -1701,11 +2192,13 @@ Relocate(array<t>* Array, buffer Buf) {
   idx2_Assert(Array->Size <= Array->Capacity);
 }
 
-idx2_T(t) void
-SetCapacity(array<t>* Array, i64 NewCapacity) {
+template <typename t> void
+SetCapacity(array<t>* Array, i64 NewCapacity)
+{
   if (NewCapacity == 0) // default
     NewCapacity = Array->Capacity * 3 / 2 + 8;
-  if (Array->Capacity < NewCapacity) {
+  if (Array->Capacity < NewCapacity)
+  {
     buffer Buf;
     Array->Alloc->Alloc(&Buf, NewCapacity * sizeof(t));
     idx2_Assert(Buf);
@@ -1714,36 +2207,44 @@ SetCapacity(array<t>* Array, i64 NewCapacity) {
   }
 }
 
-idx2_Ti(t) void
-PushBack(array<t>* Array, const t& Item) {
+template <typename t> idx2_Inline void
+PushBack(array<t>* Array, const t& Item)
+{
   if (Array->Size >= Array->Capacity)
     SetCapacity(Array);
   (*Array)[Array->Size++] = Item;
 }
 
-idx2_Ti(t) void
-PushBack(array<t>* Array) {
+template <typename t> idx2_Inline void
+PushBack(array<t>* Array)
+{
   if (Array->Size >= Array->Capacity)
     SetCapacity(Array);
   ++Array->Size;
 }
 
-idx2_Ti(t) void
-PopBack(array<t>* Array) {
+template <typename t> idx2_Inline void
+PopBack(array<t>* Array)
+{
   if (Array->Size > 0)
     --Array->Size;
 }
 
-idx2_T(t) buffer
-ToBuffer(const array<t>& Array) {
-  return buffer{Array.Buffer.Data, Size(Array) * (i64)sizeof(t), Array.Buffer.Alloc};
+template <typename t> buffer
+ToBuffer(const array<t>& Array)
+{
+  return buffer{ Array.Buffer.Data, Size(Array) * (i64)sizeof(t), Array.Buffer.Alloc };
 }
 
-idx2_Ti(t) void
-Clear(array<t>* Array) { Array->Size = 0; }
+template <typename t> idx2_Inline void
+Clear(array<t>* Array)
+{
+  Array->Size = 0;
+}
 
-idx2_T(t) void
-Resize(array<t>* Array, i64 NewSize) {
+template <typename t> void
+Resize(array<t>* Array, i64 NewSize)
+{
   if (NewSize > Array->Capacity)
     SetCapacity(Array, NewSize);
   if (Array->Size < NewSize)
@@ -1751,21 +2252,24 @@ Resize(array<t>* Array, i64 NewSize) {
   Array->Size = NewSize;
 }
 
-idx2_Ti(t) void
-Reserve(array<t>* Array, i64 Capacity) {
+template <typename t> idx2_Inline void
+Reserve(array<t>* Array, i64 Capacity)
+{
   SetCapacity(Array, Capacity);
 }
 
 // TODO: test to see if t is POD, if yes, just memcpy
-idx2_T(t) void
-Clone(const array<t>& Src, array<t>* Dst) {
+template <typename t> void
+Clone(const array<t>& Src, array<t>* Dst)
+{
   Resize(Dst, Size(Src));
   for (int I = 0; I < Size(Src); ++I)
     (*Dst)[I] = Src[I];
 }
 
-idx2_Ti(t) void
-Dealloc(array<t>* Array) {
+template <typename t> idx2_Inline void
+Dealloc(array<t>* Array)
+{
   Array->Alloc->Dealloc(&Array->Buffer);
   Array->Size = Array->Capacity = 0;
 }
@@ -1788,14 +2292,32 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals);
 bool OptExists(int NArgs, cstr* Args, cstr Opt);
-idx2_T(e) bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val); // output to an Enum
+
+template <typename e> bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val); // output to an Enum
 
 #undef idx2_RequireOption
-#define idx2_RequireOption(Argc, Argv, Str, Var, Err)\
-  if (!OptVal(Argc, Argv, Str, Var)) {\
-    fprintf(stderr, Err); \
-    exit(1);\
+#define idx2_RequireOption(Argc, Argv, Str, Var, Err)                                              \
+  if (!OptVal(Argc, Argv, Str, Var))                                                               \
+  {                                                                                                \
+    fprintf(stderr, Err);                                                                          \
+    exit(1);                                                                                       \
   }
+
+} // namespace idx2
+
+namespace idx2
+{
+
+template <typename e> bool
+OptVal(int NArgs, cstr* Args, cstr Opt, e* Val)
+{
+  cstr BufPtr = nullptr;
+  if (!OptVal(NArgs, Args, Opt, &BufPtr))
+    return false;
+  *Val = StringTo<e>()(BufPtr);
+
+  return true;
+}
 
 } // namespace idx2
 
@@ -1803,15 +2325,15 @@ idx2_T(e) bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val); // output to an 
 //#include <x86intrin.h>
 #endif
 
-namespace idx2 {
+namespace idx2
+{
 
 /* Set the I(th) least significant bit of val to 1. Index starts at 0. */
-idx2_T(t) t    SetBit  (t Val, int I);
-idx2_T(t) t    UnsetBit(t Val, int I);
-idx2_T(t) bool BitSet  (t Val, int I);
-idx2_T(t) t    FlipBit (t Val, int I);
-
-idx2_T(t) t TakeFirstBits(t Val, int NBits);
+template <typename t> t SetBit(t Val, int I);
+template <typename t> t UnsetBit(t Val, int I);
+template <typename t> bool BitSet(t Val, int I);
+template <typename t> t FlipBit(t Val, int I);
+template <typename t> t TakeFirstBits(t Val, int NBits);
 
 /*
 Return the bit plane of the most significant one-bit. Counting starts from the
@@ -1836,55 +2358,62 @@ u32 DecodeMorton2X(u32 Code);
 u32 DecodeMorton2Y(u32 Code);
 
 /* Stuff three 21-bit uints into one 64-bit uint */
-u64 Pack3i64  (const v3i& V);
+u64 Pack3i64(const v3i& V);
 v3i Unpack3i64(u64 V);
 /* Return the low 32 bits of the input */
-u32 LowBits64 (u64 V);
+u32 LowBits64(u64 V);
 u32 HighBits64(u64 V);
 
 } // namespace idx2
 
 // #include "bitmap_tables.h"
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Ti(t) t
-SetBit(t Val, int I) {
+template <typename t> idx2_Inline t
+SetBit(t Val, int I)
+{
   idx2_Assert(I < (int)idx2_BitSizeOf(t));
   return Val | t((1ull << I));
 }
 
-idx2_Ti(t) t
-UnsetBit(t Val, int I) {
+template <typename t> idx2_Inline t
+UnsetBit(t Val, int I)
+{
   idx2_Assert(I < (int)idx2_BitSizeOf(t));
   return Val & t(~(1ull << I));
 }
 
-idx2_Ti(t) bool
-BitSet(t Val, int I) {
+template <typename t> idx2_Inline bool
+BitSet(t Val, int I)
+{
   idx2_Assert(I < (int)idx2_BitSizeOf(t));
   return 1 & (Val >> I);
 }
 
-idx2_Ti(t) t
-FlipBit(t Val, int I) {
+template <typename t> idx2_Inline t
+FlipBit(t Val, int I)
+{
   idx2_Assert(I < (int)idx2_BitSizeOf(t));
   return Val ^ t(1ull << I);
 }
 
-idx2_Ti(t) t
-TakeFirstBits(t Val, int NBits) {
+template <typename t> idx2_Inline t
+TakeFirstBits(t Val, int NBits)
+{
   int S = idx2_BitSizeOf(t);
   idx2_Assert(NBits <= S && NBits > 0);
-  int Shift = S - NBits ;
+  int Shift = S - NBits;
   t Mask = t(-1) << Shift;
   using u = typename traits<t>::unsigned_t;
   t Result = u(Val & Mask) >> Shift;
   return Result;
 }
 
-idx2_Ti(t) t
-TakeFirstBitsNoShift(t Val, int NBits) {
+template <typename t> idx2_Inline t
+TakeFirstBitsNoShift(t Val, int NBits)
+{
   int S = idx2_BitSizeOf(t);
   idx2_Assert(NBits <= S && NBits > 0);
   t Mask = t(-1) << (S - NBits);
@@ -1897,51 +2426,69 @@ TakeFirstBitsNoShift(t Val, int NBits) {
 #if defined(__clang__) || defined(__GNUC__)
 //#include <x86intrin.h>
 idx2_Inline i8
-Msb(u32 V, i8 Default) {
+Msb(u32 V, i8 Default)
+{
   return (V == 0) ? Default : i8(sizeof(u32) * 8 - 1 - __builtin_clz(V));
 }
+
 idx2_Inline i8
-Msb(u64 V, i8 Default) {
+Msb(u64 V, i8 Default)
+{
   return (V == 0) ? Default : i8(sizeof(u64) * 8 - 1 - __builtin_clzll(V));
 }
+
 idx2_Inline i8
-Lsb(u32 V, i8 Default) {
+Lsb(u32 V, i8 Default)
+{
   return (V == 0) ? Default : i8(__builtin_ctz(V));
 }
+
 idx2_Inline i8
-Lsb(u64 V, i8 Default) {
+Lsb(u64 V, i8 Default)
+{
   return (V == 0) ? Default : i8(__builtin_ctzll(V));
 }
+
 #elif defined(_MSC_VER)
 //#include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
 #pragma intrinsic(_BitScanReverse64)
+
 idx2_Inline i8
-Msb(u32 V, i8 Default) {
+Msb(u32 V, i8 Default)
+{
   unsigned long Index = 0;
   unsigned char Ret = _BitScanReverse(&Index, V);
   return Ret ? (i8)Index : Default;
 }
+
 idx2_Inline i8
-Msb(u64 V, i8 Default) {
+Msb(u64 V, i8 Default)
+{
   unsigned long Index = 0;
   unsigned char Ret = _BitScanReverse64(&Index, V);
   return Ret ? (i8)Index : Default;
 }
+
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanForward64)
+
 idx2_Inline i8
-Lsb(u32 V, i8 Default) {
+Lsb(u32 V, i8 Default)
+{
   unsigned long Index = 0;
   unsigned char Ret = _BitScanForward(&Index, V);
   return Ret ? (i8)Index : Default;
 }
+
 idx2_Inline i8
-Lsb(u64 V, i8 Default) {
+Lsb(u64 V, i8 Default)
+{
   unsigned long Index = 0;
   unsigned char Ret = _BitScanForward64(&Index, V);
   return Ret ? (i8)Index : Default;
 }
+
 #endif
 
 // TODO: the following clashes with stlab which brings in MSVC's intrin.h
@@ -1950,40 +2497,42 @@ Lsb(u64 V, i8 Default) {
 //#include <intrin.h>
 //#include <mmintrin.h>
 //#include <x86intrin.h>
-//idx2_Inline i8
-//LzCnt(u32 V, i8 Default) { return V ? (i8)_lzcnt_u32(V) : Default; }
-//idx2_Inline i8
-//LzCnt(u64 V, i8 Default) { return V ? (i8)_lzcnt_u64(V) : Default; }
-//idx2_Inline i8
-//TzCnt(u32 V, i8 Default) { return V ? (i8)_tzcnt_u32(V) : Default; }
-//idx2_Inline i8
-//TzCnt(u64 V, i8 Default) { return V ? (i8)_tzcnt_u64(V) : Default; }
+// idx2_Inline i8
+// LzCnt(u32 V, i8 Default) { return V ? (i8)_lzcnt_u32(V) : Default; }
+// idx2_Inline i8
+// LzCnt(u64 V, i8 Default) { return V ? (i8)_lzcnt_u64(V) : Default; }
+// idx2_Inline i8
+// TzCnt(u32 V, i8 Default) { return V ? (i8)_tzcnt_u32(V) : Default; }
+// idx2_Inline i8
+// TzCnt(u64 V, i8 Default) { return V ? (i8)_tzcnt_u64(V) : Default; }
 //#elif defined(_MSC_VER)
 //#include <intrin.h>
-//idx2_Inline i8
-//LzCnt(u32 V, i8 Default) { return V ? (i8)__lzcnt(V) : Default; }
-//idx2_Inline i8
-//LzCnt(u64 V, i8 Default) { return V ? (i8)__lzcnt64(V) : Default; }
-//idx2_Inline i8
-//TzCnt(u32 V, i8 Default) { return V ? (i8)__tzcnt(V) : Default; }
-//idx2_Inline i8
-//TzCnt(u64 V, i8 Default) { return V ? (i8)__tzcnt64(V) : Default; }
+// idx2_Inline i8
+// LzCnt(u32 V, i8 Default) { return V ? (i8)__lzcnt(V) : Default; }
+// idx2_Inline i8
+// LzCnt(u64 V, i8 Default) { return V ? (i8)__lzcnt64(V) : Default; }
+// idx2_Inline i8
+// TzCnt(u32 V, i8 Default) { return V ? (i8)__tzcnt(V) : Default; }
+// idx2_Inline i8
+// TzCnt(u64 V, i8 Default) { return V ? (i8)__tzcnt64(V) : Default; }
 //#endif
 //#endif
 
 /* Reverse the operation that inserts two 0 bits after every bit of x */
 idx2_Inline u32
-CompactBy2(u32 X) {
+CompactBy2(u32 X)
+{
   X &= 0x09249249;                  // X = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
-  X = (X ^ (X >>  2)) & 0x030c30c3; // X = ---- --98 ---- 76-- --54 ---- 32-- --10
-  X = (X ^ (X >>  4)) & 0x0300f00f; // X = ---- --98 ---- ---- 7654 ---- ---- 3210
-  X = (X ^ (X >>  8)) & 0x030000ff; // X = ---- --98 ---- ---- ---- ---- 7654 3210
+  X = (X ^ (X >> 2)) & 0x030c30c3;  // X = ---- --98 ---- 76-- --54 ---- 32-- --10
+  X = (X ^ (X >> 4)) & 0x0300f00f;  // X = ---- --98 ---- ---- 7654 ---- ---- 3210
+  X = (X ^ (X >> 8)) & 0x030000ff;  // X = ---- --98 ---- ---- ---- ---- 7654 3210
   X = (X ^ (X >> 16)) & 0x000003ff; // X = ---- ---- ---- ---- ---- --98 7654 3210
   return X;
 }
 
 idx2_Inline u32
-CompactBy1(u32 X) {
+CompactBy1(u32 X)
+{
   X &= 0x55555555;                 // X = -5-4 -3-2 -1-0 -9-8 -7-6 -5-4 -3-2 -1-0
   X = (X ^ (X >> 1)) & 0x33333333; // X = --54 --32 --10 --98 --76 --54 --32 --10
   X = (X ^ (X >> 2)) & 0x0f0f0f0f; // X = ---- 5432 ---- 1098 ---- 7654 ---- 3210
@@ -1994,80 +2543,114 @@ CompactBy1(u32 X) {
 
 /* Morton decoding */
 idx2_Inline v3<u32>
-DecodeMorton3(u32 Code) {
+DecodeMorton3(u32 Code)
+{
   return v3<u32>(CompactBy2(Code >> 0), CompactBy2(Code >> 1), CompactBy2(Code >> 2));
 }
 
 idx2_Inline u32
-DecodeMorton2X(u32 Code) { return CompactBy1(Code >> 0); }
-idx2_Inline u32
-DecodeMorton2Y(u32 Code) { return CompactBy1(Code >> 1); }
+DecodeMorton2X(u32 Code)
+{
+  return CompactBy1(Code >> 0);
+}
 
 idx2_Inline u32
-SplitBy2(u32 X) {
-  X &=                  0x000003ff; // X = ---- ---- ---- ---- ---- --98 7654 3210
+DecodeMorton2Y(u32 Code)
+{
+  return CompactBy1(Code >> 1);
+}
+
+idx2_Inline u32
+SplitBy2(u32 X)
+{
+  X &= 0x000003ff;                  // X = ---- ---- ---- ---- ---- --98 7654 3210
   X = (X ^ (X << 16)) & 0x030000ff; // X = ---- --98 ---- ---- ---- ---- 7654 3210
-  X = (X ^ (X <<  8)) & 0x0300f00f; // X = ---- --98 ---- ---- 7654 ---- ---- 3210
-  X = (X ^ (X <<  4)) & 0x030c30c3; // X = ---- --98 ---- 76-- --54 ---- 32-- --10
-  X = (X ^ (X <<  2)) & 0x09249249; // X = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
+  X = (X ^ (X << 8)) & 0x0300f00f;  // X = ---- --98 ---- ---- 7654 ---- ---- 3210
+  X = (X ^ (X << 4)) & 0x030c30c3;  // X = ---- --98 ---- 76-- --54 ---- 32-- --10
+  X = (X ^ (X << 2)) & 0x09249249;  // X = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
   return X;
 }
 
 idx2_Inline u32
-EncodeMorton3(const v3<u32>& Val) {
+EncodeMorton3(const v3<u32>& Val)
+{
   return SplitBy2(Val.X) | (SplitBy2(Val.Y) << 1) | (SplitBy2(Val.Z) << 2);
 }
 
 idx2_Inline u64
-SplitBy2(u64 X)  {
-  X &=                0x00000000001fffffULL;
+SplitBy2(u64 X)
+{
+  X &= 0x00000000001fffffULL;
   X = (X | X << 32) & 0x001f00000000ffffULL;
   X = (X | X << 16) & 0x001f0000ff0000ffULL;
-  X = (X | X <<  8) & 0x100f00f00f00f00fULL;
-  X = (X | X <<  4) & 0x10c30c30c30c30c3ULL;
-  X = (X | X <<  2) & 0x1249249249249249ULL;
+  X = (X | X << 8) & 0x100f00f00f00f00fULL;
+  X = (X | X << 4) & 0x10c30c30c30c30c3ULL;
+  X = (X | X << 2) & 0x1249249249249249ULL;
   return X;
 }
 
 idx2_Inline u64
-EncodeMorton3(const v3<u64>& Val) {
+EncodeMorton3(const v3<u64>& Val)
+{
   return SplitBy2(Val.X) | (SplitBy2(Val.Y) << 1) | (SplitBy2(Val.Z) << 2);
 }
 
 idx2_Inline u32
-CompactBy2(u64 X) {
-  X &=                  0x1249249249249249ULL;
-  X = (X ^ (X >>  2)) & 0x10c30c30c30c30c3ULL;
-  X = (X ^ (X >>  4)) & 0x100f00f00f00f00fULL;
-  X = (X ^ (X >>  8)) & 0x001f0000ff0000ffULL;
+CompactBy2(u64 X)
+{
+  X &= 0x1249249249249249ULL;
+  X = (X ^ (X >> 2)) & 0x10c30c30c30c30c3ULL;
+  X = (X ^ (X >> 4)) & 0x100f00f00f00f00fULL;
+  X = (X ^ (X >> 8)) & 0x001f0000ff0000ffULL;
   X = (X ^ (X >> 16)) & 0x001f00000000ffffULL;
   X = (X ^ (X >> 32)) & 0x00000000001fffffULL;
   return (u32)X;
 }
 
 idx2_Inline v3<u32>
-DecodeMorton3(u64 Code) {
+DecodeMorton3(u64 Code)
+{
   return v3<u32>(CompactBy2(Code >> 0), CompactBy2(Code >> 1), CompactBy2(Code >> 2));
 }
 
 idx2_Inline u32
-Pack3i32(const v3i& V) { return u32(V.X & 0x3FF) + (u32(V.Y & 0x3FF) << 10) + (u32(V.Z & 0x3FF) << 20); }
+Pack3i32(const v3i& V)
+{
+  return u32(V.X & 0x3FF) + (u32(V.Y & 0x3FF) << 10) + (u32(V.Z & 0x3FF) << 20);
+}
+
 idx2_Inline v3i
-Unpack3i32(u32 V) {
-  return v3i((i32(V & 0x3FF) << 22) >> 22, (i32(V & 0xFFC00) << 12) >> 22, (i32(V & 0x3FFFFC00) << 2) >> 22);
+Unpack3i32(u32 V)
+{
+  return v3i(
+    (i32(V & 0x3FF) << 22) >> 22, (i32(V & 0xFFC00) << 12) >> 22, (i32(V & 0x3FFFFC00) << 2) >> 22);
 }
 
 idx2_Inline u64
-Pack3i64(const v3i& V) { return u64(V.X & 0x1FFFFF) + (u64(V.Y & 0x1FFFFF) << 21) + (u64(V.Z & 0x1FFFFF) << 42); }
+Pack3i64(const v3i& V)
+{
+  return u64(V.X & 0x1FFFFF) + (u64(V.Y & 0x1FFFFF) << 21) + (u64(V.Z & 0x1FFFFF) << 42);
+}
+
 idx2_Inline v3i
-Unpack3i64(u64 V) {
-  return v3i((i64(V & 0x1FFFFF) << 43) >> 43, (i64(V & 0x3FFFFE00000) << 22) >> 43, (i64(V & 0x7FFFFC0000000000ull) << 1) >> 43);
+Unpack3i64(u64 V)
+{
+  return v3i((i64(V & 0x1FFFFF) << 43) >> 43,
+             (i64(V & 0x3FFFFE00000) << 22) >> 43,
+             (i64(V & 0x7FFFFC0000000000ull) << 1) >> 43);
 }
 
 idx2_Inline u32
-LowBits64(u64 V) { return V & 0xFFFFFFFF; }
+LowBits64(u64 V)
+{
+  return V & 0xFFFFFFFF;
+}
+
 idx2_Inline u32
-HighBits64(u64 V) { return V >> 32; }
+HighBits64(u64 V)
+{
+  return V >> 32;
+}
 
 // inline int
 // DecodeBitmap(u64 Val, int* Out) {
@@ -2083,14 +2666,13 @@ HighBits64(u64 V) { return V >> 32; }
 //       uint8_t ByteA = (uint8_t)Val;
 //       uint8_t ByteB = (uint8_t)(Val >> 8);
 //       Val >>= 16;
-//       __m256i VecA = _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteA])));
-//       __m256i VecB = _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteB])));
-//       uint8_t AdvanceA = lengthTable[ByteA];
-//       uint8_t AdvanceB = lengthTable[ByteB];
-//       VecA = _mm256_add_epi32(BaseVec, VecA);
-//       BaseVec = _mm256_add_epi32(BaseVec, Add8);
-//       VecB = _mm256_add_epi32(BaseVec, VecB);
-//       BaseVec = _mm256_add_epi32(BaseVec, Add8);
+//       __m256i VecA =
+//       _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteA])));
+//       __m256i VecB =
+//       _mm256_cvtepu8_epi32(_mm_cvtsi64_si128(*(uint64_t*)(vecDecodeTableByte[ByteB]))); uint8_t
+//       AdvanceA = lengthTable[ByteA]; uint8_t AdvanceB = lengthTable[ByteB]; VecA =
+//       _mm256_add_epi32(BaseVec, VecA); BaseVec = _mm256_add_epi32(BaseVec, Add8); VecB =
+//       _mm256_add_epi32(BaseVec, VecB); BaseVec = _mm256_add_epi32(BaseVec, Add8);
 //       _mm256_storeu_si256((__m256i*)Out, VecA);
 //       Out += AdvanceA;
 //       _mm256_storeu_si256((__m256i*)Out, VecB);
@@ -2103,15 +2685,16 @@ HighBits64(u64 V) { return V >> 32; }
 
 /* Reverse the bits in the input */
 idx2_Inline u32
-BitReverse(u32 a) {
+BitReverse(u32 a)
+{
   u32 t;
   a = (a << 15) | (a >> 17);
   t = (a ^ (a >> 10)) & 0x003f801f;
   a = (t + (t << 10)) ^ a;
-  t = (a ^ (a >>  4)) & 0x0e038421;
-  a = (t + (t <<  4)) ^ a;
-  t = (a ^ (a >>  2)) & 0x22488842;
-  a = (t + (t <<  2)) ^ a;
+  t = (a ^ (a >> 4)) & 0x0e038421;
+  a = (t + (t << 4)) ^ a;
+  t = (a ^ (a >> 2)) & 0x22488842;
+  a = (t + (t << 2)) ^ a;
   return a;
 }
 
@@ -2122,19 +2705,22 @@ BitReverse(u32 a) {
 // TODO: bound checking?
 
 /*
-A bit stream. LSB bits are written first. Bytes are written in little-endian
-order. */
+A bit stream. LSB bits are written first. Bytes are written in little-endian order.
+*/
 
-namespace idx2 {
+namespace idx2
+{
 
 /* Support only either reading or writing, not both at the same time */
-struct bitstream {
+struct bitstream
+{
   buffer Stream = {};
   byte* BitPtr = nullptr; // Pointer to current byte
-  u64 BitBuf = 0; // buffer
-  int BitPos = 0; // how many of those bits we've consumed/written
+  u64 BitBuf = 0;         // buffer
+  int BitPos = 0;         // how many of those bits we've consumed/written
 
-  inline static stack_array<u64, 65> Masks = []() {
+  inline static stack_array<u64, 65> Masks = []()
+  {
     stack_array<u64, 65> Masks;
     for (int I = 0; I < 64; ++I)
       Masks[I] = (u64(1) << I) - 1;
@@ -2143,10 +2729,10 @@ struct bitstream {
   }();
 };
 
-void Rewind    (bitstream* Bs);
-i64  Size      (const bitstream& Bs);
-i64  BitSize   (const bitstream& Bs);
-int  BufferSize(const bitstream& Bs);
+void Rewind(bitstream* Bs);
+i64 Size(const bitstream& Bs);
+i64 BitSize(const bitstream& Bs);
+int BufferSize(const bitstream& Bs);
 /* ---------------- Read functions ---------------- */
 void InitRead(bitstream* Bs, const buffer& Stream);
 /* Refill our buffer (replace the consumed bytes with new bytes from memory) */
@@ -2176,9 +2762,9 @@ void FlushAndMoveToNextByte(bitstream* Bs);
 /* Put "Count" bits into the buffer (Count <= 64 - BitPos) */
 void Put(bitstream* Bs, u64 N, int Count = 1);
 /* Write "Count" bits into the stream (Count <= 64 - 7) */
-u64  Write(bitstream* Bs, u64 N, int Count = 1);
+u64 Write(bitstream* Bs, u64 N, int Count = 1);
 /* Similar to Write() but Count is less restrictive (Count <= 64) */
-u64  WriteLong(bitstream* Bs, u64 N, int Count);
+u64 WriteLong(bitstream* Bs, u64 N, int Count);
 /* Flush and write stream Src to Bs, at byte granularity */
 void WriteStream(bitstream* Bs, bitstream* Src);
 void WriteBuffer(bitstream* Bs, const buffer& Src);
@@ -2207,25 +2793,37 @@ void Dealloc(bitstream* Bs);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 idx2_Inline void
-Rewind(bitstream* Bs) {
+Rewind(bitstream* Bs)
+{
   Bs->BitPtr = Bs->Stream.Data;
   Bs->BitBuf = Bs->BitPos = 0;
 }
 
 idx2_Inline i64
-Size(const bitstream& Bs) { return (Bs.BitPtr - Bs.Stream.Data) + (Bs.BitPos + 7) / 8; }
+Size(const bitstream& Bs)
+{
+  return (Bs.BitPtr - Bs.Stream.Data) + (Bs.BitPos + 7) / 8;
+}
 
 idx2_Inline i64
-BitSize(const bitstream& Bs) { return (Bs.BitPtr - Bs.Stream.Data) * 8 + Bs.BitPos; }
+BitSize(const bitstream& Bs)
+{
+  return (Bs.BitPtr - Bs.Stream.Data) * 8 + Bs.BitPos;
+}
 
 idx2_Inline int
-BufferSize(const bitstream& Bs) { return sizeof(Bs.BitBuf); }
+BufferSize(const bitstream& Bs)
+{
+  return sizeof(Bs.BitBuf);
+}
 
 idx2_Inline void
-InitRead(bitstream* Bs, const buffer& Stream) {
+InitRead(bitstream* Bs, const buffer& Stream)
+{
   idx2_Assert(!Stream.Data || Stream.Bytes > 0);
   Bs->Stream = Stream;
   Rewind(Bs);
@@ -2233,28 +2831,32 @@ InitRead(bitstream* Bs, const buffer& Stream) {
 }
 
 idx2_Inline void
-Refill(bitstream* Bs) {
+Refill(bitstream* Bs)
+{
   idx2_Assert(Bs->BitPos <= 64);
-  Bs->BitPtr += Bs->BitPos >> 3; // ignore the bytes we've consumed
+  Bs->BitPtr += Bs->BitPos >> 3;  // ignore the bytes we've consumed
   Bs->BitBuf = *(u64*)Bs->BitPtr; // refill
-  Bs->BitPos &= 7; // (% 8) left over bits that don't make a full byte
+  Bs->BitPos &= 7;                // (% 8) left over bits that don't make a full byte
 }
 
 idx2_Inline u64
-Peek(bitstream* Bs, int Count) {
+Peek(bitstream* Bs, int Count)
+{
   idx2_Assert(Count >= 0 && Bs->BitPos + Count <= 64);
-  u64 Remaining = Bs->BitBuf >> Bs->BitPos; // the bits we have not consumed
+  u64 Remaining = Bs->BitBuf >> Bs->BitPos;   // the bits we have not consumed
   return Remaining & bitstream::Masks[Count]; // return the bottom count bits
 }
 
 idx2_Inline void
-Consume(bitstream* Bs, int Count) {
+Consume(bitstream* Bs, int Count)
+{
   idx2_Assert(Count + Bs->BitPos <= 64);
   Bs->BitPos += Count;
 }
 
 idx2_Inline u64
-Read(bitstream* Bs, int Count) {
+Read(bitstream* Bs, int Count)
+{
   idx2_Assert(Count >= 0 && Count <= 64 - 7);
   if (Count + Bs->BitPos > 64)
     Refill(Bs);
@@ -2264,12 +2866,14 @@ Read(bitstream* Bs, int Count) {
 }
 
 idx2_Inline u64
-ReadLong(bitstream* Bs, int Count) {
+ReadLong(bitstream* Bs, int Count)
+{
   idx2_Assert(Count >= 0 && Count <= 64);
   int FirstBatchCount = Min(Count, 64 - Bs->BitPos);
   u64 Result = Peek(Bs, FirstBatchCount);
   Consume(Bs, FirstBatchCount);
-  if (Count > FirstBatchCount) {
+  if (Count > FirstBatchCount)
+  {
     Refill(Bs);
     Result |= Peek(Bs, Count - FirstBatchCount) << FirstBatchCount;
     Consume(Bs, Count - FirstBatchCount);
@@ -2278,7 +2882,8 @@ ReadLong(bitstream* Bs, int Count) {
 }
 
 idx2_Inline void
-InitWrite(bitstream* Bs, const buffer& Buf) {
+InitWrite(bitstream* Bs, const buffer& Buf)
+{
   idx2_Assert((size_t)Buf.Bytes >= sizeof(Bs->BitBuf));
   Bs->Stream = Buf;
   Bs->BitPtr = Buf.Data;
@@ -2286,27 +2891,30 @@ InitWrite(bitstream* Bs, const buffer& Buf) {
 }
 
 idx2_Inline void
-InitWrite(bitstream* Bs, i64 Bytes, allocator* Alloc) {
+InitWrite(bitstream* Bs, i64 Bytes, allocator* Alloc)
+{
   Alloc->Alloc(&Bs->Stream, Bytes + sizeof(Bs->BitBuf));
   Bs->BitPtr = Bs->Stream.Data;
   Bs->BitBuf = Bs->BitPos = 0;
 }
 
 idx2_Inline void
-Flush(bitstream* Bs) {
+Flush(bitstream* Bs)
+{
   idx2_Assert(Bs->BitPos <= 64);
   /* write the buffer to memory */
   *(u64*)Bs->BitPtr = Bs->BitBuf; // TODO: make sure this write is in little-endian
-  int BytePos = Bs->BitPos >> 3; // number of bytes in the buffer we have used
+  int BytePos = Bs->BitPos >> 3;  // number of bytes in the buffer we have used
   /* shift the buffer to the right (the convoluted logic is to avoid shifting by 64 bits) */
   if (BytePos > 0)
     Bs->BitBuf = (Bs->BitBuf >> 1) >> ((BytePos << 3) - 1);
   Bs->BitPtr += BytePos; // advance the pointer
-  Bs->BitPos &= 7; // % 8
+  Bs->BitPos &= 7;       // % 8
 }
 
-inline void
-FlushAndMoveToNextByte(bitstream* Bs) {
+idx2_Inline void
+FlushAndMoveToNextByte(bitstream* Bs)
+{
   *(u64*)Bs->BitPtr = Bs->BitBuf;
   int BytePos = Bs->BitPos >> 3;
   Bs->BitPtr += BytePos + ((Bs->BitPos & 0x7) != 0); // advance the pointer
@@ -2314,14 +2922,16 @@ FlushAndMoveToNextByte(bitstream* Bs) {
 }
 
 idx2_Inline void
-Put(bitstream* Bs, u64 N, int Count) {
+Put(bitstream* Bs, u64 N, int Count)
+{
   idx2_Assert(Count >= 0 && Bs->BitPos + Count <= 64);
   Bs->BitBuf |= (N & bitstream::Masks[Count]) << Bs->BitPos;
   Bs->BitPos += Count;
 }
 
 idx2_Inline u64
-Write(bitstream* Bs, u64 N, int Count) {
+Write(bitstream* Bs, u64 N, int Count)
+{
   idx2_Assert(Count >= 0 && Count <= 64 - 7);
   if (Count + Bs->BitPos >= 64)
     Flush(Bs);
@@ -2330,11 +2940,13 @@ Write(bitstream* Bs, u64 N, int Count) {
 }
 
 idx2_Inline u64
-WriteLong(bitstream* Bs, u64 N, int Count) {
+WriteLong(bitstream* Bs, u64 N, int Count)
+{
   idx2_Assert(Count >= 0 && Count <= 64);
   int FirstBatchCount = Min(Count, 64 - Bs->BitPos);
   Put(Bs, N, FirstBatchCount);
-  if (Count > FirstBatchCount) {
+  if (Count > FirstBatchCount)
+  {
     Flush(Bs);
     Put(Bs, N >> FirstBatchCount, Count - FirstBatchCount);
   }
@@ -2342,7 +2954,8 @@ WriteLong(bitstream* Bs, u64 N, int Count) {
 }
 
 inline void
-WriteStream(bitstream* Bs, bitstream* Src) {
+WriteStream(bitstream* Bs, bitstream* Src)
+{
   FlushAndMoveToNextByte(Bs);
   Flush(Src);
   buffer Dst = Bs->Stream + Size(*Bs);
@@ -2351,7 +2964,8 @@ WriteStream(bitstream* Bs, bitstream* Src) {
 }
 
 inline void
-WriteBuffer(bitstream* Bs, const buffer& Src) {
+WriteBuffer(bitstream* Bs, const buffer& Src)
+{
   FlushAndMoveToNextByte(Bs);
   buffer Dst = Bs->Stream + Size(*Bs);
   MemCopy(Src, &Dst);
@@ -2359,19 +2973,27 @@ WriteBuffer(bitstream* Bs, const buffer& Src) {
 }
 
 idx2_Inline void
-RepeatedWrite(bitstream* Bs, bool B, int Count) {
+RepeatedWrite(bitstream* Bs, bool B, int Count)
+{
   idx2_Assert(Count >= 0);
   u64 N = ~(u64(B) - 1);
-  if (Count <= 64 - 7) { // write at most 57 bits
+  if (Count <= 64 - 7)
+  { // write at most 57 bits
     Write(Bs, N, Count);
-  } else { // write more than 57 bits
-    while (true) {
+  }
+  else
+  { // write more than 57 bits
+    while (true)
+    {
       int NBits = 64 - Bs->BitPos;
-      if (NBits <= Count) {
+      if (NBits <= Count)
+      {
         Put(Bs, N, NBits);
         Count -= NBits;
         Flush(Bs);
-      } else {
+      }
+      else
+      {
         Put(Bs, N, Count);
         break;
       }
@@ -2380,57 +3002,67 @@ RepeatedWrite(bitstream* Bs, bool B, int Count) {
 }
 
 idx2_Inline void
-SeekToByte(bitstream* Bs, i64 ByteOffset) {
+SeekToByte(bitstream* Bs, i64 ByteOffset)
+{
   Bs->BitPtr = Bs->Stream.Data + ByteOffset;
   Bs->BitBuf = *(u64*)Bs->BitPtr; // refill
   Bs->BitPos = 0;
 }
 
 idx2_Inline void
-SeekToNextByte(bitstream* Bs) {
+SeekToNextByte(bitstream* Bs)
+{
   SeekToByte(Bs, Bs->BitPtr - Bs->Stream.Data + ((Bs->BitPos + 7) >> 3));
 }
 
 idx2_Inline void
-SeekToBit(bitstream* Bs, i64 BitOffset) {
+SeekToBit(bitstream* Bs, i64 BitOffset)
+{
   Bs->BitPtr = Bs->Stream.Data + (BitOffset >> 3);
   Bs->BitBuf = *(u64*)Bs->BitPtr; // refill
-  Bs->BitPos = (BitOffset & 7); // (% 8)
+  Bs->BitPos = (BitOffset & 7);   // (% 8)
 }
 
 idx2_Inline buffer
-ToBuffer(const bitstream& Bs) {
-    return buffer{Bs.Stream.Data, Size(Bs), Bs.Stream.Alloc};
+ToBuffer(const bitstream& Bs)
+{
+  return buffer{ Bs.Stream.Data, Size(Bs), Bs.Stream.Alloc };
 }
 
 idx2_Inline void
-Dealloc(bitstream* Bs) {
+Dealloc(bitstream* Bs)
+{
   Bs->Stream.Alloc->Dealloc(&(Bs->Stream));
   Bs->BitPtr = Bs->Stream.Data;
   Bs->BitBuf = Bs->BitPos = 0;
 }
 
 idx2_Inline void
-Zero(bitstream* Bs) {
+Zero(bitstream* Bs)
+{
   ZeroBuf(&(Bs->Stream));
   Bs->BitBuf = 0;
 }
 
 idx2_Inline void
-Pad0sUntil(bitstream* Bs, i64 BitCount) {
+Pad0sUntil(bitstream* Bs, i64 BitCount)
+{
   RepeatedWrite(Bs, false, int(BitCount - BitSize(*Bs)));
 }
 
 idx2_Inline void
-GrowIfTooFull(bitstream* Bs) {
-  if (Size(*Bs) * 10 > Size(Bs->Stream) * 8) { // we grow at 80% capacity
+GrowIfTooFull(bitstream* Bs)
+{
+  if (Size(*Bs) * 10 > Size(Bs->Stream) * 8)
+  { // we grow at 80% capacity
     auto NewCapacity = (Size(Bs->Stream) * 3) / 2 + 8;
     IncreaseCapacity(Bs, NewCapacity);
   }
 }
 
 idx2_Inline void
-GrowToAccomodate(bitstream* Bs, i64 AddedCapacity) {
+GrowToAccomodate(bitstream* Bs, i64 AddedCapacity)
+{
   i64 OriginalCapacity = Size(Bs->Stream);
   i64 NewCapacity = OriginalCapacity;
   while (Size(*Bs) + AddedCapacity + (i64)sizeof(Bs->BitBuf) >= NewCapacity)
@@ -2440,9 +3072,11 @@ GrowToAccomodate(bitstream* Bs, i64 AddedCapacity) {
 }
 
 idx2_Inline void
-IncreaseCapacity(bitstream* Bs, i64 NewCapacity) {
+IncreaseCapacity(bitstream* Bs, i64 NewCapacity)
+{
   NewCapacity += sizeof(Bs->BitBuf);
-  if (Size(Bs->Stream) < NewCapacity) {
+  if (Size(Bs->Stream) < NewCapacity)
+  {
     buffer NewBuf;
     AllocBuf(&NewBuf, NewCapacity, Bs->Stream.Alloc);
     MemCopy(Bs->Stream, &NewBuf, Size(*Bs));
@@ -2454,34 +3088,56 @@ IncreaseCapacity(bitstream* Bs, i64 NewCapacity) {
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_TI(t, N)
-struct circular_queue {
+template <typename t, int N> struct circular_queue;
+
+template <typename t, int N> i16 Size(const circular_queue<t, N>& Queue);
+template <typename t, int N> bool IsFull(const circular_queue<t, N>& Queue);
+/* Return the absolute array index of that element, so that it can be later accessed directly */
+template <typename t, int N> i16 PushBack(circular_queue<t, N>* Queue, const t& Val);
+/* Return the first value popped */
+template <typename t, int N> t PopFront(circular_queue<t, N>* Queue, i16 Count = 1);
+/* Return the first value popped */
+template <typename t, int N> t PopBack(circular_queue<t, N>* Queue, i16 Count = 1);
+template <typename t, int N> void Clear(circular_queue<t, N>* Queue);
+
+} // namespace idx2
+
+namespace idx2
+{
+
+template <typename t, int N> struct circular_queue
+{
   static_assert((N & (N - 1)) == 0);
   stack_array<t, N> Buffer;
   i16 Start = 0;
   i16 End = 0; // exclusive
-  t& operator[](i16 Idx) {
+
+  t&
+  operator[](i16 Idx)
+  {
     idx2_Assert(Idx < Size(*this));
     return Buffer[(Start + Idx) & (N - 1)];
   }
 };
 
-idx2_TI(t, N) i16
-Size(const circular_queue<t, N>& Queue) {
+template <typename t, int N> i16
+Size(const circular_queue<t, N>& Queue)
+{
   return (Queue.Start <= Queue.End) ? (Queue.End - Queue.Start) : (N - (Queue.Start - Queue.End));
 }
 
-idx2_TI(t, N) bool
-IsFull(const circular_queue<t, N>& Queue) {
+template <typename t, int N> bool
+IsFull(const circular_queue<t, N>& Queue)
+{
   return Size(Queue) == N - 1;
 }
 
-/* Push a value to the back of the queue.
- * Return the absolute array index of that element, so that it can be later accessed directly. */
-idx2_TI(t, N) i16
-PushBack(circular_queue<t, N>* Queue, const t& Val) {
+template <typename t, int N> i16
+PushBack(circular_queue<t, N>* Queue, const t& Val)
+{
   idx2_Assert(!IsFull(*Queue) || false);
   Queue->Buffer[Queue->End++] = Val;
   i16 Pos = Queue->End;
@@ -2489,10 +3145,9 @@ PushBack(circular_queue<t, N>* Queue, const t& Val) {
   return Pos;
 }
 
-/* Pop values from the front of the queue.
- * Return the first value popped. */
-idx2_TI(t, N) t
-PopFront(circular_queue<t, N>* Queue, i16 Count = 1) {
+template <typename t, int N> t
+PopFront(circular_queue<t, N>* Queue, i16 Count)
+{
   idx2_Assert(Count <= Size(*Queue));
   i16 Pos = Queue->Start;
   Queue->Start += Count;
@@ -2500,10 +3155,9 @@ PopFront(circular_queue<t, N>* Queue, i16 Count = 1) {
   return Queue->Buffer[Pos];
 }
 
-/* Pop values from the back of the queue.
- * Return the first value popped. */
-idx2_TI(t, N) t
-PopBack(circular_queue<t, N>* Queue, i16 Count = 1) {
+template <typename t, int N> t
+PopBack(circular_queue<t, N>* Queue, i16 Count)
+{
   idx2_Assert(Count <= Size(*Queue));
   i16 Pos = Queue->Start;
   Queue->End -= Count;
@@ -2511,12 +3165,14 @@ PopBack(circular_queue<t, N>* Queue, i16 Count = 1) {
   return Queue->Buffer[Pos];
 }
 
-idx2_TI(t, N) void
-Clear(circular_queue<t, N>* Queue) {
+template <typename t, int N> void
+Clear(circular_queue<t, N>* Queue)
+{
   Queue->Start = Queue->End = 0;
 }
 
-// Commented out since we can easily traverse a circular queue using indices from 0 to Size(Queue) and the [] operator
+// Commented out since we can easily traverse a circular queue using indices from 0 to Size(Queue)
+// and the [] operator
 ///* Traverse a circular queue:
 // * Pos  = name of the current index
 // * Body = the code to apply during traversal */
@@ -2530,32 +3186,50 @@ Clear(circular_queue<t, N>* Queue) {
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 /* v is from 0 to n-1 */
+void EncodeCenteredMinimal(u32 v, u32 n, bitstream* Bs);
+u32 DecodeCenteredMinimal(u32 n, bitstream* Bs);
+
+} // namespace idx2
+
+namespace idx2
+{
+
 inline void
-EncodeCenteredMinimal(u32 v, u32 n, bitstream* Bs) {
+EncodeCenteredMinimal(u32 v, u32 n, bitstream* Bs)
+{
   idx2_Assert(n > 0);
   idx2_Assert(v < n);
-  if (n == 2) {
+  if (n == 2)
+  {
     Write(Bs, v == 1);
     return;
-  } else if (n == 1) {
+  }
+  else if (n == 1)
+  {
     return;
   }
   u32 l1 = Msb(n);
   u32 l2 = ((1 << l1) == n) ? l1 : l1 + 1;
   u32 d = (1 << l2) - n;
   u32 m = (n - d) / 2;
-  if (v < m) {
+  if (v < m)
+  {
     v = BitReverse(v);
     v >>= sizeof(v) * 8 - l2;
     Write(Bs, v, l2);
-  } else if (v >= m + d) {
+  }
+  else if (v >= m + d)
+  {
     v = BitReverse(v - d);
     v >>= sizeof(v) * 8 - l2;
     Write(Bs, v, l2);
-  } else { // middle
+  }
+  else
+  { // middle
     v = BitReverse(v);
     v >>= sizeof(v) * 8 - l1;
     Write(Bs, v, l1);
@@ -2563,9 +3237,11 @@ EncodeCenteredMinimal(u32 v, u32 n, bitstream* Bs) {
 }
 
 inline u32
-DecodeCenteredMinimal(u32 n, bitstream* Bs) {
+DecodeCenteredMinimal(u32 n, bitstream* Bs)
+{
   idx2_Assert(n > 0);
-  if (n == 2) {
+  if (n == 2)
+  {
     return (u32)Read(Bs);
   }
   u32 l1 = Msb(n);
@@ -2576,13 +3252,18 @@ DecodeCenteredMinimal(u32 n, bitstream* Bs) {
   u32 v = (u32)Peek(Bs, l2);
   v <<= sizeof(v) * 8 - l2;
   v = BitReverse(v);
-  if (v < m) {
+  if (v < m)
+  {
     Consume(Bs, l2);
     return v;
-  } else if (v < 2 * m) {
+  }
+  else if (v < 2 * m)
+  {
     Consume(Bs, l2);
     return v + d;
-  } else {
+  }
+  else
+  {
     Consume(Bs, l1);
     return v >> 1;
   }
@@ -2607,11 +3288,11 @@ namespace idx2
 #define idx2_StRef(x) idx2::stref((x), sizeof(x) - 1)
 
 /*
-A "view" into a (usually bigger) null-terminated string. A string_ref itself is
-not null-terminated.
+A "view" into a (usually bigger) null-terminated string. A string_ref itself is not null-terminated.
 There are two preferred ways to construct a string_ref from a char[] array:
   - Use the idx2_StringRef macro to make string_ref refer to the entire array
-  - Use the string_ref(const char*) constructor to refer up to the first NULL */
+  - Use the string_ref(const char*) constructor to refer up to the first NULL
+*/
 struct stref
 {
   union
@@ -2628,35 +3309,64 @@ struct stref
   operator bool() const;
 }; // struct string_ref
 
-int Size(const stref& Str);
+int
+Size(const stref& Str);
 
-cstr ToString(const stref& Str);
-str  Begin   (stref Str);
-str  End     (stref Str);
-str  RevBegin(stref Str);
-str  RevEnd  (stref Str);
-bool operator==(const stref& Lhs, const stref& Rhs);
+cstr
+ToString(const stref& Str);
+
+str
+Begin(stref Str);
+
+str
+End(stref Str);
+
+str
+RevBegin(stref Str);
+
+str
+RevEnd(stref Str);
+
+bool
+operator==(const stref& Lhs, const stref& Rhs);
 
 /* Remove spaces at the start of a string */
-stref TrimLeft (const stref& Str);
-stref TrimRight(const stref& Str);
-stref Trim     (const stref& Str);
+stref
+TrimLeft(const stref& Str);
+
+stref
+TrimRight(const stref& Str);
+
+stref
+Trim(const stref& Str);
+
 /*
 Return a substring of a given string. The substring starts at Begin and has
 length Size. Return the empty string if no proper substring can be constructed
-(e.g. Begin >= Str.Size). */
-stref SubString(const stref& Str, int Begin, int Size);
+(e.g. Begin >= Str.Size).
+*/
+stref
+SubString(const stref& Str, int Begin, int Size);
+
 /*
 Copy the underlying buffer referred to by Src to the one referred to by Dst.
 AddNull should be true whenever dst represents a whole string (as opposed to a
 substring). If Src is larger than Dst, we copy as many characters as we can. We
 always assume that the null character can be optionally added without
-overflowing the memory of Dst. */
-void Copy(const stref& Src, stref* Dst, bool AddNull = true);
+overflowing the memory of Dst.
+*/
+void
+Copy(const stref& Src, stref* Dst, bool AddNull = true);
+
 /* Parse a string_ref and return a number */
-bool ToInt   (const stref& Str, int* Result);
-bool ToInt64 (const stref& Str, i64* Result);
-bool ToDouble(const stref& Str, f64* Result);
+bool
+ToInt(const stref& Str, int* Result);
+
+bool
+ToInt64(const stref& Str, i64* Result);
+
+bool
+ToDouble(const stref& Str, f64* Result);
 
 /* Tokenize strings without allocating memory */
 struct tokenizer
@@ -2669,9 +3379,12 @@ struct tokenizer
   tokenizer(const stref& InputIn, const stref& DelimsIn = " \n\t");
 }; // struct tokenizer
 
-void  Init (tokenizer* Tk, const stref& Input, const stref& Delims = " \n\t");
-stref Next (tokenizer* Tk);
-void  Reset(tokenizer* Tk);
+void
+Init(tokenizer* Tk, const stref& Input, const stref& Delims = " \n\t");
+stref
+Next(tokenizer* Tk);
+void
+Reset(tokenizer* Tk);
 
 } // namespace idx2
 
@@ -2681,27 +3394,78 @@ void  Reset(tokenizer* Tk);
 namespace idx2
 {
 
-idx2_Inline stref::stref() = default;
-idx2_Inline stref::stref(cstr PtrIn, int SizeIn) : ConstPtr(PtrIn), Size(SizeIn) { }
-idx2_Inline stref::stref(cstr PtrIn) : ConstPtr(PtrIn), Size(int(strlen(PtrIn))) { }
+idx2_Inline
+stref::stref() = default;
 
-idx2_Inline char& stref::operator[](int Idx) const
-{ assert(Idx < Size); return const_cast<char&>(Ptr[Idx]); }
+idx2_Inline
+stref::stref(cstr PtrIn, int SizeIn)
+  : ConstPtr(PtrIn)
+  , Size(SizeIn)
+{
+}
 
-idx2_Inline stref::operator bool() const { return Ptr != nullptr; }
+idx2_Inline
+stref::stref(cstr PtrIn)
+  : ConstPtr(PtrIn)
+  , Size(int(strlen(PtrIn)))
+{
+}
 
-idx2_Inline int Size(const stref& Str) { return Str.Size; }
+idx2_Inline char&
+stref::operator[](int Idx) const
+{
+  assert(Idx < Size);
+  return const_cast<char&>(Ptr[Idx]);
+}
 
-idx2_Inline str Begin   (stref Str) { return Str.Ptr;                }
-idx2_Inline str End     (stref Str) { return Str.Ptr + Str.Size;     }
-idx2_Inline str RevBegin(stref Str) { return Str.Ptr + Str.Size - 1; }
-idx2_Inline str RevEnd  (stref Str) { return Str.Ptr - 1;            }
+idx2_Inline stref::operator bool() const
+{
+  return Ptr != nullptr;
+}
 
-idx2_Inline tokenizer::tokenizer() = default;
-idx2_Inline tokenizer::tokenizer(const stref& InputIn, const stref& DelimsIn)
-  : Input(InputIn), Delims(DelimsIn), Pos(0) { }
+idx2_Inline int
+Size(const stref& Str)
+{
+  return Str.Size;
+}
 
-idx2_Inline void Init(tokenizer* Tk, const stref& Input, const stref& Delims)
+idx2_Inline str
+Begin(stref Str)
+{
+  return Str.Ptr;
+}
+
+idx2_Inline str
+End(stref Str)
+{
+  return Str.Ptr + Str.Size;
+}
+
+idx2_Inline str
+RevBegin(stref Str)
+{
+  return Str.Ptr + Str.Size - 1;
+}
+
+idx2_Inline str
+RevEnd(stref Str)
+{
+  return Str.Ptr - 1;
+}
+
+idx2_Inline
+tokenizer::tokenizer() = default;
+
+idx2_Inline
+tokenizer::tokenizer(const stref& InputIn, const stref& DelimsIn)
+  : Input(InputIn)
+  , Delims(DelimsIn)
+  , Pos(0)
+{
+}
+
+idx2_Inline void
+Init(tokenizer* Tk, const stref& Input, const stref& Delims)
 {
   Tk->Input = Input;
   Tk->Delims = Delims;
@@ -2711,25 +3475,43 @@ idx2_Inline void Init(tokenizer* Tk, const stref& Input, const stref& Delims)
 } // namespace idx2
 
 /* Example usage: idx2_Enum(error_type, u8, OutOfMemory, FileNotFound) */
-#define idx2_Enum(enum_name, type, ...)\
-namespace idx2 {\
-struct enum_name {\
-  enum : type { __Invalid__, __VA_ARGS__ };\
-  type Val;\
-  enum_name();\
-  enum_name(type Val);\
-  enum_name& operator=(type Val);\
-  explicit enum_name(stref Name);\
-  explicit operator bool() const;\
-}; /* struct enum_name */\
-\
-stref ToString(enum_name Enum);\
-} // namespace idx2
+#define idx2_Enum(enum_name, type, ...)                                                            \
+                                                                                                   \
+  namespace idx2                                                                                   \
+  {                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  struct enum_name                                                                                 \
+  {                                                                                                \
+    enum : type                                                                                    \
+    {                                                                                              \
+      __Invalid__,                                                                                 \
+      __VA_ARGS__                                                                                  \
+    };                                                                                             \
+    type Val;                                                                                      \
+    enum_name();                                                                                   \
+    enum_name(type Val);                                                                           \
+    enum_name& operator=(type Val);                                                                \
+    explicit enum_name(stref Name);                                                                \
+    explicit operator bool() const;                                                                \
+  }; /* struct enum_name */                                                                        \
+                                                                                                   \
+                                                                                                   \
+  stref ToString(enum_name Enum);                                                                  \
+                                                                                                   \
+                                                                                                   \
+  } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
+
 /* Construct an enum from a string */
-idx2_T(t) struct StringTo { t operator()(stref Name); };
-}
+template <typename t> struct StringTo
+{
+  t operator()(stref Name);
+};
+
+} // namespace idx2
 
 #include <assert.h>
 #include <ctype.h>
@@ -2737,107 +3519,141 @@ idx2_T(t) struct StringTo { t operator()(stref Name); };
 #include <stdlib.h>
 
 #undef idx2_Enum
-#define idx2_Enum(enum_name, type, ...)\
-namespace idx2 {\
-\
-enum class enum_name : type { __VA_ARGS__, __Invalid__ };\
-\
-struct idx2_Cat(enum_name, _s) {\
-  enum_name Val;\
-  struct enum_item {\
-    stref Name;\
-    enum_name ItemVal;\
-  };\
-  \
-  using name_map = stack_array<enum_item, idx2_NumArgs(__VA_ARGS__)>;\
-  \
-  inline static name_map NameMap = []() {\
-    name_map MyNameMap;\
-    tokenizer Tk1(idx2_Str(__VA_ARGS__), ",");\
-    type CurrentVal = 0;\
-    for (int I = 0; ; ++I, ++CurrentVal) {\
-      stref Token = Next(&Tk1);\
-      if (!Token) break;\
-      tokenizer Tk2(Token, " =");\
-      stref EnumStr = Next(&Tk2);\
-      stref EnumVal = Next(&Tk2);\
-      if (EnumVal) {\
-        char* EndPtr = nullptr;\
-        errno = 0;\
-        enum_name MyVal = enum_name(strtol(EnumVal.Ptr, &EndPtr, 10));\
-        if (errno == ERANGE || EndPtr == EnumVal.Ptr || !EndPtr ||\
-            !(isspace(*EndPtr) || *EndPtr == ',' || *EndPtr == '\0'))\
-          assert(false && " non-integer enum values");\
-        else if (MyVal < static_cast<enum_name>(CurrentVal))\
-          assert(false && " non-increasing enum values");\
-        else\
-          CurrentVal = static_cast<type>(MyVal);\
-      }\
-      assert(I < Size(MyNameMap));\
-      MyNameMap[I] = enum_item{EnumStr, static_cast<enum_name>(CurrentVal)};\
-    }\
-    return MyNameMap;\
-  }();\
-  \
-  idx2_Cat(enum_name, _s)() : idx2_Cat(enum_name, _s)(enum_name::__Invalid__) {}\
-  \
-  idx2_Cat(enum_name, _s)(enum_name Value) {\
-    auto* It = Begin(NameMap);\
-    while (It != End(NameMap)) {\
-      if (It->ItemVal == Value)\
-        break;\
-      ++It;\
-    }\
-    this->Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;\
-  }\
-  \
-  explicit idx2_Cat(enum_name, _s)(stref Name) {\
-    auto* It = Begin(NameMap);\
-    while (It != End(NameMap)) {\
-      if (It->Name == Name)\
-        break;\
-      ++It;\
-    }\
-    Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;\
-  }\
-  \
-  explicit operator bool() const { return Val != enum_name::__Invalid__; }  \
-};\
-\
-inline stref \
-ToString(enum_name Enum) {\
-  idx2_Cat(enum_name, _s) EnumS(Enum);\
-  auto* It = Begin(EnumS.NameMap);\
-  while (It != End(EnumS.NameMap)) {\
-    if (It->ItemVal == EnumS.Val)\
-      break;\
-    ++It;\
-  }\
-  assert(It != End(EnumS.NameMap));\
-  return It->Name;\
-}\
-\
-template <>\
-struct StringTo<enum_name> {\
-  enum_name operator()(stref Name) {\
-    idx2_Cat(enum_name, _s) EnumS(Name);\
-    return EnumS.Val;\
-  }\
-};\
-\
-inline bool \
-IsValid(enum_name Enum) { \
-  idx2_Cat(enum_name, _s) EnumS(Enum); \
-  return EnumS.Val != enum_name::__Invalid__; \
-} \
-} // namespace idx2
+#define idx2_Enum(enum_name, type, ...)                                                            \
+                                                                                                   \
+  namespace idx2                                                                                   \
+  {                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  enum class enum_name : type                                                                      \
+  {                                                                                                \
+    __VA_ARGS__,                                                                                   \
+    __Invalid__                                                                                    \
+  };                                                                                               \
+                                                                                                   \
+  struct idx2_Cat(enum_name, _s)                                                                   \
+  {                                                                                                \
+    enum_name Val;                                                                                 \
+    struct enum_item                                                                               \
+    {                                                                                              \
+      stref Name;                                                                                  \
+      enum_name ItemVal;                                                                           \
+    };                                                                                             \
+                                                                                                   \
+    using name_map = stack_array<enum_item, idx2_NumArgs(__VA_ARGS__)>;                            \
+                                                                                                   \
+    inline static name_map NameMap = []()                                                          \
+    {                                                                                              \
+      name_map MyNameMap;                                                                          \
+      tokenizer Tk1(idx2_Str(__VA_ARGS__), ",");                                                   \
+      type CurrentVal = 0;                                                                         \
+      for (int I = 0;; ++I, ++CurrentVal)                                                          \
+      {                                                                                            \
+        stref Token = Next(&Tk1);                                                                  \
+        if (!Token)                                                                                \
+          break;                                                                                   \
+        tokenizer Tk2(Token, " =");                                                                \
+        stref EnumStr = Next(&Tk2);                                                                \
+        stref EnumVal = Next(&Tk2);                                                                \
+        if (EnumVal)                                                                               \
+        {                                                                                          \
+          char* EndPtr = nullptr;                                                                  \
+          errno = 0;                                                                               \
+          enum_name MyVal = enum_name(strtol(EnumVal.Ptr, &EndPtr, 10));                           \
+          if (errno == ERANGE || EndPtr == EnumVal.Ptr || !EndPtr ||                               \
+              !(isspace(*EndPtr) || *EndPtr == ',' || *EndPtr == '\0'))                            \
+            assert(false && " non-integer enum values");                                           \
+          else if (MyVal < static_cast<enum_name>(CurrentVal))                                     \
+            assert(false && " non-increasing enum values");                                        \
+          else                                                                                     \
+            CurrentVal = static_cast<type>(MyVal);                                                 \
+        }                                                                                          \
+        assert(I < Size(MyNameMap));                                                               \
+        MyNameMap[I] = enum_item{ EnumStr, static_cast<enum_name>(CurrentVal) };                   \
+      }                                                                                            \
+      return MyNameMap;                                                                            \
+    }();                                                                                           \
+                                                                                                   \
+                                                                                                   \
+    idx2_Cat(enum_name, _s)()                                                                      \
+      : idx2_Cat(enum_name, _s)(enum_name::__Invalid__)                                            \
+    {                                                                                              \
+    }                                                                                              \
+                                                                                                   \
+                                                                                                   \
+    idx2_Cat(enum_name, _s)(enum_name Value)                                                       \
+    {                                                                                              \
+      auto* It = Begin(NameMap);                                                                   \
+      while (It != End(NameMap))                                                                   \
+      {                                                                                            \
+        if (It->ItemVal == Value)                                                                  \
+          break;                                                                                   \
+        ++It;                                                                                      \
+      }                                                                                            \
+      this->Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;                     \
+    }                                                                                              \
+                                                                                                   \
+                                                                                                   \
+    explicit idx2_Cat(enum_name, _s)(stref Name)                                                   \
+    {                                                                                              \
+      auto* It = Begin(NameMap);                                                                   \
+      while (It != End(NameMap))                                                                   \
+      {                                                                                            \
+        if (It->Name == Name)                                                                      \
+          break;                                                                                   \
+        ++It;                                                                                      \
+      }                                                                                            \
+      Val = (It != End(NameMap)) ? It->ItemVal : enum_name::__Invalid__;                           \
+    }                                                                                              \
+                                                                                                   \
+                                                                                                   \
+    explicit operator bool() const { return Val != enum_name::__Invalid__; }                       \
+  };                                                                                               \
+                                                                                                   \
+                                                                                                   \
+  inline stref                                                                                     \
+  ToString(enum_name Enum)                                                                         \
+  {                                                                                                \
+    idx2_Cat(enum_name, _s) EnumS(Enum);                                                           \
+    auto* It = Begin(EnumS.NameMap);                                                               \
+    while (It != End(EnumS.NameMap))                                                               \
+    {                                                                                              \
+      if (It->ItemVal == EnumS.Val)                                                                \
+        break;                                                                                     \
+      ++It;                                                                                        \
+    }                                                                                              \
+    assert(It != End(EnumS.NameMap));                                                              \
+    return It->Name;                                                                               \
+  }                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  template <> struct StringTo<enum_name>                                                           \
+  {                                                                                                \
+    enum_name                                                                                      \
+    operator()(stref Name)                                                                         \
+    {                                                                                              \
+      idx2_Cat(enum_name, _s) EnumS(Name);                                                         \
+      return EnumS.Val;                                                                            \
+    }                                                                                              \
+  };                                                                                               \
+                                                                                                   \
+                                                                                                   \
+  inline bool                                                                                      \
+  IsValid(enum_name Enum)                                                                          \
+  {                                                                                                \
+    idx2_Cat(enum_name, _s) EnumS(Enum);                                                           \
+    return EnumS.Val != enum_name::__Invalid__;                                                    \
+  }                                                                                                \
+                                                                                                   \
+                                                                                                   \
+  } // namespace idx2
 
-idx2_Enum(dtype, i8,
-  int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64)
+idx2_Enum(dtype, i8, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64);
 
 /*
 Dispatch some code depending on Type. To use, define a Body macro which
-contains the code to run. Presumably the code makes use of Type. */
+contains the code to run. Presumably the code makes use of Type.
+*/
 #define idx2_DispatchOnType(Type)
 #define idx2_DispatchOnInt(Type)
 #define idx2_DispatchOnFloat(Type)
@@ -2845,396 +3661,608 @@ contains the code to run. Presumably the code makes use of Type. */
 #define idx2_DispatchOnFloat1(Type1, Type2) // Type1 is floating point
 #define idx2_DispatchOnFloat2(Type1, Type2) // Type2 is floating point
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_T(t) struct dtype_traits        { static inline const dtype Type = dtype::__Invalid__; };
-template <> struct dtype_traits<i8 > { static inline const dtype Type = dtype::   int8    ; };
-template <> struct dtype_traits<u8 > { static inline const dtype Type = dtype::  uint8    ; };
-template <> struct dtype_traits<i16> { static inline const dtype Type = dtype::  int16    ; };
-template <> struct dtype_traits<u16> { static inline const dtype Type = dtype:: uint16    ; };
-template <> struct dtype_traits<i32> { static inline const dtype Type = dtype::  int32    ; };
-template <> struct dtype_traits<u32> { static inline const dtype Type = dtype:: uint32    ; };
-template <> struct dtype_traits<i64> { static inline const dtype Type = dtype::  int64    ; };
-template <> struct dtype_traits<u64> { static inline const dtype Type = dtype:: uint64    ; };
-template <> struct dtype_traits<f32> { static inline const dtype Type = dtype::float32    ; };
-template <> struct dtype_traits<f64> { static inline const dtype Type = dtype::float64    ; };
+template <typename t> struct dtype_traits
+{
+  static inline const dtype Type = dtype::__Invalid__;
+};
 
-idx2_T(t)
-bool  ISameType       (dtype Type);
-bool  IsIntegral      (dtype Type);
-bool  IsSigned        (dtype Type);
-bool  IsUnsigned      (dtype Type);
-bool  IsFloatingPoint (dtype Type);
-int   SizeOf          (dtype Type);
-int   BitSizeOf       (dtype Type);
-dtype IntType         (dtype Type);
-dtype FloatType       (dtype Type);
-dtype UnsignedType    (dtype Type);
-dtype SignedType      (dtype Type);
+template <> struct dtype_traits<i8>
+{
+  static inline const dtype Type = dtype::int8;
+};
+
+template <> struct dtype_traits<u8>
+{
+  static inline const dtype Type = dtype::uint8;
+};
+
+template <> struct dtype_traits<i16>
+{
+  static inline const dtype Type = dtype::int16;
+};
+
+template <> struct dtype_traits<u16>
+{
+  static inline const dtype Type = dtype::uint16;
+};
+
+template <> struct dtype_traits<i32>
+{
+  static inline const dtype Type = dtype::int32;
+};
+
+template <> struct dtype_traits<u32>
+{
+  static inline const dtype Type = dtype::uint32;
+};
+
+template <> struct dtype_traits<i64>
+{
+  static inline const dtype Type = dtype::int64;
+};
+
+template <> struct dtype_traits<u64>
+{
+  static inline const dtype Type = dtype::uint64;
+};
+
+template <> struct dtype_traits<f32>
+{
+  static inline const dtype Type = dtype::float32;
+};
+
+template <> struct dtype_traits<f64>
+{
+  static inline const dtype Type = dtype::float64;
+};
+
+template <typename t> bool ISameType(dtype Type);
+bool IsIntegral(dtype Type);
+bool IsSigned(dtype Type);
+bool IsUnsigned(dtype Type);
+bool IsFloatingPoint(dtype Type);
+int SizeOf(dtype Type);
+int BitSizeOf(dtype Type);
+dtype IntType(dtype Type);
+dtype FloatType(dtype Type);
+dtype UnsignedType(dtype Type);
+dtype SignedType(dtype Type);
 
 } // namespace idx2
 
 #undef idx2_DispatchOnType
-#define idx2_DispatchOnType(Type)\
-  if (Type == idx2::dtype::float64) {\
-    Body(f64)\
-  } else if (Type == idx2::dtype::float32) {\
-    Body(f32)\
-  } else if (Type == idx2::dtype::int64) {\
-    Body(i64)\
-  } else if (Type == idx2::dtype::uint64) {\
-    Body(u64)\
-  } else if (Type == idx2::dtype::int32) {\
-    Body(i32)\
-  } else if (Type == idx2::dtype::uint32) {\
-    Body(u32)\
-  } else if (Type == idx2::dtype::int16) {\
-    Body(i16)\
-  } else if (Type == idx2::dtype::uint16) {\
-    Body(u16)\
-  } else if (Type == idx2::dtype::int8) {\
-    Body(i8)\
-  } else if (Type == idx2::dtype::uint8) {\
-    Body(u8)\
-  } else {\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOnType(Type)                                                                  \
+  if (Type == idx2::dtype::float64)                                                                \
+  {                                                                                                \
+    Body(f64)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::float32)                                                           \
+  {                                                                                                \
+    Body(f32)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::int64)                                                             \
+  {                                                                                                \
+    Body(i64)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::uint64)                                                            \
+  {                                                                                                \
+    Body(u64)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::int32)                                                             \
+  {                                                                                                \
+    Body(i32)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::uint32)                                                            \
+  {                                                                                                \
+    Body(u32)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::int16)                                                             \
+  {                                                                                                \
+    Body(i16)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::uint16)                                                            \
+  {                                                                                                \
+    Body(u16)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::int8)                                                              \
+  {                                                                                                \
+    Body(i8)                                                                                       \
+  }                                                                                                \
+  else if (Type == idx2::dtype::uint8)                                                             \
+  {                                                                                                \
+    Body(u8)                                                                                       \
+  }                                                                                                \
+  else                                                                                             \
+  {                                                                                                \
+    idx2_Assert(false, "type not supported");                                                      \
   }
 
 /* Type1 is fixed, switch based on Type2 */
-#define idx2_DispatchOn2TypesHelper1(Type1, Type2)\
-  if (Type2 == idx2::dtype::float64) {\
-    Body(Type1, f64)\
-  } else if (Type2 == idx2::dtype::float32) {\
-    Body(Type1, f32)\
-  } else if (Type2 == idx2::dtype::int64) {\
-    Body(Type1, i64)\
-  } else if (Type2 == idx2::dtype::uint64) {\
-    Body(Type1, u64)\
-  } else if (Type2 == idx2::dtype::int32) {\
-    Body(Type1, i32)\
-  } else if (Type2 == idx2::dtype::uint32) {\
-    Body(Type1, u32)\
-  } else if (Type2 == idx2::dtype::int16) {\
-    Body(Type1, i16)\
-  } else if (Type2 == idx2::dtype::uint16) {\
-    Body(Type1, u16)\
-  } else if (Type2 == idx2::dtype::int8) {\
-    Body(Type1, i8)\
-  } else if (Type2 == idx2::dtype::uint8) {\
-    Body(Type1, u8)\
-  } else {\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOn2TypesHelper1(Type1, Type2)                                                 \
+  if (Type2 == idx2::dtype::float64)                                                               \
+  {                                                                                                \
+    Body(Type1, f64)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::float32)                                                          \
+  {                                                                                                \
+    Body(Type1, f32)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::int64)                                                            \
+  {                                                                                                \
+    Body(Type1, i64)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::uint64)                                                           \
+  {                                                                                                \
+    Body(Type1, u64)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::int32)                                                            \
+  {                                                                                                \
+    Body(Type1, i32)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::uint32)                                                           \
+  {                                                                                                \
+    Body(Type1, u32)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::int16)                                                            \
+  {                                                                                                \
+    Body(Type1, i16)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::uint16)                                                           \
+  {                                                                                                \
+    Body(Type1, u16)                                                                               \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::int8)                                                             \
+  {                                                                                                \
+    Body(Type1, i8)                                                                                \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::uint8)                                                            \
+  {                                                                                                \
+    Body(Type1, u8)                                                                                \
+  }                                                                                                \
+  else                                                                                             \
+  {                                                                                                \
+    idx2_Assert(false, "type not supported");                                                      \
   }
 
 /* Type2 is fixed, switch based on Type1 */
-#define idx2_DispatchOn2TypesHelper2(Type1, Type2)\
-  if (Type1 == idx2::dtype::float64) {\
-    Body(f64, Type2)\
-  } else if (Type1 == idx2::dtype::float32) {\
-    Body(f32, Type2)\
-  } else if (Type1 == idx2::dtype::int64) {\
-    Body(i64, Type2)\
-  } else if (Type1 == idx2::dtype::uint64) {\
-    Body(u64, Type2)\
-  } else if (Type1 == idx2::dtype::int32) {\
-    Body(i32, Type2)\
-  } else if (Type1 == idx2::dtype::uint32) {\
-    Body(u32, Type2)\
-  } else if (Type1 == idx2::dtype::int16) {\
-    Body(i16, Type2)\
-  } else if (Type1 == idx2::dtype::uint16) {\
-    Body(u16, Type2)\
-  } else if (Type1 == idx2::dtype::int8) {\
-    Body(i8, Type2)\
-  } else if (Type1 == idx2::dtype::uint8) {\
-    Body(u8, Type2)\
-  } else {\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOn2TypesHelper2(Type1, Type2)                                                 \
+  if (Type1 == idx2::dtype::float64)                                                               \
+  {                                                                                                \
+    Body(f64, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::float32)                                                          \
+  {                                                                                                \
+    Body(f32, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int64)                                                            \
+  {                                                                                                \
+    Body(i64, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint64)                                                           \
+  {                                                                                                \
+    Body(u64, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int32)                                                            \
+  {                                                                                                \
+    Body(i32, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint32)                                                           \
+  {                                                                                                \
+    Body(u32, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int16)                                                            \
+  {                                                                                                \
+    Body(i16, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint16)                                                           \
+  {                                                                                                \
+    Body(u16, Type2)                                                                               \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int8)                                                             \
+  {                                                                                                \
+    Body(i8, Type2)                                                                                \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint8)                                                            \
+  {                                                                                                \
+    Body(u8, Type2)                                                                                \
+  }                                                                                                \
+  else                                                                                             \
+  {                                                                                                \
+    idx2_Assert(false, "type not supported");                                                      \
   }
 
 #undef idx2_DispatchOn2Types
-#define idx2_DispatchOn2Types(Type1, Type2)\
-  if (Type1 == idx2::dtype::float64) {\
-    idx2_DispatchOn2TypesHelper1(f64, Type2)\
-  } else if (Type1 == idx2::dtype::float32) {\
-    idx2_DispatchOn2TypesHelper1(f32, Type2)\
-  } else if (Type1 == idx2::dtype::int64) {\
-    idx2_DispatchOn2TypesHelper1(i64, Type2)\
-  } else if (Type1 == idx2::dtype::uint64) {\
-    idx2_DispatchOn2TypesHelper1(u64, Type2)\
-  } else if (Type1 == idx2::dtype::int32) {\
-    idx2_DispatchOn2TypesHelper1(i32, Type2)\
-  } else if (Type1 == idx2::dtype::uint32) {\
-    idx2_DispatchOn2TypesHelper1(u32, Type2)\
-  } else if (Type1 == idx2::dtype::int16) {\
-    idx2_DispatchOn2TypesHelper1(i16, Type2)\
-  } else if (Type1 == idx2::dtype::uint16) {\
-    idx2_DispatchOn2TypesHelper1(u16, Type2)\
-  } else if (Type1 == idx2::dtype::int8) {\
-    idx2_DispatchOn2TypesHelper1(i8, Type2)\
-  } else if (Type1 == idx2::dtype::uint8) {\
-    idx2_DispatchOn2TypesHelper1(u8, Type2)\
-  } else {\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOn2Types(Type1, Type2)                                                        \
+  if (Type1 == idx2::dtype::float64)                                                               \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(f64, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::float32)                                                          \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(f32, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int64)                                                            \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(i64, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint64)                                                           \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(u64, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int32)                                                            \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(i32, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint32)                                                           \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(u32, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int16)                                                            \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(i16, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint16)                                                           \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(u16, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::int8)                                                             \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(i8, Type2)                                                        \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::uint8)                                                            \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(u8, Type2)                                                        \
+  }                                                                                                \
+  else                                                                                             \
+  {                                                                                                \
+    idx2_Assert(false, "type not supported");                                                      \
   }
 
 #undef idx2_DispatchOnFloat1
-#define idx2_DispatchOnFloat1(Type1, Type2)\
-  if (Type1 == idx2::dtype::float64) {\
-    idx2_DispatchOn2TypesHelper1(f64, Type2)\
-  } else if (Type1 == idx2::dtype::float32) {\
-    idx2_DispatchOn2TypesHelper1(f32, Type2)\
-  } else {\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOnFloat1(Type1, Type2)                                                        \
+  if (Type1 == idx2::dtype::float64)                                                               \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(f64, Type2)                                                       \
+  }                                                                                                \
+  else if (Type1 == idx2::dtype::float32)                                                          \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper1(f32, Type2)                                                       \
+  }                                                                                                \
+  else                                                                                             \
+  {                                                                                                \
+    idx2_Assert(false, "type not supported");                                                      \
   }
 
 #undef idx2_DispatchOnFloat2
-#define idx2_DispatchOnFloat2(Type1, Type2)\
-  if (Type2 == idx2::dtype::float64) {\
-    idx2_DispatchOn2TypesHelper2(Type1, f64)\
-  } else if (Type2 == idx2::dtype::float32) {\
-    idx2_DispatchOn2TypesHelper2(Type1, f32)\
-  } else {\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOnFloat2(Type1, Type2)                                                        \
+  if (Type2 == idx2::dtype::float64)                                                               \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper2(Type1, f64)                                                       \
+  }                                                                                                \
+  else if (Type2 == idx2::dtype::float32)                                                          \
+  {                                                                                                \
+    idx2_DispatchOn2TypesHelper2(Type1, f32)                                                       \
+  }                                                                                                \
+  else                                                                                             \
+  {                                                                                                \
+    idx2_Assert(false, "type not supported");                                                      \
   }
 
 #undef idx2_DispatchOnInt
-#define idx2_DispatchOnInt(Type)\
-  if (Type == idx2::dtype::int64) {\
-    Body(i64)\
-  } else if (Type == idx2::dtype::int32) {\
-    Body(i32)\
-  } else if (Type == idx2::dtype::int16) {\
-    Body(i16)\
-  } else if (Type == idx2::dtype::int8) {\
-    Body(i8)\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOnInt(Type)                                                                   \
+  if (Type == idx2::dtype::int64)                                                                  \
+  {                                                                                                \
+    Body(i64)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::int32)                                                             \
+  {                                                                                                \
+    Body(i32)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::int16)                                                             \
+  {                                                                                                \
+    Body(i16)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::int8)                                                              \
+  {                                                                                                \
+    Body(i8) idx2_Assert(false, "type not supported");                                             \
   }
 
 #undef idx2_DispatchOnFloat
-#define idx2_DispatchOnFloat(Type)\
-  if (Type == idx2::dtype::float64) {\
-    Body(f64)\
-  } else if (Type == idx2::dtype::float32) {\
-    Body(f32)\
-  } else {\
-    idx2_Assert(false, "type not supported");\
+#define idx2_DispatchOnFloat(Type)                                                                 \
+  if (Type == idx2::dtype::float64)                                                                \
+  {                                                                                                \
+    Body(f64)                                                                                      \
+  }                                                                                                \
+  else if (Type == idx2::dtype::float32)                                                           \
+  {                                                                                                \
+    Body(f32)                                                                                      \
+  }                                                                                                \
+  else                                                                                             \
+  {                                                                                                \
+    idx2_Assert(false, "type not supported");                                                      \
   }
 
-namespace idx2 {
+namespace idx2
+{
 
 idx2_Inline bool
-IsIntegral(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::uint8  :
-    case dtype::int16  :
-    case dtype::uint16 :
-    case dtype::int32  :
-    case dtype::uint32 :
-    case dtype::int64  :
-    case dtype::uint64 : return true;
+IsIntegral(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::uint8:
+    case dtype::int16:
+    case dtype::uint16:
+    case dtype::int32:
+    case dtype::uint32:
+    case dtype::int64:
+    case dtype::uint64:
+      return true;
     case dtype::float32:
-    case dtype::float64: return false;
-    default: idx2_Assert(false, "type unsupported");
+    case dtype::float64:
+      return false;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return 0;
 }
 
 idx2_Inline bool
-IsSigned(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::int16  :
-    case dtype::int32  :
-    case dtype::int64  : return true;
-    case dtype::uint8  :
-    case dtype::uint16 :
-    case dtype::uint32 :
-    case dtype::uint64 : return false;
-    default: idx2_Assert(false, "type unsupported");
+IsSigned(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::int16:
+    case dtype::int32:
+    case dtype::int64:
+      return true;
+    case dtype::uint8:
+    case dtype::uint16:
+    case dtype::uint32:
+    case dtype::uint64:
+      return false;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return 0;
 }
 
 idx2_Inline bool
-IsUnsigned(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::int16  :
-    case dtype::int32  :
-    case dtype::int64  : return false;
-    case dtype::uint8  :
-    case dtype::uint16 :
-    case dtype::uint32 :
-    case dtype::uint64 : return true;
-    default: idx2_Assert(false, "type unsupported");
+IsUnsigned(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::int16:
+    case dtype::int32:
+    case dtype::int64:
+      return false;
+    case dtype::uint8:
+    case dtype::uint16:
+    case dtype::uint32:
+    case dtype::uint64:
+      return true;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return 0;
 }
 
 idx2_Inline bool
-IsFloatingPoint(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::uint8  :
-    case dtype::int16  :
-    case dtype::uint16 :
-    case dtype::int32  :
-    case dtype::uint32 :
-    case dtype::int64  :
-    case dtype::uint64 : return false;
+IsFloatingPoint(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::uint8:
+    case dtype::int16:
+    case dtype::uint16:
+    case dtype::int32:
+    case dtype::uint32:
+    case dtype::int64:
+    case dtype::uint64:
+      return false;
     case dtype::float32:
-    case dtype::float64: return true;
-    default: idx2_Assert(false, "type unsupported");
+    case dtype::float64:
+      return true;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return 0;
 }
 
 idx2_Inline int
-SizeOf(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::uint8  : return 1;
-    case dtype::int16  :
-    case dtype::uint16 : return 2;
-    case dtype::int32  :
-    case dtype::uint32 :
-    case dtype::float32: return 4;
-    case dtype::int64  :
-    case dtype::uint64 :
-    case dtype::float64: return 8;
-    default: idx2_Assert(false, "type unsupported");
+SizeOf(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::uint8:
+      return 1;
+    case dtype::int16:
+    case dtype::uint16:
+      return 2;
+    case dtype::int32:
+    case dtype::uint32:
+    case dtype::float32:
+      return 4;
+    case dtype::int64:
+    case dtype::uint64:
+    case dtype::float64:
+      return 8;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return 0;
 }
 
 idx2_Inline int
-BitSizeOf(dtype Type) { return 8 * SizeOf(Type); }
+BitSizeOf(dtype Type)
+{
+  return 8 * SizeOf(Type);
+}
 
-idx2_T(t) bool
-ISameType(dtype Type) {
-  switch (Type) {
-    case dtype::int8   : return is_same_type<t,  i8>::Value;
-    case dtype::uint8  : return is_same_type<t,  u8>::Value;
-    case dtype::int16  : return is_same_type<t, i16>::Value;
-    case dtype::uint16 : return is_same_type<t, u16>::Value;
-    case dtype::int32  : return is_same_type<t, i32>::Value;
-    case dtype::uint32 : return is_same_type<t, u32>::Value;
-    case dtype::int64  : return is_same_type<t, i64>::Value;
-    case dtype::uint64 : return is_same_type<t, u64>::Value;
-    case dtype::float32: return is_same_type<t, f32>::Value;
-    case dtype::float64: return is_same_type<t, f64>::Value;
-    default: idx2_Assert(false, "type unsupported");
+template <typename t> bool
+ISameType(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+      return is_same_type<t, i8>::Value;
+    case dtype::uint8:
+      return is_same_type<t, u8>::Value;
+    case dtype::int16:
+      return is_same_type<t, i16>::Value;
+    case dtype::uint16:
+      return is_same_type<t, u16>::Value;
+    case dtype::int32:
+      return is_same_type<t, i32>::Value;
+    case dtype::uint32:
+      return is_same_type<t, u32>::Value;
+    case dtype::int64:
+      return is_same_type<t, i64>::Value;
+    case dtype::uint64:
+      return is_same_type<t, u64>::Value;
+    case dtype::float32:
+      return is_same_type<t, f32>::Value;
+    case dtype::float64:
+      return is_same_type<t, f64>::Value;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return false;
 }
 
 idx2_Inline dtype
-IntType(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::uint8  :
-    case dtype::int16  :
-    case dtype::uint16 :
-    case dtype::int32  :
-    case dtype::uint32 :
-    case dtype::int64  :
-    case dtype::uint64 : return Type;
-    case dtype::float32: return dtype::int32;
-    case dtype::float64: return dtype::int64;
-    default: idx2_Assert(false, "type unsupported");
+IntType(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::uint8:
+    case dtype::int16:
+    case dtype::uint16:
+    case dtype::int32:
+    case dtype::uint32:
+    case dtype::int64:
+    case dtype::uint64:
+      return Type;
+    case dtype::float32:
+      return dtype::int32;
+    case dtype::float64:
+      return dtype::int64;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return dtype(dtype::__Invalid__);
 }
 
 idx2_Inline dtype
-FloatType(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::uint8  :
-    case dtype::int16  :
-    case dtype::uint16 :
-    case dtype::int32  :
-    case dtype::uint32 :
-    case dtype::float32: return dtype::float32;
-    case dtype::int64  :
-    case dtype::uint64 :
-    case dtype::float64: return dtype::float64;
-    default: idx2_Assert(false, "type unsupported");
+FloatType(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::uint8:
+    case dtype::int16:
+    case dtype::uint16:
+    case dtype::int32:
+    case dtype::uint32:
+    case dtype::float32:
+      return dtype::float32;
+    case dtype::int64:
+    case dtype::uint64:
+    case dtype::float64:
+      return dtype::float64;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return dtype(dtype::__Invalid__);
 }
 
 idx2_Inline dtype
-UnsignedType(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::uint8  : return dtype::uint8;
-    case dtype::int16  :
-    case dtype::uint16 : return dtype::uint16;
-    case dtype::int32  :
-    case dtype::uint32 : return dtype::uint32;
-    case dtype::int64  :
-    case dtype::uint64 : return dtype::uint64;
-    default: idx2_Assert(false, "type unsupported");
+UnsignedType(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::uint8:
+      return dtype::uint8;
+    case dtype::int16:
+    case dtype::uint16:
+      return dtype::uint16;
+    case dtype::int32:
+    case dtype::uint32:
+      return dtype::uint32;
+    case dtype::int64:
+    case dtype::uint64:
+      return dtype::uint64;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return dtype(dtype::__Invalid__);
 }
 
 idx2_Inline dtype
-SignedType(dtype Type) {
-  switch (Type) {
-    case dtype::int8   :
-    case dtype::uint8  : return dtype::int8;
-    case dtype::int16  :
-    case dtype::uint16 : return dtype::int16;
-    case dtype::int32  :
-    case dtype::uint32 : return dtype::int32;
-    case dtype::int64  :
-    case dtype::uint64 : return dtype::int64;
-    default: idx2_Assert(false, "type unsupported");
+SignedType(dtype Type)
+{
+  switch (Type)
+  {
+    case dtype::int8:
+    case dtype::uint8:
+      return dtype::int8;
+    case dtype::int16:
+    case dtype::uint16:
+      return dtype::int16;
+    case dtype::int32:
+    case dtype::uint32:
+      return dtype::int32;
+    case dtype::int64:
+    case dtype::uint64:
+      return dtype::int64;
+    default:
+      idx2_Assert(false, "type unsupported");
   };
   return dtype(dtype::__Invalid__);
 }
 
-} //namespace idx2
+} // namespace idx2
 
-#define idx2_CommonErrs\
-  NoError, UnknownError,\
-  SizeZero, SizeTooSmall, SizeMismatched,\
-  DimensionMismatched, DimensionsTooMany,\
-  AttributeNotFound,\
-  OptionNotSupported,\
-  TypeNotSupported,\
-  FileCreateFailed, FileReadFailed, FileWriteFailed, FileOpenFailed,\
-  FileCloseFailed, FileSeekFailed, FileTellFailed,\
-  ParseFailed,\
-  OutOfMemory
+#define idx2_CommonErrs                                                                            \
+  NoError, UnknownError, SizeZero, SizeTooSmall, SizeMismatched, DimensionMismatched,              \
+    DimensionsTooMany, AttributeNotFound, OptionNotSupported, TypeNotSupported, FileCreateFailed,  \
+    FileReadFailed, FileWriteFailed, FileOpenFailed, FileCloseFailed, FileSeekFailed,              \
+    FileTellFailed, ParseFailed, OutOfMemory
 
 idx2_Enum(err_code, int, idx2_CommonErrs)
 
-namespace idx2 {
+namespace idx2
+{
 
 /* There should be only one error in-flight on each thread */
-template <typename t = err_code>
-struct error {
+template <typename t = err_code> struct error
+{
   cstr Msg = "";
   t Code = {};
   i8 StackIdx = 0;
   bool StrGened = false;
   error();
   error(t CodeIn, bool StrGenedIn = false, cstr MsgIn = "");
-  idx2_T(u) error(const error<u>& Err);
+  template <typename u> error(const error<u>& Err);
   inline thread_local static cstr Files[64]; // Store file names up the stack
-  inline thread_local static int Lines[64]; // Store line numbers up the stack
+  inline thread_local static int Lines[64];  // Store line numbers up the stack
   operator bool() const;
 }; // struct err_template
 
-idx2_T(t) cstr ToString(const error<t>& Err, bool Force = false);
+template <typename t> cstr ToString(const error<t>& Err, bool Force = false);
 struct printer;
-idx2_T(t) void PrintStacktrace(printer* Pr, const error<t>& Err);
-idx2_T(t) bool ErrorExists(const error<t>& Err);
+template <typename t> void PrintStacktrace(printer* Pr, const error<t>& Err);
+template <typename t> bool ErrorExists(const error<t>& Err);
 
 } // namespace idx2
 
@@ -3255,39 +4283,49 @@ idx2_T(t) bool ErrorExists(const error<t>& Err);
 namespace idx2
 {
 
-idx2_T(t)
-error<t>::error() {}
+template <typename t> error<t>::error() {}
 
-idx2_T(t)
-error<t>::error(t CodeIn, bool StrGenedIn, cstr MsgIn) :
-  Msg(MsgIn), Code(CodeIn), StackIdx(0), StrGened(StrGenedIn) {}
-
-idx2_T(t) idx2_T(u)
-error<t>::error(const error<u>& Err) :
-  Msg(Err.Msg), Code((t)Err.Code), StackIdx(Err.StackIdx), StrGened(Err.StrGened) {
-//  static_assert(sizeof(t) == sizeof(u));
-
+template <typename t> error<t>::error(t CodeIn, bool StrGenedIn, cstr MsgIn)
+  : Msg(MsgIn)
+  , Code(CodeIn)
+  , StackIdx(0)
+  , StrGened(StrGenedIn)
+{
 }
 
-idx2_T(t)
-error<t>::operator bool() const { return Code == t::NoError; }
+template <typename t> template <typename u> error<t>::error(const error<u>& Err)
+  : Msg(Err.Msg)
+  , Code((t)Err.Code)
+  , StackIdx(Err.StackIdx)
+  , StrGened(Err.StrGened)
+{
+  //  static_assert(sizeof(t) == sizeof(u));
+}
 
-idx2_T(t) cstr
+template <typename t> error<t>::operator bool() const
+{
+  return Code == t::NoError;
+}
+
+template <typename t> cstr
 ToString(const error<t>& Err, bool Force)
 {
   if (Force || !Err.StrGened)
   {
     auto ErrStr = ToString(Err.Code);
-    snprintf
-    (
-      ScratchBuf, sizeof(ScratchBuf), "%.*s (file: %s, line %d): %s",
-      ErrStr.Size, ErrStr.Ptr, Err.Files[0], Err.Lines[0], Err.Msg
-    );
+    snprintf(ScratchBuf,
+             sizeof(ScratchBuf),
+             "%.*s (file: %s, line %d): %s",
+             ErrStr.Size,
+             ErrStr.Ptr,
+             Err.Files[0],
+             Err.Lines[0],
+             Err.Msg);
   }
   return ScratchBuf;
 }
 
-idx2_T(t) void
+template <typename t> void
 PrintStacktrace(printer* Pr, const error<t>& Err)
 {
   (void)Pr;
@@ -3296,99 +4334,111 @@ PrintStacktrace(printer* Pr, const error<t>& Err)
     idx2_Print(Pr, "File %s, line %d\n", Err.Files[I], Err.Lines[I]);
 }
 
-idx2_T(t) bool
-ErrorExists(const error<t>& Err) { return Err.Code != t::NoError; }
+template <typename t> bool
+ErrorExists(const error<t>& Err)
+{
+  return Err.Code != t::NoError;
+}
 
 } // namespace idx2
 
 #undef idx2_Error
-#define idx2_Error(ErrCode, ...)\
-  [&]() {\
-    if constexpr(idx2_NumArgs(__VA_ARGS__) > 0) {\
-      idx2::error Err(ErrCode, true, "" idx2_ExtractFirst(__VA_ARGS__));\
-      Err.Files[0] = __FILE__;\
-      Err.Lines[0] = __LINE__;\
-      auto ErrStr = ToString(Err.Code);\
-      int L = snprintf(idx2::ScratchBuf, sizeof(idx2::ScratchBuf), "%.*s (file %s, line %d): ",\
-                       ErrStr.Size, ErrStr.Ptr, __FILE__, __LINE__);\
-      idx2_SPrintHelper(idx2::ScratchBuf, L, "" __VA_ARGS__);\
-      return Err;\
-    }\
-    idx2::error Err(ErrCode);\
-    Err.Files[0] = __FILE__;\
-    Err.Lines[0] = __LINE__;\
-    return Err;\
+#define idx2_Error(ErrCode, ...)                                                                   \
+  [&]()                                                                                            \
+  {                                                                                                \
+    if constexpr (idx2_NumArgs(__VA_ARGS__) > 0)                                                   \
+    {                                                                                              \
+      idx2::error Err(ErrCode, true, "" idx2_ExtractFirst(__VA_ARGS__));                           \
+      Err.Files[0] = __FILE__;                                                                     \
+      Err.Lines[0] = __LINE__;                                                                     \
+      auto ErrStr = ToString(Err.Code);                                                            \
+      int L = snprintf(idx2::ScratchBuf,                                                           \
+                       sizeof(idx2::ScratchBuf),                                                   \
+                       "%.*s (file %s, line %d): ",                                                \
+                       ErrStr.Size,                                                                \
+                       ErrStr.Ptr,                                                                 \
+                       __FILE__,                                                                   \
+                       __LINE__);                                                                  \
+      idx2_SPrintHelper(idx2::ScratchBuf, L, "" __VA_ARGS__);                                      \
+      return Err;                                                                                  \
+    }                                                                                              \
+    idx2::error Err(ErrCode);                                                                      \
+    Err.Files[0] = __FILE__;                                                                       \
+    Err.Lines[0] = __LINE__;                                                                       \
+    return Err;                                                                                    \
   }();
 
 #undef idx2_PropagateError
-#define idx2_PropagateError(Err)\
-  [&Err]() {\
-    if (Err.StackIdx >= 64)\
-      assert(false && "stack too deep");\
-    ++Err.StackIdx;\
-    Err.Lines[Err.StackIdx] = __LINE__;\
-    Err.Files[Err.StackIdx] = __FILE__;\
-    return Err;\
+#define idx2_PropagateError(Err)                                                                   \
+  [&Err]()                                                                                         \
+  {                                                                                                \
+    if (Err.StackIdx >= 64)                                                                        \
+      assert(false && "stack too deep");                                                           \
+    ++Err.StackIdx;                                                                                \
+    Err.Lines[Err.StackIdx] = __LINE__;                                                            \
+    Err.Files[Err.StackIdx] = __FILE__;                                                            \
+    return Err;                                                                                    \
   }();
 
 /* Return from a function if an error happens */
 #undef idx2_ReturnIfError
-#define idx2_ReturnIfError(Expr)\
-  {\
-    auto Result = Expr;\
-    if (ErrorExists(Result))\
-      return Result;\
+#define idx2_ReturnIfError(Expr)                                                                   \
+  {                                                                                                \
+    auto Result = Expr;                                                                            \
+    if (ErrorExists(Result))                                                                       \
+      return Result;                                                                               \
   }
 
 /* Propagate an error up the stack */
 #undef idx2_PropagateIfError
-#define idx2_PropagateIfError(Expr)\
-  {\
-    auto Result = Expr;\
-    if (!Result)\
-      return idx2_PropagateError(Result);\
+#define idx2_PropagateIfError(Expr)                                                                \
+  {                                                                                                \
+    auto Result = Expr;                                                                            \
+    if (!Result)                                                                                   \
+      return idx2_PropagateError(Result);                                                          \
   }
 
 #undef id2_PropagateIfExpectedError
-#define idx2_PropagateIfExpectedError(Expr)\
-  {\
-    auto Result = Expr;\
-    if (!Result)\
-      return idx2_PropagateError(Error(Result));\
+#define idx2_PropagateIfExpectedError(Expr)                                                        \
+  {                                                                                                \
+    auto Result = Expr;                                                                            \
+    if (!Result)                                                                                   \
+      return idx2_PropagateError(Error(Result));                                                   \
   }
 
 /* Exit the program if an error happens */
 #undef idx2_ExitIfError
-#define idx2_ExitIfError(Expr)\
-  {\
-    auto Result = Expr;\
-    if (ErrorExists(Result))\
-    {\
-      fprintf(stderr, "%s\n", ToString(Result));\
-      exit(1);\
-    }\
+#define idx2_ExitIfError(Expr)                                                                     \
+  {                                                                                                \
+    auto Result = Expr;                                                                            \
+    if (ErrorExists(Result))                                                                       \
+    {                                                                                              \
+      fprintf(stderr, "%s\n", ToString(Result));                                                   \
+      exit(1);                                                                                     \
+    }                                                                                              \
   }
 
 /* Return an error if a condition happens */
 #undef idx2_ReturnErrorIf
-#define idx2_ReturnErrorIf(Expr, Error, ...)\
-  {\
-    if (Expr)\
-      return idx2_Error(Error, __VA_ARGS__);\
+#define idx2_ReturnErrorIf(Expr, Error, ...)                                                       \
+  {                                                                                                \
+    if (Expr)                                                                                      \
+      return idx2_Error(Error, __VA_ARGS__);                                                       \
   }
 
 /* Exit the program and print a message if a condition happens */
 #undef idx2_ExitIf
-#define idx2_ExitIf(Cond, Msg)\
-  {\
-    if (Cond)\
-    {\
-      fprintf(stderr, "%s\n", Msg);\
-      exit(1);\
-    }\
+#define idx2_ExitIf(Cond, Msg)                                                                     \
+  {                                                                                                \
+    if (Cond)                                                                                      \
+    {                                                                                              \
+      fprintf(stderr, "%s\n", Msg);                                                                \
+      exit(1);                                                                                     \
+    }                                                                                              \
   }
 
-namespace idx2 {
+namespace idx2
+{
 
 /*
 In string form:
@@ -3396,10 +4446,11 @@ file = C:/My Data/my file.raw
 name = combustion
 field = o2
 dimensions = 512 512 256
-data type = float32 */
+data type = float32
+*/
 struct metadata
 {
-  //char File[256] = "";
+  // char File[256] = "";
   char Name[32] = "";
   char Field[32] = "";
   v3i Dims3 = v3i(0);
@@ -3414,12 +4465,14 @@ error<> StrToMetaData(stref FilePath, metadata* Meta);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 /* Store either a value or an error */
-idx2_TT(t, u = err_code)
-struct expected {
-  union {
+template <typename t, typename u = err_code> struct expected
+{
+  union
+  {
     t Val;
     error<u> Err;
   };
@@ -3436,56 +4489,86 @@ struct expected {
   explicit operator bool() const;
 }; // struct expected
 
-idx2_TT(t, u) t& Value(expected<t, u>& E);
-idx2_TT(t, u) error<u>& Error(expected<t, u>& E);
+template <typename t, typename u> t& Value(expected<t, u>& E);
+template <typename t, typename u> error<u>& Error(expected<t, u>& E);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_TTi(t, u) expected<t, u>::
-expected() : Ok(false) {}
+template <typename t, typename u> idx2_Inline
+expected<t, u>::expected()
+  : Ok(false)
+{
+}
 
-idx2_TTi(t, u) expected<t, u>::
-expected(const t& ValIn) : Val(ValIn), Ok(true) {}
+template <typename t, typename u> idx2_Inline
+expected<t, u>::expected(const t& ValIn)
+  : Val(ValIn)
+  , Ok(true)
+{
+}
 
-idx2_TTi(t, u) expected<t, u>::
-expected(const error<u>& ErrIn) : Err(ErrIn), Ok(false) {}
+template <typename t, typename u> idx2_Inline
+expected<t, u>::expected(const error<u>& ErrIn)
+  : Err(ErrIn)
+  , Ok(false)
+{
+}
 
-idx2_TTi(t, u) t& expected<t, u>::
-operator*() { return Val; }
+template <typename t, typename u> idx2_Inline t&
+expected<t, u>::operator*()
+{
+  return Val;
+}
 
 /* (Safely) get the value with the added check */
-idx2_TTi(t, u) t&
-Value(expected<t, u>& E) { idx2_Assert(E.Ok); return E.Val; }
+template <typename t, typename u> idx2_Inline t&
+Value(expected<t, u>& E)
+{
+  idx2_Assert(E.Ok);
+  return E.Val;
+}
 
-idx2_TTi(t, u) t* expected<t, u>::
-operator->() { return &**this; }
+template <typename t, typename u> idx2_Inline t*
+expected<t, u>::operator->()
+{
+  return &**this;
+}
 
 /* Get the error */
-idx2_TTi(t, u) error<u>&
-Error(expected<t, u>& E) { idx2_Assert(!E.Ok); return E.Err; }
+template <typename t, typename u> idx2_Inline error<u>&
+Error(expected<t, u>& E)
+{
+  idx2_Assert(!E.Ok);
+  return E.Err;
+}
 
 /* Bool operator */
-idx2_TTi(t, u) expected<t, u>::
-operator bool() const { return Ok; }
+template <typename t, typename u> idx2_Inline expected<t, u>::operator bool() const
+{
+  return Ok;
+}
 
 } // namespace idx2
 
 #if defined(__APPLE__)
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 inline int // TODO: move to file_utils.cpp
-fallocate(int fd, int mode, off_t offset, off_t len) {
+fallocate(int fd, int mode, off_t offset, off_t len)
+{
   (void)mode; // TODO: what to do with mode?
-  //int fd = PR_FileDesc2NativeHandle(aFD);
-  fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, offset, len, 0};
+  // int fd = PR_FileDesc2NativeHandle(aFD);
+  fstore_t store = { F_ALLOCATECONTIG, F_PEOFPOSMODE, offset, len, 0 };
   // Try to get a continous chunk of disk space
   int ret = fcntl(fd, F_PREALLOCATE, &store);
-    if (-1 == ret){
+  if (-1 == ret)
+  {
     // OK, perhaps we are too fragmented, allocate non-continuous
     store.fst_flags = F_ALLOCATEALL;
     ret = fcntl(fd, F_PREALLOCATE, &store);
@@ -3512,21 +4595,21 @@ struct path
 };
 
 /* General */
-void  Init(path* Path, const stref& Str);
-void  Append(path* Path, const stref& Part);
-bool  IsRelative(const stref& Path);
-cstr  ToString(const path& Path);
+void Init(path* Path, const stref& Str);
+void Append(path* Path, const stref& Part);
+bool IsRelative(const stref& Path);
+cstr ToString(const path& Path);
 
 /* File related */
 stref GetFileName(const stref& Path);
 stref GetExtension(const stref& Path);
-i64   GetFileSize(const stref& Path);
+i64 GetFileSize(const stref& Path);
 
 /* Directory related */
 stref GetDirName(const stref& Path);
-bool  CreateFullDir(const stref& Path);
-bool  DirExists(const stref& Path);
-void  RemoveDir(cstr path);
+bool CreateFullDir(const stref& Path);
+bool DirExists(const stref& Path);
+void RemoveDir(cstr path);
 
 } // namespace idx2
 
@@ -3534,148 +4617,321 @@ void  RemoveDir(cstr path);
 // TODO: move the implementations out of this file into an .inl file
 // TODO: before each operation, check if the table has been init
 
-namespace idx2 {
+namespace idx2
+{
 
 constexpr f64 Pi = 3.14159265358979323846;
 
 /* Generate a power table for a particular base and type */
-template <int N>
-int (&Power(int Base))[N];
+template <int N> int (&Power(int Base))[N];
 
-bool IsEven(i64 X);
-bool IsOdd (i64 X);
-v3i  IsEven(const v3i& P);
-v3i  IsOdd (const v3i& P);
-idx2_T(t) bool IsBetween(t Val, t A, t B);
+bool
+IsEven(i64 X);
 
-bool IsPrime(i64 X);
-i64 NextPrime(i64 X);
+bool
+IsOdd(i64 X);
 
-idx2_T(t) int Exponent(t Val);
+v3i
+IsEven(const v3i& P);
 
-idx2_TT(u, t = u) t Prod(const v2<u>& Vec);
-idx2_TT(u, t = u) t Prod(const v3<u>& Vec);
-idx2_TT(u, t = u) t Sum(const v2<u>& Vec);
-idx2_TT(u, t = u) t Sum(const v3<u>& Vec);
+v3i
+IsOdd(const v3i& P);
+
+template <typename t> bool
+IsBetween(t Val, t A, t B);
+
+bool
+IsPrime(i64 X);
+
+i64
+NextPrime(i64 X);
+
+template <typename t> int
+Exponent(t Val);
+
+template <typename u, typename t = u> t
+Prod(const v2<u>& Vec);
+
+template <typename u, typename t = u> t
+Prod(const v3<u>& Vec);
+
+template <typename u, typename t = u> t
+Sum(const v2<u>& Vec);
+
+template <typename u, typename t = u> t
+Sum(const v3<u>& Vec);
 
 /* 2D vector math */
-idx2_T(t) v2<t> operator+(const v2<t>& Lhs, const v2<t>& Rhs);
-idx2_T(t) v2<t> operator-(const v2<t>& Lhs, const v2<t>& Rhs);
-idx2_T(t) v2<t> operator/(const v2<t>& Lhs, const v2<t>& Rhs);
-idx2_T(t) v2<t> operator*(const v2<t>& Lhs, const v2<t>& Rhs);
-idx2_T(t) v2<t> operator+(const v2<t>& Lhs, t Val);
-idx2_T(t) v2<t> operator-(const v2<t>& Lhs, t Val);
-idx2_T(t) v2<t> operator/(const v2<t>& Lhs, t Rhs);
-idx2_T(t) v2<t> operator*(const v2<t>& Lhs, t Val);
-idx2_T(t) bool operator>(const v2<t>& Lhs, t Val);
-idx2_T(t) bool operator<(const v2<t>& Lhs, t Val);
-idx2_T(t) bool operator==(const v2<t>& Lhs, const v2<t>& Rhs);
-idx2_T(t) bool operator!=(const v2<t>& Lhs, const v2<t>& Rhs);
-idx2_T(t) bool operator<(t Val, const v2<t>& Rhs);
-idx2_T(t) bool operator<=(t Val, const v2<t>& Rhs);
-idx2_T(t) bool operator<=(const v2<t>& Lhs, t Val);
+template <typename t> v2<t>
+operator+(const v2<t>& Lhs, const v2<t>& Rhs);
 
-idx2_T(t) v2<t> Min(const v2<t>& Lhs, const v2<t>& Rhs);
-idx2_T(t) v2<t> Max(const v2<t>& Lhs, const v2<t>& Rhs);
+template <typename t> v2<t>
+operator-(const v2<t>& Lhs, const v2<t>& Rhs);
+
+template <typename t> v2<t>
+operator/(const v2<t>& Lhs, const v2<t>& Rhs);
+
+template <typename t> v2<t>
+operator*(const v2<t>& Lhs, const v2<t>& Rhs);
+
+template <typename t> v2<t>
+operator+(const v2<t>& Lhs, t Val);
+
+template <typename t> v2<t>
+operator-(const v2<t>& Lhs, t Val);
+
+template <typename t> v2<t>
+operator/(const v2<t>& Lhs, t Rhs);
+
+template <typename t> v2<t>
+operator*(const v2<t>& Lhs, t Val);
+
+template <typename t> bool
+operator>(const v2<t>& Lhs, t Val);
+
+template <typename t> bool
+operator<(const v2<t>& Lhs, t Val);
+
+template <typename t> bool
+operator==(const v2<t>& Lhs, const v2<t>& Rhs);
+
+template <typename t> bool
+operator!=(const v2<t>& Lhs, const v2<t>& Rhs);
+
+template <typename t> bool
+operator<(t Val, const v2<t>& Rhs);
+
+template <typename t> bool
+operator<=(t Val, const v2<t>& Rhs);
+
+template <typename t> bool
+operator<=(const v2<t>& Lhs, t Val);
+
+template <typename t> v2<t>
+Min(const v2<t>& Lhs, const v2<t>& Rhs);
+
+template <typename t> v2<t>
+Max(const v2<t>& Lhs, const v2<t>& Rhs);
 
 // TODO: generalize the t parameter to u for the RHS
 /* 3D vector math */
-idx2_T(t) v3<t> operator+(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) v3<t> operator-(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) v3<t> operator*(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) v3<t> operator/(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) v3<t> operator&(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) v3<t> operator%(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) v3<t> operator+(const v3<t>& Lhs, t Val);
-idx2_T(t) v3<t> operator-(const v3<t>& Lhs, t Val);
-idx2_T(t) v3<t> operator-(t Val, const v3<t>& Lhs);
-idx2_T(t) v3<t> operator*(const v3<t>& Lhs, t Val);
-idx2_T(t) v3<t> operator/(const v3<t>& Lhs, t Val);
-idx2_T(t) v3<t> operator&(const v3<t>& Lhs, t Val);
-idx2_T(t) v3<t> operator%(const v3<t>& Lhs, t Val);
-idx2_T(t) bool  operator==(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) bool  operator!=(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) bool  operator<=(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) bool  operator< (const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) bool  operator> (const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) bool  operator> (const v3<t>& Lhs, t Val);
-idx2_T(t) bool  operator>=(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) bool  operator==(const v3<t>& Lhs, t Val);
-idx2_T(t) bool  operator!=(const v3<t>& Lhs, t Val);
-idx2_T(t) bool  operator<(t Val, const v3<t>& Rhs);
-idx2_T(t) bool  operator<(const v3<t>& Lhs, t Val);
-idx2_T(t) bool  operator<=(t Val, const v3<t>& Rhs);
-idx2_T(t) bool  operator<=(const v3<t>& Lhs, t Val);
-idx2_TT(t, u) v3<t> operator>>(const v3<t>& Lhs, const v3<u>& Rhs);
-idx2_TT(t, u) v3<t> operator>>(const v3<t>& Lhs, u Val);
-idx2_TT(t, u) v3<u> operator>>(u Val, const v3<t>& Rhs);
-idx2_TT(t, u) v3<t> operator<<(const v3<t>& Lhs, const v3<u>& Rhs);
-idx2_TT(t, u) v3<t> operator<<(const v3<t>& Lhs, u Val);
-idx2_TT(t, u) v3<u> operator<<(u Val, const v3<t>& Rhs);
+template <typename t> v3<t>
+operator+(const v3<t>& Lhs, const v3<t>& Rhs);
 
-idx2_T(t) v3<t> Min(const v3<t>& Lhs, const v3<t>& Rhs);
-idx2_T(t) v3<t> Max(const v3<t>& Lhs, const v3<t>& Rhs);
+template <typename t> v3<t>
+operator-(const v3<t>& Lhs, const v3<t>& Rhs);
 
-i8 Log2Floor(i64 Val);
-i8 Log2Ceil(i64 Val);
-i8 Log8Floor(i64 Val);
+template <typename t> v3<t>
+operator*(const v3<t>& Lhs, const v3<t>& Rhs);
 
-idx2_T(t) v3<t> Ceil(const v3<t>& Vec);
-idx2_T(t) v2<t> Ceil(const v2<t>& Vec);
-i64 RoundDown(i64 Val, i64 M); // Round Val down to a multiple of M
-i64 RoundUp(i64 Val, i64 M); // Round Val up to a multiple of M
+template <typename t> v3<t>
+operator/(const v3<t>& Lhs, const v3<t>& Rhs);
 
-i64 Pow(i64 Base, int Exp);
-i64 NextPow2(i64 Val);
+template <typename t> v3<t>
+operator&(const v3<t>& Lhs, const v3<t>& Rhs);
 
-int GeometricSum(int Base, int N);
+template <typename t> v3<t>
+operator%(const v3<t>& Lhs, const v3<t>& Rhs);
 
-idx2_T(t) t Lerp(t V0, t V1, f64 T);
+template <typename t> v3<t>
+operator+(const v3<t>& Lhs, t Val);
+
+template <typename t> v3<t>
+operator-(const v3<t>& Lhs, t Val);
+
+template <typename t> v3<t>
+operator-(t Val, const v3<t>& Lhs);
+
+template <typename t> v3<t>
+operator*(const v3<t>& Lhs, t Val);
+
+template <typename t> v3<t>
+operator/(const v3<t>& Lhs, t Val);
+
+template <typename t> v3<t>
+operator&(const v3<t>& Lhs, t Val);
+
+template <typename t> v3<t>
+operator%(const v3<t>& Lhs, t Val);
+
+template <typename t> bool
+operator==(const v3<t>& Lhs, const v3<t>& Rhs);
+
+template <typename t> bool
+operator!=(const v3<t>& Lhs, const v3<t>& Rhs);
+
+template <typename t> bool
+operator<=(const v3<t>& Lhs, const v3<t>& Rhs);
+
+template <typename t> bool
+operator<(const v3<t>& Lhs, const v3<t>& Rhs);
+
+template <typename t> bool
+operator>(const v3<t>& Lhs, const v3<t>& Rhs);
+
+template <typename t> bool
+operator>(const v3<t>& Lhs, t Val);
+
+template <typename t> bool
+operator>=(const v3<t>& Lhs, const v3<t>& Rhs);
+
+template <typename t> bool
+operator==(const v3<t>& Lhs, t Val);
+
+template <typename t> bool
+operator!=(const v3<t>& Lhs, t Val);
+
+template <typename t> bool
+operator<(t Val, const v3<t>& Rhs);
+
+template <typename t> bool
+operator<(const v3<t>& Lhs, t Val);
+
+template <typename t> bool
+operator<=(t Val, const v3<t>& Rhs);
+
+template <typename t> bool
+operator<=(const v3<t>& Lhs, t Val);
+
+template <typename t, typename u> v3<t>
+operator>>(const v3<t>& Lhs, const v3<u>& Rhs);
+
+template <typename t, typename u> v3<t>
+operator>>(const v3<t>& Lhs, u Val);
+
+template <typename t, typename u> v3<u>
+operator>>(u Val, const v3<t>& Rhs);
+
+template <typename t, typename u> v3<t>
+operator<<(const v3<t>& Lhs, const v3<u>& Rhs);
+
+template <typename t, typename u> v3<t>
+operator<<(const v3<t>& Lhs, u Val);
+
+template <typename t, typename u> v3<u>
+operator<<(u Val, const v3<t>& Rhs);
+
+template <typename t> v3<t>
+Min(const v3<t>& Lhs, const v3<t>& Rhs);
+
+template <typename t> v3<t>
+Max(const v3<t>& Lhs, const v3<t>& Rhs);
+
+i8
+Log2Floor(i64 Val);
+
+i8
+Log2Ceil(i64 Val);
+
+i8
+Log8Floor(i64 Val);
+
+template <typename t> v3<t>
+Ceil(const v3<t>& Vec);
+
+template <typename t> v2<t>
+Ceil(const v2<t>& Vec);
+
+i64
+RoundDown(i64 Val, i64 M); // Round Val down to a multiple of M
+
+i64
+RoundUp(i64 Val, i64 M); // Round Val up to a multiple of M
+
+i64
+Pow(i64 Base, int Exp);
+
+i64
+NextPow2(i64 Val);
+
+int
+GeometricSum(int Base, int N);
+
+template <typename t> t
+Lerp(t V0, t V1, f64 T);
+
 // bilinear interpolation
-idx2_T(t) t BiLerp(t V00, t V10, t V01, t V11, const v2d& T);
+template <typename t> t
+BiLerp(t V00, t V10, t V01, t V11, const v2d& T);
+
 // trilinear interpolation
-idx2_T(t) t TriLerp(
-  t V000, t V100, t V010, t V110, t V001,
-  t V101, t V011, t V111, const v3d& T);
+template <typename t> t
+TriLerp(t V000, t V100, t V010, t V110, t V001, t V101, t V011, t V111, const v3d& T);
 
 } // namespace idx2
 
 #include <math.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 idx2_Inline bool
-IsEven(i64 X) { return (X & 1) == 0; }
+IsEven(i64 X)
+{
+  return (X & 1) == 0;
+}
+
 idx2_Inline bool
-IsOdd(i64 X) { return (X & 1) != 0; }
+IsOdd(i64 X)
+{
+  return (X & 1) != 0;
+}
+
 idx2_Inline v3i
-IsEven(const v3i& P) { return v3i(IsEven(P.X), IsEven(P.Y), IsEven(P.Z)); }
+IsEven(const v3i& P)
+{
+  return v3i(IsEven(P.X), IsEven(P.Y), IsEven(P.Z));
+}
+
 idx2_Inline v3i
-IsOdd(const v3i& P) { return v3i(IsOdd(P.X), IsOdd(P.Y), IsOdd(P.Z)); }
+IsOdd(const v3i& P)
+{
+  return v3i(IsOdd(P.X), IsOdd(P.Y), IsOdd(P.Z));
+}
+
 idx2_Inline int
-Max(const v3i& P) { return Max(Max(P.X, P.Y), P.Z); }
-idx2_Inline v3i
-Abs(const v3i& P) { return v3i(abs(P.X), abs(P.Y), abs(P.Z)); }
-idx2_Inline v3i
-Equals(const v3i& P, const v3i& Q) { return v3i(P.X == Q.X, P.Y == Q.Y, P.Z == Q.Z); }
-idx2_Inline v3i
-NotEquals(const v3i& P, const v3i& Q) { return v3i(P.X != Q.X, P.Y != Q.Y, P.Z != Q.Z); }
+Max(const v3i& P)
+{
+  return Max(Max(P.X, P.Y), P.Z);
+}
 
-idx2_Ti(t) bool
-IsBetween(t Val, t A, t B) {
+idx2_Inline v3i
+Abs(const v3i& P)
+{
+  return v3i(abs(P.X), abs(P.Y), abs(P.Z));
+}
+
+idx2_Inline v3i
+Equals(const v3i& P, const v3i& Q)
+{
+  return v3i(P.X == Q.X, P.Y == Q.Y, P.Z == Q.Z);
+}
+
+idx2_Inline v3i
+NotEquals(const v3i& P, const v3i& Q)
+{
+  return v3i(P.X != Q.X, P.Y != Q.Y, P.Z != Q.Z);
+}
+
+template <typename t> idx2_Inline bool
+IsBetween(t Val, t A, t B)
+{
   return (A <= Val && Val <= B) || (B <= Val && Val <= A);
 }
 
 idx2_Inline bool
-IsPow2(int X) {
+IsPow2(int X)
+{
   idx2_Assert(X > 0);
   return X && !(X & (X - 1));
 }
 
 idx2_Inline bool
-IsPrime(i64 X) {
+IsPrime(i64 X)
+{
   i64 S = (i64)sqrt((f64)X);
-  for (i64 I = 2; I <= S; ++I) {
+  for (i64 I = 2; I <= S; ++I)
+  {
     if (X % I == 0)
       return false;
   }
@@ -3683,30 +4939,37 @@ IsPrime(i64 X) {
 }
 
 idx2_Inline i64
-NextPrime(i64 X) {
-  while (IsPrime(X)) { ++X; }
+NextPrime(i64 X)
+{
+  while (IsPrime(X))
+  {
+    ++X;
+  }
   return X;
 }
 
 idx2_Inline constexpr int
-LogFloor(i64 Base, i64 Val) {
+LogFloor(i64 Base, i64 Val)
+{
   int Log = 0;
   i64 S = Base;
-  while (S <= Val) {
+  while (S <= Val)
+  {
     ++Log;
     S *= Base;
   }
   return Log;
 }
 
-idx2_TI(t, N)
-struct power
+template <typename t, int N> struct power
 {
-  static inline const stack_array<t, LogFloor(N, traits<t>::Max)> Table = []() {
+  static inline const stack_array<t, LogFloor(N, traits<t>::Max)> Table = []()
+  {
     stack_array<t, LogFloor(N, traits<t>::Max)> Result;
     t Base = N;
     t Pow = 1;
-    for (int I = 0; I < Size(Result); ++I) {
+    for (int I = 0; I < Size(Result); ++I)
+    {
       Result[I] = Pow;
       Pow *= Base;
     }
@@ -3716,11 +4979,14 @@ struct power
 };
 
 /*
-For double-precision, the returned exponent is between [-1023, 1024] (-1023 if 0, -1022 if denormal, the bias is 1023)
-For single-precision, the returned exponent is between [-127, 128] (-127 if 0, -126 if denormal, the bias is 127) */
-idx2_Ti(t) int
-Exponent(t Val) {
-  if (Val != 0) {
+For double-precision, the returned exponent is between [-1023, 1024] (-1023 if 0, -1022 if denormal,
+the bias is 1023) For single-precision, the returned exponent is between [-127, 128] (-127 if 0,
+-126 if denormal, the bias is 127) */
+template <typename t> idx2_Inline int
+Exponent(t Val)
+{
+  if (Val != 0)
+  {
     int E;
     frexp(Val, &E);
     /* clamp exponent in case Val is denormal */
@@ -3729,259 +4995,393 @@ Exponent(t Val) {
   return -traits<t>::ExpBias;
 }
 
-idx2_Ti(t) v2<t>
-operator+(const v2<t>& Lhs, const v2<t>& Rhs) {
+template <typename t> idx2_Inline v2<t>
+operator+(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return v2<t>(Lhs.X + Rhs.X, Lhs.Y + Rhs.Y);
 }
-idx2_Ti(t) v2<t> operator+(const v2<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v2<t>
+operator+(const v2<t>& Lhs, t Val)
+{
   return v2<t>(Lhs.X + Val, Lhs.Y + Val);
 }
-idx2_Ti(t) v2<t>
-operator-(const v2<t>& Lhs, const v2<t>& Rhs) {
+
+template <typename t> idx2_Inline v2<t>
+operator-(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return v2<t>(Lhs.X - Rhs.X, Lhs.Y - Rhs.Y);
 }
-idx2_Ti(t) v2<t> operator-(const v2<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v2<t>
+operator-(const v2<t>& Lhs, t Val)
+{
   return v2<t>(Lhs.X - Val, Lhs.Y - Val);
 }
-idx2_Ti(t) v2<t>
-operator*(const v2<t>& Lhs, const v2<t>& Rhs) {
+
+template <typename t> idx2_Inline v2<t>
+operator*(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return v2<t>(Lhs.X * Rhs.X, Lhs.Y * Rhs.Y);
 }
-idx2_Ti(t) v2<t> operator*(const v2<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v2<t>
+operator*(const v2<t>& Lhs, t Val)
+{
   return v2<t>(Lhs.X * Val, Lhs.Y * Val);
 }
-idx2_Ti(t) v2<t>
-operator/(const v2<t>& Lhs, const v2<t>& Rhs) {
+
+template <typename t> idx2_Inline v2<t>
+operator/(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return v2<t>(Lhs.X / Rhs.X, Lhs.Y / Rhs.Y);
 }
-idx2_Ti(t) v2<t> operator/(const v2<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v2<t>
+operator/(const v2<t>& Lhs, t Val)
+{
   return v2<t>(Lhs.X / Val, Lhs.Y / Val);
 }
-idx2_Ti(t) bool
-operator==(const v2<t>& Lhs, const v2<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator==(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return Lhs.X == Rhs.X && Lhs.Y == Rhs.Y;
 }
-idx2_Ti(t) bool
-operator!=(const v2<t>& Lhs, const v2<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator!=(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return Lhs.X != Rhs.X || Lhs.Y != Rhs.Y;
 }
-idx2_T(t) bool operator>(const v2<t>& Lhs, t Val) {
+
+template <typename t> bool
+operator>(const v2<t>& Lhs, t Val)
+{
   return Lhs.X > Val && Lhs.Y > Val;
 }
-idx2_T(t) bool operator<(t Val, const v2<t>& Rhs) {
+
+template <typename t> bool
+operator<(t Val, const v2<t>& Rhs)
+{
   return Val < Rhs.X && Val < Rhs.Y;
 }
-idx2_T(t) bool operator<(const v2<t>& Lhs, t Val) {
+
+template <typename t> bool
+operator<(const v2<t>& Lhs, t Val)
+{
   return Lhs.X < Val && Lhs.Y < Val;
 }
-idx2_T(t) bool operator<=(t Val, const v2<t>& Rhs) {
+
+template <typename t> bool
+operator<=(t Val, const v2<t>& Rhs)
+{
   return Val <= Rhs.X && Val <= Rhs.Y;
 }
-idx2_T(t) bool operator<=(const v2<t>& Lhs, t Val) {
+
+template <typename t> bool
+operator<=(const v2<t>& Lhs, t Val)
+{
   return Lhs.X <= Val && Lhs.Y <= Val;
 }
-idx2_Ti(t) v2<t>
-Min(const v2<t>& Lhs, const v2<t>& Rhs) {
+
+template <typename t> idx2_Inline v2<t>
+Min(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return v2<t>(Min(Lhs.X, Rhs.X), Min(Lhs.Y, Rhs.Y));
 }
-idx2_Ti(t) v2<t>
-Max(const v2<t>& Lhs, const v2<t>& Rhs) {
+
+template <typename t> idx2_Inline v2<t>
+Max(const v2<t>& Lhs, const v2<t>& Rhs)
+{
   return v2<t>(Max(Lhs.X, Rhs.X), Max(Lhs.Y, Rhs.Y));
 }
 
-idx2_TTi(u, t) t
-Prod(const v2<u>& Vec) { return t(Vec.X) * t(Vec.Y); }
+template <typename u, typename t> idx2_Inline t
+Prod(const v2<u>& Vec)
+{
+  return t(Vec.X) * t(Vec.Y);
+}
 
-idx2_TTi(u, t) t
-Prod(const v3<u>& Vec) { return t(Vec.X) * t(Vec.Y) * t(Vec.Z); }
+template <typename u, typename t> idx2_Inline t
+Prod(const v3<u>& Vec)
+{
+  return t(Vec.X) * t(Vec.Y) * t(Vec.Z);
+}
 
-idx2_TTi(u, t) t
-Sum(const v2<u>& Vec) { return t(Vec.X) + t(Vec.Y); }
+template <typename u, typename t> idx2_Inline t
+Sum(const v2<u>& Vec)
+{
+  return t(Vec.X) + t(Vec.Y);
+}
 
-idx2_TTi(u, t) t
-Sum(const v3<u>& Vec) { return t(Vec.X) + t(Vec.Y) + t(Vec.Z); }
+template <typename u, typename t> idx2_Inline t
+Sum(const v3<u>& Vec)
+{
+  return t(Vec.X) + t(Vec.Y) + t(Vec.Z);
+}
 
-idx2_Ti(t) v3<t>
-operator+(const v3<t>& Lhs, const v3<t>& Rhs) {
+template <typename t> idx2_Inline v3<t>
+operator+(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Lhs.X + Rhs.X, Lhs.Y + Rhs.Y, Lhs.Z + Rhs.Z);
 }
-idx2_Ti(t) v3<t>
-operator+(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v3<t>
+operator+(const v3<t>& Lhs, t Val)
+{
   return v3<t>(Lhs.X + Val, Lhs.Y + Val, Lhs.Z + Val);
 }
-idx2_Ti(t) v3<t>
-operator-(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline v3<t>
+operator-(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Lhs.X - Rhs.X, Lhs.Y - Rhs.Y, Lhs.Z - Rhs.Z);
 }
-idx2_Ti(t) v3<t>
-operator-(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v3<t>
+operator-(const v3<t>& Lhs, t Val)
+{
   return v3<t>(Lhs.X - Val, Lhs.Y - Val, Lhs.Z - Val);
 }
-idx2_Ti(t) v3<t>
-operator-(t Val, const v3<t>& Lhs) {
+
+template <typename t> idx2_Inline v3<t>
+operator-(t Val, const v3<t>& Lhs)
+{
   return v3<t>(Val - Lhs.X, Val - Lhs.Y, Val - Lhs.Z);
 }
-idx2_Ti(t) v3<t>
-operator*(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline v3<t>
+operator*(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Lhs.X * Rhs.X, Lhs.Y * Rhs.Y, Lhs.Z * Rhs.Z);
 }
-idx2_Ti(t) v3<t>
-operator*(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v3<t>
+operator*(const v3<t>& Lhs, t Val)
+{
   return v3<t>(Lhs.X * Val, Lhs.Y * Val, Lhs.Z * Val);
 }
-idx2_Ti(t) v3<t>
-operator/(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline v3<t>
+operator/(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Lhs.X / Rhs.X, Lhs.Y / Rhs.Y, Lhs.Z / Rhs.Z);
 }
-idx2_Ti(t) v3<t>
-operator/(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v3<t>
+operator/(const v3<t>& Lhs, t Val)
+{
   return v3<t>(Lhs.X / Val, Lhs.Y / Val, Lhs.Z / Val);
 }
-idx2_Ti(t) v3<t>
-operator&(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline v3<t>
+operator&(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Lhs.X & Rhs.X, Lhs.Y & Rhs.Y, Lhs.Z & Rhs.Z);
 }
-idx2_Ti(t) v3<t>
-operator&(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v3<t>
+operator&(const v3<t>& Lhs, t Val)
+{
   return v3<t>(Lhs.X & Val, Lhs.Y & Val, Lhs.Z & Val);
 }
-idx2_Ti(t) v3<t>
-operator%(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline v3<t>
+operator%(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Lhs.X % Rhs.X, Lhs.Y % Rhs.Y, Lhs.Z % Rhs.Z);
 }
-idx2_Ti(t) v3<t>
-operator%(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline v3<t>
+operator%(const v3<t>& Lhs, t Val)
+{
   return v3<t>(Lhs.X % Val, Lhs.Y % Val, Lhs.Z % Val);
 }
-idx2_Ti(t) bool
-operator==(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator==(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return Lhs.X == Rhs.X && Lhs.Y == Rhs.Y && Lhs.Z == Rhs.Z;
 }
-idx2_Ti(t) bool
-operator!=(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator!=(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return Lhs.X != Rhs.X || Lhs.Y != Rhs.Y || Lhs.Z != Rhs.Z;
 }
-idx2_Ti(t) bool
-operator==(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline bool
+operator==(const v3<t>& Lhs, t Val)
+{
   return Lhs.X == Val && Lhs.Y == Val && Lhs.Z == Val;
 }
-idx2_Ti(t) bool
-operator!=(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline bool
+operator!=(const v3<t>& Lhs, t Val)
+{
   return Lhs.X != Val || Lhs.Y != Val || Lhs.Z != Val;
 }
-idx2_Ti(t) bool
-operator<=(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator<=(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return Lhs.X <= Rhs.X && Lhs.Y <= Rhs.Y && Lhs.Z <= Rhs.Z;
 }
-idx2_Ti(t) bool
-operator<(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator<(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return Lhs.X < Rhs.X && Lhs.Y < Rhs.Y && Lhs.Z < Rhs.Z;
 }
-idx2_Ti(t) bool
-operator>(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator>(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return Lhs.X > Rhs.X && Lhs.Y > Rhs.Y && Lhs.Z > Rhs.Z;
 }
-idx2_Ti(t) bool
-operator>(const v3<t>& Lhs, t Val) {
+
+template <typename t> idx2_Inline bool
+operator>(const v3<t>& Lhs, t Val)
+{
   return Lhs.X > Val && Lhs.Y > Val && Lhs.Z > Val;
 }
-idx2_Ti(t) bool
-operator>=(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline bool
+operator>=(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return Lhs.X >= Rhs.X && Lhs.Y >= Rhs.Y && Lhs.Z >= Rhs.Z;
 }
-idx2_T(t) bool  operator<(t Val, const v3<t>& Rhs) {
+
+template <typename t> bool
+operator<(t Val, const v3<t>& Rhs)
+{
   return Val < Rhs.X && Val < Rhs.Y && Val < Rhs.Z;
 }
-idx2_T(t) bool operator<(const v3<t>& Lhs, t Val) {
+
+template <typename t> bool
+operator<(const v3<t>& Lhs, t Val)
+{
   return Lhs.X < Val && Lhs.Y < Val && Lhs.Z < Val;
 }
-idx2_T(t) bool operator<=(const v3<t>& Lhs, t Val) {
+
+template <typename t> bool
+operator<=(const v3<t>& Lhs, t Val)
+{
   return Lhs.X <= Val && Lhs.Y <= Val && Lhs.Z <= Val;
 }
-idx2_T(t) bool operator<=(t Val, const v3<t>& Rhs) {
+
+template <typename t> bool
+operator<=(t Val, const v3<t>& Rhs)
+{
   return Val <= Rhs.X && Val <= Rhs.Y && Val <= Rhs.Z;
 }
-idx2_TTi(t, u) v3<t>
-operator>>(const v3<t>& Lhs, const v3<u>& Rhs) {
+
+template <typename t, typename u> idx2_Inline v3<t>
+operator>>(const v3<t>& Lhs, const v3<u>& Rhs)
+{
   return v3<t>(Lhs.X >> Rhs.X, Lhs.Y >> Rhs.Y, Lhs.Z >> Rhs.Z);
 }
-idx2_TTi(t, u) v3<u>
-operator>>(u Val, const v3<t>& Lhs) {
+
+template <typename t, typename u> idx2_Inline v3<u>
+operator>>(u Val, const v3<t>& Lhs)
+{
   return v3<u>(Val >> Lhs.X, Val >> Lhs.Y, Val >> Lhs.Z);
 }
-idx2_TTi(t, u) v3<t>
-operator>>(const v3<t>& Lhs, u Val) {
+
+template <typename t, typename u> idx2_Inline v3<t>
+operator>>(const v3<t>& Lhs, u Val)
+{
   return v3<t>(Lhs.X >> Val, Lhs.Y >> Val, Lhs.Z >> Val);
 }
-idx2_TTi(t, u) v3<t>
-operator<<(const v3<t>& Lhs, const v3<u>& Rhs) {
+
+template <typename t, typename u> idx2_Inline v3<t>
+operator<<(const v3<t>& Lhs, const v3<u>& Rhs)
+{
   return v3<t>(Lhs.X << Rhs.X, Lhs.Y << Rhs.Y, Lhs.Z << Rhs.Z);
 }
-idx2_TTi(t, u) v3<t>
-operator<<(const v3<t>& Lhs, u Val) {
+
+template <typename t, typename u> idx2_Inline v3<t>
+operator<<(const v3<t>& Lhs, u Val)
+{
   return v3<t>(Lhs.X << Val, Lhs.Y << Val, Lhs.Z << Val);
 }
-idx2_TTi(t, u) v3<u>
-operator<<(u Val, const v3<t>& Lhs) {
+
+template <typename t, typename u> idx2_Inline v3<u>
+operator<<(u Val, const v3<t>& Lhs)
+{
   return v3<u>(Val << Lhs.X, Val << Lhs.Y, Val << Lhs.Z);
 }
-idx2_Ti(t) v3<t>
-Min(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline v3<t>
+Min(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Min(Lhs.X, Rhs.X), Min(Lhs.Y, Rhs.Y), Min(Lhs.Z, Rhs.Z));
 }
-idx2_Ti(t) v3<t>
-Max(const v3<t>& Lhs, const v3<t>& Rhs) {
+
+template <typename t> idx2_Inline v3<t>
+Max(const v3<t>& Lhs, const v3<t>& Rhs)
+{
   return v3<t>(Max(Lhs.X, Rhs.X), Max(Lhs.Y, Rhs.Y), Max(Lhs.Z, Rhs.Z));
 }
 
-idx2_Ti(t) v3<t>
-Ceil(const v3<t>& Vec) {
+template <typename t> idx2_Inline v3<t>
+Ceil(const v3<t>& Vec)
+{
   return v3<t>(ceil(Vec.X), ceil(Vec.Y), ceil(Vec.Z));
 }
 
-idx2_Ti(t) v2<t>
-Ceil(const v2<t>& Vec) {
+template <typename t> idx2_Inline v2<t>
+Ceil(const v2<t>& Vec)
+{
   return v2<t>(ceil(Vec.X), ceil(Vec.Y));
 }
 
 idx2_Inline i64
-RoundDown(i64 Val, i64 M) {
+RoundDown(i64 Val, i64 M)
+{
   return (Val / M) * M;
 }
 
 idx2_Inline i64
-RoundUp(i64 Val, i64 M) {
+RoundUp(i64 Val, i64 M)
+{
   return ((Val + M - 1) / M) * M;
 }
 
 idx2_Inline i8
-Log2Floor(i64 Val) {
+Log2Floor(i64 Val)
+{
   idx2_Assert(Val > 0);
   return Msb((u64)Val);
 }
 
 idx2_Inline i8
-Log2Ceil(i64 Val) {
+Log2Ceil(i64 Val)
+{
   idx2_Assert(Val > 0);
   auto I = Msb((u64)Val);
   return I + i8(Val != (1ll << I));
 }
 
 idx2_Inline i8
-Log8Floor(i64 Val) {
+Log8Floor(i64 Val)
+{
   idx2_Assert(Val > 0);
   return Log2Floor(Val) / 3;
 }
 
 idx2_Inline int
-GeometricSum(int Base, int N) {
+GeometricSum(int Base, int N)
+{
   idx2_Assert(N >= 0);
   return int((Pow(Base, N + 1) - 1) / (Base - 1));
 }
 
 // TODO: when n is already a power of two plus one, do not increase n
 idx2_Inline i64
-NextPow2(i64 Val) {
+NextPow2(i64 Val)
+{
   idx2_Assert(Val >= 0);
   if (Val == 0)
     return 1;
@@ -3989,7 +5389,8 @@ NextPow2(i64 Val) {
 }
 
 idx2_Inline i64
-Pow(i64 Base, int Exp) {
+Pow(i64 Base, int Exp)
+{
   idx2_Assert(Exp >= 0);
   i64 Result = 1;
   for (int I = 0; I < Exp; ++I)
@@ -3998,7 +5399,8 @@ Pow(i64 Base, int Exp) {
 }
 
 idx2_Inline v3i
-Pow(const v3i& Base, int Exp) {
+Pow(const v3i& Base, int Exp)
+{
   idx2_Assert(Exp >= 0);
   v3i Result(1);
   for (int I = 0; I < Exp; ++I)
@@ -4006,23 +5408,24 @@ Pow(const v3i& Base, int Exp) {
   return Result;
 }
 
-idx2_Ti(t) t
-Lerp(t V0, t V1, f64 T) {
+template <typename t> idx2_Inline t
+Lerp(t V0, t V1, f64 T)
+{
   idx2_Assert(0 <= T && T <= 1);
   return V0 + (V1 - V0) * T;
 }
 
-idx2_Ti(t) t
-BiLerp(t V00, t V10, t V01, t V11, const v2d& T) {
+template <typename t> idx2_Inline t
+BiLerp(t V00, t V10, t V01, t V11, const v2d& T)
+{
   idx2_Assert(0.0 <= T && T <= 1.0);
   t V0 = Lerp(V00.X, V10.X, T.X);
   t V1 = Lerp(V01.X, V11.X, T.X);
   return Lerp(V0, V1, T.Y);
 }
 
-idx2_T(t) t TriLerp(
-  t V000, t V100, t V010, t V110,
-  t V001, t V101, t V011, t V111, const v3d& T)
+template <typename t> t
+TriLerp(t V000, t V100, t V010, t V110, t V001, t V101, t V011, t V111, const v3d& T)
 {
   idx2_Assert(0.0 <= T && T <= 1.0);
   t V0 = BiLerp(V000, V100, V010, V110, T.XY);
@@ -4032,11 +5435,17 @@ idx2_T(t) t TriLerp(
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_TT(k, v)
-struct hash_table {
-  enum bucket_status : u8 { Empty, Tombstone, Occupied };
+template <typename k, typename v> struct hash_table
+{
+  enum bucket_status : u8
+  {
+    Empty,
+    Tombstone,
+    Occupied
+  };
   k* Keys = nullptr;
   v* Vals = nullptr;
   bucket_status* Stats = nullptr;
@@ -4044,7 +5453,8 @@ struct hash_table {
   i64 LogCapacity = 0;
   allocator* Alloc = nullptr;
 
-  struct iterator {
+  struct iterator
+  {
     k* Key;
     v* Val;
     hash_table* Ht;
@@ -4053,10 +5463,16 @@ struct hash_table {
     bool operator!=(const iterator& Other) const;
     bool operator==(const iterator& Other) const;
     operator bool() const;
-    idx2_Inline v& operator*() { return *Val; }
+    idx2_Inline v&
+    operator*()
+    {
+      return *Val;
+    }
   };
 
-  idx2_Inline v& operator[](const k& Key) {
+  idx2_Inline v&
+  operator[](const k& Key)
+  {
     auto It = Lookup(this, Key);
     if (!It)
       Insert(&It, Key, v());
@@ -4066,52 +5482,63 @@ struct hash_table {
   idx2_Inline operator bool() const { return Keys != nullptr; }
 };
 
-idx2_TT(k, v)
-u64 HeapSize(const hash_table<k, v>& HashTable) {
+template <typename k, typename v> u64
+HeapSize(const hash_table<k, v>& HashTable)
+{
   u64 Capacity = 1ull << HashTable.LogCapacity;
   return (sizeof(k) + sizeof(v) + sizeof(typename hash_table<k, v>::bucket_status)) * Capacity;
-
 }
 
-idx2_TTi(k, v) bool hash_table<k, v>::iterator::
-operator!=(const hash_table<k, v>::iterator& Other) const {
+template <typename k, typename v> idx2_Inline bool
+hash_table<k, v>::iterator::operator!=(const hash_table<k, v>::iterator& Other) const
+{
   return Ht != Other.Ht || Idx != Other.Idx;
 }
-idx2_TTi(k, v) bool hash_table<k, v>::iterator::
-operator==(const hash_table<k, v>::iterator& Other) const {
+
+template <typename k, typename v> idx2_Inline bool
+hash_table<k, v>::iterator::operator==(const hash_table<k, v>::iterator& Other) const
+{
   return Ht == Other.Ht && Idx == Other.Idx;
 }
-idx2_TTi(k, v) hash_table<k, v>::iterator::
-operator bool() const {
+
+template <typename k, typename v> idx2_Inline hash_table<k, v>::iterator::operator bool() const
+{
   return Ht->Stats[Idx] == Occupied;
 }
 
-idx2_TTi(k, v) typename hash_table<k, v>::iterator
-IterAt(const hash_table<k, v>& Ht, i64 H) {
-  return typename hash_table<k, v>::iterator
-    { &(Ht.Keys[H]), &(Ht.Vals[H]), &(const_cast<hash_table<k, v>&>(Ht)), H };
+template <typename k, typename v> idx2_Inline typename hash_table<k, v>::iterator
+IterAt(const hash_table<k, v>& Ht, i64 H)
+{
+  return typename hash_table<k, v>::iterator{
+    &(Ht.Keys[H]), &(Ht.Vals[H]), &(const_cast<hash_table<k, v>&>(Ht)), H
+  };
 }
 
-idx2_TT(k, v) typename hash_table<k, v>::iterator
-Begin(const hash_table<k, v>& Ht) {
+template <typename k, typename v> typename hash_table<k, v>::iterator
+Begin(const hash_table<k, v>& Ht)
+{
   i64 C = Capacity(Ht);
-  for (i64 I = 0; I <= C; ++I) {
+  for (i64 I = 0; I <= C; ++I)
+  {
     if (Ht.Stats[I] == hash_table<k, v>::Occupied)
       return IterAt(Ht, I);
   }
   return IterAt(Ht, C);
 }
 
-idx2_TT(k, v) typename hash_table<k, v>::iterator
-End(const hash_table<k, v>& Ht) {
+template <typename k, typename v> typename hash_table<k, v>::iterator
+End(const hash_table<k, v>& Ht)
+{
   i64 C = Capacity(Ht);
   idx2_Assert((Ht.Stats[C] == hash_table<k, v>::Occupied));
   return IterAt(Ht, C);
 }
 
-idx2_TTi(k, v) typename hash_table<k, v>::iterator& hash_table<k, v>::iterator::
-operator++() {
-  do {
+template <typename k, typename v> idx2_Inline typename hash_table<k, v>::iterator&
+hash_table<k, v>::iterator::operator++()
+{
+  do
+  {
     ++Idx;
   } while (Ht->Stats[Idx] != hash_table<k, v>::Occupied);
   Key = &(Ht->Keys[Idx]);
@@ -4119,50 +5546,58 @@ operator++() {
   return *this;
 }
 
-idx2_TT(k, v) void
-Init(hash_table<k, v>* Ht, allocator* AllocIn = &Mallocator()) {
+template <typename k, typename v> void
+Init(hash_table<k, v>* Ht, allocator* AllocIn = &Mallocator())
+{
   Init(Ht, 8, AllocIn); // starts with size = 2^8 = 128
 }
 
-idx2_TT(k, v) void
-Init(hash_table<k, v>* Ht, i64 LogCapacityIn, allocator* AllocIn = &Mallocator()) {
+template <typename k, typename v> void
+Init(hash_table<k, v>* Ht, i64 LogCapacityIn, allocator* AllocIn = &Mallocator())
+{
   Ht->Alloc = AllocIn;
   Ht->LogCapacity = LogCapacityIn;
   i64 Capacity = 1ll << LogCapacityIn;
-  AllocPtr(&Ht->Keys , Capacity + 1, AllocIn);
-  AllocPtr(&Ht->Vals , Capacity + 1, AllocIn);
+  AllocPtr(&Ht->Keys, Capacity + 1, AllocIn);
+  AllocPtr(&Ht->Vals, Capacity + 1, AllocIn);
   AllocPtr(&Ht->Stats, Capacity + 1, AllocIn);
   Fill(Ht->Stats, Ht->Stats + Capacity, hash_table<k, v>::Empty);
   Ht->Stats[Capacity] = hash_table<k, v>::Occupied; // sentinel
 }
 
-idx2_TT(k, v) void
-Clear(hash_table<k, v>* Ht) {
+template <typename k, typename v> void
+Clear(hash_table<k, v>* Ht)
+{
   Ht->Size = 0;
   i64 Capacity = 1ll << Ht->LogCapacity;
-  for (i64 I = 0; I < Capacity; ++I) {
+  for (i64 I = 0; I < Capacity; ++I)
+  {
     Ht->Stats[I] = hash_table<k, v>::Empty;
   }
 }
 
-idx2_TT(k, v) void
-Dealloc(hash_table<k, v>* Ht) {
-  if (Ht->Alloc) {
-    DeallocPtr(&Ht->Keys , Ht->Alloc);
-    DeallocPtr(&Ht->Vals , Ht->Alloc);
+template <typename k, typename v> void
+Dealloc(hash_table<k, v>* Ht)
+{
+  if (Ht->Alloc)
+  {
+    DeallocPtr(&Ht->Keys, Ht->Alloc);
+    DeallocPtr(&Ht->Vals, Ht->Alloc);
     DeallocPtr(&Ht->Stats, Ht->Alloc);
     Ht->Size = Ht->LogCapacity = 0;
     Ht->Alloc = nullptr;
   }
 }
 
-idx2_TTi(k, v) i64
-Size(const hash_table<k, v>& Ht) {
+template <typename k, typename v> idx2_Inline i64
+Size(const hash_table<k, v>& Ht)
+{
   return Ht.Size;
 }
 
-idx2_TTi(k, v) i64
-Capacity(const hash_table<k, v>& Ht) {
+template <typename k, typename v> idx2_Inline i64
+Capacity(const hash_table<k, v>& Ht)
+{
   return 1ll << Ht.LogCapacity;
 }
 
@@ -4192,32 +5627,37 @@ Capacity(const hash_table<k, v>& Ht) {
 // }
 
 idx2_Inline u64
-Hash(u64 Key) {
+Hash(u64 Key)
+{
   return Key;
 }
 
 // NOTE: TODO: this is a 32-bit hash
 idx2_Inline u32
-Hash(cstr Key) { // FNV-1a (https://create.stephan-brumme.com/fnv-hash/)
+Hash(cstr Key)
+{                                   // FNV-1a (https://create.stephan-brumme.com/fnv-hash/)
   constexpr u32 Prime = 0x01000193; //   16777619
-  u32 Hash  = 0x811C9DC5; // Seed: 2166136261
+  u32 Hash = 0x811C9DC5;            // Seed: 2166136261
   while (*Key)
     Hash = (*Key++ ^ Hash) * Prime;
   return Hash;
 }
 
 idx2_Inline u32
-Hash(const buffer& Buf) {
+Hash(const buffer& Buf)
+{
   return Hash((cstr)Buf.Data);
 }
 
-idx2_TTi(k, v) u64
-Index(hash_table<k, v>* Ht, u64 Key) { // Fibonacci hashing
+template <typename k, typename v> idx2_Inline u64
+Index(hash_table<k, v>* Ht, u64 Key)
+{ // Fibonacci hashing
   return (Key * 11400714819323198485llu) >> (64 - Ht->LogCapacity);
 }
 
-idx2_TT(k, v) void
-IncreaseCapacity(hash_table<k, v>* Ht) {
+template <typename k, typename v> void
+IncreaseCapacity(hash_table<k, v>* Ht)
+{
   hash_table<k, v> NewHt;
   Init(&NewHt, Ht->LogCapacity + 1, Ht->Alloc);
   for (auto It = Begin(*Ht); It != End(*Ht); ++It)
@@ -4226,12 +5666,14 @@ IncreaseCapacity(hash_table<k, v>* Ht) {
   *Ht = NewHt;
 }
 
-idx2_TT(k, v) typename hash_table<k, v>::iterator
-IncreaseCapacity(hash_table<k, v>* Ht, const typename hash_table<k, v>::iterator& ItIn) {
+template <typename k, typename v> typename hash_table<k, v>::iterator
+IncreaseCapacity(hash_table<k, v>* Ht, const typename hash_table<k, v>::iterator& ItIn)
+{
   auto ItOut = ItIn;
   hash_table<k, v> NewHt;
   Init(&NewHt, Ht->LogCapacity + 1, Ht->Alloc);
-  for (auto It = Begin(*Ht); It != End(*Ht); ++It) {
+  for (auto It = Begin(*Ht); It != End(*Ht); ++It)
+  {
     auto Result = Insert(&NewHt, *(It.Key), *(It.Val));
     if (*(ItIn.Key) == *(Result.Key))
       ItOut = Result;
@@ -4242,20 +5684,23 @@ IncreaseCapacity(hash_table<k, v>* Ht, const typename hash_table<k, v>::iterator
   return ItOut;
 }
 
-idx2_TT(k, v) typename hash_table<k, v>::iterator
-Insert(hash_table<k, v>* Ht, const k& Key, const v& Val) {
+template <typename k, typename v> typename hash_table<k, v>::iterator
+Insert(hash_table<k, v>* Ht, const k& Key, const v& Val)
+{
   if (Size(*Ht) * 10 >= Capacity(*Ht) * 7)
     IncreaseCapacity(Ht);
 
   i64 H = Index(Ht, Hash(Key));
-  while (Ht->Stats[H] == hash_table<k, v>::Occupied && !(Ht->Keys[H] == Key)) {
+  while (Ht->Stats[H] == hash_table<k, v>::Occupied && !(Ht->Keys[H] == Key))
+  {
     ++H;
     H &= Capacity(*Ht) - 1;
   }
 
   Ht->Keys[H] = Key;
   Ht->Vals[H] = Val;
-  if (Ht->Stats[H] != hash_table<k, v>::Occupied) {
+  if (Ht->Stats[H] != hash_table<k, v>::Occupied)
+  {
     ++Ht->Size;
     Ht->Stats[H] = hash_table<k, v>::Occupied;
   }
@@ -4263,47 +5708,63 @@ Insert(hash_table<k, v>* Ht, const k& Key, const v& Val) {
   return IterAt(*Ht, H);
 }
 
-idx2_TT(k, v) void
-Insert(typename hash_table<k, v>::iterator* It, const k& Key, const v& Val) {
+template <typename k, typename v> void
+Insert(typename hash_table<k, v>::iterator* It, const k& Key, const v& Val)
+{
   idx2_Assert((*It) != End(*(It->Ht)));
   *(It->Key) = Key;
   *(It->Val) = Val;
   It->Ht->Stats[It->Idx] = hash_table<k, v>::Occupied;
   ++It->Ht->Size;
 
-  if (Size(*(It->Ht)) * 10 >= Capacity(*(It->Ht)) * 7) {
+  if (Size(*(It->Ht)) * 10 >= Capacity(*(It->Ht)) * 7)
+  {
     *(It) = IncreaseCapacity(It->Ht, *It);
   }
 }
 
-idx2_TT(k, v) typename hash_table<k, v>::iterator
-Lookup(hash_table<k, v>* Ht, const k& Key) {
+template <typename k, typename v> typename hash_table<k, v>::iterator
+Lookup(hash_table<k, v>* Ht, const k& Key)
+{
   i64 H = Index(Ht, Hash(Key));
   i64 Start = H;
   bool Found = false;
-  while (Ht->Stats[H] != hash_table<k, v>::Empty) { // either Occupied or Tombstone
-    if (Ht->Keys[H] == Key) { Found = true; break; }
+  while (Ht->Stats[H] != hash_table<k, v>::Empty)
+  { // either Occupied or Tombstone
+    if (Ht->Keys[H] == Key)
+    {
+      Found = true;
+      break;
+    }
     ++H;
-    if ((H &= Capacity(*Ht) - 1) == Start) break;
+    if ((H &= Capacity(*Ht) - 1) == Start)
+      break;
   }
-  if (!Found) {
-    while (Ht->Stats[H] == hash_table<k, v>::Occupied) {
+  if (!Found)
+  {
+    while (Ht->Stats[H] == hash_table<k, v>::Occupied)
+    {
       ++H;
       H &= Capacity(*Ht) - 1;
     }
   }
   auto Result = IterAt(*Ht, H);
-  if (Found) { idx2_Assert(*Result.Key == Key); }
+  if (Found)
+  {
+    idx2_Assert(*Result.Key == Key);
+  }
   return Result;
 }
 
 /* Count how long a chain is */
-idx2_TT(k, v) i64
-Probe(hash_table<k, v>* Ht, const k& Key) {
+template <typename k, typename v> i64
+Probe(hash_table<k, v>* Ht, const k& Key)
+{
   i64 Length = 0;
   i64 H = Index(Ht, Hash(Key));
   i64 Start = H;
-  while (Ht->Stats[H] != hash_table<k, v>::Empty) { // either Occupied or Tombstone
+  while (Ht->Stats[H] != hash_table<k, v>::Empty)
+  { // either Occupied or Tombstone
     if (Ht->Keys[H] == Key)
       break;
     ++H;
@@ -4314,13 +5775,16 @@ Probe(hash_table<k, v>* Ht, const k& Key) {
   return Length;
 }
 
-idx2_TT(k, v) typename hash_table<k, v>::iterator
-Delete(hash_table<k, v>* Ht, const k& Key) {
+template <typename k, typename v> typename hash_table<k, v>::iterator
+Delete(hash_table<k, v>* Ht, const k& Key)
+{
   i64 H = Index(Ht, Hash(Key));
   i64 Start = H;
   bool Found = false;
-  while (Ht->Stats[H] != hash_table<k, v>::Empty) {
-    if (Ht->Keys[H] == Key) {
+  while (Ht->Stats[H] != hash_table<k, v>::Empty)
+  {
+    if (Ht->Keys[H] == Key)
+    {
       Ht->Stats[H] = hash_table<k, v>::Tombstone;
       --Ht->Size;
       idx2_Assert(Ht->Size >= 0);
@@ -4328,23 +5792,28 @@ Delete(hash_table<k, v>* Ht, const k& Key) {
       return IterAt(*Ht, H);
     }
     ++H;
-    if ((H &= Capacity(*Ht) - 1) == Start) break;
+    if ((H &= Capacity(*Ht) - 1) == Start)
+      break;
   }
-  if (Found) { idx2_Assert(Ht->Keys[H] == Key); }
+  if (Found)
+  {
+    idx2_Assert(Ht->Keys[H] == Key);
+  }
   idx2_Assert(Found);
   return End(*Ht);
 }
 
 /* Note: this does not do "deep" cloning */
-idx2_TT(k, v) void
-Clone(const hash_table<k, v>& Src, hash_table<k, v>* Dst) {
+template <typename k, typename v> void
+Clone(const hash_table<k, v>& Src, hash_table<k, v>* Dst)
+{
   Dealloc(Dst);
   Dst->Alloc = Src.Alloc;
   Dst->Size = Src.Size;
   Dst->LogCapacity = Src.LogCapacity;
   i64 Capacity = 1ll << Dst->LogCapacity;
-  AllocPtr(&Dst->Keys , Capacity + 1, Dst->Alloc);
-  AllocPtr(&Dst->Vals , Capacity + 1, Dst->Alloc);
+  AllocPtr(&Dst->Keys, Capacity + 1, Dst->Alloc);
+  AllocPtr(&Dst->Vals, Capacity + 1, Dst->Alloc);
   AllocPtr(&Dst->Stats, Capacity + 1, Dst->Alloc);
   memcpy(Dst->Keys, Src.Keys, sizeof(k) * (Capacity + 1));
   memcpy(Dst->Vals, Src.Vals, sizeof(v) * (Capacity + 1));
@@ -4370,8 +5839,7 @@ error<>
 WriteBuffer(cstr FileName, const buffer& Buf);
 
 /* Dump a range of stuffs into a text file */
-template<typename i>
-error<>
+template <typename i> error<>
 DumpText(cstr FileName, i Begin, i End, cstr Format);
 
 } // namespace idx2
@@ -4383,30 +5851,30 @@ DumpText(cstr FileName, i Begin, i End, cstr Format);
 #undef idx2_FTell
 /* Enable support for reading large files */
 #if defined(_WIN32)
-  #define idx2_FSeek _fseeki64
-  #define idx2_FTell _ftelli64
+#define idx2_FSeek _fseeki64
+#define idx2_FTell _ftelli64
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
-  #define _FILE_OFFSET_BITS 64
-  #define idx2_FSeek fseeko
-  #define idx2_FTell ftello
+#define _FILE_OFFSET_BITS 64
+#define idx2_FSeek fseeko
+#define idx2_FTell ftello
 #endif
 
 namespace idx2
 {
 
-#define idx2_OpenExistingFile(Fp, FileName, Mode)\
-  FILE* Fp = fopen(FileName, Mode)
+#define idx2_OpenExistingFile(Fp, FileName, Mode) FILE* Fp = fopen(FileName, Mode)
 
-#define idx2_OpenMaybeExistingFile(Fp, FileName, Mode)\
-  idx2_RAII(FILE*, Fp = fopen(FileName, Mode), , if (Fp) fclose(Fp));\
-  if (!Fp) {\
-    CreateFullDir(GetDirName(FileName));\
-    Fp = fopen(FileName, Mode);\
-    idx2_Assert(Fp);\
+#define idx2_OpenMaybeExistingFile(Fp, FileName, Mode)                                             \
+  idx2_RAII(FILE*, Fp = fopen(FileName, Mode), , if (Fp) fclose(Fp));                              \
+  if (!Fp)                                                                                         \
+  {                                                                                                \
+    CreateFullDir(GetDirName(FileName));                                                           \
+    Fp = fopen(FileName, Mode);                                                                    \
+    idx2_Assert(Fp);                                                                               \
   }
 
-template <typename i>
-error<> DumpText(cstr FileName, i Begin, i End, cstr Format)
+template <typename i> error<>
+DumpText(cstr FileName, i Begin, i End, cstr Format)
 {
   FILE* Fp = fopen(FileName, "w");
   idx2_CleanUp(0, if (Fp) fclose(Fp));
@@ -4420,14 +5888,20 @@ error<> DumpText(cstr FileName, i Begin, i End, cstr Format)
   return idx2_Error(err_code::NoError);
 }
 
-template <typename t>
-void WritePOD(FILE* Fp, const t Var) { fwrite(&Var, sizeof(Var), 1, Fp); }
+template <typename t> void
+WritePOD(FILE* Fp, const t Var)
+{
+  fwrite(&Var, sizeof(Var), 1, Fp);
+}
 
-template <typename t>
-idx2_Inline void ReadPOD(FILE* Fp, t* Val) { fread(Val, sizeof(t), 1, Fp); }
+template <typename t> idx2_Inline void
+ReadPOD(FILE* Fp, t* Val)
+{
+  fread(Val, sizeof(t), 1, Fp);
+}
 
-template <typename t>
-idx2_Inline void ReadBackwardPOD(FILE* Fp, t* Val)
+template <typename t> idx2_Inline void
+ReadBackwardPOD(FILE* Fp, t* Val)
 {
   auto Where = idx2_FTell(Fp);
   idx2_FSeek(Fp, Where -= sizeof(t), SEEK_SET);
@@ -4435,15 +5909,38 @@ idx2_Inline void ReadBackwardPOD(FILE* Fp, t* Val)
   idx2_FSeek(Fp, Where, SEEK_SET);
 }
 
-idx2_Inline void WriteBuffer(FILE* Fp, const buffer& Buf) { fwrite(Buf.Data, Size(Buf), 1, Fp); }
-idx2_Inline void WriteBuffer(FILE* Fp, const buffer& Buf, i64 Sz) { fwrite(Buf.Data, Sz, 1, Fp); }
-idx2_Inline void ReadBuffer(FILE* Fp, buffer* Buf) { fread(Buf->Data, Size(*Buf), 1, Fp); }
-idx2_Inline void ReadBuffer(FILE* Fp, buffer* Buf, i64 Sz) { fread(Buf->Data, Sz, 1, Fp); }
+idx2_Inline void
+WriteBuffer(FILE* Fp, const buffer& Buf)
+{
+  fwrite(Buf.Data, Size(Buf), 1, Fp);
+}
 
-template <typename t>
-idx2_Inline void ReadBuffer(FILE* Fp, buffer_t<t>* Buf) { fread(Buf->Data, Bytes(*Buf), 1, Fp); }
+idx2_Inline void
+WriteBuffer(FILE* Fp, const buffer& Buf, i64 Sz)
+{
+  fwrite(Buf.Data, Sz, 1, Fp);
+}
 
-idx2_Inline void ReadBackwardBuffer(FILE* Fp, buffer* Buf)
+idx2_Inline void
+ReadBuffer(FILE* Fp, buffer* Buf)
+{
+  fread(Buf->Data, Size(*Buf), 1, Fp);
+}
+
+idx2_Inline void
+ReadBuffer(FILE* Fp, buffer* Buf, i64 Sz)
+{
+  fread(Buf->Data, Sz, 1, Fp);
+}
+
+template <typename t> idx2_Inline void
+ReadBuffer(FILE* Fp, buffer_t<t>* Buf)
+{
+  fread(Buf->Data, Bytes(*Buf), 1, Fp);
+}
+
+idx2_Inline void
+ReadBackwardBuffer(FILE* Fp, buffer* Buf)
 {
   auto Where = idx2_FTell(Fp);
   idx2_FSeek(Fp, Where -= Size(*Buf), SEEK_SET);
@@ -4451,7 +5948,8 @@ idx2_Inline void ReadBackwardBuffer(FILE* Fp, buffer* Buf)
   idx2_FSeek(Fp, Where, SEEK_SET);
 }
 
-idx2_Inline void ReadBackwardBuffer(FILE* Fp, buffer* Buf, i64 Sz)
+idx2_Inline void
+ReadBackwardBuffer(FILE* Fp, buffer* Buf, i64 Sz)
 {
   assert(Sz <= Size(*Buf));
   auto Where = idx2_FTell(Fp);
@@ -4460,8 +5958,8 @@ idx2_Inline void ReadBackwardBuffer(FILE* Fp, buffer* Buf, i64 Sz)
   idx2_FSeek(Fp, Where, SEEK_SET);
 }
 
-template <int N>
-void ReadLines(FILE* Fp, array<stack_array<char, N>>* Lines)
+template <int N> void
+ReadLines(FILE* Fp, array<stack_array<char, N>>* Lines)
 {
   while (true)
   {
@@ -4480,26 +5978,25 @@ void ReadLines(FILE* Fp, array<stack_array<char, N>>* Lines)
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_T(t)
-struct list_node {
+template <typename t> struct list_node
+{
   t Payload;
   list_node* Next = nullptr;
 };
 
-idx2_T(t)
-struct list {
+template <typename t> struct list
+{
   list_node<t>* Head = nullptr;
   allocator* Alloc = nullptr;
   i64 Size = 0;
   list(allocator* Alloc = &Mallocator());
 };
 
-#define idx2_Li list_iterator<t>
-
-idx2_T(t)
-struct list_iterator {
+template <typename t> struct list_iterator
+{
   list_node<t>* Node = nullptr;
   list_iterator& operator++();
   list_node<t>* operator->() const;
@@ -4508,53 +6005,74 @@ struct list_iterator {
   bool operator==(const list_iterator& Other);
 };
 
-idx2_T(t) idx2_Li Begin(const list<t>& List);
-idx2_T(t) idx2_Li End  (const list<t>& List);
-idx2_T(t) idx2_Li Insert(list<t>* List, const idx2_Li& Where, const t& Payload);
-idx2_T(t) idx2_Li PushBack(list<t>* List, const t& Payload);
-idx2_T(t) void Dealloc(list<t>* List);
-idx2_T(t) i64 Size(const list<t>& List);
+template <typename t> list_iterator<t>
+Begin(const list<t>& List);
+
+template <typename t> list_iterator<t>
+End(const list<t>& List);
+
+template <typename t> list_iterator<t>
+Insert(list<t>* List, const list_iterator<t>& Where, const t& Payload);
+
+template <typename t> list_iterator<t>
+PushBack(list<t>* List, const t& Payload);
+
+template <typename t> void
+Dealloc(list<t>* List);
+
+template <typename t> i64
+Size(const list<t>& List);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Ti(t) list<t>::
-list(allocator* Alloc) : Alloc(Alloc) {}
+template <typename t> idx2_Inline
+list<t>::list(allocator* Alloc)
+  : Alloc(Alloc)
+{
+}
 
-idx2_T(t) idx2_Li
-Insert(list<t>* List, const list_iterator<t>& Where, const t& Payload) {
+template <typename t> list_iterator<t>
+Insert(list<t>* List, const list_iterator<t>& Where, const t& Payload)
+{
   buffer Buf;
   List->Alloc->Alloc(&Buf, sizeof(list_node<t>));
   list_node<t>* NewNode = (list_node<t>*)Buf.Data;
   NewNode->Payload = Payload;
   NewNode->Next = nullptr;
-  if (Where.Node) {
+  if (Where.Node)
+  {
     NewNode->Next = Where->Next;
     Where->Next = NewNode;
   }
   ++List->Size;
-  return list_iterator<t>{NewNode};
+  return list_iterator<t>{ NewNode };
 }
 
-idx2_T(t) idx2_Li
-PushBack(list<t>* List, const t& Payload) {
+template <typename t> list_iterator<t>
+PushBack(list<t>* List, const t& Payload)
+{
   auto Node = List->Head;
   list_node<t>* Prev = nullptr;
-  while (Node) {
+  while (Node)
+  {
     Prev = Node;
     Node = Node->Next;
   }
-  auto NewNode = Insert(List, list_iterator<t>{Prev}, Payload);
+  auto NewNode = Insert(List, list_iterator<t>{ Prev }, Payload);
   if (!Prev) // this new node is the first node in the list
     List->Head = NewNode.Node;
   return NewNode;
 }
 
-idx2_T(t) void
-Dealloc(list<t>* List) {
+template <typename t> void
+Dealloc(list<t>* List)
+{
   auto Node = List->Head;
-  while (Node) {
+  while (Node)
+  {
     buffer Buf((byte*)Node, sizeof(list_node<t>), List->Alloc);
     Node = Node->Next;
     List->Alloc->Dealloc(&Buf);
@@ -4563,41 +6081,58 @@ Dealloc(list<t>* List) {
   List->Size = 0;
 }
 
-idx2_Ti(t) i64
-Size(const list<t>& List) { return List.Size; }
+template <typename t> idx2_Inline i64
+Size(const list<t>& List)
+{
+  return List.Size;
+}
 
-idx2_Ti(t) list_iterator<t>&
-list_iterator<t>::operator++() {
+template <typename t> idx2_Inline list_iterator<t>&
+list_iterator<t>::operator++()
+{
   idx2_Assert(Node);
   Node = Node->Next;
   return *this;
 }
 
-idx2_Ti(t) list_node<t>*
-list_iterator<t>::operator->() const {
+template <typename t> idx2_Inline list_node<t>*
+list_iterator<t>::operator->() const
+{
   idx2_Assert(Node);
   return const_cast<list_node<t>*>(Node);
 }
 
-idx2_Ti(t) t& idx2_Li::
-operator*() const {
+template <typename t> idx2_Inline t&
+list_iterator<t>::operator*() const
+{
   idx2_Assert(Node);
   return const_cast<t&>(Node->Payload);
 }
 
-idx2_Ti(t) bool idx2_Li::
-operator!=(const list_iterator<t>& Other) { return Node != Other.Node; }
+template <typename t> idx2_Inline bool
+list_iterator<t>::operator!=(const list_iterator<t>& Other)
+{
+  return Node != Other.Node;
+}
 
-idx2_Ti(t) bool idx2_Li::
-operator==(const list_iterator<t>& Other) { return Node == Other.Node; }
+template <typename t> idx2_Inline bool
+list_iterator<t>::operator==(const list_iterator<t>& Other)
+{
+  return Node == Other.Node;
+}
 
-idx2_Ti(t) idx2_Li
-Begin(const list<t>& List) { return list_iterator<t>{List.Head}; }
+template <typename t> idx2_Inline list_iterator<t>
+Begin(const list<t>& List)
+{
+  return list_iterator<t>{ List.Head };
+}
 
-idx2_Ti(t) idx2_Li
-End(const list<t>& List) { (void)List; return list_iterator<t>(); }
-
-#undef idx2_Li
+template <typename t> idx2_Inline list_iterator<t>
+End(const list<t>& List)
+{
+  (void)List;
+  return list_iterator<t>();
+}
 
 } // namespace idx2
 
@@ -4608,45 +6143,60 @@ End(const list<t>& List) { (void)List; return list_iterator<t>(); }
 
 #define idx2_MaxSlots 16
 
-namespace idx2 {
+namespace idx2
+{
 
-enum class buffer_mode { Full, Line, None };
+enum class buffer_mode
+{
+  Full,
+  Line,
+  None
+};
 
-struct logger {
-  stack_array<FILE*, idx2_MaxSlots> FHandles    = {};
-  stack_array<cstr , idx2_MaxSlots> FNames      = {};
-  stack_array<u32  , idx2_MaxSlots> FNameHashes = {};
+struct logger
+{
+  stack_array<FILE*, idx2_MaxSlots> FHandles = {};
+  stack_array<cstr, idx2_MaxSlots> FNames = {};
+  stack_array<u32, idx2_MaxSlots> FNameHashes = {};
   buffer_mode Mode = buffer_mode::Full;
 };
 
 inline logger GlobalLogger;
 
-void SetBufferMode(logger* Logger, buffer_mode Mode);
-void SetBufferMode(buffer_mode Mode); // set buffer mode for the global logger
+void
+SetBufferMode(logger* Logger, buffer_mode Mode);
+
+void
+SetBufferMode(buffer_mode Mode); // set buffer mode for the global logger
 
 } // namespace idx2
 
 /*
 Use the following macro for logging as follows
 idx2_Log("log.txt", "Message %d", A)
-idx2_Log(stderr, "Message %f", B) */
+idx2_Log(stderr, "Message %f", B)
+*/
 #define idx2_Log(FileName, Format, ...)
 
-namespace idx2 {
+namespace idx2
+{
 
 constexpr inline bool
-IsStdErr(cstr Input) {
-  return Input[0] == 's' && Input[1] == 't' && Input[2] == 'd' &&
-         Input[3] == 'e' && Input[4] == 'r' && Input[5] == 'r';
+IsStdErr(cstr Input)
+{
+  return Input[0] == 's' && Input[1] == 't' && Input[2] == 'd' && Input[3] == 'e' &&
+         Input[4] == 'r' && Input[5] == 'r';
 }
 constexpr inline bool
-IsStdOut(cstr Input) {
-  return Input[0] == 's' && Input[1] == 't' && Input[2] == 'd' &&
-         Input[3] == 'o' && Input[4] == 'u' && Input[5] == 't';
+IsStdOut(cstr Input)
+{
+  return Input[0] == 's' && Input[1] == 't' && Input[2] == 'd' && Input[3] == 'o' &&
+         Input[4] == 'u' && Input[5] == 't';
 }
 
-idx2_T(t) constexpr cstr
-CastCStr(t Input) {
+template <typename t> constexpr cstr
+CastCStr(t Input)
+{
   if constexpr (is_same_type<t, cstr>::Value)
     return Input;
   return nullptr;
@@ -4656,17 +6206,18 @@ CastCStr(t Input) {
 
 #undef idx2_Log
 #if defined(idx2_Verbose)
-#define idx2_Log(FileName, Format, ...) {\
-  FILE* Fp = nullptr;\
-  if constexpr (IsStdErr(#FileName))\
-    Fp = stderr;\
-  else if constexpr (IsStdOut(#FileName))\
-    Fp = stdout;\
-  else\
-    Fp = idx2::GetFileHandle(&idx2::GlobalLogger, CastCStr(FileName));\
-  idx2::printer Pr(Fp);\
-  idx2_Print(&Pr, Format, __VA_ARGS__);\
-}
+#define idx2_Log(FileName, Format, ...)                                                            \
+  {                                                                                                \
+    FILE* Fp = nullptr;                                                                            \
+    if constexpr (IsStdErr(#FileName))                                                             \
+      Fp = stderr;                                                                                 \
+    else if constexpr (IsStdOut(#FileName))                                                        \
+      Fp = stdout;                                                                                 \
+    else                                                                                           \
+      Fp = idx2::GetFileHandle(&idx2::GlobalLogger, CastCStr(FileName));                           \
+    idx2::printer Pr(Fp);                                                                          \
+    idx2_Print(&Pr, Format, __VA_ARGS__);                                                          \
+  }
 #else
 #define idx2_Log(FileName, Format, ...)
 #endif
@@ -4686,28 +6237,31 @@ CastCStr(t Input) {
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #endif
 
 // TODO: create a mapping that is not backed by a file
 
-idx2_Enum
-(
-  mmap_err_code, int, idx2_CommonErrs,
-  MappingFailed,
-  MapViewFailed,
-  AllocateFailed,
-  FlushFailed,
-  SyncFailed,
-  UnmapFailed
-)
+idx2_Enum(mmap_err_code,
+          int,
+          idx2_CommonErrs,
+          MappingFailed,
+          MapViewFailed,
+          AllocateFailed,
+          FlushFailed,
+          SyncFailed,
+          UnmapFailed);
 
 namespace idx2
 {
 
-enum class map_mode { Read, Write };
+enum class map_mode
+{
+  Read,
+  Write
+};
 
 #if defined(_WIN32)
 using file_handle = HANDLE;
@@ -4741,36 +6295,36 @@ UnmapFile(mmap_file* MMap);
 error<mmap_err_code>
 CloseFile(mmap_file* MMap);
 
-idx2_T(t) void
+template <typename t> void
 Write(mmap_file* MMap, const t* Data);
 
-idx2_T(t) void
+template <typename t> void
 Write(mmap_file* MMap, const t* Data, i64 Size);
 
-idx2_T(t) void
+template <typename t> void
 Write(mmap_file* MMap, t Val);
 
 } // namespace idx2
 
 #include <string.h>
 
-namespace idx2 {
+namespace idx2
+{
 
-template <typename t>
-void Write
-(mmap_file* MMap, const t* Data, i64 Size)
+template <typename t> void
+Write(mmap_file* MMap, const t* Data, i64 Size)
 {
   memcpy(MMap->Buf.Data + MMap->Buf.Bytes, Data, Size);
   MMap->Buf.Bytes += Size;
 }
 
-idx2_Ti(t) void
+template <typename t> idx2_Inline void
 Write(mmap_file* MMap, const t* Data)
 {
   Write(MMap, Data, sizeof(t));
 }
 
-idx2_Ti(t) void
+template <typename t> idx2_Inline void
 Write(mmap_file* MMap, t Val)
 {
   Write(MMap, &Val, sizeof(t));
@@ -4778,23 +6332,27 @@ Write(mmap_file* MMap, t Val)
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 struct mutex;
-/*
-RAII struct that acquires the mutex on construction and releases it on destruction */
+
+/* RAII struct that acquires the mutex on construction and releases it on destruction */
 struct lock;
 
-/*
-Block until the lock can be acquired then return true.
-Return false if something goes wrong.  */
-bool Lock(mutex* Mutex);
-/* Return immediately: true if the lock can be acquired, false if not */
-bool TryLock(mutex* Mutex);
-/* Return true if the lock can be released. Return false if something goes wrong. */
-bool Unlock(mutex* Mutex);
+/* Block until the lock can be acquired then return true. Return false if something goes wrong.  */
+bool
+Lock(mutex* Mutex);
 
-}
+/* Return immediately: true if the lock can be acquired, false if not */
+bool
+TryLock(mutex* Mutex);
+
+/* Return true if the lock can be released. Return false if something goes wrong. */
+bool
+Unlock(mutex* Mutex);
+
+} // namespace idx2
 
 #if defined(_WIN32)
 
@@ -4803,76 +6361,119 @@ bool Unlock(mutex* Mutex);
 #endif
 
 #include <Windows.h>
-namespace idx2 {
-struct mutex {
+
+namespace idx2
+{
+
+struct mutex
+{
   CRITICAL_SECTION Crit;
   mutex();
   ~mutex();
 };
 
-struct lock {
+struct lock
+{
   mutex* Mutex = nullptr;
   lock(mutex* MutexIn);
   ~lock();
 };
 
-idx2_Inline mutex::
-mutex() { InitializeCriticalSection(&Crit); }
+idx2_Inline
+mutex::mutex()
+{
+  InitializeCriticalSection(&Crit);
+}
 
-idx2_Inline mutex::
-~mutex() { DeleteCriticalSection(&Crit); }
+idx2_Inline mutex::~mutex()
+{
+  DeleteCriticalSection(&Crit);
+}
 
-idx2_Inline lock::
-lock(mutex* MutexIn) : Mutex(MutexIn) { Lock(Mutex); }
+idx2_Inline
+lock::lock(mutex* MutexIn)
+  : Mutex(MutexIn)
+{
+  Lock(Mutex);
+}
 
-idx2_Inline lock::
-~lock() { Unlock(Mutex); }
+idx2_Inline lock::~lock()
+{
+  Unlock(Mutex);
+}
 
 idx2_Inline bool
-Lock(mutex* Mutex) {
+Lock(mutex* Mutex)
+{
   EnterCriticalSection(&Mutex->Crit); // TODO: handle exception
   return true;
 }
 
 idx2_Inline bool
-TryLock(mutex* Mutex) { return TryEnterCriticalSection(&Mutex->Crit) != 0; }
+TryLock(mutex* Mutex)
+{
+  return TryEnterCriticalSection(&Mutex->Crit) != 0;
+}
 
 idx2_Inline bool
-Unlock(mutex* Mutex) {
+Unlock(mutex* Mutex)
+{
   LeaveCriticalSection(&Mutex->Crit); // TODO: handle exception
   return true;
 }
 
 } // namespace idx2
+
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <pthread.h>
-namespace idx2 {
-struct mutex {
+
+namespace idx2
+{
+
+struct mutex
+{
   pthread_mutex_t Mx;
 };
 
-struct lock {
+struct lock
+{
   mutex* Mutex = nullptr;
   lock(mutex* Mutex);
   ~lock();
 };
 
-idx2_Inline lock::
-lock(mutex* Mutex) : Mutex(Mutex) { Lock(Mutex); }
+idx2_Inline
+lock::lock(mutex* Mutex)
+  : Mutex(Mutex)
+{
+  Lock(Mutex);
+}
 
-idx2_Inline lock::
-~lock() { Unlock(Mutex); }
+idx2_Inline lock::~lock()
+{
+  Unlock(Mutex);
+}
 
 idx2_Inline bool
-Lock(mutex* Mutex) { return pthread_mutex_lock(&Mutex->Mx) == 0; }
+Lock(mutex* Mutex)
+{
+  return pthread_mutex_lock(&Mutex->Mx) == 0;
+}
 
 idx2_Inline bool
-TryLock(mutex* Mutex) { return pthread_mutex_trylock(&Mutex->Mx) == 0; }
+TryLock(mutex* Mutex)
+{
+  return pthread_mutex_trylock(&Mutex->Mx) == 0;
+}
 
 idx2_Inline bool
-Unlock(mutex* Mutex) { return pthread_mutex_unlock(&Mutex->Mx) == 0; }
+Unlock(mutex* Mutex)
+{
+  return pthread_mutex_unlock(&Mutex->Mx) == 0;
+}
 
 } // namespace idx2
+
 #endif
 
 /*
@@ -5138,16 +6739,19 @@ operator!=(const pcg32& First, const pcg32& Second) {
 
 #include <math.h>
 
-namespace idx2 {
+namespace idx2
+{
 
-struct stat {
+struct stat
+{
   f64 MinV = traits<f64>::Max;
   f64 MaxV = traits<f64>::Min;
   f64 S = 0;
   i64 N = 0;
   f64 SSq = 0;
 
-  idx2_Inline void Add(f64 Val) {
+  idx2_Inline void Add(f64 Val)
+  {
     MinV = Min(MinV, Val);
     MaxV = Max(MaxV, Val);
     S += Val;
@@ -5162,87 +6766,113 @@ struct stat {
   idx2_Inline f64 SumSq() const { return SSq; }
   idx2_Inline f64 Avg() const { return S / N; }
   idx2_Inline f64 AvgSq() const { return SSq / N; }
-  idx2_Inline f64 SqAvg() const { f64 A = Avg(); return A * A; }
+  idx2_Inline f64 SqAvg() const
+  {
+    f64 A = Avg();
+    return A * A;
+  }
   idx2_Inline f64 Var() const { return AvgSq() - SqAvg(); }
   idx2_Inline f64 StdDev() const { return sqrt(Var()); }
 };
 
-}
+} // namespace idx2
 
 #include <inttypes.h>
 #include <stdio.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 // TODO: use array instead of map
-using TestFunc = void(*)();
+using TestFunc = void (*)();
+
 inline hash_table<cstr, TestFunc> TestFuncMap;
 inline int Dummy = (Init(&TestFuncMap, 1), 0);
 inline bool CalledOnly = false;
 
-#define idx2_RegisterTest(Func)\
-bool Test##Func() {\
-  if (!CalledOnly) {\
-    TestFuncMap[#Func] = Func;\
-  }\
-  return true;\
-}\
-inline bool VarTest##Func = Test##Func();
+#define idx2_RegisterTest(Func)                                                                    \
+  bool Test##Func()                                                                                \
+  {                                                                                                \
+    if (!CalledOnly)                                                                               \
+      TestFuncMap[#Func] = Func;                                                                   \
+    return true;                                                                                   \
+  }                                                                                                \
+                                                                                                   \
+  inline bool VarTest##Func = Test##Func();
 
-#define idx2_RegisterTestOnly(Func)\
-bool Test##Func() {\
-  if (CalledOnly)\
-    idx2_Assert(false);\
-  CalledOnly = true;\
-  Clear(&TestFuncMap);\
-  TestFuncMap[#Func] = Func;\
-  return true;\
-}\
-inline bool VarTest##Func = Test##Func();
+#define idx2_RegisterTestOnly(Func)                                                                \
+  bool Test##Func()                                                                                \
+  {                                                                                                \
+    if (CalledOnly)                                                                                \
+      idx2_Assert(false);                                                                          \
+    CalledOnly = true;                                                                             \
+    Clear(&TestFuncMap);                                                                           \
+    TestFuncMap[#Func] = Func;                                                                     \
+    return true;                                                                                   \
+  }                                                                                                \
+                                                                                                   \
+  inline bool VarTest##Func = Test##Func();
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 struct timer;
-void StartTimer (timer* Timer);
-i64  ElapsedTime(timer* Timer); // return nanoseconds
-i64  ResetTimer (timer* Timer); // return nanoseconds
-f64  Milliseconds(i64 Nanosecs);
-f64  Seconds(i64 Nanosecs);
+void
+StartTimer(timer* Timer);
+i64
+ElapsedTime(timer* Timer); // return nanoseconds
+i64
+ResetTimer(timer* Timer); // return nanoseconds
+f64
+Milliseconds(i64 Nanosecs);
+f64
+Seconds(i64 Nanosecs);
 
 } // namespace idx2
 
 #if defined(idx2_CTimer)
 #include <time.h>
-namespace idx2 {
 
-struct timer {
+namespace idx2
+{
+
+struct timer
+{
   clock_t Start = 0;
 };
+
 idx2_Inline void
-StartTimer (timer* Timer) {
+StartTimer(timer* Timer)
+{
   Timer->Start = clock();
 }
+
 idx2_Inline i64
-ElapsedTime(timer* Timer) {
+ElapsedTime(timer* Timer)
+{
   auto End = clock();
   auto Seconds = (double)(End - Timer->Start) / CLOCKS_PER_SEC;
   return Seconds * 1e9;
 }
-}
+
+} // namespace idx2
+
 #elif defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-
 #include <Windows.h>
 
-namespace idx2 {
+namespace idx2
+{
 
-struct timer {
-  inline const static i64 PCFreq = []() {
+struct timer
+{
+  inline const static i64 PCFreq = []()
+  {
     LARGE_INTEGER Li;
     bool Ok = QueryPerformanceFrequency(&Li);
     return Ok ? Li.QuadPart : 0;
@@ -5251,7 +6881,8 @@ struct timer {
 };
 
 idx2_Inline void
-StartTimer(timer* Timer) {
+StartTimer(timer* Timer)
+{
   LARGE_INTEGER Li;
   QueryPerformanceCounter(&Li);
   Timer->CounterStart = Li.QuadPart;
@@ -5259,66 +6890,91 @@ StartTimer(timer* Timer) {
 
 // TODO: take a const reference
 idx2_Inline i64
-ElapsedTime(timer* Timer) {
+ElapsedTime(timer* Timer)
+{
   LARGE_INTEGER Li;
   QueryPerformanceCounter(&Li);
   return (Li.QuadPart - Timer->CounterStart) * 1000000000 / Timer->PCFreq;
 }
 
 } // namespace idx2
+
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <time.h>
 
-namespace idx2 {
+namespace idx2
+{
 
-struct timer {
+struct timer
+{
   timespec Start;
 };
 
 idx2_Inline void
-StartTimer(timer* Timer) {
+StartTimer(timer* Timer)
+{
   clock_gettime(CLOCK_MONOTONIC, &Timer->Start);
 }
 
 idx2_Inline i64
-ElapsedTime(timer* Timer) {
+ElapsedTime(timer* Timer)
+{
   timespec End;
   clock_gettime(CLOCK_MONOTONIC, &End);
   return 1e9 * (End.tv_sec - Timer->Start.tv_sec) + (End.tv_nsec - Timer->Start.tv_nsec);
 }
+
 } // namespace idx2
+
 #endif
 
-namespace idx2 {
+namespace idx2
+{
 
 idx2_Inline i64
-ResetTimer(timer* Timer) {
+ResetTimer(timer* Timer)
+{
   i64 Elapsed = ElapsedTime(Timer);
   StartTimer(Timer);
   return Elapsed;
 }
 
 idx2_Inline f64
-Milliseconds(i64 Nanosecs) { return f64(Nanosecs) / 1e6; }
+Milliseconds(i64 Nanosecs)
+{
+  return f64(Nanosecs) / 1e6;
+}
 
 idx2_Inline f64
-Seconds(i64 Nanosecs) { return f64(Nanosecs) / 1e9; }
+Seconds(i64 Nanosecs)
+{
+  return f64(Nanosecs) / 1e9;
+}
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-u32 Murmur3_32(u8* Key, int Len, u32 Seed);
+u32
+Murmur3_32(u8* Key, int Len, u32 Seed);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-enum dimension { X, Y, Z };
+enum dimension
+{
+  X,
+  Y,
+  Z
+};
 
 struct volume;
 
-struct extent {
+struct extent
+{
   u64 From = 0, Dims = 0;
   extent();
   explicit extent(const v3i& Dims3);
@@ -5328,7 +6984,8 @@ struct extent {
   static extent Invalid();
 };
 
-struct grid : public extent {
+struct grid : public extent
+{
   u64 Strd = 0;
   grid();
   explicit grid(const v3i& Dims3);
@@ -5341,38 +6998,42 @@ struct grid : public extent {
 };
 
 // TODO: do not allocate in the constructor, use Alloc() function
-struct volume {
+struct volume
+{
   buffer Buffer = {};
   u64 Dims = 0;
   dtype Type = dtype::__Invalid__;
   volume();
   volume(const buffer& Buf, const v3i& Dims3, dtype TypeIn);
   volume(const v3i& Dims3, dtype TypeIn, allocator* Alloc = &Mallocator());
-  idx2_T(t) volume(const t* Ptr, i64 Size);
-  idx2_T(t) volume(const t* Ptr, const v3i& Dims3);
-  idx2_T(t) explicit volume(const buffer_t<t>& Buf);
-  idx2_T(t) t& At(const v3i& P) const;
-  idx2_T(t) t& At(const v3i& From3, const v3i& Strd3, const v3i& P) const;
-  idx2_T(t) t& At(const extent& Ext, const v3i& P) const;
-  idx2_T(t) t& At(const grid& Grid, const v3i& P) const;
-  idx2_T(t) t& At(i64 Idx) const;
-  idx2_T(t) volume& operator=(t Val);
+  template <typename t> volume(const t* Ptr, i64 Size);
+  template <typename t> volume(const t* Ptr, const v3i& Dims3);
+  template <typename t> explicit volume(const buffer_t<t>& Buf);
+  template <typename t> t& At(const v3i& P) const;
+  template <typename t> t& At(const v3i& From3, const v3i& Strd3, const v3i& P) const;
+  template <typename t> t& At(const extent& Ext, const v3i& P) const;
+  template <typename t> t& At(const grid& Grid, const v3i& P) const;
+  template <typename t> t& At(i64 Idx) const;
+  template <typename t> volume& operator=(t Val);
 };
 
-struct mmap_volume {
+struct mmap_volume
+{
   volume Vol;
   mmap_file MMap;
 };
 
-void Unmap(mmap_volume* Vol);
+void
+Unmap(mmap_volume* Vol);
 
 /* Represent a volume storing samples of a sub-grid to a larger grid */
-struct subvol_grid {
+struct subvol_grid
+{
   volume Vol;
   grid Grid;
   explicit subvol_grid(const volume& VolIn);
   subvol_grid(const grid& GridIn, const volume& VolIn);
-  idx2_T(t) t& At(const v3i& P) const;
+  template <typename t> t& At(const v3i& P) const;
 };
 
 #define idx2_PrStrExt "[" idx2_PrStrV3i idx2_PrStrV3i "]"
@@ -5380,50 +7041,112 @@ struct subvol_grid {
 #define idx2_PrStrGrid "[" idx2_PrStrV3i idx2_PrStrV3i idx2_PrStrV3i "]"
 #define idx2_PrGrid(G) idx2_PrV3i(From(G)), idx2_PrV3i(Dims(G)), idx2_PrV3i(Strd(G))
 
-bool operator==(const extent& Ext1, const extent& Ext2);
-bool operator==(const grid& Ext1, const grid& Ext2);
-bool operator==(const volume& V1, const volume& V2);
+bool
+operator==(const extent& Ext1, const extent& Ext2);
 
-v3i Dims(const v3i& First, const v3i& Last);
-v3i Dims(const v3i& First, const v3i& Last, const v3i& Strd);
+bool
+operator==(const grid& Ext1, const grid& Ext2);
 
-v3i From(const extent& Ext);
-v3i To(const extent& Ext);
-v3i Frst(const extent& Ext);
-v3i Last(const extent& Ext);
-v3i Dims(const extent& Ext);
-v3i Strd(const extent& Ext);
-i64 Size(const extent& Ext);
-void SetFrom(extent* Ext, const v3i& From3);
-void SetDims(extent* Ext, const v3i& Dims3);
+bool
+operator==(const volume& V1, const volume& V2);
 
-v3i From(const grid& Grid);
-v3i To(const grid& Grid);
-v3i Frst(const grid& Grid);
-v3i Last(const grid& Grid);
-v3i Dims(const grid& Grid);
-v3i Strd(const grid& Grid);
-i64 Size(const grid& Grid);
-void SetFrom(grid* Grid, const v3i& From3);
-void SetDims(grid* Grid, const v3i& Dims3);
-void SetStrd(grid* Grid, const v3i& Strd3);
+v3i
+Dims(const v3i& First, const v3i& Last);
 
-v3i From(const volume& Vol);
-v3i To(const volume& Vol);
-v3i Frst(const volume& Vol);
-v3i Last(const volume& Vol);
-v3i Dims(const volume& Vol);
-v3i Strd(const volume& Vol);
-i64 Size(const volume& Vol);
-void SetDims(volume* Vol, const v3i& Dims3);
+v3i
+Dims(const v3i& First, const v3i& Last, const v3i& Strd);
 
-i64 Row(const v3i& N, const v3i& P);
-v3i InvRow(i64 I, const v3i& N);
+v3i
+From(const extent& Ext);
 
-//grid Intersect();
+v3i
+To(const extent& Ext);
 
-idx2_T(t)
-struct volume_iterator {
+v3i
+Frst(const extent& Ext);
+
+v3i
+Last(const extent& Ext);
+
+v3i
+Dims(const extent& Ext);
+
+v3i
+Strd(const extent& Ext);
+
+i64
+Size(const extent& Ext);
+
+void
+SetFrom(extent* Ext, const v3i& From3);
+
+void
+SetDims(extent* Ext, const v3i& Dims3);
+
+v3i
+From(const grid& Grid);
+
+v3i
+To(const grid& Grid);
+
+v3i
+Frst(const grid& Grid);
+
+v3i
+Last(const grid& Grid);
+
+v3i
+Dims(const grid& Grid);
+
+v3i
+Strd(const grid& Grid);
+
+i64
+Size(const grid& Grid);
+
+void
+SetFrom(grid* Grid, const v3i& From3);
+
+void
+SetDims(grid* Grid, const v3i& Dims3);
+
+void
+SetStrd(grid* Grid, const v3i& Strd3);
+
+v3i
+From(const volume& Vol);
+
+v3i
+To(const volume& Vol);
+
+v3i
+Frst(const volume& Vol);
+
+v3i
+Last(const volume& Vol);
+
+v3i
+Dims(const volume& Vol);
+
+v3i
+Strd(const volume& Vol);
+
+i64
+Size(const volume& Vol);
+
+void
+SetDims(volume* Vol, const v3i& Dims3);
+
+i64
+Row(const v3i& N, const v3i& P);
+
+v3i
+InvRow(i64 I, const v3i& N);
+
+// grid Intersect();
+
+template <typename t> struct volume_iterator
+{
   t* Ptr = nullptr;
   v3i P = {}, N = {};
   volume_iterator& operator++();
@@ -5431,11 +7154,15 @@ struct volume_iterator {
   bool operator!=(const volume_iterator& Other) const;
   bool operator==(const volume_iterator& Other) const;
 };
-idx2_T(t) volume_iterator<t> Begin(const volume& Vol);
-idx2_T(t) volume_iterator<t> End(const volume& Vol);
 
-idx2_T(t)
-struct extent_iterator {
+template <typename t> volume_iterator<t>
+Begin(const volume& Vol);
+
+template <typename t> volume_iterator<t>
+End(const volume& Vol);
+
+template <typename t> struct extent_iterator
+{
   t* Ptr = nullptr;
   v3i P = {}, D = {}, N = {};
   extent_iterator& operator++();
@@ -5443,13 +7170,17 @@ struct extent_iterator {
   bool operator!=(const extent_iterator& Other) const;
   bool operator==(const extent_iterator& Other) const;
 };
-idx2_T(t) extent_iterator<t> Begin(const extent& Ext, const volume& Vol);
-idx2_T(t) extent_iterator<t> End(const extent& Ext, const volume& Vol);
+
+template <typename t> extent_iterator<t>
+Begin(const extent& Ext, const volume& Vol);
+
+template <typename t> extent_iterator<t>
+End(const extent& Ext, const volume& Vol);
 // TODO: merge grid_iterator and grid_indexer?
 // TODO: add extent_iterator and dimension_iterator?
 
-idx2_T(t)
-struct grid_iterator {
+template <typename t> struct grid_iterator
+{
   t* Ptr = nullptr;
   v3i P = {}, D = {}, S = {}, N = {};
   grid_iterator& operator++();
@@ -5457,296 +7188,549 @@ struct grid_iterator {
   bool operator!=(const grid_iterator& Other) const;
   bool operator==(const grid_iterator& Other) const;
 };
-idx2_T(t) grid_iterator<t> Begin(const grid& Grid, const volume& Vol);
-idx2_T(t) grid_iterator<t> End(const grid& Grid, const volume& Vol);
+
+template <typename t> grid_iterator<t>
+Begin(const grid& Grid, const volume& Vol);
+
+template <typename t> grid_iterator<t>
+End(const grid& Grid, const volume& Vol);
 
 /* Read a volume from a file. */
-error<> ReadVolume(cstr FileName, const v3i& Dims3, dtype Type, volume* Vol);
+error<>
+ReadVolume(cstr FileName, const v3i& Dims3, dtype Type, volume* Vol);
 
 /* Memory-map a volume */
-error<mmap_err_code> MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mode Mode);
+error<mmap_err_code>
+MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mode Mode);
 
-void Resize(volume* Vol, const v3i& Dims3, allocator* Alloc = &Mallocator());
-void Resize(volume* Vol, const v3i& Dims3, dtype Type, allocator* Alloc = &Mallocator());
-void Dealloc(volume* Vol);
+void
+Resize(volume* Vol, const v3i& Dims3, allocator* Alloc = &Mallocator());
 
-error<> WriteVolume(FILE* Fp, const volume& Vol, const grid& Grid);
-error<> WriteVolume(cstr FileName, const volume& Vol);
-error<> WriteVolume(cstr FileName, const volume& Vol, const extent& Grid);
+void
+Resize(volume* Vol, const v3i& Dims3, dtype Type, allocator* Alloc = &Mallocator());
+
+void
+Dealloc(volume* Vol);
+
+error<>
+WriteVolume(FILE* Fp, const volume& Vol, const grid& Grid);
+
+error<>
+WriteVolume(cstr FileName, const volume& Vol);
+
+error<>
+WriteVolume(cstr FileName, const volume& Vol, const extent& Grid);
 
 /* Copy a region of the first volume to a region of the second volume */
-idx2_T(t) void Copy(const t& SGrid, const volume& SVol, volume* DVol);
-idx2_TT(t1, t2) void Copy(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol);
+template <typename t> void
+Copy(const t& SGrid, const volume& SVol, volume* DVol);
+
+template <typename t1, typename t2> void
+Copy(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol);
+
 /* Copy the part of SVol that overlaps with Grid to DVol. All grids are defined
 on some "global" coordinate system. */
-idx2_T(t) void Copy(const t& Grid, const subvol_grid& SVol, subvol_grid* DVol);
+template <typename t> void
+Copy(const t& Grid, const subvol_grid& SVol, subvol_grid* DVol);
+
 /* Similar to copy, but add the source to the destination instead */
-idx2_TT(t1, t2) void Add(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol);
+template <typename t1, typename t2> void
+Add(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol);
+
 /* Returns whether Grid1 is a sub-grid of Grid2 */
-idx2_TT(t1, t2) bool IsSubGrid(const t1& Grid1, const t2& Grid2);
-idx2_TT(t1, t2) t1 SubGrid(const t1& Grid1, const t2& Grid2);
+template <typename t1, typename t2> bool
+IsSubGrid(const t1& Grid1, const t2& Grid2);
+
+template <typename t1, typename t2> t1
+SubGrid(const t1& Grid1, const t2& Grid2);
+
 /* Compute the position of Grid1 relative to Grid2 (Grid1 is a sub-grid of Grid2) */
-idx2_TT(t1, t2) t1 Relative(const t1& Grid1, const t2& Grid2);
+template <typename t1, typename t2> t1
+Relative(const t1& Grid1, const t2& Grid2);
 /* "Crop" Grid1 against Grid2 */
-idx2_TT(t1, t2) t1 Crop(const t1& Grid1, const t2& Grid2);
-idx2_T(t) bool IsInGrid(const t& Grid, const v3i& Point);
+template <typename t1, typename t2> t1
+Crop(const t1& Grid1, const t2& Grid2);
+
+template <typename t> bool
+IsInGrid(const t& Grid, const v3i& Point);
+
 /* Return the bounding box of two extents */
-extent BoundingBox(const extent& Ext1, const extent& Ext2);
+extent
+BoundingBox(const extent& Ext1, const extent& Ext2);
 
 /* Return a slab (from Grid) of size N in the direction of D. If N is positive,
 take from the lower end, otherwise take from the higher end. Useful for e.g.,
 taking a boundary face/column/corner of a block. */
-idx2_T(t) t Slab(const t& Grid, dimension D, int N);
-struct grid_split { grid First, Second; };
-grid_split Split(const grid& Grid, dimension D, int N);
-grid_split SplitAlternate(const grid& Grid, dimension D);
-idx2_T(t) t Translate(const t& Grid, dimension D, int N);
-idx2_T(t) struct slabs1 {
+template <typename t> t
+Slab(const t& Grid, dimension D, int N);
+struct grid_split
+{
+  grid First, Second;
+};
+
+grid_split
+Split(const grid& Grid, dimension D, int N);
+
+grid_split
+SplitAlternate(const grid& Grid, dimension D);
+
+template <typename t> t
+Translate(const t& Grid, dimension D, int N);
+
+template <typename t> struct slabs1
+{
   t Slabs[4];
 };
 
-idx2_T(t) slabs1<t>
-TakeSlabs1(const t& Grid) {
+template <typename t> slabs1<t>
+TakeSlabs1(const t& Grid)
+{
   v3i D3 = Dims(Grid);
-  idx2_Assert((D3.X < D3.Y && D3.Y == D3.Z) || (D3.Y < D3.Z && D3.Z == D3.X) || (D3.Z < D3.X && D3.X == D3.Y));
+  idx2_Assert((D3.X < D3.Y && D3.Y == D3.Z) || (D3.Y < D3.Z && D3.Z == D3.X) ||
+              (D3.Z < D3.X && D3.X == D3.Y));
   dimension D, E, F;
   int M;
-  if (D3.X < D3.Y) {
-    D = X; E = Y; F = Z; M = D3.X;
-  } else if (D3.Y < D3.Z) {
-    D = Y; E = Z; F = X; M = D3.Y;
-  } else {
-    D = Z; E = X; F = Y; M = D3.Z;
+  if (D3.X < D3.Y)
+  {
+    D = X;
+    E = Y;
+    F = Z;
+    M = D3.X;
   }
-  return slabs1<t>{ Slab(Slab(Grid, E,  M), F,  M),   // MMM
-                    Slab(Slab(Grid, E, -1), F,  M),   // MM1
-                    Slab(Slab(Grid, F, -1), E,  M),   // M1M
+  else if (D3.Y < D3.Z)
+  {
+    D = Y;
+    E = Z;
+    F = X;
+    M = D3.Y;
+  }
+  else
+  {
+    D = Z;
+    E = X;
+    F = Y;
+    M = D3.Z;
+  }
+  return slabs1<t>{ Slab(Slab(Grid, E, M), F, M),     // MMM
+                    Slab(Slab(Grid, E, -1), F, M),    // MM1
+                    Slab(Slab(Grid, F, -1), E, M),    // M1M
                     Slab(Slab(Grid, E, -1), F, -1) }; // M11
 }
 
-void Clone(const volume& Src, volume* Dst, allocator* Alloc = &Mallocator());
+void
+Clone(const volume& Src, volume* Dst, allocator* Alloc = &Mallocator());
 
 /* Return the number of dimensions, given a volume size */
-int NumDims(const v3i& N);
+int
+NumDims(const v3i& N);
 
 #define idx2_BeginGridLoop(G, V) // G is a grid and V is a volume
 #define idx2_EndGridLoop
+
 #define idx2_BeginGridLoop2(GI, VI, GJ, VJ) // loop through two grids in lockstep
 #define idx2_EndGridLoop2
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-idx2_Inline extent::
-extent() = default;
+idx2_Inline
+extent::extent() = default;
 
-idx2_Inline extent::
-extent(const v3i& Dims3)
+idx2_Inline
+extent::extent(const v3i& Dims3)
   : From(0)
-  , Dims(Pack3i64(Dims3)) {}
+  , Dims(Pack3i64(Dims3))
+{
+}
 
-idx2_Inline extent::
-extent(const volume& Vol)
+idx2_Inline
+extent::extent(const volume& Vol)
   : From(0)
-  , Dims(Vol.Dims) {}
+  , Dims(Vol.Dims)
+{
+}
 
-idx2_Inline extent::
-extent(const v3i& From3, const v3i& Dims3)
+idx2_Inline
+extent::extent(const v3i& From3, const v3i& Dims3)
   : From(Pack3i64(From3))
-  , Dims(Pack3i64(Dims3)) {}
+  , Dims(Pack3i64(Dims3))
+{
+}
 
-idx2_Inline extent::
-operator bool() const {
+idx2_Inline extent::operator bool() const
+{
   return Unpack3i64(Dims) > v3i(0);
 }
 
-idx2_Inline extent extent::
-Invalid() {
+idx2_Inline extent
+extent::Invalid()
+{
   return extent(v3i(0), v3i(0));
 }
 
-idx2_Inline grid::
-grid() = default;
+idx2_Inline
+grid::grid() = default;
 
-idx2_Inline grid::
-grid(const v3i& Dims3)
+idx2_Inline
+grid::grid(const v3i& Dims3)
   : extent(Dims3)
-  , Strd(Pack3i64(v3i(1))) {}
+  , Strd(Pack3i64(v3i(1)))
+{
+}
 
-idx2_Inline grid::
-grid(const v3i& From3, const v3i& Dims3)
+idx2_Inline
+grid::grid(const v3i& From3, const v3i& Dims3)
   : extent(From3, Dims3)
-  , Strd(Pack3i64(v3i(1))) {}
+  , Strd(Pack3i64(v3i(1)))
+{
+}
 
-idx2_Inline grid::
-grid(const v3i& From3, const v3i& Dims3, const v3i& Strd3)
+idx2_Inline
+grid::grid(const v3i& From3, const v3i& Dims3, const v3i& Strd3)
   : extent(From3, Dims3)
-  , Strd(Pack3i64(Strd3)) {}
+  , Strd(Pack3i64(Strd3))
+{
+}
 
-idx2_Inline grid::
-grid(const extent& Ext)
+idx2_Inline
+grid::grid(const extent& Ext)
   : extent(Ext)
-  , Strd(Pack3i64(v3i(1))) {}
+  , Strd(Pack3i64(v3i(1)))
+{
+}
 
-idx2_Inline grid::
-grid(const volume& Vol)
+idx2_Inline
+grid::grid(const volume& Vol)
   : extent(Vol)
-  , Strd(Pack3i64(v3i(1))) {}
+  , Strd(Pack3i64(v3i(1)))
+{
+}
 
-idx2_Inline grid::
-operator bool() const {
+idx2_Inline grid::operator bool() const
+{
   return Unpack3i64(Dims) > v3i(0);
 }
 
-idx2_Inline grid grid::
-Invalid() {
+idx2_Inline grid
+grid::Invalid()
+{
   return grid(v3i(0), v3i(0), v3i(0));
 }
 
-idx2_Inline volume::
-volume() = default;
+idx2_Inline
+volume::volume() = default;
 
-idx2_Inline volume::
-volume(const buffer& Buf, const v3i& Dims3, dtype TypeIn)
+idx2_Inline
+volume::volume(const buffer& Buf, const v3i& Dims3, dtype TypeIn)
   : Buffer(Buf)
   , Dims(Pack3i64(Dims3))
-  , Type(TypeIn) {}
+  , Type(TypeIn)
+{
+}
 
-idx2_Inline volume::
-volume(const v3i& Dims3, dtype TypeIn, allocator* Alloc)
+idx2_Inline
+volume::volume(const v3i& Dims3, dtype TypeIn, allocator* Alloc)
   : Buffer()
   , Dims(Pack3i64(Dims3))
-  , Type(TypeIn) { AllocBuf(&Buffer, SizeOf(TypeIn) * Prod<i64>(Dims3), Alloc); }
+  , Type(TypeIn)
+{
+  AllocBuf(&Buffer, SizeOf(TypeIn) * Prod<i64>(Dims3), Alloc);
+}
 
-idx2_Ti(t) volume::
-volume(const t* Ptr, i64 Size)
-  : volume(Ptr, v3i(Size, 1, 1)) { idx2_Assert(Size <= (i64)traits<i32>::Max); }
+template <typename t> idx2_Inline
+volume::volume(const t* Ptr, i64 Size)
+  : volume(Ptr, v3i(Size, 1, 1))
+{
+  idx2_Assert(Size <= (i64)traits<i32>::Max);
+}
 
-idx2_Ti(t) volume::
-volume(const t* Ptr, const v3i& Dims3)
+template <typename t> idx2_Inline
+volume::volume(const t* Ptr, const v3i& Dims3)
   : Buffer((byte*)const_cast<t*>(Ptr), Prod<i64>(Dims3) * sizeof(t))
   , Dims(Pack3i64(Dims3))
-  , Type(dtype_traits<t>::Type) {}
+  , Type(dtype_traits<t>::Type)
+{
+}
 
-idx2_Ti(t) volume::
-volume(const buffer_t<t>& Buf)
-  : volume(Buf.Data, Buf.Size) {}
+template <typename t> idx2_Inline
+volume::volume(const buffer_t<t>& Buf)
+  : volume(Buf.Data, Buf.Size)
+{
+}
 
-idx2_T(t) volume& volume::
-operator=(t Val) {
+template <typename t> volume&
+volume::operator=(t Val)
+{
   idx2_Assert(dtype_traits<t>::Type == Type);
   Fill(Begin<t>(*this), End<t>(*this), Val);
   return *this;
 }
 
-idx2_Inline subvol_grid::
-subvol_grid(const volume& VolIn)
+idx2_Inline
+subvol_grid::subvol_grid(const volume& VolIn)
   : Vol(VolIn)
-  , Grid(VolIn) {}
+  , Grid(VolIn)
+{
+}
 
-idx2_Inline subvol_grid::
-subvol_grid(const grid& GridIn, const volume& VolIn)
+idx2_Inline
+subvol_grid::subvol_grid(const grid& GridIn, const volume& VolIn)
   : Vol(VolIn)
-  , Grid(GridIn) {}
+  , Grid(GridIn)
+{
+}
 
-idx2_Ti(t) t& volume::
-At(const v3i& P) const {
+template <typename t> idx2_Inline t&
+volume::At(const v3i& P) const
+{
   v3i D3 = idx2::Dims(*this);
   idx2_Assert(P < D3, "%d %d %d\n", P.X, P.Y, P.Z);
   return (const_cast<t*>((const t*)Buffer.Data))[Row(D3, P)];
 }
 
-idx2_Ti(t) t& volume::
-At(const v3i& From3, const v3i& Strd3, const v3i& P) const {
+template <typename t> idx2_Inline t&
+volume::At(const v3i& From3, const v3i& Strd3, const v3i& P) const
+{
   return At<t>(From3 + P * Strd3);
 }
 
-idx2_Ti(t) t& volume::
-At(const extent& Ext, const v3i& P) const {
+template <typename t> idx2_Inline t&
+volume::At(const extent& Ext, const v3i& P) const
+{
   return At<t>(From(Ext) + P);
 }
 
-idx2_Ti(t) t& volume::
-At(const grid& Grid, const v3i& P) const {
+template <typename t> idx2_Inline t&
+volume::At(const grid& Grid, const v3i& P) const
+{
   return At<t>(From(Grid) + P * Strd(Grid));
 }
 
-idx2_Ti(t) t& volume::
-At(i64 Idx) const {
+template <typename t> idx2_Inline t&
+volume::At(i64 Idx) const
+{
   // TODO: add a bound check in here
   return (const_cast<t*>((const t*)Buffer.Data))[Idx];
 }
 
 idx2_Inline bool
-operator==(const extent& E1, const extent& E2) {
+operator==(const extent& E1, const extent& E2)
+{
   return E1.Dims == E2.Dims && E1.From == E2.From;
 }
 
 idx2_Inline bool
-operator==(const grid& G1, const grid& G2) {
+operator==(const grid& G1, const grid& G2)
+{
   return G1.Dims == G2.Dims && G1.From == G2.From && G1.Strd == G2.Strd;
 }
 
 idx2_Inline bool
-operator==(const volume& V1, const volume& V2) {
+operator==(const volume& V1, const volume& V2)
+{
   return V1.Buffer == V2.Buffer && V1.Dims == V2.Dims && V1.Type == V2.Type;
 }
 
-idx2_Inline v3i Dims(const v3i& Frst, const v3i& Last) { return Last - Frst + 1; }
-idx2_Inline v3i Dims(const v3i& Frst, const v3i& Last, const v3i& Strd) { return (Last - Frst) / Strd + 1; }
+idx2_Inline v3i
+Dims(const v3i& Frst, const v3i& Last)
+{
+  return Last - Frst + 1;
+}
 
-idx2_Inline v3i  From(const extent& Ext) { return Unpack3i64(Ext.From); }
-idx2_Inline v3i  To(const extent& Ext) { return From(Ext) + Dims(Ext); }
-idx2_Inline v3i  Frst(const extent& Ext) { return From(Ext); }
-idx2_Inline v3i  Last(const extent& Ext) { return To(Ext) - 1; }
-idx2_Inline v3i  Dims(const extent& Ext) { return Unpack3i64(Ext.Dims); }
-idx2_Inline v3i  Strd(const extent& Ext) { (void)Ext; return v3i(1); }
-idx2_Inline i64  Size(const extent& Ext) { return Prod<i64>(Dims(Ext)); }
-idx2_Inline void SetFrom(extent* Ext, const v3i& From3) { Ext->From = Pack3i64(From3); }
-idx2_Inline void SetDims(extent* Ext, const v3i& Dims3) { Ext->Dims = Pack3i64(Dims3); }
+idx2_Inline v3i
+Dims(const v3i& Frst, const v3i& Last, const v3i& Strd)
+{
+  return (Last - Frst) / Strd + 1;
+}
 
-idx2_Inline v3i  From(const grid& Grid) { return Unpack3i64(Grid.From); }
-idx2_Inline v3i  To(const grid& Grid) { return From(Grid) + Dims(Grid) * Strd(Grid); }
-idx2_Inline v3i  Frst(const grid& Grid) { return From(Grid); }
-idx2_Inline v3i  Last(const grid& Grid) { return To(Grid) - Strd(Grid); }
-idx2_Inline v3i  Dims(const grid& Grid) { return Unpack3i64(Grid.Dims); }
-idx2_Inline v3i  Strd(const grid& Grid) { return Unpack3i64(Grid.Strd); }
-idx2_Inline i64  Size(const grid& Grid) { return Prod<i64>(Dims(Grid)); }
-idx2_Inline void SetFrom(grid* Grid, const v3i& From3) { Grid->From = Pack3i64(From3); }
-idx2_Inline void SetDims(grid* Grid, const v3i& Dims3) { Grid->Dims = Pack3i64(Dims3); }
-idx2_Inline void SetStrd(grid* Grid, const v3i& Strd3) { Grid->Strd = Pack3i64(Strd3); }
+idx2_Inline v3i
+From(const extent& Ext)
+{
+  return Unpack3i64(Ext.From);
+}
 
-idx2_Inline v3i  From(const volume& Vol) { (void)Vol; return v3i(0); }
-idx2_Inline v3i  To(const volume& Vol) { return Dims(Vol); }
-idx2_Inline v3i  Frst(const volume& Vol) { return From(Vol); }
-idx2_Inline v3i  Last(const volume& Vol) { return Dims(Vol) - 1; }
-idx2_Inline v3i  Dims(const volume& Vol) { return Unpack3i64(Vol.Dims); }
-idx2_Inline i64  Size(const volume& Vol) { return Prod<i64>(Dims(Vol)); }
-idx2_Inline void SetDims(volume* Vol, const v3i& Dims3) { Vol->Dims = Pack3i64(Dims3); }
+idx2_Inline v3i
+To(const extent& Ext)
+{
+  return From(Ext) + Dims(Ext);
+}
 
-idx2_Ti(t) volume_iterator<t>
-Begin(const volume& Vol) {
+idx2_Inline v3i
+Frst(const extent& Ext)
+{
+  return From(Ext);
+}
+
+idx2_Inline v3i
+Last(const extent& Ext)
+{
+  return To(Ext) - 1;
+}
+
+idx2_Inline v3i
+Dims(const extent& Ext)
+{
+  return Unpack3i64(Ext.Dims);
+}
+
+idx2_Inline v3i
+Strd(const extent& Ext)
+{
+  (void)Ext;
+  return v3i(1);
+}
+
+idx2_Inline i64
+Size(const extent& Ext)
+{
+  return Prod<i64>(Dims(Ext));
+}
+
+idx2_Inline void
+SetFrom(extent* Ext, const v3i& From3)
+{
+  Ext->From = Pack3i64(From3);
+}
+
+idx2_Inline void
+SetDims(extent* Ext, const v3i& Dims3)
+{
+  Ext->Dims = Pack3i64(Dims3);
+}
+
+idx2_Inline v3i
+From(const grid& Grid)
+{
+  return Unpack3i64(Grid.From);
+}
+
+idx2_Inline v3i
+To(const grid& Grid)
+{
+  return From(Grid) + Dims(Grid) * Strd(Grid);
+}
+
+idx2_Inline v3i
+Frst(const grid& Grid)
+{
+  return From(Grid);
+}
+
+idx2_Inline v3i
+Last(const grid& Grid)
+{
+  return To(Grid) - Strd(Grid);
+}
+
+idx2_Inline v3i
+Dims(const grid& Grid)
+{
+  return Unpack3i64(Grid.Dims);
+}
+
+idx2_Inline v3i
+Strd(const grid& Grid)
+{
+  return Unpack3i64(Grid.Strd);
+}
+
+idx2_Inline i64
+Size(const grid& Grid)
+{
+  return Prod<i64>(Dims(Grid));
+}
+
+idx2_Inline void
+SetFrom(grid* Grid, const v3i& From3)
+{
+  Grid->From = Pack3i64(From3);
+}
+
+idx2_Inline void
+SetDims(grid* Grid, const v3i& Dims3)
+{
+  Grid->Dims = Pack3i64(Dims3);
+}
+
+idx2_Inline void
+SetStrd(grid* Grid, const v3i& Strd3)
+{
+  Grid->Strd = Pack3i64(Strd3);
+}
+
+idx2_Inline v3i
+From(const volume& Vol)
+{
+  (void)Vol;
+  return v3i(0);
+}
+
+idx2_Inline v3i
+To(const volume& Vol)
+{
+  return Dims(Vol);
+}
+
+idx2_Inline v3i
+Frst(const volume& Vol)
+{
+  return From(Vol);
+}
+
+idx2_Inline v3i
+Last(const volume& Vol)
+{
+  return Dims(Vol) - 1;
+}
+
+idx2_Inline v3i
+Dims(const volume& Vol)
+{
+  return Unpack3i64(Vol.Dims);
+}
+
+idx2_Inline i64
+Size(const volume& Vol)
+{
+  return Prod<i64>(Dims(Vol));
+}
+
+idx2_Inline void
+SetDims(volume* Vol, const v3i& Dims3)
+{
+  Vol->Dims = Pack3i64(Dims3);
+}
+
+template <typename t> idx2_Inline volume_iterator<t>
+Begin(const volume& Vol)
+{
   volume_iterator<t> Iter;
-  Iter.P = v3i(0); Iter.N = Dims(Vol);
+  Iter.P = v3i(0);
+  Iter.N = Dims(Vol);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data);
   return Iter;
 }
 
-idx2_Ti(t) volume_iterator<t>
-End(const volume& Vol) {
+template <typename t> idx2_Inline volume_iterator<t>
+End(const volume& Vol)
+{
   volume_iterator<t> Iter;
   v3i To3(0, 0, Dims(Vol).Z);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data) + Row(Dims(Vol), To3);
   return Iter;
 }
 
-idx2_Ti(t) volume_iterator<t>& volume_iterator<t>::
-operator++() {
+template <typename t> idx2_Inline volume_iterator<t>&
+volume_iterator<t>::operator++()
+{
   ++Ptr;
-  if (++P.X >= N.X) {
+  if (++P.X >= N.X)
+  {
     P.X = 0;
-    if (++P.Y >= N.Y) {
+    if (++P.Y >= N.Y)
+    {
       P.Y = 0;
       ++P.Z;
     }
@@ -5754,40 +7738,56 @@ operator++() {
   return *this;
 }
 
-idx2_Ti(t) t& volume_iterator<t>::
-operator*() { return *Ptr; }
+template <typename t> idx2_Inline t&
+volume_iterator<t>::operator*()
+{
+  return *Ptr;
+}
 
-idx2_Ti(t) bool volume_iterator<t>::
-operator!=(const volume_iterator<t>& Other) const { return Ptr != Other.Ptr; }
+template <typename t> idx2_Inline bool
+volume_iterator<t>::operator!=(const volume_iterator<t>& Other) const
+{
+  return Ptr != Other.Ptr;
+}
 
-idx2_Ti(t) bool volume_iterator<t>::
-operator==(const volume_iterator<t>& Other) const { return Ptr == Other.Ptr; }
+template <typename t> idx2_Inline bool
+volume_iterator<t>::operator==(const volume_iterator<t>& Other) const
+{
+  return Ptr == Other.Ptr;
+}
 
-idx2_Ti(t) extent_iterator<t>
-Begin(const extent& Ext, const volume& Vol) {
+template <typename t> idx2_Inline extent_iterator<t>
+Begin(const extent& Ext, const volume& Vol)
+{
   extent_iterator<t> Iter;
-  Iter.D = Dims(Ext); Iter.P = v3i(0); Iter.N = Dims(Vol);
+  Iter.D = Dims(Ext);
+  Iter.P = v3i(0);
+  Iter.N = Dims(Vol);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data) + Row(Iter.N, From(Ext));
   return Iter;
 }
 
-idx2_Ti(t) extent_iterator<t>
-End(const extent& Ext, const volume& Vol) {
+template <typename t> idx2_Inline extent_iterator<t>
+End(const extent& Ext, const volume& Vol)
+{
   extent_iterator<t> Iter;
   v3i To3 = From(Ext) + v3i(0, 0, Dims(Ext).Z);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data) + Row(Dims(Vol), To3);
   return Iter;
 }
 
-idx2_Ti(t) extent_iterator<t>& extent_iterator<t>::
-operator++() {
+template <typename t> idx2_Inline extent_iterator<t>&
+extent_iterator<t>::operator++()
+{
   ++P.X;
   ++Ptr;
-  if (P.X >= D.X) {
+  if (P.X >= D.X)
+  {
     P.X = 0;
     ++P.Y;
     Ptr = Ptr - D.X + N.X;
-    if (P.Y >= D.Y) {
+    if (P.Y >= D.Y)
+    {
       P.Y = 0;
       ++P.Z;
       Ptr = Ptr - D.Y * N.X + N.X * N.Y;
@@ -5796,40 +7796,57 @@ operator++() {
   return *this;
 }
 
-idx2_Ti(t) t& extent_iterator<t>::
-operator*() { return *Ptr; }
+template <typename t> idx2_Inline t&
+extent_iterator<t>::operator*()
+{
+  return *Ptr;
+}
 
-idx2_Ti(t) bool extent_iterator<t>::
-operator!=(const extent_iterator<t>& Other) const { return Ptr != Other.Ptr; }
+template <typename t> idx2_Inline bool
+extent_iterator<t>::operator!=(const extent_iterator<t>& Other) const
+{
+  return Ptr != Other.Ptr;
+}
 
-idx2_Ti(t) bool extent_iterator<t>::
-operator==(const extent_iterator<t>& Other) const { return Ptr == Other.Ptr; }
+template <typename t> idx2_Inline bool
+extent_iterator<t>::operator==(const extent_iterator<t>& Other) const
+{
+  return Ptr == Other.Ptr;
+}
 
-idx2_T(t) grid_iterator<t>
-Begin(const grid& Grid, const volume& Vol) {
+template <typename t> grid_iterator<t>
+Begin(const grid& Grid, const volume& Vol)
+{
   grid_iterator<t> Iter;
-  Iter.S = Strd(Grid); Iter.D = Dims(Grid) * Iter.S; Iter.P = v3i(0); Iter.N = Dims(Vol);
+  Iter.S = Strd(Grid);
+  Iter.D = Dims(Grid) * Iter.S;
+  Iter.P = v3i(0);
+  Iter.N = Dims(Vol);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data) + Row(Iter.N, From(Grid));
   return Iter;
 }
 
-idx2_T(t) grid_iterator<t>
-End(const grid& Grid, const volume& Vol) {
+template <typename t> grid_iterator<t>
+End(const grid& Grid, const volume& Vol)
+{
   grid_iterator<t> Iter;
   v3i To3 = From(Grid) + v3i(0, 0, Dims(Grid).Z * Strd(Grid).Z);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data) + Row(Dims(Vol), To3);
   return Iter;
 }
 
-idx2_T(t) grid_iterator<t>& grid_iterator<t>::
-operator++() {
+template <typename t> grid_iterator<t>&
+grid_iterator<t>::operator++()
+{
   P.X += S.X;
   Ptr += S.X;
-  if (P.X >= D.X) {
+  if (P.X >= D.X)
+  {
     P.X = 0;
     P.Y += S.Y;
     Ptr = Ptr - D.X + (N.X * S.Y);
-    if (P.Y >= D.Y) {
+    if (P.Y >= D.Y)
+    {
       P.Y = 0;
       P.Z += S.Z;
       Ptr = Ptr - D.Y * i64(N.X) + S.Z * i64(N.X) * N.Y;
@@ -5838,58 +7855,85 @@ operator++() {
   return *this;
 }
 
-idx2_Ti(t) t& grid_iterator<t>::
-operator*() { return *Ptr; }
+template <typename t> idx2_Inline t&
+grid_iterator<t>::operator*()
+{
+  return *Ptr;
+}
 
-idx2_Ti(t) bool grid_iterator<t>::
-operator!=(const grid_iterator<t>& Other) const { return Ptr != Other.Ptr; }
+template <typename t> idx2_Inline bool
+grid_iterator<t>::operator!=(const grid_iterator<t>& Other) const
+{
+  return Ptr != Other.Ptr;
+}
 
-idx2_Ti(t) bool grid_iterator<t>::
-operator==(const grid_iterator<t>& Other) const { return Ptr == Other.Ptr; }
+template <typename t> idx2_Inline bool
+grid_iterator<t>::operator==(const grid_iterator<t>& Other) const
+{
+  return Ptr == Other.Ptr;
+}
 
 // TODO: change this function name to something more descriptive
 idx2_Inline i64
-Row(const v3i& N, const v3i& P) { return i64(P.Z) * N.X * N.Y + i64(P.Y) * N.X + P.X; }
+Row(const v3i& N, const v3i& P)
+{
+  return i64(P.Z) * N.X * N.Y + i64(P.Y) * N.X + P.X;
+}
 
 idx2_Inline v3i
-InvRow(i64 I, const v3i& N) {
+InvRow(i64 I, const v3i& N)
+{
   i32 Z = i32(I / (N.X * N.Y));
   i32 XY = i32(I % (N.X * N.Y));
   return v3i(XY % N.X, XY / N.X, Z);
 }
 
 idx2_Inline int
-NumDims(const v3i& N) { return (N.X > 1) + (N.Y > 1) + (N.Z > 1); }
+NumDims(const v3i& N)
+{
+  return (N.X > 1) + (N.Y > 1) + (N.Z > 1);
+}
 
 #undef idx2_BeginGridLoop2
-#define idx2_BeginGridLoop2(GI, VI, GJ, VJ) /* GridI, VolumeI, GridJ, VolumeJ */\
-  {\
-    idx2_Assert(Dims(GI) == Dims(GJ));\
-    v3i Pos;\
-    v3i FromI = From(GI), FromJ = From(GJ);\
-    v3i Dims3 = Dims(GI), DimsI = Dims(VI), DimsJ = Dims(VJ);\
-    v3i StrdI = Strd(GI), StrdJ = Strd(GJ);\
-    idx2_BeginFor3(Pos, v3i(0), Dims3, v3i(1)) {\
-      i64 I = Row(DimsI, FromI + Pos * StrdI);\
-      i64 J = Row(DimsJ, FromJ + Pos * StrdJ);\
+#define idx2_BeginGridLoop2(GI, VI, GJ, VJ) /* GridI, VolumeI, GridJ, VolumeJ */                   \
+  {                                                                                                \
+    idx2_Assert(Dims(GI) == Dims(GJ));                                                             \
+    v3i Pos;                                                                                       \
+    v3i FromI = From(GI), FromJ = From(GJ);                                                        \
+    v3i Dims3 = Dims(GI), DimsI = Dims(VI), DimsJ = Dims(VJ);                                      \
+    v3i StrdI = Strd(GI), StrdJ = Strd(GJ);                                                        \
+    idx2_BeginFor3 (Pos, v3i(0), Dims3, v3i(1))                                                    \
+    {                                                                                              \
+      i64 I = Row(DimsI, FromI + Pos * StrdI);                                                     \
+      i64 J = Row(DimsJ, FromJ + Pos * StrdJ);
 
 #undef idx2_EndGridLoop2
-#define idx2_EndGridLoop2 }}}}
+#define idx2_EndGridLoop2                                                                          \
+  }                                                                                                \
+  }                                                                                                \
+  }                                                                                                \
+  }
 
 #undef idx2_BeginGridLoop
-#define idx2_BeginGridLoop(G, V)\
-  {\
-    v3i Pos;\
-    v3i From3 = From(G), Dims3 = Dims(G), Strd3 = Strd(G);\
-    v3i DimsB = Dims(V);\
-    idx2_BeginFor3(Pos, From3, Dims3, Strd3) {\
-      i64 I = Row(DimsB, Pos);\
+#define idx2_BeginGridLoop(G, V)                                                                   \
+  {                                                                                                \
+    v3i Pos;                                                                                       \
+    v3i From3 = From(G), Dims3 = Dims(G), Strd3 = Strd(G);                                         \
+    v3i DimsB = Dims(V);                                                                           \
+    idx2_BeginFor3 (Pos, From3, Dims3, Strd3)                                                      \
+    {                                                                                              \
+      i64 I = Row(DimsB, Pos);
 
 #undef idx2_EndGridLoop
-#define idx2_EndGridLoop }}}}
+#define idx2_EndGridLoop                                                                           \
+  }                                                                                                \
+  }                                                                                                \
+  }                                                                                                \
+  }
 
-idx2_T(t)
-void Copy(const grid& SGrid, const volume& SVol, volume* DVol) {
+template <typename t> void
+Copy(const grid& SGrid, const volume& SVol, volume* DVol)
+{
   idx2_Assert(Dims(SGrid) <= Dims(*DVol));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
@@ -5901,12 +7945,8 @@ void Copy(const grid& SGrid, const volume& SVol, volume* DVol) {
     *DIt = *SIt;
 }
 
-idx2_TT(stype, dtype)
-void Copy(
-  const grid& SGrid,
-  const volume& SVol,
-  const grid& DGrid,
-  volume* DVol)
+template <typename stype, typename dtype> void
+Copy(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
 {
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
@@ -5919,14 +7959,11 @@ void Copy(
     *DIt = *SIt;
 }
 
-//i64 CopyGridGridCountZeroes(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol);
+// i64 CopyGridGridCountZeroes(const grid& SGrid, const volume& SVol, const grid& DGrid, volume*
+// DVol);
 
-idx2_TT(stype, dtype)
-v2d CopyExtentExtentMinMax(
-  const extent& SGrid,
-  const volume& SVol,
-  const extent& DGrid,
-  volume* DVol)
+template <typename stype, typename dtype> v2d
+CopyExtentExtentMinMax(const extent& SGrid, const volume& SVol, const extent& DGrid, volume* DVol)
 {
   v2d MinMax = v2d(traits<f64>::Max, traits<f64>::Min);
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
@@ -5942,22 +7979,20 @@ v2d CopyExtentExtentMinMax(
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
 
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, v3i(1)) {
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, v3i(1))
+  {
     f64 V = (f64)SrcPtr[Row(SrcDims3, S3)];
     DstPtr[Row(DstDims3, D3)] = (dtype)V;
     MinMax.Min = Min(MinMax.Min, V);
     MinMax.Max = Max(MinMax.Min, V);
-  } idx2_EndFor3
+  }
+  idx2_EndFor3;
 
   return MinMax;
 }
 
-idx2_TT(stype, dtype)
-void CopyExtentGrid(
-  const extent& SGrid,
-  const volume& SVol,
-  const grid& DGrid,
-  volume* DVol)
+template <typename stype, typename dtype> void
+CopyExtentGrid(const extent& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
 {
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
@@ -5972,17 +8007,15 @@ void CopyExtentGrid(
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
 
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, DstStrd3) {
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, DstStrd3)
+  {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
-  } idx2_EndFor3
+  }
+  idx2_EndFor3;
 }
 
-idx2_TT(stype, dtype)
-void CopyGridExtent(
-  const grid& SGrid,
-  const volume& SVol,
-  const extent& DGrid,
-  volume* DVol)
+template <typename stype, typename dtype> void
+CopyGridExtent(const grid& SGrid, const volume& SVol, const extent& DGrid, volume* DVol)
 {
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
@@ -5996,18 +8029,15 @@ void CopyGridExtent(
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
 
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, v3i(1)) {
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, v3i(1))
+  {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
-  } idx2_EndFor3
+  }
+  idx2_EndFor3;
 }
 
-idx2_TT(stype, dtype)
-void
-CopyGridGrid(
-  const grid& SGrid,
-  const volume& SVol,
-  const grid& DGrid,
-  volume* DVol)
+template <typename stype, typename dtype> void
+CopyGridGrid(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
 {
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
@@ -6020,17 +8050,15 @@ CopyGridGrid(
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, DstStrd3) {
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, DstStrd3)
+  {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
-  } idx2_EndFor3
+  }
+  idx2_EndFor3;
 }
 
-idx2_TT(stype, dtype)
-void CopyExtentExtent(
-  const extent& SGrid,
-  const volume& SVol,
-  const extent& DGrid,
-  volume* DVol)
+template <typename stype, typename dtype> void
+CopyExtentExtent(const extent& SGrid, const volume& SVol, const extent& DGrid, volume* DVol)
 {
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
@@ -6043,17 +8071,15 @@ void CopyExtentExtent(
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, v3i(1)) {
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, v3i(1))
+  {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
-  } idx2_EndFor3
+  }
+  idx2_EndFor3;
 }
 
-idx2_TT(stype, dtype)
-i64 CopyGridGridCountZeroes(
-  const grid& SGrid,
-  const volume& SVol,
-  const grid& DGrid,
-  volume* DVol)
+template <typename stype, typename dtype> i64
+CopyGridGridCountZeroes(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
 {
   idx2_Assert(Dims(SGrid) == Dims(DGrid));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
@@ -6069,22 +8095,27 @@ i64 CopyGridGridCountZeroes(
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
 
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, DstStrd3) {
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, DstStrd3)
+  {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
     Count += (dtype)SrcPtr[Row(SrcDims3, S3)] == 0;
-  } idx2_EndFor3
+  }
+  idx2_EndFor3;
 
   return Count;
 }
 
-idx2_T(t) void
-Copy(const t& Grid, const subvol_grid& SVol, subvol_grid* DVol) {
+template <typename t> void
+Copy(const t& Grid, const subvol_grid& SVol, subvol_grid* DVol)
+{
   idx2_Assert(Strd(SVol.Grid) % Strd(Grid) == 0);
   idx2_Assert(Strd(DVol->Grid) % Strd(Grid) == 0);
   t Crop1 = Crop(Grid, SVol.Grid);
-  if (Crop1) {
+  if (Crop1)
+  {
     t Crop2 = Crop(Crop1, DVol->Grid);
-    if (Crop2) {
+    if (Crop2)
+    {
       grid SGrid = Relative(Crop2, SVol.Grid);
       grid DGrid = Relative(Crop2, DVol->Grid);
       Copy(SGrid, SVol.Vol, DGrid, &DVol->Vol);
@@ -6092,17 +8123,18 @@ Copy(const t& Grid, const subvol_grid& SVol, subvol_grid* DVol) {
   }
 }
 
-idx2_TT(t1, t2) void
-Add(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol) {
-#define Body(type)\
-  idx2_Assert(Dims(SGrid) == Dims(DGrid));\
-  idx2_Assert(Dims(SGrid) <= Dims(SVol));\
-  idx2_Assert(Dims(DGrid) <= Dims(*DVol));\
-  idx2_Assert(DVol->Buffer && SVol.Buffer);\
-  idx2_Assert(SVol.Type == DVol->Type);\
-  auto SIt = Begin<type>(SGrid, SVol), SEnd = End<type>(SGrid, SVol);\
-  auto DIt = Begin<type>(DGrid, *DVol);\
-  for (; SIt != SEnd; ++SIt, ++DIt)\
+template <typename t1, typename t2> void
+Add(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol)
+{
+#define Body(type)                                                                                 \
+  idx2_Assert(Dims(SGrid) == Dims(DGrid));                                                         \
+  idx2_Assert(Dims(SGrid) <= Dims(SVol));                                                          \
+  idx2_Assert(Dims(DGrid) <= Dims(*DVol));                                                         \
+  idx2_Assert(DVol->Buffer&& SVol.Buffer);                                                         \
+  idx2_Assert(SVol.Type == DVol->Type);                                                            \
+  auto SIt = Begin<type>(SGrid, SVol), SEnd = End<type>(SGrid, SVol);                              \
+  auto DIt = Begin<type>(DGrid, *DVol);                                                            \
+  for (; SIt != SEnd; ++SIt, ++DIt)                                                                \
     *DIt += *SIt;
 
   idx2_DispatchOnType(SVol.Type);
@@ -6110,22 +8142,24 @@ Add(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol) {
 }
 
 // TODO: what is this
-idx2_TT(t1, t2) void
-Add2(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol) {
-  idx2_Assert(Dims(SGrid) == Dims(DGrid));\
-  idx2_Assert(Dims(SGrid) <= Dims(SVol));\
-  idx2_Assert(Dims(DGrid) <= Dims(*DVol));\
-  idx2_Assert(DVol->Buffer && SVol.Buffer);\
-  idx2_Assert(SVol.Type == DVol->Type);\
+template <typename t1, typename t2> void
+Add2(const t1& SGrid, const volume& SVol, const t2& DGrid, volume* DVol)
+{
+  idx2_Assert(Dims(SGrid) == Dims(DGrid));
+  idx2_Assert(Dims(SGrid) <= Dims(SVol));
+  idx2_Assert(Dims(DGrid) <= Dims(*DVol));
+  idx2_Assert(DVol->Buffer && SVol.Buffer);
+  idx2_Assert(SVol.Type == DVol->Type);
   auto SBeg = Begin<f64>(SGrid, SVol);
-  auto SIt = Begin<f64>(SGrid, SVol), SEnd = End<f64>(SGrid, SVol);\
-  auto DIt = Begin<f64>(DGrid, *DVol), DEnd = End<f64>(DGrid, *DVol);\
-  for (; SIt != SEnd; ++SIt, ++DIt)\
+  auto SIt = Begin<f64>(SGrid, SVol), SEnd = End<f64>(SGrid, SVol);
+  auto DIt = Begin<f64>(DGrid, *DVol), DEnd = End<f64>(DGrid, *DVol);
+  for (; SIt != SEnd; ++SIt, ++DIt)
     *DIt += *SIt;
 }
 
-idx2_TT(t1, t2) bool
-IsSubGrid(const t1& Grid1, const t2& Grid2) {
+template <typename t1, typename t2> bool
+IsSubGrid(const t1& Grid1, const t2& Grid2)
+{
   if (!(From(Grid1) >= From(Grid2)))
     return false;
   if (!(Last(Grid1) <= Last(Grid2)))
@@ -6137,21 +8171,24 @@ IsSubGrid(const t1& Grid1, const t2& Grid2) {
   return true;
 }
 
-idx2_TT(t1, t2) t1
-SubGrid(const t1& Grid1, const t2& Grid2) {
+template <typename t1, typename t2> t1
+SubGrid(const t1& Grid1, const t2& Grid2)
+{
   return t1(From(Grid1) + Strd(Grid1) * From(Grid2), Dims(Grid2), Strd(Grid1) * Strd(Grid2));
 }
 
-idx2_TT(t1, t2) t1
-Relative(const t1& Grid1, const t2& Grid2) {
-  //printf("");
+template <typename t1, typename t2> t1
+Relative(const t1& Grid1, const t2& Grid2)
+{
+  // printf("");
   idx2_Assert(IsSubGrid(Grid1, Grid2));
   v3i From3 = (From(Grid1) - From(Grid2)) / Strd(Grid2);
   return grid(From3, Dims(Grid1), Strd(Grid1) / Strd(Grid2));
 }
 
-idx2_TT(t1, t2) t1
-Crop(const t1& Grid1, const t2& Grid2) {
+template <typename t1, typename t2> t1
+Crop(const t1& Grid1, const t2& Grid2)
+{
   v3i Strd3 = Strd(Grid1);
   v3i Grid1Frst3 = Frst(Grid1);
   v3i Frst3 = Max(Grid1Frst3, Frst(Grid2));
@@ -6164,18 +8201,21 @@ Crop(const t1& Grid1, const t2& Grid2) {
   return OutGrid;
 }
 
-idx2_Ti(t) bool
-IsInGrid(const t& Grid, const v3i& Point) {
+template <typename t> idx2_Inline bool
+IsInGrid(const t& Grid, const v3i& Point)
+{
   return (Point - From(Grid)) % Strd(Grid) == v3i(0);
 }
 
 // TODO: this can be turned into a slice function ala Python[start:stop]
-idx2_T(t) t
-Slab(const t& Grid, dimension D, int N) {
+template <typename t> t
+Slab(const t& Grid, dimension D, int N)
+{
   v3i Dims3 = Dims(Grid);
   idx2_Assert(abs(N) <= Dims3[D] && N != 0);
   t Slab = Grid;
-  if (N < 0) {
+  if (N < 0)
+  {
     v3i From3 = From(Grid);
     v3i Strd3 = Strd(Grid);
     From3[D] += (Dims3[D] + N) * Strd3[D];
@@ -6186,8 +8226,9 @@ Slab(const t& Grid, dimension D, int N) {
   return Slab;
 }
 
-idx2_T(t) t
-Translate(const t& Grid, dimension D, int N) {
+template <typename t> t
+Translate(const t& Grid, dimension D, int N)
+{
   v3i From3 = From(Grid);
   From3[D] += N;
   t Slab = Grid;
@@ -6196,37 +8237,49 @@ Translate(const t& Grid, dimension D, int N) {
 }
 
 idx2_Inline bool
-Contain(const extent& Ext, const v3i& P) {
+Contain(const extent& Ext, const v3i& P)
+{
   return From(Ext) <= P && P < To(Ext);
 }
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-struct wavelet_block {
+struct wavelet_block
+{
   v3i Levels;
   grid Grid;
   volume Volume;
   bool IsPacked = false; // if the Volume stores data just for this block
 };
 
-struct wav_basis_norms {
+struct wav_basis_norms
+{
   array<f64> ScalNorms; // scaling function norms
   array<f64> WaveNorms; // wavelet function norms
 };
-wav_basis_norms GetCdf53Norms(int NLevels);
-void Dealloc(wav_basis_norms* WbN);
 
-idx2_I(N) struct wav_basis_norms_static {
+wav_basis_norms
+GetCdf53Norms(int NLevels);
+
+void
+Dealloc(wav_basis_norms* WbN);
+
+template <int N> struct wav_basis_norms_static
+{
   stack_array<f64, N> ScalNorms;
   stack_array<f64, N> WaveNorms;
 };
-idx2_I(N) wav_basis_norms_static<N> GetCdf53NormsFast()
+
+template <int N> wav_basis_norms_static<N>
+GetCdf53NormsFast()
 {
   wav_basis_norms_static<N> Result;
   f64 Num1 = 3, Num2 = 23;
-  for (int I = 0; I < N; ++I) {
+  for (int I = 0; I < N; ++I)
+  {
     Result.ScalNorms[I] = sqrt(Num1 / (1 << (I + 1)));
     Num1 = Num1 * 4 - 1;
     Result.WaveNorms[I] = sqrt(Num2 / (1 << (I + 5)));
@@ -6235,16 +8288,18 @@ idx2_I(N) wav_basis_norms_static<N> GetCdf53NormsFast()
   return Result;
 }
 
-struct subband {
+struct subband
+{
   grid Grid;
-  grid AccumGrid; // accumulative grid (with the coarsest same-level subband)
-  v3<i8> Level3; // convention: 0 is the coarsest
+  grid AccumGrid;   // accumulative grid (with the coarsest same-level subband)
+  v3<i8> Level3;    // convention: 0 is the coarsest
   v3<i8> Level3Rev; // convention: 0 is the finest
   v3<i8> LowHigh3;
   i8 Level = 0;
 };
 
-struct transform_details {
+struct transform_details
+{
   wav_basis_norms_static<16> BasisNorms;
   stack_array<grid, 32> StackGrids;
   stack_array<int, 32> StackAxes;
@@ -6252,486 +8307,699 @@ struct transform_details {
   int StackSize;
   int NPasses;
 };
-void ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NLevels, u64 TformOrder);
+
+void
+ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NLevels, u64 TformOrder);
 
 /* Normal lifting which uses mirroring at the boundary */
-idx2_T(t) void FLiftCdf53OldX(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void FLiftCdf53OldY(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void FLiftCdf53OldZ(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void ILiftCdf53OldX(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void ILiftCdf53OldY(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void ILiftCdf53OldZ(t* F, const v3i& N, const v3i& L);
-/* Do constant extrapolation (the last value is extrapolated if the signal is odd-length) */
-idx2_T(t) void FLiftCdf53ConstX(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void FLiftCdf53ConstY(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void FLiftCdf53ConstZ(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void ILiftCdf53ConstX(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void ILiftCdf53ConstY(t* F, const v3i& N, const v3i& L);
-idx2_T(t) void ILiftCdf53ConstZ(t* F, const v3i& N, const v3i& L);
+template <typename t> void
+FLiftCdf53OldX(t* F, const v3i& N, const v3i& L);
 
-/* New set of lifting functions. We assume the volume where we want to transform
+template <typename t> void
+FLiftCdf53OldY(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+FLiftCdf53OldZ(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+ILiftCdf53OldX(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+ILiftCdf53OldY(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+ILiftCdf53OldZ(t* F, const v3i& N, const v3i& L);
+
+/* Do constant extrapolation (the last value is extrapolated if the signal is odd-length) */
+template <typename t> void
+FLiftCdf53ConstX(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+FLiftCdf53ConstY(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+FLiftCdf53ConstZ(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+ILiftCdf53ConstX(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+ILiftCdf53ConstY(t* F, const v3i& N, const v3i& L);
+
+template <typename t> void
+ILiftCdf53ConstZ(t* F, const v3i& N, const v3i& L);
+
+/*
+New set of lifting functions. We assume the volume where we want to transform
 to happen (M) is contained within a bigger volume (Vol). When Dims(Grid) is even,
 extrapolation will happen, in a way that the last (odd) wavelet coefficient is 0.
 We assume the storage at index M3.(x/y/z) is available to store the extrapolated
 values if necessary. We could always store the extrapolated value at the correct
 position, but storing it at M3.(x/y/z) allows us to avoid having to actually use
-extra storage (which are mostly used to store 0 wavelet coefficients). */
-enum lift_option { Normal, PartialUpdateLast, NoUpdateLast, NoUpdate };
-idx2_T(t) void FLiftCdf53X(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
-idx2_T(t) void FLiftCdf53Y(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
-idx2_T(t) void FLiftCdf53Z(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
+extra storage (which are mostly used to store 0 wavelet coefficients).
+*/
+enum lift_option
+{
+  Normal,
+  PartialUpdateLast,
+  NoUpdateLast,
+  NoUpdate
+};
+template <typename t> void
+FLiftCdf53X(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
+template <typename t> void
+FLiftCdf53Y(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
+template <typename t> void
+FLiftCdf53Z(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
 /* The inverse lifting functions can be used to extrapolate the volume */
-idx2_T(t) void ILiftCdf53X(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
-idx2_T(t) void ILiftCdf53Y(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
-idx2_T(t) void ILiftCdf53Z(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
+template <typename t> void
+ILiftCdf53X(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
+template <typename t> void
+ILiftCdf53Y(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
+template <typename t> void
+ILiftCdf53Z(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
 
-/* "In-place" extrapolate a volume to size 2^L+1, which is assumed to be the
-dims of Vol. The original volume is stored in the D3 sub-volume of Vol. */
-void Extrapolate(v3i D3, volume* Vol);
+/*
+"In-place" extrapolate a volume to size 2^L+1, which is assumed to be the
+dims of Vol. The original volume is stored in the D3 sub-volume of Vol.
+*/
+void
+Extrapolate(v3i D3, volume* Vol);
 
 /* Lifting with extrapolation */
-// idx2_T(t) void FLiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-// idx2_T(t) void FLiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-// idx2_T(t) void FLiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-// idx2_T(t) void ILiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-// idx2_T(t) void ILiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
-// idx2_T(t) void ILiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// template <typename t> void FLiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// template <typename t> void FLiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// template <typename t> void FLiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// template <typename t> void ILiftExtCdf53X(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// template <typename t> void ILiftExtCdf53Y(t* F, const v3i& N, const v3i& NBig, const v3i& L);
+// template <typename t> void ILiftExtCdf53Z(t* F, const v3i& N, const v3i& NBig, const v3i& L);
 
 //#define idx2_Cdf53TileDebug
 
-//void ForwardCdf53Tile(int NLvls, const v3i& TDims3, const volume& Vol
+// void ForwardCdf53Tile(int NLvls, const v3i& TDims3, const volume& Vol
 //#if defined(idx2_Cdf53TileDebug)
-//  , volume* OutVol
+//   , volume* OutVol
 //#endif
 //);
-void ForwardCdf53(const extent& Ext, int NLevels, volume* Vol);
-void InverseCdf53(const extent& Ext, int NLevels, volume* Vol);
-void ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol);
-void ExtrapolateCdf53(const transform_details& Td, volume* Vol);
-void ForwardCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOrder, volume* Vol, bool Normalize = false);
-void InverseCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOrder, volume* Vol, bool Normalize = false);
-void ForwardCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const transform_details& Td, volume* Vol, bool Normalize = false);
-void InverseCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const transform_details& Td, volume* Vol, bool Normalize = false);
-void ForwardCdf53Old(volume* Vol, int NLevels);
-void InverseCdf53Old(volume* Vol, int NLevels);
-void ForwardCdf53Ext(const extent& Ext, volume* Vol);
-void InverseCdf53Ext(const extent& Ext, volume* Vol);
+void
+ForwardCdf53(const extent& Ext, int NLevels, volume* Vol);
+void
+InverseCdf53(const extent& Ext, int NLevels, volume* Vol);
+void
+ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol);
+void
+ExtrapolateCdf53(const transform_details& Td, volume* Vol);
+void
+ForwardCdf53(const v3i& Dims3,
+             const v3i& M3,
+             int Iter,
+             int NLevels,
+             u64 TformOrder,
+             volume* Vol,
+             bool Normalize = false);
+void
+InverseCdf53(const v3i& Dims3,
+             const v3i& M3,
+             int Iter,
+             int NLevels,
+             u64 TformOrder,
+             volume* Vol,
+             bool Normalize = false);
+void
+ForwardCdf53(const v3i& M3,
+             int Iter,
+             const array<subband>& Subbands,
+             const transform_details& Td,
+             volume* Vol,
+             bool Normalize = false);
+void
+InverseCdf53(const v3i& M3,
+             int Iter,
+             const array<subband>& Subbands,
+             const transform_details& Td,
+             volume* Vol,
+             bool Normalize = false);
+void
+ForwardCdf53Old(volume* Vol, int NLevels);
 
-idx2_T(t) struct array;
-void BuildSubbands(const v3i& N3, int NLevels, array<extent>* Subbands);
-void BuildSubbands(const v3i& N3, int NLevels, array<grid>* Subbands);
-u64 EncodeTransformOrder(const stref& TransformOrder);
-void DecodeTransformOrder(u64 Input, str Output);
-i8 DecodeTransformOrder(u64 Input, v3i N3, str Output);
-i8 DecodeTransformOrder(u64 Input, int Passes, str Output);
-void BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands);
-void BuildLevelGrids(const v3i& N3, int NLevels, u64 TransformOrder, array<grid>* LevelGrids);
-grid MergeSubbandGrids(const grid& Sb1, const grid& Sb2);
+void
+InverseCdf53Old(volume* Vol, int NLevels);
+
+void
+ForwardCdf53Ext(const extent& Ext, volume* Vol);
+
+void
+InverseCdf53Ext(const extent& Ext, volume* Vol);
+
+template <typename t> struct array;
+
+void
+BuildSubbands(const v3i& N3, int NLevels, array<extent>* Subbands);
+
+void
+BuildSubbands(const v3i& N3, int NLevels, array<grid>* Subbands);
+
+u64
+EncodeTransformOrder(const stref& TransformOrder);
+
+void
+DecodeTransformOrder(u64 Input, str Output);
+
+i8
+DecodeTransformOrder(u64 Input, v3i N3, str Output);
+
+i8
+DecodeTransformOrder(u64 Input, int Passes, str Output);
+
+void
+BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands);
+
+void
+BuildLevelGrids(const v3i& N3, int NLevels, u64 TransformOrder, array<grid>* LevelGrids);
+
+grid
+MergeSubbandGrids(const grid& Sb1, const grid& Sb2);
 
 /* Copy samples from Src so that in Dst, samples are organized into subbands */
-void FormSubbands(int NLevels, const grid& SrcGrid, const volume& SrcVol,
-                  const grid& DstGrid, volume* DstVol);
+void
+FormSubbands(int NLevels,
+             const grid& SrcGrid,
+             const volume& SrcVol,
+             const grid& DstGrid,
+             volume* DstVol);
+
 /* Assume the wavelet transform is done in X, then Y, then Z */
-int LevelToSubband(const v3i& Lvl3);
-v3i ExpandDomain(const v3i& N, int NLevels);
+int
+LevelToSubband(const v3i& Lvl3);
+
+v3i
+ExpandDomain(const v3i& N, int NLevels);
 
 /* If Norm(alize), the return levels are either 0 or 1 */
-v3i SubbandToLevel(int NDims, int Sb, bool Norm = false);
+v3i
+SubbandToLevel(int NDims, int Sb, bool Norm = false);
 
-struct wav_grids {
+struct wav_grids
+{
   grid WavGrid; // grid of wavelet coefficients to copy
   grid ValGrid; // the output grid of values
   grid WrkGrid; // determined using the WavGrid
 };
-wav_grids ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, const v3i& ValStrd);
+
+wav_grids
+ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, const v3i& ValStrd);
 
 /* Return the footprint (influence range) of a block of wavelet coefficients */
-extent WavFootprint(int NDims, int Sb, const grid& WavGrid);
+extent
+WavFootprint(int NDims, int Sb, const grid& WavGrid);
 
 } // namespace idx2
 
 //#include <stlab/concurrency/future.hpp>
 
-#define idx2_RowX(x, y, z, N) i64(z) * N.X * N.Y + i64(y) * N.X + (x)
-#define idx2_RowY(y, x, z, N) i64(z) * N.X * N.Y + i64(y) * N.X + (x)
-#define idx2_RowZ(z, x, y, N) i64(z) * N.X * N.Y + i64(y) * N.X + (x)
+#define idx2_RowX(x, y, z, N) i64(z) * N.X* N.Y + i64(y) * N.X + (x)
+#define idx2_RowY(y, x, z, N) i64(z) * N.X* N.Y + i64(y) * N.X + (x)
+#define idx2_RowZ(z, x, y, N) i64(z) * N.X* N.Y + i64(y) * N.X + (x)
 
 /* Forward lifting */
-#define idx2_FLiftCdf53(z, y, x)\
-idx2_T(t) void \
-FLiftCdf53##x(const grid& Grid, const v3i& M, lift_option Opt, volume* Vol) {\
-  v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);\
-  if (D.x == 1) return;\
-  idx2_Assert(M.x <= N.x);\
-  idx2_Assert(IsPow2(S.X) && IsPow2(S.Y) && IsPow2(S.Z));\
-  idx2_Assert(D.x >= 2);\
-  idx2_Assert(IsEven(P.x));\
-  idx2_Assert(P.x + S.x * (D.x - 2) < M.x);\
-  buffer_t<t> F(Vol->Buffer);\
-  int x0 = Min(P.x + S.x * D.x, M.x); /* extrapolated position */\
-  int x1 = Min(P.x + S.x * (D.x - 1), M.x); /* last position */\
-  int x2 = P.x + S.x * (D.x - 2); /* second last position */\
-  int x3 = P.x + S.x * (D.x - 3); /* third last position */\
-  bool Ext = IsEven(D.x);\
-  for (int z = P.z; z < P.z + S.z * D.z; z += S.z) {\
-    int zz = Min(z, M.z);\
-    for (int y = P.y; y < P.y + S.y * D.y; y += S.y) {\
-      int yy = Min(y, M.y);\
-      if (Ext) {\
-        idx2_Assert(M.x < N.x);\
-        t A = F[idx2_Row##x(x2, yy, zz, N)]; /* 2nd last (even) */\
-        t B = F[idx2_Row##x(x1, yy, zz, N)]; /* last (odd) */\
-        /* store the extrapolated value at the boundary position */\
-        F[idx2_Row##x(x0, yy, zz, N)] = 2 * B - A;\
-      }\
-      /* predict (excluding last odd position) */\
-      for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x) {\
-        t & Val = F[idx2_Row##x(x, yy, zz, N)];\
-        Val -= (F[idx2_Row##x(x - S.x, yy, zz, N)] + F[idx2_Row##x(x + S.x, yy, zz, N)]) / 2;\
-      }\
-      if (!Ext) { /* no extrapolation, predict at the last odd position */\
-        t & Val = F[idx2_Row##x(x2, yy, zz, N)];\
-        Val -= (F[idx2_Row##x(x1, yy, zz, N)] + F[idx2_Row##x(x3, yy, zz, N)]) / 2;\
-      } else if (x1 < M.x) {\
-        F[idx2_Row##x(x1, yy, zz, N)] = 0;\
-      }\
-      /* update (excluding last odd position) */\
-      if (Opt != lift_option::NoUpdate) {\
-        for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x) {\
-          t Val = F[idx2_Row##x(x, yy, zz, N)];\
-          F[idx2_Row##x(x - S.x, yy, zz, N)] += Val / 4;\
-          F[idx2_Row##x(x + S.x, yy, zz, N)] += Val / 4;\
-        }\
-        if (!Ext) { /* no extrapolation, update at the last odd position */\
-          t Val = F[idx2_Row##x(x2, yy, zz, N)];\
-          F[idx2_Row##x(x3, yy, zz, N)] += Val / 4;\
-          if (Opt == lift_option::Normal)\
-            F[idx2_Row##x(x1, yy, zz, N)] += Val / 4;\
-          else if (Opt == lift_option::PartialUpdateLast)\
-            F[idx2_Row##x(x1, yy, zz, N)] = Val / 4;\
-        }\
-      }\
-    }\
-  }\
-}
+#define idx2_FLiftCdf53(z, y, x)                                                                   \
+  template <typename t> void FLiftCdf53##x(                                                        \
+    const grid& Grid, const v3i& M, lift_option Opt, volume* Vol)                                  \
+  {                                                                                                \
+    v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);                            \
+    if (D.x == 1)                                                                                  \
+      return;                                                                                      \
+    idx2_Assert(M.x <= N.x);                                                                       \
+    idx2_Assert(IsPow2(S.X) && IsPow2(S.Y) && IsPow2(S.Z));                                        \
+    idx2_Assert(D.x >= 2);                                                                         \
+    idx2_Assert(IsEven(P.x));                                                                      \
+    idx2_Assert(P.x + S.x * (D.x - 2) < M.x);                                                      \
+    buffer_t<t> F(Vol->Buffer);                                                                    \
+    int x0 = Min(P.x + S.x * D.x, M.x);       /* extrapolated position */                          \
+    int x1 = Min(P.x + S.x * (D.x - 1), M.x); /* last position */                                  \
+    int x2 = P.x + S.x * (D.x - 2);           /* second last position */                           \
+    int x3 = P.x + S.x * (D.x - 3);           /* third last position */                            \
+    bool Ext = IsEven(D.x);                                                                        \
+    for (int z = P.z; z < P.z + S.z * D.z; z += S.z)                                               \
+    {                                                                                              \
+      int zz = Min(z, M.z);                                                                        \
+      for (int y = P.y; y < P.y + S.y * D.y; y += S.y)                                             \
+      {                                                                                            \
+        int yy = Min(y, M.y);                                                                      \
+        if (Ext)                                                                                   \
+        {                                                                                          \
+          idx2_Assert(M.x < N.x);                                                                  \
+          t A = F[idx2_Row##x(x2, yy, zz, N)]; /* 2nd last (even) */                               \
+          t B = F[idx2_Row##x(x1, yy, zz, N)]; /* last (odd) */                                    \
+          /* store the extrapolated value at the boundary position */                              \
+          F[idx2_Row##x(x0, yy, zz, N)] = 2 * B - A;                                               \
+        }                                                                                          \
+        /* predict (excluding last odd position) */                                                \
+        for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x)                           \
+        {                                                                                          \
+          t& Val = F[idx2_Row##x(x, yy, zz, N)];                                                   \
+          Val -= (F[idx2_Row##x(x - S.x, yy, zz, N)] + F[idx2_Row##x(x + S.x, yy, zz, N)]) / 2;    \
+        }                                                                                          \
+        if (!Ext)                                                                                  \
+        { /* no extrapolation, predict at the last odd position */                                 \
+          t& Val = F[idx2_Row##x(x2, yy, zz, N)];                                                  \
+          Val -= (F[idx2_Row##x(x1, yy, zz, N)] + F[idx2_Row##x(x3, yy, zz, N)]) / 2;              \
+        }                                                                                          \
+        else if (x1 < M.x)                                                                         \
+        {                                                                                          \
+          F[idx2_Row##x(x1, yy, zz, N)] = 0;                                                       \
+        }                                                                                          \
+        /* update (excluding last odd position) */                                                 \
+        if (Opt != lift_option::NoUpdate)                                                          \
+        {                                                                                          \
+          for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x)                         \
+          {                                                                                        \
+            t Val = F[idx2_Row##x(x, yy, zz, N)];                                                  \
+            F[idx2_Row##x(x - S.x, yy, zz, N)] += Val / 4;                                         \
+            F[idx2_Row##x(x + S.x, yy, zz, N)] += Val / 4;                                         \
+          }                                                                                        \
+          if (!Ext)                                                                                \
+          { /* no extrapolation, update at the last odd position */                                \
+            t Val = F[idx2_Row##x(x2, yy, zz, N)];                                                 \
+            F[idx2_Row##x(x3, yy, zz, N)] += Val / 4;                                              \
+            if (Opt == lift_option::Normal)                                                        \
+              F[idx2_Row##x(x1, yy, zz, N)] += Val / 4;                                            \
+            else if (Opt == lift_option::PartialUpdateLast)                                        \
+              F[idx2_Row##x(x1, yy, zz, N)] = Val / 4;                                             \
+          }                                                                                        \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+  }
 
 // TODO: this function does not make use of PartialUpdateLast
-#define idx2_ILiftCdf53(z, y, x)\
-idx2_T(t) void \
-ILiftCdf53##x(const grid& Grid, const v3i& M, lift_option Opt, volume* Vol) {\
-  v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);\
-  if (D.x == 1) return;\
-  idx2_Assert(M.x <= N.x);      \
-  idx2_Assert(IsPow2(S.X) && IsPow2(S.Y) && IsPow2(S.Z));\
-  idx2_Assert(D.x >= 2);\
-  idx2_Assert(IsEven(P.x));\
-  idx2_Assert(P.x + S.x * (D.x - 2) < M.x);\
-  buffer_t<t> F(Vol->Buffer);\
-  int x0 = Min(P.x + S.x * D.x, M.x); /* extrapolated position */\
-  int x1 = Min(P.x + S.x * (D.x - 1), M.x); /* last position */\
-  int x2 = P.x + S.x * (D.x - 2); /* second last position */\
-  int x3 = P.x + S.x * (D.x - 3); /* third last position */\
-  bool Ext = IsEven(D.x);\
-  for (int z = P.z; z < P.z + S.z * D.z; z += S.z) {\
-    int zz = Min(z, M.z);\
-    for (int y = P.y; y < P.y + S.y * D.y; y += S.y) {\
-      int yy = Min(y, M.y);\
-      /* inverse update (excluding last odd position) */\
-      if (Opt != lift_option::NoUpdate) {\
-        for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x) {\
-          t Val = F[idx2_Row##x(x, yy, zz, N)];\
-          F[idx2_Row##x(x - S.x, yy, zz, N)] -= Val / 4;\
-          F[idx2_Row##x(x + S.x, yy, zz, N)] -= Val / 4;\
-        }\
-        if (!Ext) { /* no extrapolation, inverse update at the last odd position */\
-          t Val = F[idx2_Row##x(x2, yy, zz, N)];\
-          F[idx2_Row##x(x3, yy, zz, N)] -= Val / 4;\
-          if (Opt == lift_option::Normal)\
-            F[idx2_Row##x(x1, yy, zz, N)] -= Val / 4;\
-        } else { /* extrapolation, need to "fix" the last position (odd) */\
-          t A = F[idx2_Row##x(x0, yy, zz, N)];\
-          t B = F[idx2_Row##x(x2, yy, zz, N)];\
-          F[idx2_Row##x(x1, yy, zz, N)] = (A + B) / 2;\
-        }\
-      }\
-      /* inverse predict (excluding last odd position) */\
-      for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x) {\
-        t & Val = F[idx2_Row##x(x, yy, zz, N)];\
-        Val += (F[idx2_Row##x(x - S.x, yy, zz, N)] + F[idx2_Row##x(x + S.x, yy, zz, N)])  / 2;\
-      }\
-      if (!Ext) { /* no extrapolation, inverse predict at the last odd position */\
-        t & Val = F[idx2_Row##x(x2, yy, zz, N)];\
-        Val += (F[idx2_Row##x(x1, yy, zz, N)] + F[idx2_Row##x(x3, yy, zz, N)]) / 2;\
-      }\
-    }\
-  }\
-}
+#define idx2_ILiftCdf53(z, y, x)                                                                   \
+  template <typename t> void ILiftCdf53##x(                                                        \
+    const grid& Grid, const v3i& M, lift_option Opt, volume* Vol)                                  \
+  {                                                                                                \
+    v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);                            \
+    if (D.x == 1)                                                                                  \
+      return;                                                                                      \
+    idx2_Assert(M.x <= N.x);                                                                       \
+    idx2_Assert(IsPow2(S.X) && IsPow2(S.Y) && IsPow2(S.Z));                                        \
+    idx2_Assert(D.x >= 2);                                                                         \
+    idx2_Assert(IsEven(P.x));                                                                      \
+    idx2_Assert(P.x + S.x * (D.x - 2) < M.x);                                                      \
+    buffer_t<t> F(Vol->Buffer);                                                                    \
+    int x0 = Min(P.x + S.x * D.x, M.x);       /* extrapolated position */                          \
+    int x1 = Min(P.x + S.x * (D.x - 1), M.x); /* last position */                                  \
+    int x2 = P.x + S.x * (D.x - 2);           /* second last position */                           \
+    int x3 = P.x + S.x * (D.x - 3);           /* third last position */                            \
+    bool Ext = IsEven(D.x);                                                                        \
+    for (int z = P.z; z < P.z + S.z * D.z; z += S.z)                                               \
+    {                                                                                              \
+      int zz = Min(z, M.z);                                                                        \
+      for (int y = P.y; y < P.y + S.y * D.y; y += S.y)                                             \
+      {                                                                                            \
+        int yy = Min(y, M.y);                                                                      \
+        /* inverse update (excluding last odd position) */                                         \
+        if (Opt != lift_option::NoUpdate)                                                          \
+        {                                                                                          \
+          for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x)                         \
+          {                                                                                        \
+            t Val = F[idx2_Row##x(x, yy, zz, N)];                                                  \
+            F[idx2_Row##x(x - S.x, yy, zz, N)] -= Val / 4;                                         \
+            F[idx2_Row##x(x + S.x, yy, zz, N)] -= Val / 4;                                         \
+          }                                                                                        \
+          if (!Ext)                                                                                \
+          { /* no extrapolation, inverse update at the last odd position */                        \
+            t Val = F[idx2_Row##x(x2, yy, zz, N)];                                                 \
+            F[idx2_Row##x(x3, yy, zz, N)] -= Val / 4;                                              \
+            if (Opt == lift_option::Normal)                                                        \
+              F[idx2_Row##x(x1, yy, zz, N)] -= Val / 4;                                            \
+          }                                                                                        \
+          else                                                                                     \
+          { /* extrapolation, need to "fix" the last position (odd) */                             \
+            t A = F[idx2_Row##x(x0, yy, zz, N)];                                                   \
+            t B = F[idx2_Row##x(x2, yy, zz, N)];                                                   \
+            F[idx2_Row##x(x1, yy, zz, N)] = (A + B) / 2;                                           \
+          }                                                                                        \
+        }                                                                                          \
+        /* inverse predict (excluding last odd position) */                                        \
+        for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x)                           \
+        {                                                                                          \
+          t& Val = F[idx2_Row##x(x, yy, zz, N)];                                                   \
+          Val += (F[idx2_Row##x(x - S.x, yy, zz, N)] + F[idx2_Row##x(x + S.x, yy, zz, N)]) / 2;    \
+        }                                                                                          \
+        if (!Ext)                                                                                  \
+        { /* no extrapolation, inverse predict at the last odd position */                         \
+          t& Val = F[idx2_Row##x(x2, yy, zz, N)];                                                  \
+          Val += (F[idx2_Row##x(x1, yy, zz, N)] + F[idx2_Row##x(x3, yy, zz, N)]) / 2;              \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+  }
 
 /* Forward x lifting */
 // TODO: merge the first two loops
-#define idx2_FLiftCdf53Old(z, y, x)\
-idx2_T(t) void \
-FLiftCdf53Old##x(t* F, const v3i& N, const v3i& L) {\
-  v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);\
-  v3i M = (N + P - 1) / P;\
-  if (M.x <= 1)\
-    return;\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x - 1;\
-    t & Val = F[idx2_Row##x(x, y, z, N)];\
-    Val -= F[idx2_Row##x(XLeft, y, z, N)] / 2;\
-    Val -= F[idx2_Row##x(XRight, y, z, N)] / 2;\
-  }}}\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x - 1;\
-    t Val = F[idx2_Row##x(x, y, z, N)];\
-    F[idx2_Row##x(XLeft, y, z, N)] += Val / 4;\
-    F[idx2_Row##x(XRight, y, z, N)] += Val / 4;\
-  }}}\
-  idx2_MallocArray(Temp, t, M.x / 2);\
-  int S##x = (M.x + 1) / 2;\
-  for (int z = 0; z < M.z; ++z) {\
-  for (int y = 0; y < M.y; ++y) {\
-    for (int x = 1; x < M.x; x += 2) {\
-      Temp[x / 2] = F[idx2_Row##x(x    , y, z, N)];\
-      F[idx2_Row##x(x / 2, y, z, N)] = F[idx2_Row##x(x - 1, y, z, N)];\
-    }\
-    if (IsOdd(M.x))\
-      F[idx2_Row##x(M.x / 2, y, z, N)] = F[idx2_Row##x(M.x - 1, y, z, N)];\
-    for (int x = 0; x < (M.x / 2); ++x)\
-      F[idx2_Row##x(S##x + x, y, z, N)] = Temp[x];\
-  }}\
-}
+#define idx2_FLiftCdf53Old(z, y, x)                                                                \
+  template <typename t> void FLiftCdf53Old##x(t* F, const v3i& N, const v3i& L)                    \
+  {                                                                                                \
+    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
+    v3i M = (N + P - 1) / P;                                                                       \
+    if (M.x <= 1)                                                                                  \
+      return;                                                                                      \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
+          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
+          Val -= F[idx2_Row##x(XLeft, y, z, N)] / 2;                                               \
+          Val -= F[idx2_Row##x(XRight, y, z, N)] / 2;                                              \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
+          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
+          F[idx2_Row##x(XLeft, y, z, N)] += Val / 4;                                               \
+          F[idx2_Row##x(XRight, y, z, N)] += Val / 4;                                              \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
+    int S##x = (M.x + 1) / 2;                                                                      \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          Temp[x / 2] = F[idx2_Row##x(x, y, z, N)];                                                \
+          F[idx2_Row##x(x / 2, y, z, N)] = F[idx2_Row##x(x - 1, y, z, N)];                         \
+        }                                                                                          \
+        if (IsOdd(M.x))                                                                            \
+          F[idx2_Row##x(M.x / 2, y, z, N)] = F[idx2_Row##x(M.x - 1, y, z, N)];                     \
+        for (int x = 0; x < (M.x / 2); ++x)                                                        \
+          F[idx2_Row##x(S##x + x, y, z, N)] = Temp[x];                                             \
+      }                                                                                            \
+    }                                                                                              \
+  }
 
 // TODO: merge two loops
-#define idx2_ILiftCdf53Old(z, y, x)\
-idx2_T(t) void \
-ILiftCdf53Old##x(t* F, const v3i& N, const v3i& L) {\
-  v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);\
-  v3i M = (N + P - 1) / P;\
-  if (M.x <= 1)\
-    return;\
-  idx2_MallocArray(Temp, t, M.x / 2);\
-  int S##x = (M.x + 1) >> 1;\
-  for (int z = 0; z < M.z; ++z) {\
-  for (int y = 0; y < M.y; ++y) {\
-    for (int x = 0; x < (M.x / 2); ++x)\
-      Temp[x] = F[idx2_Row##x(S##x + x, y, z, N)];\
-    if (IsOdd(M.x))\
-      F[idx2_Row##x(M.x - 1, y, z, N)] = F[idx2_Row##x(M.x >> 1, y, z, N)];\
-    for (int x = (M.x / 2) * 2 - 1; x >= 1; x -= 2) {\
-      F[idx2_Row##x(x - 1, y, z, N)] = F[idx2_Row##x(x >> 1, y, z, N)];\
-      F[idx2_Row##x(x    , y, z, N)] = Temp[x / 2];\
-    }\
-  }}\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x - 1;\
-    t Val = F[idx2_Row##x(x, y, z, N)];\
-    F[idx2_Row##x(XLeft, y, z, N)] -= Val / 4;\
-    F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;\
-  }}}\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x - 1;\
-    t & Val = F[idx2_Row##x(x, y, z, N)];\
-    Val += F[idx2_Row##x(XLeft, y, z, N)] / 2;\
-    Val += F[idx2_Row##x(XRight, y, z, N)] / 2;\
-  }}}\
-}
+#define idx2_ILiftCdf53Old(z, y, x)                                                                \
+  template <typename t> void ILiftCdf53Old##x(t* F, const v3i& N, const v3i& L)                    \
+  {                                                                                                \
+    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
+    v3i M = (N + P - 1) / P;                                                                       \
+    if (M.x <= 1)                                                                                  \
+      return;                                                                                      \
+    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
+    int S##x = (M.x + 1) >> 1;                                                                     \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 0; x < (M.x / 2); ++x)                                                        \
+          Temp[x] = F[idx2_Row##x(S##x + x, y, z, N)];                                             \
+        if (IsOdd(M.x))                                                                            \
+          F[idx2_Row##x(M.x - 1, y, z, N)] = F[idx2_Row##x(M.x >> 1, y, z, N)];                    \
+        for (int x = (M.x / 2) * 2 - 1; x >= 1; x -= 2)                                            \
+        {                                                                                          \
+          F[idx2_Row##x(x - 1, y, z, N)] = F[idx2_Row##x(x >> 1, y, z, N)];                        \
+          F[idx2_Row##x(x, y, z, N)] = Temp[x / 2];                                                \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
+          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
+          F[idx2_Row##x(XLeft, y, z, N)] -= Val / 4;                                               \
+          F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;                                              \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
+          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
+          Val += F[idx2_Row##x(XLeft, y, z, N)] / 2;                                               \
+          Val += F[idx2_Row##x(XRight, y, z, N)] / 2;                                              \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+  }
 
-#define idx2_FLiftCdf53Const(z, y, x)\
-idx2_T(t) void \
-FLiftCdf53Const##x(t* F, const v3i& N, const v3i& L) {\
-  v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);\
-  v3i M = (N + P - 1) / P;\
-  if (M.x <= 1)\
-    return;\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x;\
-    t & Val = F[idx2_Row##x(x, y, z, N)];\
-    Val -= (F[idx2_Row##x(XLeft , y, z, N)] + F[idx2_Row##x(XRight , y, z, N)]) / 2;\
-  }}}\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x - 1;\
-    t Val = F[idx2_Row##x(x, y, z, N)];\
-    F[idx2_Row##x(XLeft, y, z, N)] += Val / 4;\
-    F[idx2_Row##x(XRight, y, z, N)] += Val / 4;\
-  }}}\
-  idx2_MallocArray(Temp, t, M.x / 2);\
-  int S##x = (M.x + 1) / 2;\
-  for (int z = 0; z < M.z; ++z) {\
-  for (int y = 0; y < M.y; ++y) {\
-    for (int x = 1; x < M.x; x += 2) {\
-      Temp[x / 2] = F[idx2_Row##x(x    , y, z, N)];\
-      F[idx2_Row##x(x / 2, y, z, N)] = F[idx2_Row##x(x - 1, y, z, N)];\
-    }\
-    if (IsOdd(M.x))\
-      F[idx2_Row##x(M.x / 2, y, z, N)] = F[idx2_Row##x(M.x - 1, y, z, N)];\
-    for (int x = 0; x < (M.x / 2); ++x)\
-      F[idx2_Row##x(S##x + x, y, z, N)] = Temp[x];\
-  }}\
-}
+#define idx2_FLiftCdf53Const(z, y, x)                                                              \
+  template <typename t> void FLiftCdf53Const##x(t* F, const v3i& N, const v3i& L)                  \
+  {                                                                                                \
+    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
+    v3i M = (N + P - 1) / P;                                                                       \
+    if (M.x <= 1)                                                                                  \
+      return;                                                                                      \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x;                                                    \
+          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
+          Val -= (F[idx2_Row##x(XLeft, y, z, N)] + F[idx2_Row##x(XRight, y, z, N)]) / 2;           \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
+          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
+          F[idx2_Row##x(XLeft, y, z, N)] += Val / 4;                                               \
+          F[idx2_Row##x(XRight, y, z, N)] += Val / 4;                                              \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
+    int S##x = (M.x + 1) / 2;                                                                      \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          Temp[x / 2] = F[idx2_Row##x(x, y, z, N)];                                                \
+          F[idx2_Row##x(x / 2, y, z, N)] = F[idx2_Row##x(x - 1, y, z, N)];                         \
+        }                                                                                          \
+        if (IsOdd(M.x))                                                                            \
+          F[idx2_Row##x(M.x / 2, y, z, N)] = F[idx2_Row##x(M.x - 1, y, z, N)];                     \
+        for (int x = 0; x < (M.x / 2); ++x)                                                        \
+          F[idx2_Row##x(S##x + x, y, z, N)] = Temp[x];                                             \
+      }                                                                                            \
+    }                                                                                              \
+  }
 
 // TODO: merge two loops
-#define idx2_ILiftCdf53Const(z, y, x)\
-idx2_T(t) void \
-ILiftCdf53Const##x(t* F, const v3i& N, const v3i& L) {\
-  v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);\
-  v3i M = (N + P - 1) / P;\
-  if (M.x <= 1)\
-    return;\
-  idx2_MallocArray(Temp, t, M.x / 2);\
-  int S##x = (M.x + 1) >> 1;\
-  for (int z = 0; z < M.z; ++z) {\
-  for (int y = 0; y < M.y; ++y) {\
-    for (int x = 0; x < (M.x / 2); ++x)\
-      Temp[x] = F[idx2_Row##x(S##x + x, y, z, N)];\
-    if (IsOdd(M.x))\
-      F[idx2_Row##x(M.x - 1, y, z, N)] = F[idx2_Row##x(M.x >> 1, y, z, N)];\
-    for (int x = (M.x / 2) * 2 - 1; x >= 1; x -= 2) {\
-      F[idx2_Row##x(x - 1, y, z, N)] = F[idx2_Row##x(x >> 1, y, z, N)];\
-      F[idx2_Row##x(x    , y, z, N)] = Temp[x / 2];\
-    }\
-  }}\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x - 1;\
-    t Val = F[idx2_Row##x(x, y, z, N)];\
-    F[idx2_Row##x(XLeft , y, z, N)] -= Val / 4;\
-    F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;\
-  }}}\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < M.x; x += 2) {\
-    int XLeft = x - 1;\
-    int XRight = x < M.x - 1 ? x + 1 : x;\
-    t & Val = F[idx2_Row##x(x, y, z, N)];\
-    if (x < M.x - 1) {\
-      Val += F[idx2_Row##x(XLeft , y, z, N)] / 2;\
-      Val += F[idx2_Row##x(XRight, y, z, N)] / 2;\
-    } else {\
-      Val += F[idx2_Row##x(XLeft , y, z, N)] + F[idx2_Row##x(XRight, y, z, N)];\
-    }\
-  }}}\
-}
+#define idx2_ILiftCdf53Const(z, y, x)                                                              \
+  template <typename t> void ILiftCdf53Const##x(t* F, const v3i& N, const v3i& L)                  \
+  {                                                                                                \
+    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
+    v3i M = (N + P - 1) / P;                                                                       \
+    if (M.x <= 1)                                                                                  \
+      return;                                                                                      \
+    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
+    int S##x = (M.x + 1) >> 1;                                                                     \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 0; x < (M.x / 2); ++x)                                                        \
+          Temp[x] = F[idx2_Row##x(S##x + x, y, z, N)];                                             \
+        if (IsOdd(M.x))                                                                            \
+          F[idx2_Row##x(M.x - 1, y, z, N)] = F[idx2_Row##x(M.x >> 1, y, z, N)];                    \
+        for (int x = (M.x / 2) * 2 - 1; x >= 1; x -= 2)                                            \
+        {                                                                                          \
+          F[idx2_Row##x(x - 1, y, z, N)] = F[idx2_Row##x(x >> 1, y, z, N)];                        \
+          F[idx2_Row##x(x, y, z, N)] = Temp[x / 2];                                                \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
+          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
+          F[idx2_Row##x(XLeft, y, z, N)] -= Val / 4;                                               \
+          F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;                                              \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          int XLeft = x - 1;                                                                       \
+          int XRight = x < M.x - 1 ? x + 1 : x;                                                    \
+          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
+          if (x < M.x - 1)                                                                         \
+          {                                                                                        \
+            Val += F[idx2_Row##x(XLeft, y, z, N)] / 2;                                             \
+            Val += F[idx2_Row##x(XRight, y, z, N)] / 2;                                            \
+          }                                                                                        \
+          else                                                                                     \
+          {                                                                                        \
+            Val += F[idx2_Row##x(XLeft, y, z, N)] + F[idx2_Row##x(XRight, y, z, N)];               \
+          }                                                                                        \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+  }
 
-#define idx2_FLiftExtCdf53(z, y, x)\
-idx2_T(t) void \
-FLiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L) {\
-  idx2_Assert(L.X == L.Y && L.Y == L.Z);\
-  auto D = DimsAtLevel(N, L.x);\
-  /* linearly extrapolate */\
-  if (D[0].x < D[1].x) {\
-    idx2_Assert(D[0].x + 1 == D[1].x);\
-    /*_Pragma("omp parallel for")*/\
-    for (int z = 0; z < D[1].z; ++z) {\
-    for (int y = 0; y < D[1].y; ++y) {\
-      t A = F[idx2_Row##x(D[0].x - 2, y, z, NBig)];\
-      t B = F[idx2_Row##x(D[0].x - 1, y, z, NBig)];\
-      F[idx2_Row##x(D[0].x, y, z, NBig)] = 2 * B - A;\
-    }}\
-  }\
-  v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);\
-  v3i M = (NBig + P - 1) / P;\
-  if (M.x <= 1)\
-    return;\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < D[1].x; x += 2) {\
-    t & Val = F[idx2_Row##x(x, y, z, NBig)];\
-    Val -= F[idx2_Row##x(x - 1, y, z, NBig)] / 2;\
-    Val -= F[idx2_Row##x(x + 1, y, z, NBig)] / 2;\
-  }}}\
-  /*_Pragma("omp parallel for collapse(2)")*/\
-  for (int z = 0; z < M.z; ++z   ) {\
-  for (int y = 0; y < M.y; ++y   ) {\
-  for (int x = 1; x < D[1].x; x += 2) {\
-    t Val = F[idx2_Row##x(x, y, z, NBig)];\
-    F[idx2_Row##x(x - 1, y, z, NBig)] += Val / 4;\
-    F[idx2_Row##x(x + 1, y, z, NBig)] += Val / 4;\
-  }}}\
-  idx2_MallocArray(Temp, t, M.x / 2);\
-  int S##x = (M.x + 1) / 2;\
-  for (int z = 0; z < M.z; ++z) {\
-  for (int y = 0; y < M.y; ++y) {\
-    for (int x = 1; x < M.x; x += 2) {\
-      Temp[x / 2] = F[idx2_Row##x(x, y, z, NBig)];\
-      F[idx2_Row##x(x / 2, y, z, NBig)] = F[idx2_Row##x(x - 1, y, z, NBig)];\
-    }\
-    if (IsOdd(M.x))\
-      F[idx2_Row##x(M.x / 2, y, z, NBig)] = F[idx2_Row##x(M.x - 1, y, z, NBig)];\
-    for (int x = 0; x < (M.x / 2); ++x)\
-      F[idx2_Row##x(S##x + x, y, z, NBig)] = Temp[x];\
-  }}\
-}
+#define idx2_FLiftExtCdf53(z, y, x)                                                                \
+  template <typename t> void FLiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L)   \
+  {                                                                                                \
+    idx2_Assert(L.X == L.Y && L.Y == L.Z);                                                         \
+    auto D = DimsAtLevel(N, L.x);                                                                  \
+    /* linearly extrapolate */                                                                     \
+    if (D[0].x < D[1].x)                                                                           \
+    {                                                                                              \
+      idx2_Assert(D[0].x + 1 == D[1].x);                                                           \
+      /*_Pragma("omp parallel for")*/                                                              \
+      for (int z = 0; z < D[1].z; ++z)                                                             \
+      {                                                                                            \
+        for (int y = 0; y < D[1].y; ++y)                                                           \
+        {                                                                                          \
+          t A = F[idx2_Row##x(D[0].x - 2, y, z, NBig)];                                            \
+          t B = F[idx2_Row##x(D[0].x - 1, y, z, NBig)];                                            \
+          F[idx2_Row##x(D[0].x, y, z, NBig)] = 2 * B - A;                                          \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
+    v3i M = (NBig + P - 1) / P;                                                                    \
+    if (M.x <= 1)                                                                                  \
+      return;                                                                                      \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < D[1].x; x += 2)                                                        \
+        {                                                                                          \
+          t& Val = F[idx2_Row##x(x, y, z, NBig)];                                                  \
+          Val -= F[idx2_Row##x(x - 1, y, z, NBig)] / 2;                                            \
+          Val -= F[idx2_Row##x(x + 1, y, z, NBig)] / 2;                                            \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < D[1].x; x += 2)                                                        \
+        {                                                                                          \
+          t Val = F[idx2_Row##x(x, y, z, NBig)];                                                   \
+          F[idx2_Row##x(x - 1, y, z, NBig)] += Val / 4;                                            \
+          F[idx2_Row##x(x + 1, y, z, NBig)] += Val / 4;                                            \
+        }                                                                                          \
+      }                                                                                            \
+    }                                                                                              \
+    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
+    int S##x = (M.x + 1) / 2;                                                                      \
+    for (int z = 0; z < M.z; ++z)                                                                  \
+    {                                                                                              \
+      for (int y = 0; y < M.y; ++y)                                                                \
+      {                                                                                            \
+        for (int x = 1; x < M.x; x += 2)                                                           \
+        {                                                                                          \
+          Temp[x / 2] = F[idx2_Row##x(x, y, z, NBig)];                                             \
+          F[idx2_Row##x(x / 2, y, z, NBig)] = F[idx2_Row##x(x - 1, y, z, NBig)];                   \
+        }                                                                                          \
+        if (IsOdd(M.x))                                                                            \
+          F[idx2_Row##x(M.x / 2, y, z, NBig)] = F[idx2_Row##x(M.x - 1, y, z, NBig)];               \
+        for (int x = 0; x < (M.x / 2); ++x)                                                        \
+          F[idx2_Row##x(S##x + x, y, z, NBig)] = Temp[x];                                          \
+      }                                                                                            \
+    }                                                                                              \
+  }
 
-#define idx2_ILiftExtCdf53(z, y, x)\
-idx2_T(t) void \
-ILiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L) {\
-  (void)N;\
-  idx2_Assert(L.X == L.Y && L.Y == L.Z);\
-  return ILiftCdf53Old##x(F, NBig, L);\
-}
+#define idx2_ILiftExtCdf53(z, y, x)                                                                \
+  template <typename t> void ILiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L)   \
+  {                                                                                                \
+    (void)N;                                                                                       \
+    idx2_Assert(L.X == L.Y && L.Y == L.Z);                                                         \
+    return ILiftCdf53Old##x(F, NBig, L);                                                           \
+  }
 
-namespace idx2 {
+namespace idx2
+{
 
 inline stack_array<v3i, 2>
-DimsAtLevel(v3i N, int L) {
-  for (int I = 0; I < L; ++I) {
+DimsAtLevel(v3i N, int L)
+{
+  for (int I = 0; I < L; ++I)
+  {
     N = ((N / 2) * 2) + 1;
     N = (N + 1) / 2;
   }
-  return stack_array<v3i,2>{N, (N / 2) * 2 + 1};
+  return stack_array<v3i, 2>{ N, (N / 2) * 2 + 1 };
 }
 
-idx2_FLiftCdf53(Z, Y, X) // X forward lifting
-idx2_FLiftCdf53(Z, X, Y) // Y forward lifting
-idx2_FLiftCdf53(Y, X, Z) // Z forward lifting
-idx2_ILiftCdf53(Z, Y, X) // X inverse lifting
-idx2_ILiftCdf53(Z, X, Y) // Y inverse lifting
-idx2_ILiftCdf53(Y, X, Z) // Z inverse lifting
+idx2_FLiftCdf53(Z, Y, X)   // X forward lifting
+  idx2_FLiftCdf53(Z, X, Y) // Y forward lifting
+  idx2_FLiftCdf53(Y, X, Z) // Z forward lifting
+  idx2_ILiftCdf53(Z, Y, X) // X inverse lifting
+  idx2_ILiftCdf53(Z, X, Y) // Y inverse lifting
+  idx2_ILiftCdf53(Y, X, Z) // Z inverse lifting
 
-idx2_FLiftCdf53Old(Z, Y, X) // X forward lifting
-idx2_FLiftCdf53Old(Z, X, Y) // Y forward lifting
-idx2_FLiftCdf53Old(Y, X, Z) // Z forward lifting
-idx2_ILiftCdf53Old(Z, Y, X) // X inverse lifting
-idx2_ILiftCdf53Old(Z, X, Y) // Y inverse lifting
-idx2_ILiftCdf53Old(Y, X, Z) // Z inverse lifting
+  idx2_FLiftCdf53Old(Z, Y, X) // X forward lifting
+  idx2_FLiftCdf53Old(Z, X, Y) // Y forward lifting
+  idx2_FLiftCdf53Old(Y, X, Z) // Z forward lifting
+  idx2_ILiftCdf53Old(Z, Y, X) // X inverse lifting
+  idx2_ILiftCdf53Old(Z, X, Y) // Y inverse lifting
+  idx2_ILiftCdf53Old(Y, X, Z) // Z inverse lifting
 
-idx2_FLiftCdf53Const(Z, Y, X) // X forward lifting
-idx2_FLiftCdf53Const(Z, X, Y) // Y forward lifting
-idx2_FLiftCdf53Const(Y, X, Z) // Z forward lifting
-idx2_ILiftCdf53Const(Z, Y, X) // X inverse lifting
-idx2_ILiftCdf53Const(Z, X, Y) // Y inverse lifting
-idx2_ILiftCdf53Const(Y, X, Z) // Z inverse lifting
+  idx2_FLiftCdf53Const(Z, Y, X) // X forward lifting
+  idx2_FLiftCdf53Const(Z, X, Y) // Y forward lifting
+  idx2_FLiftCdf53Const(Y, X, Z) // Z forward lifting
+  idx2_ILiftCdf53Const(Z, Y, X) // X inverse lifting
+  idx2_ILiftCdf53Const(Z, X, Y) // Y inverse lifting
+  idx2_ILiftCdf53Const(Y, X, Z) // Z inverse lifting
 
 // idx2_FLiftExtCdf53(Z, Y, X) // X forward lifting
 // idx2_FLiftExtCdf53(Z, X, Y) // Y forward lifting
@@ -6754,51 +9022,44 @@ idx2_ILiftCdf53Const(Y, X, Z) // Z inverse lifting
 
 /* ---------------------- MACROS ----------------------*/
 // Get non-extrapolated dims
-#define idx2_NonExtDims(P3)\
-  v3i(P3.X - (P3.X > 1), P3.Y - (P3.Y > 1), P3.Z - (P3.Z > 1))
-#define idx2_ExtDims(P3)\
-  v3i(P3.X + (P3.X > 1), P3.Y + (P3.Y > 1), P3.Z + (P3.Z > 1))
+#define idx2_NonExtDims(P3) v3i(P3.X - (P3.X > 1), P3.Y - (P3.Y > 1), P3.Z - (P3.Z > 1))
+#define idx2_ExtDims(P3) v3i(P3.X + (P3.X > 1), P3.Y + (P3.Y > 1), P3.Z + (P3.Z > 1))
 
-#define idx2_NextMorton(Morton, Row3, Dims3)\
-  if (!(Row3 < Dims3)) {\
-    int B = Lsb(Morton);\
-    idx2_Assert(B >= 0);\
-    Morton = (((Morton >> (B + 1)) + 1) << (B + 1)) - 1;\
-    continue;\
+#define idx2_NextMorton(Morton, Row3, Dims3)                                                       \
+  if (!(Row3 < Dims3))                                                                             \
+  {                                                                                                \
+    int B = Lsb(Morton);                                                                           \
+    idx2_Assert(B >= 0);                                                                           \
+    Morton = (((Morton >> (B + 1)) + 1) << (B + 1)) - 1;                                           \
+    continue;                                                                                      \
   }
 
 /* ---------------------- ENUMS ----------------------*/
-idx2_Enum(action, u8,
-  Encode,
-  Decode
-)
+idx2_Enum(action, u8, Encode, Decode);
 
-idx2_Enum(idx2_err_code, u8, idx2_CommonErrs,
-  BrickSizeNotPowerOfTwo,
-  BrickSizeTooBig,
-  TooManyLevels,
-  TooManyTransformPassesPerLevel,
-  TooManyLevelsOrTransformPasses,
-  TooManyBricksPerFile,
-  TooManyFilesPerDir,
-  NotSupportedInVersion,
-  CannotCreateDirectory,
-  SyntaxError,
-  TooManyBricksPerChunk,
-  TooManyChunksPerFile,
-  ChunksPerFileNotPowerOf2,
-  BricksPerChunkNotPowerOf2,
-  ChunkNotFound,
-  BrickNotFound,
-  FileNotFound,
-  UnsupportedScheme
-)
+idx2_Enum(idx2_err_code,
+          u8,
+          idx2_CommonErrs,
+          BrickSizeNotPowerOfTwo,
+          BrickSizeTooBig,
+          TooManyLevels,
+          TooManyTransformPassesPerLevel,
+          TooManyLevelsOrTransformPasses,
+          TooManyBricksPerFile,
+          TooManyFilesPerDir,
+          NotSupportedInVersion,
+          CannotCreateDirectory,
+          SyntaxError,
+          TooManyBricksPerChunk,
+          TooManyChunksPerFile,
+          ChunksPerFileNotPowerOf2,
+          BricksPerChunkNotPowerOf2,
+          ChunkNotFound,
+          BrickNotFound,
+          FileNotFound,
+          UnsupportedScheme);
 
-idx2_Enum(func_level, u8,
-  Subband,
-  Sum,
-  Max
-)
+idx2_Enum(func_level, u8, Subband, Sum, Max);
 
 namespace idx2
 {
@@ -6817,7 +9078,7 @@ struct params
   action Action = action::__Invalid__;
   metadata Meta;
   v2i Version = v2i(1, 0);
-  //v3i Dims3 = v3i(256);
+  // v3i Dims3 = v3i(256);
   v3i BrickDims3 = v3i(32);
   array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
@@ -6833,11 +9094,16 @@ struct params
   int OutputLevel = 0;
   u8 DecodeMask = 0xFF;
   int QualityLevel = -1;
-  cstr OutDir = "."; // TODO: change this to local storage
-  cstr InDir = "."; // TODO: change this to local storage
+  cstr OutDir = ".";      // TODO: change this to local storage
+  cstr InDir = ".";       // TODO: change this to local storage
   cstr OutFile = nullptr; // TODO: change this to local storage
   bool Pause = false;
-  enum class out_mode { WriteToFile, KeepInMemory, NoOutput };
+  enum class out_mode
+  {
+    WriteToFile,
+    KeepInMemory,
+    NoOutput
+  };
   out_mode OutMode = out_mode::KeepInMemory;
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
@@ -6866,7 +9132,8 @@ struct idx2_file
   static constexpr int MaxBricksPerChunk = 32768;
   static constexpr int MaxChunksPerFile = 4906;
   static constexpr int MaxFilesPerDir = 4096;
-  static constexpr int MaxBrickDim = 256; // so max number of blocks per subband can be represented in 2 bytes
+  static constexpr int MaxBrickDim =
+    256; // so max number of blocks per subband can be represented in 2 bytes
   static constexpr int MaxLevels = 16;
   static constexpr int MaxTformPassesPerLevels = 9;
   static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
@@ -6898,29 +9165,30 @@ struct idx2_file
   int FilesPerDir = 4096; // maximum number of files (or sub-directories) per directory
   int BricksPerChunkIn = 512;
   int ChunksPerFileIn = 4096;
-  stack_array<int, MaxLevels> BricksPerChunks = {{512}};
-  stack_array<int, MaxLevels> ChunksPerFiles = {{4096}};
-  stack_array<int, MaxLevels> BricksPerFiles = {{512 * 4096}};
-  stack_array<int, MaxLevels> FilesPerVol = {{4096}}; // power of two
-  stack_array<int, MaxLevels> ChunksPerVol = {{4096 * 4096}}; // power of two
+  stack_array<int, MaxLevels> BricksPerChunks = { { 512 } };
+  stack_array<int, MaxLevels> ChunksPerFiles = { { 4096 } };
+  stack_array<int, MaxLevels> BricksPerFiles = { { 512 * 4096 } };
+  stack_array<int, MaxLevels> FilesPerVol = { { 4096 } };         // power of two
+  stack_array<int, MaxLevels> ChunksPerVol = { { 4096 * 4096 } }; // power of two
   v2i Version = v2i(1, 0);
-  array<subband> Subbands; // based on BrickDimsExt3
+  array<subband> Subbands;       // based on BrickDimsExt3
   array<subband> SubbandsNonExt; // based on BrickDims3
   v3i GroupBrick3; // how many bricks in the current iteration form a brick in the next iteration
-  stack_array<v3i, MaxLevels> BricksPerChunk3s = {{v3i(8)}};
-  stack_array<v3i, MaxLevels> ChunksPerFile3s = {{v3i(16)}};
-  transform_details Td; // used for normal transform
+  stack_array<v3i, MaxLevels> BricksPerChunk3s = { { v3i(8) } };
+  stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
+  transform_details Td;           // used for normal transform
   transform_details TdExtrpolate; // used only for extrapolation
   cstr Dir = "./";
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
   array<int> QualityLevelsIn; // [] -> bytes
-  array<i64> RdoLevels; // [] -> bytes
+  array<i64> RdoLevels;       // [] -> bytes
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
   bool GroupSubLevels = true;
 };
 
-struct brick_volume {
+struct brick_volume
+{
   volume Vol;
   extent ExtentLocal;
   i8 NChildren = 0;
@@ -6939,40 +9207,59 @@ void
 Dealloc(params* P);
 
 idx2_Inline i64
-Size(const brick_volume& B) { return Prod(Dims(B.Vol)) * SizeOf(B.Vol.Type); }
+Size(const brick_volume& B)
+{
+  return Prod(Dims(B.Vol)) * SizeOf(B.Vol.Type);
+}
 
 void
 SetName(idx2_file* Idx2, cstr Name);
+
 void
 SetField(idx2_file* Idx2, cstr Field);
+
 void
 SetVersion(idx2_file* Idx2, const v2i& Ver);
+
 void
 SetDimensions(idx2_file* Idx2, const v3i& Dims3);
+
 void
 SetDataType(idx2_file* Idx2, dtype DType);
+
 void
 SetBrickSize(idx2_file* Idx2, const v3i& BrickDims3);
+
 void
 SetNumIterations(idx2_file* Idx2, i8 NIterations);
+
 void
 SetAccuracy(idx2_file* Idx2, f64 Accuracy);
+
 void
 SetChunksPerFile(idx2_file* Idx2, int ChunksPerFile);
+
 void
 SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk);
+
 void
 SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
+
 void
 SetDir(idx2_file* Idx2, cstr Dir);
+
 void
 SetGroupLevels(idx2_file* Idx2, bool GroupLevels);
+
 void
 SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels);
+
 void
 SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
+
 void
 SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels);
+
 error<idx2_err_code>
 Finalize(idx2_file* Idx2);
 
@@ -6981,7 +9268,8 @@ Dealloc(idx2_file* Idx2);
 
 /* -------- VERSION 0 : UNUSED ---------*/
 idx2_Inline u64
-GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
+GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
+{
   (void)BricksPerFile;
   (void)Brick;
   (void)Level;
@@ -6990,34 +9278,39 @@ GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane
 }
 
 idx2_Inline file_id
-ConstructFilePathV0_0(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
+ConstructFilePathV0_0(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
+{
 #define idx2_PrintIteration idx2_Print(&Pr, "/I%02x", Iter);
 #define idx2_PrintExtension idx2_Print(&Pr, ".bin");
   thread_local static char FilePath[256];
   printer Pr(FilePath, sizeof(FilePath));
   idx2_Print(&Pr, "%s/%s/", Idx2.Name, Idx2.Field);
-  idx2_PrintIteration; idx2_PrintExtension;
+  idx2_PrintIteration;
+  idx2_PrintExtension;
   u64 FileId = GetFileAddressV0_0(Idx2.BricksPerFiles[Iter], Brick, Iter, Level, BitPlane);
-  return file_id{ stref{FilePath, Pr.Size}, FileId };
+  return file_id{ stref{ FilePath, Pr.Size }, FileId };
 #undef idx2_PrintIteration
 #undef idx2_PrintExtension
 }
 
-}
+} // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 /* ---------------------- TYPES ----------------------*/
 
 // By default, decode everything
-struct decode_params {
+struct decode_params
+{
   bool Decode = false;
   f64 Accuracy = 0;
-  u8 Mask = 0xFF; // for now just a mask TODO: to generalize this we need an array of subbands
+  u8 Mask = 0xFF;    // for now just a mask TODO: to generalize this we need an array of subbands
   i8 Precision = 64; // number of bit planes to decode
 };
 
-struct decode_all {
+struct decode_all
+{
   const idx2_file* Idx2 = nullptr;
   extent Ext;
   f64 Accuracy = 0;
@@ -7035,62 +9328,71 @@ struct decode_all {
   extent GetExtent() const;
   u8 GetMask() const;
   int GetQuality() const;
-//  decode_params GetDecodeParams(int Iteration, const v3i &Brick3) const override;
+  //  decode_params GetDecodeParams(int Iteration, const v3i &Brick3) const override;
   void Destroy();
 };
 
-idx2_T(t)
-struct brick {
+template <typename t> struct brick
+{
   t* Samples = nullptr; // TODO: data should stay compressed
-  u8 LevelMask = 0; // TODO: need to change if we support more than one transform pass per brick
-//  stack_array<array<u8>, 8> BlockSigs; // TODO: to support more than one transform pass per brick, we need a dynamic array
+  u8 LevelMask = 0;     // TODO: need to change if we support more than one transform pass per brick
+  //  stack_array<array<u8>, 8> BlockSigs; // TODO: to support more than one transform pass per
+  //  brick, we need a dynamic array
   // friend v3i Dims(const brick<t>& Brick, const array<grid>& LevelGrids);
   // friend t& At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3);
 };
 
-idx2_T(t)
-struct brick_table {
+template <typename t> struct brick_table
+{
   hash_table<u64, brick<t>> Bricks; // hash from BrickKey to Brick
   allocator* Alloc = &Mallocator();
   // TODO: let Enc->Alloc follow this allocator
 };
 
-struct chunk_exp_cache {
+struct chunk_exp_cache
+{
   bitstream BrickExpsStream;
 };
 
-struct chunk_rdo_cache {
+struct chunk_rdo_cache
+{
   array<i16> TruncationPoints;
 };
 
-struct chunk_cache {
+struct chunk_cache
+{
   i32 ChunkPos; // chunk position in the file
   array<u64> Bricks;
   array<i32> BrickSzs;
   bitstream ChunkStream;
 };
 
-struct file_exp_cache {
+struct file_exp_cache
+{
   array<chunk_exp_cache> ChunkExpCaches;
   array<i32> ChunkExpSzs;
 };
 
-struct file_rdo_cache {
+struct file_rdo_cache
+{
   array<chunk_rdo_cache> TileRdoCaches;
 };
 
-struct file_cache {
-  array<i64> ChunkSizes; // TODO: 32-bit to store chunk sizes?
+struct file_cache
+{
+  array<i64> ChunkSizes;                    // TODO: 32-bit to store chunk sizes?
   hash_table<u64, chunk_cache> ChunkCaches; // [chunk address] -> chunk cache
 };
 
-struct file_cache_table {
-  hash_table<u64, file_cache> FileCaches; // [file address] -> file cache
+struct file_cache_table
+{
+  hash_table<u64, file_cache> FileCaches;        // [file address] -> file cache
   hash_table<u64, file_exp_cache> FileExpCaches; // [file exp address] -> file exp cache
   hash_table<u64, file_rdo_cache> FileRdoCaches; // [file rdo address] -> file rdo cache
 };
 
-struct decode_data {
+struct decode_data
+{
   allocator* Alloc = nullptr;
   file_cache_table FcTable;
   hash_table<u64, brick_volume> BrickPool;
@@ -7100,14 +9402,14 @@ struct decode_data {
   stack_array<v3i, idx2_file::MaxLevels> Bricks3;
   i32 ChunkInFile = 0;
   i32 BrickInChunk = 0;
-  stack_array<u64, idx2_file::MaxLevels> Offsets = {{}}; // used by v0.0 only
-  bitstream BlockStream; // used only by v0.1
+  stack_array<u64, idx2_file::MaxLevels> Offsets = { {} }; // used by v0.0 only
+  bitstream BlockStream;                                   // used only by v0.1
   hash_table<i16, bitstream> Streams;
   buffer CompressedChunkExps;
   bitstream ChunkEMaxSzsStream;
   bitstream ChunkAddrsStream;
   bitstream ChunkSzsStream;
-//  array<t2<u64, u64>> RequestedChunks; // is cleared after each tile
+  //  array<t2<u64, u64>> RequestedChunks; // is cleared after each tile
   int QualityLevel = -1;
   int EffIter = 0;
   u64 LastTile = 0;
@@ -7118,24 +9420,27 @@ struct decode_data {
 error<idx2_err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName);
 
-idx2_T(t) void
-GetBrick(brick_table<t>* BrickTable, i8 Iter, u64 Brick) {
-  //auto
+template <typename t> void
+GetBrick(brick_table<t>* BrickTable, i8 Iter, u64 Brick)
+{
+  // auto
   (void)BrickTable;
   (void)Iter;
   (void)Brick;
 }
 
-idx2_T(t) void
+template <typename t> void
 Dealloc(brick_table<t>* BrickTable);
 
-idx2_Ti(t) v3i
-Dims(const brick<t>& Brick, const array<grid>& LevelGrids) {
+template <typename t> idx2_Inline v3i
+Dims(const brick<t>& Brick, const array<grid>& LevelGrids)
+{
   return Dims(LevelGrids[Brick.Level]);
 }
 
-idx2_Ti(t) t&
-At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3) {
+template <typename t> idx2_Inline t&
+At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3)
+{
   v3i D3 = Dims(LevelGrids[Brick.Level]);
   idx2_Assert(P3 < D3);
   idx2_Assert(D3 == Dims(Brick));
@@ -7143,48 +9448,79 @@ At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3) {
   return const_cast<t&>(Brick.Samples[Idx]);
 }
 
-idx2_T(t) void
-Dealloc(brick<t>* Brick) { free(Brick->Samples); } // TODO: check this
+template <typename t> void
+Dealloc(brick<t>* Brick)
+{
+  free(Brick->Samples);
+} // TODO: check this
 
 idx2_Inline i64
-Size(const chunk_exp_cache& ChunkExpCache) { return Size(ChunkExpCache.BrickExpsStream.Stream); }
+Size(const chunk_exp_cache& ChunkExpCache)
+{
+  return Size(ChunkExpCache.BrickExpsStream.Stream);
+}
+
 idx2_Inline i64
-Size(const chunk_rdo_cache& ChunkRdoCache) { return Size(ChunkRdoCache.TruncationPoints) * sizeof(i16); }
+Size(const chunk_rdo_cache& ChunkRdoCache)
+{
+  return Size(ChunkRdoCache.TruncationPoints) * sizeof(i16);
+}
+
 idx2_Inline i64
-Size(const chunk_cache& C) { return Size(C.Bricks) * sizeof(u64) + Size(C.BrickSzs) * sizeof(i32) + sizeof(C.ChunkPos) + Size(C.ChunkStream.Stream); }
+Size(const chunk_cache& C)
+{
+  return Size(C.Bricks) * sizeof(u64) + Size(C.BrickSzs) * sizeof(i32) + sizeof(C.ChunkPos) +
+         Size(C.ChunkStream.Stream);
+}
+
 idx2_Inline i64
-Size(const file_exp_cache& F) {
+Size(const file_exp_cache& F)
+{
   i64 Result = 0;
-  idx2_ForEach(It, F.ChunkExpCaches) Result += Size(*It);
+  idx2_ForEach (It, F.ChunkExpCaches)
+    Result += Size(*It);
   Result += Size(F.ChunkExpSzs) * sizeof(i32);
   return Result;
 }
+
 idx2_Inline i64
-Size(const file_rdo_cache& F) {
+Size(const file_rdo_cache& F)
+{
   i64 Result = 0;
-  idx2_ForEach(It, F.TileRdoCaches) Result += Size(*It);
-  return Result;
-}
-idx2_Inline i64
-Size(const file_cache& F) {
-  i64 Result = 0;
-  Result += Size(F.ChunkSizes) * sizeof(i64);
-  idx2_ForEach(It, F.ChunkCaches) Result += Size(*It.Val);
-  return Result;
-}
-idx2_Inline i64
-Size(const file_cache_table& F) {
-  i64 Result = 0;
-  idx2_ForEach(It, F.FileCaches) Result += Size(*It.Val);
-  idx2_ForEach(It, F.FileExpCaches) Result += Size(*It.Val);
-  idx2_ForEach(It, F.FileRdoCaches) Result += Size(*It.Val);
+  idx2_ForEach (It, F.TileRdoCaches)
+    Result += Size(*It);
   return Result;
 }
 
 idx2_Inline i64
-SizeBrickPool(const decode_data& D) {
+Size(const file_cache& F)
+{
   i64 Result = 0;
-  idx2_ForEach(It, D.BrickPool) Result += Size(*It.Val);
+  Result += Size(F.ChunkSizes) * sizeof(i64);
+  idx2_ForEach (It, F.ChunkCaches)
+    Result += Size(*It.Val);
+  return Result;
+}
+
+idx2_Inline i64
+Size(const file_cache_table& F)
+{
+  i64 Result = 0;
+  idx2_ForEach (It, F.FileCaches)
+    Result += Size(*It.Val);
+  idx2_ForEach (It, F.FileExpCaches)
+    Result += Size(*It.Val);
+  idx2_ForEach (It, F.FileRdoCaches)
+    Result += Size(*It.Val);
+  return Result;
+}
+
+idx2_Inline i64
+SizeBrickPool(const decode_data& D)
+{
+  i64 Result = 0;
+  idx2_ForEach (It, D.BrickPool)
+    Result += Size(*It.Val);
   return Result;
 }
 
@@ -7192,54 +9528,63 @@ SizeBrickPool(const decode_data& D) {
 void
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf = nullptr);
 
-}
+} // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 /* ---------------------- TYPES ----------------------*/
 
-struct block_sig {
+struct block_sig
+{
   u32 Block = 0;
   i16 BitPlane = 0;
 };
 
-struct chunk_meta_info {
+struct chunk_meta_info
+{
   array<u64> Addrs; // iteration, level, bit plane, chunk id
-  bitstream Sizes; // TODO: do we need to init this?
+  bitstream Sizes;  // TODO: do we need to init this?
 };
 
 // Each channel corresponds to one (iteration, subband, bit plane) tuple
-struct channel {
+struct channel
+{
   /* brick-related streams, to be reset once per chunk */
   bitstream BrickDeltasStream; // store data for many bricks
-  bitstream BrickSzsStream; // store data for many bricks
-  bitstream BrickStream; // store data for many bricks
+  bitstream BrickSzsStream;    // store data for many bricks
+  bitstream BrickStream;       // store data for many bricks
   /* block-related streams, to be reset once per brick */
   bitstream BlockStream; // store data for many blocks
-  u64 LastChunk = 0; // current chunk
+  u64 LastChunk = 0;     // current chunk
   u64 LastBrick = 0;
   i32 NBricks = 0;
 };
 
 // Each sub-channel corresponds to one (iteration, subband) tuple
-struct sub_channel {
+struct sub_channel
+{
   bitstream BlockEMaxesStream;
   bitstream BrickEMaxesStream; // at the end of each brick we copy from BlockEMaxesStream to here
   u64 LastChunk = 0;
   u64 LastBrick = 0;
 };
 
-struct sub_channel_ptr {
+struct sub_channel_ptr
+{
   i8 Iteration = 0;
   i8 Level = 0;
   sub_channel* ChunkEMaxesPtr = nullptr;
-  idx2_Inline bool operator<(const sub_channel_ptr& Other) const {
-    if (Iteration == Other.Iteration) return Level < Other.Level;
+  idx2_Inline bool operator<(const sub_channel_ptr& Other) const
+  {
+    if (Iteration == Other.Iteration)
+      return Level < Other.Level;
     return Iteration < Other.Iteration;
   }
 };
 
-struct rdo_chunk {
+struct rdo_chunk
+{
   u64 Address;
   i64 Length;
   f64 Lambda;
@@ -7247,17 +9592,19 @@ struct rdo_chunk {
 };
 
 /* We use this to pass data between different stages of the encoder */
-struct encode_data {
+struct encode_data
+{
   allocator* Alloc = nullptr;
   hash_table<u64, brick_volume> BrickPool;
-  hash_table<u32, channel> Channels; // each corresponds to (bit plane, iteration, level)
+  hash_table<u32, channel> Channels;        // each corresponds to (bit plane, iteration, level)
   hash_table<u16, sub_channel> SubChannels; // only consider level and iteration
   i8 Iter = 0;
   i8 Level = 0;
   stack_array<u64, idx2_file::MaxLevels> Brick;
   stack_array<v3i, idx2_file::MaxLevels> Bricks3;
   hash_table<u64, chunk_meta_info> ChunkMeta; // map from file address to chunk info
-  hash_table<u64, bitstream> ChunkEMaxesMeta; // map from file address to a stream of chunk emax sizes
+  hash_table<u64, bitstream>
+    ChunkEMaxesMeta; // map from file address to a stream of chunk emax sizes
   bitstream CpresEMaxes;
   bitstream CpresChunkAddrs;
   bitstream ChunkStream;
@@ -7286,8 +9633,7 @@ struct brick_copier
   Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_volume* Brick);
 };
 
-/* FUNCTIONS
---------------------------------------------------------------------------------------------*/
+/* FUNCTIONS */
 
 void
 WriteMetaFile(const idx2_file& Idx2, cstr FileName);
@@ -7300,8 +9646,7 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier);
 error<idx2_err_code>
 EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3);
 
-/* INLINE FUNCTIONS
---------------------------------------------------------------------------------------------*/
+/* INLINE FUNCTIONS */
 
 idx2_Inline void
 Init(channel* C)
@@ -7347,126 +9692,176 @@ Dealloc(chunk_meta_info* Cm)
 /* ---------------------- MACROS ----------------------*/
 
 #if !defined(idx2_FileTraverse)
-#define idx2_FileTraverse(Body, StackSize, FileOrderIn, FileFrom3In, FileDims3In, ExtentInFiles, Extent2)\
-  {\
-    file_traverse FileStack[StackSize];\
-    int FileTopIdx = 0;\
-    v3i FileDims3Ext((int)NextPow2(FileDims3In.X), (int)NextPow2(FileDims3In.Y), (int)NextPow2(FileDims3In.Z));\
-    FileStack[FileTopIdx] = file_traverse{FileOrderIn, FileOrderIn, FileFrom3In, FileFrom3In + FileDims3Ext, u64(0)};\
-    while (FileTopIdx >= 0) {\
-      file_traverse& FileTop = FileStack[FileTopIdx];\
-      int FD = FileTop.FileOrder & 0x3;\
-      FileTop.FileOrder >>= 2;\
-      if (FD == 3) {\
-        if (FileTop.FileOrder == 3) FileTop.FileOrder = FileTop.PrevOrder;\
-        else FileTop.PrevOrder = FileTop.FileOrder;\
-        continue;\
-      }\
-      --FileTopIdx;\
-      if (FileTop.FileTo3 - FileTop.FileFrom3 == 1) {\
-        { Body }\
-        continue;\
-      }\
-      file_traverse First = FileTop, Second = FileTop;\
-      First.FileTo3[FD] = FileTop.FileFrom3[FD] + (FileTop.FileTo3[FD] - FileTop.FileFrom3[FD]) / 2;\
-      Second.FileFrom3[FD] = FileTop.FileFrom3[FD] + (FileTop.FileTo3[FD] - FileTop.FileFrom3[FD]) / 2;\
-      extent Skip(First.FileFrom3, First.FileTo3 - First.FileFrom3);\
-      First.Address = FileTop.Address;\
-      Second.Address = FileTop.Address + Prod<u64>(First.FileTo3 - First.FileFrom3);\
-      if (Second.FileFrom3 < To(ExtentInFiles) && From(ExtentInFiles) < Second.FileTo3) FileStack[++FileTopIdx] = Second;\
-      if (First.FileFrom3 < To(ExtentInFiles) && From(ExtentInFiles) < First.FileTo3)   FileStack[++FileTopIdx] = First;\
-    }\
+#define idx2_FileTraverse(                                                                         \
+  Body, StackSize, FileOrderIn, FileFrom3In, FileDims3In, ExtentInFiles, Extent2)                  \
+  {                                                                                                \
+    file_traverse FileStack[StackSize];                                                            \
+    int FileTopIdx = 0;                                                                            \
+    v3i FileDims3Ext(                                                                              \
+      (int)NextPow2(FileDims3In.X), (int)NextPow2(FileDims3In.Y), (int)NextPow2(FileDims3In.Z));   \
+    FileStack[FileTopIdx] =                                                                        \
+      file_traverse{ FileOrderIn, FileOrderIn, FileFrom3In, FileFrom3In + FileDims3Ext, u64(0) };  \
+    while (FileTopIdx >= 0)                                                                        \
+    {                                                                                              \
+      file_traverse& FileTop = FileStack[FileTopIdx];                                              \
+      int FD = FileTop.FileOrder & 0x3;                                                            \
+      FileTop.FileOrder >>= 2;                                                                     \
+      if (FD == 3)                                                                                 \
+      {                                                                                            \
+        if (FileTop.FileOrder == 3)                                                                \
+          FileTop.FileOrder = FileTop.PrevOrder;                                                   \
+        else                                                                                       \
+          FileTop.PrevOrder = FileTop.FileOrder;                                                   \
+        continue;                                                                                  \
+      }                                                                                            \
+      --FileTopIdx;                                                                                \
+      if (FileTop.FileTo3 - FileTop.FileFrom3 == 1)                                                \
+      {                                                                                            \
+        {                                                                                          \
+          Body                                                                                     \
+        }                                                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      file_traverse First = FileTop, Second = FileTop;                                             \
+      First.FileTo3[FD] =                                                                          \
+        FileTop.FileFrom3[FD] + (FileTop.FileTo3[FD] - FileTop.FileFrom3[FD]) / 2;                 \
+      Second.FileFrom3[FD] =                                                                       \
+        FileTop.FileFrom3[FD] + (FileTop.FileTo3[FD] - FileTop.FileFrom3[FD]) / 2;                 \
+      extent Skip(First.FileFrom3, First.FileTo3 - First.FileFrom3);                               \
+      First.Address = FileTop.Address;                                                             \
+      Second.Address = FileTop.Address + Prod<u64>(First.FileTo3 - First.FileFrom3);               \
+      if (Second.FileFrom3 < To(ExtentInFiles) && From(ExtentInFiles) < Second.FileTo3)            \
+        FileStack[++FileTopIdx] = Second;                                                          \
+      if (First.FileFrom3 < To(ExtentInFiles) && From(ExtentInFiles) < First.FileTo3)              \
+        FileStack[++FileTopIdx] = First;                                                           \
+    }                                                                                              \
   }
 #endif
 
 #if !defined(idx2ChunkTraverse)
-#define idx2_ChunkTraverse(Body, StackSize, ChunkOrderIn, ChunkFrom3In, ChunkDims3In, ExtentInChunks, Extent2)\
-  {\
-    chunk_traverse ChunkStack[StackSize];\
-    int ChunkTopIdx = 0;\
-    v3i ChunkDims3Ext((int)NextPow2(ChunkDims3In.X), (int)NextPow2(ChunkDims3In.Y), (int)NextPow2(ChunkDims3In.Z));\
-    ChunkStack[ChunkTopIdx] = chunk_traverse{ChunkOrderIn, ChunkOrderIn, ChunkFrom3In, ChunkFrom3In + ChunkDims3Ext, u64(0)};\
-    while (ChunkTopIdx >= 0) {\
-      chunk_traverse& ChunkTop = ChunkStack[ChunkTopIdx];\
-      int CD = ChunkTop.ChunkOrder & 0x3;\
-      ChunkTop.ChunkOrder >>= 2;\
-      if (CD == 3) {\
-        if (ChunkTop.ChunkOrder == 3) ChunkTop.ChunkOrder = ChunkTop.PrevOrder;\
-        else ChunkTop.PrevOrder = ChunkTop.ChunkOrder;\
-        continue;\
-      }\
-      --ChunkTopIdx;\
-      if (ChunkTop.ChunkTo3 - ChunkTop.ChunkFrom3 == 1) {\
-        { Body }\
-        continue;\
-      }\
-      chunk_traverse First = ChunkTop, Second = ChunkTop;\
-      First.ChunkTo3[CD] = ChunkTop.ChunkFrom3[CD] + (ChunkTop.ChunkTo3[CD] - ChunkTop.ChunkFrom3[CD]) / 2;\
-      Second.ChunkFrom3[CD] = ChunkTop.ChunkFrom3[CD] + (ChunkTop.ChunkTo3[CD] - ChunkTop.ChunkFrom3[CD]) / 2;\
-      extent Skip(First.ChunkFrom3, First.ChunkTo3 - First.ChunkFrom3);\
-      Second.NChunksBefore = First.NChunksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInChunks)));\
-      Second.ChunkInFile = First.ChunkInFile + Prod<i32>(Dims(Crop(Skip, Extent2)));\
-      First.Address = ChunkTop.Address;\
-      Second.Address = ChunkTop.Address + Prod<u64>(First.ChunkTo3 - First.ChunkFrom3);\
-      if (Second.ChunkFrom3 < To(ExtentInChunks) && From(ExtentInChunks) < Second.ChunkTo3) ChunkStack[++ChunkTopIdx] = Second;\
-      if (First.ChunkFrom3 < To(ExtentInChunks) && From(ExtentInChunks) < First.ChunkTo3)   ChunkStack[++ChunkTopIdx] = First;\
-    }\
+#define idx2_ChunkTraverse(                                                                        \
+  Body, StackSize, ChunkOrderIn, ChunkFrom3In, ChunkDims3In, ExtentInChunks, Extent2)              \
+  {                                                                                                \
+    chunk_traverse ChunkStack[StackSize];                                                          \
+    int ChunkTopIdx = 0;                                                                           \
+    v3i ChunkDims3Ext((int)NextPow2(ChunkDims3In.X),                                               \
+                      (int)NextPow2(ChunkDims3In.Y),                                               \
+                      (int)NextPow2(ChunkDims3In.Z));                                              \
+    ChunkStack[ChunkTopIdx] = chunk_traverse{                                                      \
+      ChunkOrderIn, ChunkOrderIn, ChunkFrom3In, ChunkFrom3In + ChunkDims3Ext, u64(0)               \
+    };                                                                                             \
+    while (ChunkTopIdx >= 0)                                                                       \
+    {                                                                                              \
+      chunk_traverse& ChunkTop = ChunkStack[ChunkTopIdx];                                          \
+      int CD = ChunkTop.ChunkOrder & 0x3;                                                          \
+      ChunkTop.ChunkOrder >>= 2;                                                                   \
+      if (CD == 3)                                                                                 \
+      {                                                                                            \
+        if (ChunkTop.ChunkOrder == 3)                                                              \
+          ChunkTop.ChunkOrder = ChunkTop.PrevOrder;                                                \
+        else                                                                                       \
+          ChunkTop.PrevOrder = ChunkTop.ChunkOrder;                                                \
+        continue;                                                                                  \
+      }                                                                                            \
+      --ChunkTopIdx;                                                                               \
+      if (ChunkTop.ChunkTo3 - ChunkTop.ChunkFrom3 == 1)                                            \
+      {                                                                                            \
+        {                                                                                          \
+          Body                                                                                     \
+        }                                                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      chunk_traverse First = ChunkTop, Second = ChunkTop;                                          \
+      First.ChunkTo3[CD] =                                                                         \
+        ChunkTop.ChunkFrom3[CD] + (ChunkTop.ChunkTo3[CD] - ChunkTop.ChunkFrom3[CD]) / 2;           \
+      Second.ChunkFrom3[CD] =                                                                      \
+        ChunkTop.ChunkFrom3[CD] + (ChunkTop.ChunkTo3[CD] - ChunkTop.ChunkFrom3[CD]) / 2;           \
+      extent Skip(First.ChunkFrom3, First.ChunkTo3 - First.ChunkFrom3);                            \
+      Second.NChunksBefore = First.NChunksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInChunks)));    \
+      Second.ChunkInFile = First.ChunkInFile + Prod<i32>(Dims(Crop(Skip, Extent2)));               \
+      First.Address = ChunkTop.Address;                                                            \
+      Second.Address = ChunkTop.Address + Prod<u64>(First.ChunkTo3 - First.ChunkFrom3);            \
+      if (Second.ChunkFrom3 < To(ExtentInChunks) && From(ExtentInChunks) < Second.ChunkTo3)        \
+        ChunkStack[++ChunkTopIdx] = Second;                                                        \
+      if (First.ChunkFrom3 < To(ExtentInChunks) && From(ExtentInChunks) < First.ChunkTo3)          \
+        ChunkStack[++ChunkTopIdx] = First;                                                         \
+    }                                                                                              \
   }
 #endif
 
 #if !defined(idx2_BrickTraverse)
-#define idx2_BrickTraverse(Body, StackSize, BrickOrderIn, BrickFrom3In, BrickDims3In, ExtentInBricks, Extent2)\
-  {\
-    brick_traverse Stack[StackSize];\
-    int TopIdx = 0;\
-    v3i BrickDims3Ext((int)NextPow2(BrickDims3In.X), (int)NextPow2(BrickDims3In.Y), (int)NextPow2(BrickDims3In.Z));\
-    Stack[TopIdx] = brick_traverse{BrickOrderIn, BrickOrderIn, BrickFrom3In, BrickFrom3In + BrickDims3Ext, u64(0)};\
-    while (TopIdx >= 0) {\
-      brick_traverse& Top = Stack[TopIdx];\
-      int DD = Top.BrickOrder & 0x3;\
-      Top.BrickOrder >>= 2;\
-      if (DD == 3) {\
-        if (Top.BrickOrder == 3) Top.BrickOrder = Top.PrevOrder;\
-        else Top.PrevOrder = Top.BrickOrder;\
-        continue;\
-      }\
-      --TopIdx;\
-      if (Top.BrickTo3 - Top.BrickFrom3 == 1) {\
-        { Body }\
-        continue;\
-      }\
-      brick_traverse First = Top, Second = Top;\
-      First.BrickTo3[DD] = Top.BrickFrom3[DD] + (Top.BrickTo3[DD] - Top.BrickFrom3[DD]) / 2;\
-      Second.BrickFrom3[DD] = Top.BrickFrom3[DD] + (Top.BrickTo3[DD] - Top.BrickFrom3[DD]) / 2;\
-      extent Skip(First.BrickFrom3, First.BrickTo3 - First.BrickFrom3);\
-      Second.NBricksBefore = First.NBricksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInBricks)));\
-      Second.BrickInChunk = First.BrickInChunk + Prod<i32>(Dims(Crop(Skip, Extent2)));\
-      First.Address = Top.Address;\
-      Second.Address = Top.Address + Prod<u64>(First.BrickTo3 - First.BrickFrom3);\
-      if (Second.BrickFrom3 < To(ExtentInBricks) && From(ExtentInBricks) < Second.BrickTo3) Stack[++TopIdx] = Second;\
-      if (First.BrickFrom3 < To(ExtentInBricks) && From(ExtentInBricks) < First.BrickTo3)   Stack[++TopIdx] = First;\
-    }\
+#define idx2_BrickTraverse(                                                                        \
+  Body, StackSize, BrickOrderIn, BrickFrom3In, BrickDims3In, ExtentInBricks, Extent2)              \
+  {                                                                                                \
+    brick_traverse Stack[StackSize];                                                               \
+    int TopIdx = 0;                                                                                \
+    v3i BrickDims3Ext((int)NextPow2(BrickDims3In.X),                                               \
+                      (int)NextPow2(BrickDims3In.Y),                                               \
+                      (int)NextPow2(BrickDims3In.Z));                                              \
+    Stack[TopIdx] = brick_traverse{                                                                \
+      BrickOrderIn, BrickOrderIn, BrickFrom3In, BrickFrom3In + BrickDims3Ext, u64(0)               \
+    };                                                                                             \
+    while (TopIdx >= 0)                                                                            \
+    {                                                                                              \
+      brick_traverse& Top = Stack[TopIdx];                                                         \
+      int DD = Top.BrickOrder & 0x3;                                                               \
+      Top.BrickOrder >>= 2;                                                                        \
+      if (DD == 3)                                                                                 \
+      {                                                                                            \
+        if (Top.BrickOrder == 3)                                                                   \
+          Top.BrickOrder = Top.PrevOrder;                                                          \
+        else                                                                                       \
+          Top.PrevOrder = Top.BrickOrder;                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      --TopIdx;                                                                                    \
+      if (Top.BrickTo3 - Top.BrickFrom3 == 1)                                                      \
+      {                                                                                            \
+        {                                                                                          \
+          Body                                                                                     \
+        }                                                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      brick_traverse First = Top, Second = Top;                                                    \
+      First.BrickTo3[DD] = Top.BrickFrom3[DD] + (Top.BrickTo3[DD] - Top.BrickFrom3[DD]) / 2;       \
+      Second.BrickFrom3[DD] = Top.BrickFrom3[DD] + (Top.BrickTo3[DD] - Top.BrickFrom3[DD]) / 2;    \
+      extent Skip(First.BrickFrom3, First.BrickTo3 - First.BrickFrom3);                            \
+      Second.NBricksBefore = First.NBricksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInBricks)));    \
+      Second.BrickInChunk = First.BrickInChunk + Prod<i32>(Dims(Crop(Skip, Extent2)));             \
+      First.Address = Top.Address;                                                                 \
+      Second.Address = Top.Address + Prod<u64>(First.BrickTo3 - First.BrickFrom3);                 \
+      if (Second.BrickFrom3 < To(ExtentInBricks) && From(ExtentInBricks) < Second.BrickTo3)        \
+        Stack[++TopIdx] = Second;                                                                  \
+      if (First.BrickFrom3 < To(ExtentInBricks) && From(ExtentInBricks) < First.BrickTo3)          \
+        Stack[++TopIdx] = First;                                                                   \
+    }                                                                                              \
   }
 #endif
 
-namespace idx2 {
+namespace idx2
+{
 
 /* ---------------------- TYPES ----------------------*/
-struct brick_traverse {
+struct brick_traverse
+{
   u64 BrickOrder, PrevOrder;
   v3i BrickFrom3, BrickTo3;
   i64 NBricksBefore = 0;
   i32 BrickInChunk = 0;
   u64 Address = 0;
 };
-struct chunk_traverse {
+
+struct chunk_traverse
+{
   u64 ChunkOrder, PrevOrder;
   v3i ChunkFrom3, ChunkTo3;
   i64 NChunksBefore = 0;
   i32 ChunkInFile = 0;
   u64 Address = 0;
 };
-struct file_traverse {
+
+struct file_traverse
+{
   u64 FileOrder, PrevOrder;
   v3i FileFrom3, FileTo3;
   u64 Address = 0;
@@ -7476,24 +9871,27 @@ file_id
 ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level);
 
 idx2_Inline u64
-GetFileAddressExp(int BricksPerFile, u64 Brick, i8 Iter, i8 Level) {
-  return (u64(Iter) << 60) + // 4 bits
+GetFileAddressExp(int BricksPerFile, u64 Brick, i8 Iter, i8 Level)
+{
+  return (u64(Iter) << 60) +                             // 4 bits
          u64((Brick >> Log2Ceil(BricksPerFile)) << 18) + // 42 bits
-         (u64(Level) << 12); // 6 bits
+         (u64(Level) << 12);                             // 6 bits
 }
 
 idx2_Inline u64
-GetFileAddressRdo(int BricksPerFile, u64 Brick, i8 Iter) {
-  return (u64(Iter) << 60) + // 4 bits
+GetFileAddressRdo(int BricksPerFile, u64 Brick, i8 Iter)
+{
+  return (u64(Iter) << 60) +                            // 4 bits
          u64((Brick >> Log2Ceil(BricksPerFile)) << 18); // 42 bits
 }
 
 idx2_Inline u64
-GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
-  return (Idx2.GroupLevels ? 0 : u64(Iter) << 60) + // 4 bits
+GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
+{
+  return (Idx2.GroupLevels ? 0 : u64(Iter) << 60) +                  // 4 bits
          u64((Brick >> Log2Ceil(Idx2.BricksPerFiles[Iter])) << 18) + // 42 bits
-         (Idx2.GroupSubLevels ? 0 : u64(Level) << 12) + // 6 bits
-         (Idx2.GroupBitPlanes ? 0 : u64(BitPlane) & 0xFFF); // 12 bits
+         (Idx2.GroupSubLevels ? 0 : u64(Level) << 12) +              // 6 bits
+         (Idx2.GroupBitPlanes ? 0 : u64(BitPlane) & 0xFFF);          // 12 bits
 }
 
 u64
@@ -7503,7 +9901,8 @@ file_id
 ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane);
 
 idx2_Inline file_id
-ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress) {
+ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
+{
   i16 BitPlane = i16(BrickAddress & 0xFFF);
   i8 Level = (BrickAddress >> 12) & 0x3F;
   i8 Iter = (BrickAddress >> 60) & 0xF;
@@ -7515,7 +9914,8 @@ file_id
 ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel);
 
 idx2_Inline file_id
-ConstructFilePathExponents(const idx2_file& Idx2, u64 BrickAddress) {
+ConstructFilePathExponents(const idx2_file& Idx2, u64 BrickAddress)
+{
   i8 Level = (BrickAddress >> 12) & 0x3F;
   i8 Iter = (BrickAddress >> 60) & 0xF;
   u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFiles[Iter]);
@@ -7523,72 +9923,110 @@ ConstructFilePathExponents(const idx2_file& Idx2, u64 BrickAddress) {
 }
 
 idx2_Inline u64
-GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
-  return (u64(Iter) << 60) + // 4 bits
+GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
+{
+  return (u64(Iter) << 60) +                                          // 4 bits
          u64((Brick >> Log2Ceil(Idx2.BricksPerChunks[Iter])) << 18) + // 42 bits
-         (u64(Level << 12)) + // 6 bits
-         (u64(BitPlane) & 0xFFF); // 12 bits
+         (u64(Level << 12)) +                                         // 6 bits
+         (u64(BitPlane) & 0xFFF);                                     // 12 bits
 }
 
 // Compose a key from Brick + Iteration
 idx2_Inline u64
-GetBrickKey(i8 Iter, u64 Brick) { return (Brick << 4) + Iter; }
+GetBrickKey(i8 Iter, u64 Brick)
+{
+  return (Brick << 4) + Iter;
+}
+
 // Get the Brick from a Key composed of Brick + Iteration
 idx2_Inline u64
-BrickFromBrickKey(u64 BrickKey) { return BrickKey >> 4; }
+BrickFromBrickKey(u64 BrickKey)
+{
+  return BrickKey >> 4;
+}
+
 // Get the Iteration from a Key composed of Brick + Iteration
 idx2_Inline i8
-IterationFromBrickKey(u64 BrickKey) { return i8(BrickKey & 0xF); }
+IterationFromBrickKey(u64 BrickKey)
+{
+  return i8(BrickKey & 0xF);
+}
 
 // Compose a Key from Iteration + Level + BitPlane
 idx2_Inline u32
-GetChannelKey(i16 BitPlane, i8 Iter, i8 Level) { return (u32(BitPlane) << 16) + (u32(Level) << 4) + Iter; }
+GetChannelKey(i16 BitPlane, i8 Iter, i8 Level)
+{
+  return (u32(BitPlane) << 16) + (u32(Level) << 4) + Iter;
+}
+
 // Get Level from a Key composed of Iteration + Level + BitPlane
 idx2_Inline i8
-LevelFromChannelKey(u64 ChannelKey) { return i8((ChannelKey >> 4) & 0xFFFF); }
+LevelFromChannelKey(u64 ChannelKey)
+{
+  return i8((ChannelKey >> 4) & 0xFFFF);
+}
+
 // Get Iteration from a Key composed of Iteration + Level + BitPlane
 idx2_Inline i8
-IterationFromChannelKey(u64 ChannelKey) { return i8(ChannelKey & 0xF); }
+IterationFromChannelKey(u64 ChannelKey)
+{
+  return i8(ChannelKey & 0xF);
+}
+
 // Get BitPlane from a Key composed of Iteration + Level + BitPlane
 idx2_Inline i16
-BitPlaneFromChannelKey(u64 ChannelKey) { return i16(ChannelKey >> 16); }
+BitPlaneFromChannelKey(u64 ChannelKey)
+{
+  return i16(ChannelKey >> 16);
+}
 
 // Get a Key composed from Iteration + Level
 idx2_Inline u16
-GetSubChannelKey(i8 Iter, i8 Level) { return (u16(Level) << 4) + Iter; }
-
+GetSubChannelKey(i8 Iter, i8 Level)
+{
+  return (u16(Level) << 4) + Iter;
 }
+
+} // namespace idx2
 
 #include <string.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 idx2_Inline int
-WriteVarByte(bitstream* Bs, u64 Val) {
+WriteVarByte(bitstream* Bs, u64 Val)
+{
   int BytesWritten = 0;
-  while (++BytesWritten) {
+  while (++BytesWritten)
+  {
     Write(Bs, Val & 0x7F, 7);
     Val >>= 7;
     Write(Bs, Val != 0);
-    if (Val == 0) break;
+    if (Val == 0)
+      break;
   }
   return BytesWritten;
 }
 
 idx2_Inline u64
-ReadVarByte(bitstream* Bs) {
+ReadVarByte(bitstream* Bs)
+{
   u64 Val = 0;
   int Shift = 0;
-  while (true) {
+  while (true)
+  {
     Val = (Read(Bs, 7) << (7 * Shift++)) + Val;
-    if (Read(Bs) == 0) break;
+    if (Read(Bs) == 0)
+      break;
   }
   return Val;
 }
 
 // TODO: for faster decoding, use i64[] instead of bitstream, and
 // flush even when the control sequence is 240 zeros or 120 zeros
-struct simple8b {
+struct simple8b
+{
   static constexpr u8 IntsCoded[] = { 240, 120, 60, 30, 20, 15, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1 };
   static constexpr u8 BitsPerInt[] = { 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 30, 60 };
   bitstream Stream;
@@ -7596,25 +10034,44 @@ struct simple8b {
   u8 NSavedVals = 0;
   i8 MaxBitsIdx = 0;
 };
-void Write(simple8b* S8b, u32 Val);
-void FlushVals(simple8b* S8b);
-void FlushStream(simple8b* S8b);
-void Rewind(simple8b* S8b);
-int BitCount(const simple8b& S8b);
-int ByteCount(const simple8b& S8b);
-u32 Read(simple8b* S8b);
-void WriteUnary(bitstream* Bs, u32 Val);
+
+void
+Write(simple8b* S8b, u32 Val);
+
+void
+FlushVals(simple8b* S8b);
+
+void
+FlushStream(simple8b* S8b);
+
+void
+Rewind(simple8b* S8b);
+
+int
+BitCount(const simple8b& S8b);
+
+int
+ByteCount(const simple8b& S8b);
+
+u32
+Read(simple8b* S8b);
+
+void
+WriteUnary(bitstream* Bs, u32 Val);
 
 idx2_Inline void
-WriteUnary(bitstream* Bs, u32 Val) {
-//  while (Val > 57) {
-//    Write(Bs, (u64)0, 57); // write at most 57 0-bits
-//    Val -= 57;
-//  }
-//  Write(Bs, (u64)0, Val); // write Val 0 bits
-//  Write(Bs, 1); // write last 1 bit
+WriteUnary(bitstream* Bs, u32 Val)
+{
+
+  //  while (Val > 57) {
+  //    Write(Bs, (u64)0, 57); // write at most 57 0-bits
+  //    Val -= 57;
+  //  }
+  //  Write(Bs, (u64)0, Val); // write Val 0 bits
+  //  Write(Bs, 1); // write last 1 bit
   u32 Len = idx2_BitSizeOf(Bs->BitBuf) - Bs->BitPos;
-  if (Val > Len) {
+  if (Val > Len)
+  {
     WriteLong(Bs, (u64)0, Len);
     Val -= Len;
     FlushAndMoveToNextByte(Bs);
@@ -7622,14 +10079,17 @@ WriteUnary(bitstream* Bs, u32 Val) {
     memset(Bs->BitPtr, 0, ByteLen);
     Bs->BitPtr += ByteLen;
     Write(Bs, (u64)0, Val & 0x7);
-  } else {
+  }
+  else
+  {
     WriteLong(Bs, (u64)0, Val);
   }
   Write(Bs, 1);
 }
 
 idx2_Inline u32
-ReadUnary(bitstream* Bs) {
+ReadUnary(bitstream* Bs)
+{
   u32 V = 0;
   while (!Read(Bs))
     ++V;
@@ -7643,39 +10103,74 @@ ReadUnary(bitstream* Bs) {
 //#include <immintrin.h>
 //#include <iostream>
 
-namespace idx2 {
+namespace idx2
+{
 
 extern const v3i ZDims; /* 4 x 4 x 4 */
 
 /* Forward/inverse zfp lifting in 1D */
-idx2_T(t) void FLift(t* P, int S);
-idx2_T(t) void ILift(t* P, int S);
+template <typename t> void
+FLift(t* P, int S);
+
+template <typename t> void
+ILift(t* P, int S);
 
 /* zfp transform in 3D. The input is assumed to be in row-major order. */
-idx2_T(t) void ForwardZfp(t* P);
-idx2_T(t) void ForwardZfp(t* P, int D);
-idx2_T(t) void InverseZfp(t* P);
-idx2_T(t) void InverseZfp(t* P, int D);
-idx2_TI(t, S) void ForwardZfp2D(t* P); // TODO: for now this works only for S = 4
-idx2_TI(t, S) void InverseZfp2D(t* P); // TODO: for now this works only for S = 4
+template <typename t> void
+ForwardZfp(t* P);
+
+template <typename t> void
+ForwardZfp(t* P, int D);
+
+template <typename t> void
+InverseZfp(t* P);
+
+template <typename t> void
+InverseZfp(t* P, int D);
+
+template <typename t, int S> void
+ForwardZfp2D(t* P); // TODO: for now this works only for S = 4
+
+template <typename t, int S> void
+InverseZfp2D(t* P); // TODO: for now this works only for S = 4
 
 /* Reorder coefficients within a zfp block, and convert them from/to negabinary */
-idx2_TT(t, u) void ForwardShuffle(t* IBlock, u* UBlock);
-idx2_TT(t, u) void InverseShuffle(u* UBlock, t* IBlock);
-idx2_TT(t, u) void ForwardShuffle(t* IBlock, u* UBlock, int D);
-idx2_TT(t, u) void InverseShuffle(u* UBlock, t* IBlock, int D);
-idx2_TTI(t, u, S) void ForwardShuffle2D(t* IBlock, u* UBlock);
-idx2_TTI(t, u, S) void InverseShuffle2D(u* UBlock, t* IBlock);
+template <typename t, typename u> void
+ForwardShuffle(t* IBlock, u* UBlock);
+
+template <typename t, typename u> void
+InverseShuffle(u* UBlock, t* IBlock);
+
+template <typename t, typename u> void
+ForwardShuffle(t* IBlock, u* UBlock, int D);
+
+template <typename t, typename u> void
+InverseShuffle(u* UBlock, t* IBlock, int D);
+
+template <typename t, typename u, int S> void
+ForwardShuffle2D(t* IBlock, u* UBlock);
+
+template <typename t, typename u, int S> void
+InverseShuffle2D(u* UBlock, t* IBlock);
 
 /* Pad partial block of width N < 4 and stride S */
-idx2_T(t) void PadBlock1D(t* P, int N, int S);
-idx2_T(t) void PadBlock2D(t* P, const v2i& N);
-idx2_T(t) void PadBlock3D(t* P, const v3i& N);
+template <typename t> void
+PadBlock1D(t* P, int N, int S);
 
-idx2_T(t) void Encode(t* Block, int NVals, int B, i8& N, bitstream* Bs);
-idx2_T(t) void Decode(t* Block, int NVals, int B, i8& N, bitstream* Bs);
+template <typename t> void
+PadBlock2D(t* P, const v2i& N);
+
+template <typename t> void
+PadBlock3D(t* P, const v3i& N);
+
+template <typename t> void
+Encode(t* Block, int NVals, int B, i8& N, bitstream* Bs);
+
+template <typename t> void
+Decode(t* Block, int NVals, int B, i8& N, bitstream* Bs);
 
 struct bitstream;
+
 /* Encode/decode a single bit plane B of a zfp block */
 // TODO: turn this into a template? TODO: pointer aliasing?
 /*
@@ -7683,20 +10178,39 @@ B = the bit plane to encode
 S = maximum number of bits to encode in the current pass
 N keeps track of the number of coefficients that have previously become significant
 Sometimes the stream is interrupted in the middle of a bit plane, so M keeps track
-of the number of significant coefficients encoded in the current bit plane */
-bool Encode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs);
-bool Decode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs);
-bool Encode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs);
-bool Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs);
-idx2_TII(t, D = 3, K = 4) void Encode(t* Block, int B, i64 S, i8& N, bitstream* Bs);
-idx2_TII(t, D = 3, K = 4) void Decode(t* Block, int B, i64 S, i8& N, bitstream* Bs);
-idx2_TII(t, D = 3, K = 4) void Decode2(t* Block, int B, i64 S, i8& N, bitstream* Bs);
-idx2_TII(t, D = 3, K = 4) void Decode3(t* Block, int B, i64 S, i8& N, bitstream* Bs);
-idx2_TII(t, D = 3, K = 4) void Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs);
+of the number of significant coefficients encoded in the current bit plane
+*/
+bool
+Encode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs);
+
+bool
+Decode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs);
+
+bool
+Encode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs);
+
+bool
+Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs);
+
+template <typename t, int D = 3, int K = 4> void
+Encode(t* Block, int B, i64 S, i8& N, bitstream* Bs);
+
+template <typename t, int D = 3, int K = 4> void
+Decode(t* Block, int B, i64 S, i8& N, bitstream* Bs);
+
+template <typename t, int D = 3, int K = 4> void
+Decode2(t* Block, int B, i64 S, i8& N, bitstream* Bs);
+
+template <typename t, int D = 3, int K = 4> void
+Decode3(t* Block, int B, i64 S, i8& N, bitstream* Bs);
+
+template <typename t, int D = 3, int K = 4> void
+Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs);
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 /*
 zfp lifting transform for 4 samples in 1D.
@@ -7704,19 +10218,33 @@ zfp lifting transform for 4 samples in 1D.
         ( 4  4  4  4) (X)
  1/16 * ( 5  1 -1 -5) (Y)
         (-4  4  4 -4) (Z)
-        (-2  6 -6  2) (W) */
+        (-2  6 -6  2) (W)
+*/
 // TODO: look into range expansion for this transform
-idx2_Ti(t) void
-FLift(t* P, int S) {
+template <typename t> idx2_Inline void
+FLift(t* P, int S)
+{
   idx2_Assert(P);
   idx2_Assert(S > 0);
   t X = P[0 * S], Y = P[1 * S], Z = P[2 * S], W = P[3 * S];
-  X += W; X >>= 1; W -= X;
-  Z += Y; Z >>= 1; Y -= Z;
-  X += Z; X >>= 1; Z -= X;
-  W += Y; W >>= 1; Y -= W;
-  W += Y >> 1; Y -= W >> 1;
-  P[0 * S] = X; P[1 * S] = Y; P[2 * S] = Z; P[3 * S] = W;
+  X += W;
+  X >>= 1;
+  W -= X;
+  Z += Y;
+  Z >>= 1;
+  Y -= Z;
+  X += Z;
+  X >>= 1;
+  Z -= X;
+  W += Y;
+  W >>= 1;
+  Y -= W;
+  W += Y >> 1;
+  Y -= W >> 1;
+  P[0 * S] = X;
+  P[1 * S] = Y;
+  P[2 * S] = Z;
+  P[3 * S] = W;
 }
 
 /*
@@ -7726,22 +10254,37 @@ NOTE: this lifting is not perfectly reversible
        ( 4  6 -4 -1) (x)
  1/4 * ( 4  2  4  5) (y)
        ( 4 -2  4 -5) (z)
-       ( 4 -6 -4  1) (w) */
-idx2_Ti(t) void
-ILift(t* P, int S) {
+       ( 4 -6 -4  1) (w)
+*/
+template <typename t> idx2_Inline void
+ILift(t* P, int S)
+{
   idx2_Assert(P);
   idx2_Assert(S > 0);
   t X = P[0 * S], Y = P[1 * S], Z = P[2 * S], W = P[3 * S];
-  Y += W >> 1; W -= Y >> 1;
-  Y += W; W <<= 1; W -= Y;
-  Z += X; X <<= 1; X -= Z;
-  Y += Z; Z <<= 1; Z -= Y;
-  W += X; X <<= 1; X -= W;
-  P[0 * S] = X; P[1 * S] = Y; P[2 * S] = Z; P[3 * S] = W;
+  Y += W >> 1;
+  W -= Y >> 1;
+  Y += W;
+  W <<= 1;
+  W -= Y;
+  Z += X;
+  X <<= 1;
+  X -= Z;
+  Y += Z;
+  Z <<= 1;
+  Z -= Y;
+  W += X;
+  X <<= 1;
+  X -= W;
+  P[0 * S] = X;
+  P[1 * S] = Y;
+  P[2 * S] = Z;
+  P[3 * S] = W;
 }
 
-idx2_T(t) void
-ForwardZfp(t* P) {
+template <typename t> void
+ForwardZfp(t* P)
+{
   idx2_Assert(P);
   /* transform along X */
   for (int Z = 0; Z < 4; ++Z)
@@ -7757,10 +10300,12 @@ ForwardZfp(t* P) {
       FLift(P + 1 * X + 4 * Y, 16);
 }
 
-idx2_TI(t, D) void
-ForwardZfpNew(t* P) {
+template <typename t, int D> void
+ForwardZfpNew(t* P)
+{
   idx2_Assert(P);
-  if constexpr (D == 3) {
+  if constexpr (D == 3)
+  {
     /* transform along X */
     for (int Z = 0; Z < 4; ++Z)
       for (int Y = 0; Y < 4; ++Y)
@@ -7773,22 +10318,28 @@ ForwardZfpNew(t* P) {
     for (int Y = 0; Y < 4; ++Y)
       for (int X = 0; X < 4; ++X)
         FLift(P + 1 * X + 4 * Y, 16);
-  } else if constexpr (D == 2) {
+  }
+  else if constexpr (D == 2)
+  {
     /* transform along X */
     for (int Y = 0; Y < 4; ++Y)
       FLift(P + 4 * Y, 1);
     /* transform along Y */
     for (int X = 0; X < 4; ++X)
       FLift(P + 1 * X, 4);
-  } else {
+  }
+  else
+  {
     FLift(P, 1);
   }
 }
 
-idx2_Ti(t) void
-ForwardZfp(t* P, int D) {
+template <typename t> idx2_Inline void
+ForwardZfp(t* P, int D)
+{
   idx2_Assert(P);
-  switch (D) {
+  switch (D)
+  {
     case 3:
       /* transform along X */
       for (int Z = 0; Z < 4; ++Z)
@@ -7819,8 +10370,9 @@ ForwardZfp(t* P, int D) {
   };
 }
 
-idx2_TI(t, S) void
-ForwardZfp2D(t* P) {
+template <typename t, int S> void
+ForwardZfp2D(t* P)
+{
   idx2_Assert(P);
   /* transform along X */
   for (int Y = 0; Y < S; ++Y)
@@ -7830,10 +10382,12 @@ ForwardZfp2D(t* P) {
     FLift(P + 1 * X, S);
 }
 
-idx2_Ti(t) void
-InverseZfp(t* P, int D) {
+template <typename t> idx2_Inline void
+InverseZfp(t* P, int D)
+{
   idx2_Assert(P);
-  switch (D) {
+  switch (D)
+  {
     case 3:
       /* transform along Z */
       for (int Y = 0; Y < 4; ++Y)
@@ -7864,8 +10418,9 @@ InverseZfp(t* P, int D) {
   };
 }
 
-idx2_T(t) void
-InverseZfp(t* P) {
+template <typename t> void
+InverseZfp(t* P)
+{
   idx2_Assert(P);
   /* transform along Z */
   for (int Y = 0; Y < 4; ++Y)
@@ -7881,8 +10436,9 @@ InverseZfp(t* P) {
       ILift(P + 4 * Y + 16 * Z, 1);
 }
 
-idx2_TI(t, S) void
-InverseZfp2D(t* P) {
+template <typename t, int S> void
+InverseZfp2D(t* P)
+{
   idx2_Assert(P);
   /* transform along y */
   for (int X = 0; X < S; ++X)
@@ -7892,37 +10448,45 @@ InverseZfp2D(t* P) {
     ILift(P + S * Y, 1);
 }
 
-idx2_I(S)
-struct perm2 {
-inline static const stack_array<int, S * S> Table = []() {
-  stack_array<int, S * S> Arr;
-  int I = 0;
-  for (int Y = 0; Y < S; ++Y) {
-    for (int X = 0; X < S; ++X) {
-      Arr[I++] = Y * S + X;
-    }
-  }
-  for (I = 0; I < Size(Arr); ++I) {
-    for (int J = I + 1; J < Size(Arr); ++J) {
-      int XI = Arr[I] % S, YI = Arr[I] / S;
-      int XJ = Arr[J] % S, YJ = Arr[J] / S;
-      if (XI + YI > XJ + YJ) {
-        Swap(&Arr[I], &Arr[J]);
-      } else if ((XI + YI == XJ + YJ) && (XI * XI + YI * YI > XJ * XJ + YJ * YJ)) {
-        Swap(&Arr[I], &Arr[J]);
+template <int S> struct perm2
+{
+  inline static const stack_array<int, S* S> Table = []()
+  {
+    stack_array<int, S * S> Arr;
+    int I = 0;
+    for (int Y = 0; Y < S; ++Y)
+    {
+      for (int X = 0; X < S; ++X)
+      {
+        Arr[I++] = Y * S + X;
       }
     }
-  }
-  return Arr;
-}();
+    for (I = 0; I < Size(Arr); ++I)
+    {
+      for (int J = I + 1; J < Size(Arr); ++J)
+      {
+        int XI = Arr[I] % S, YI = Arr[I] / S;
+        int XJ = Arr[J] % S, YJ = Arr[J] / S;
+        if (XI + YI > XJ + YJ)
+        {
+          Swap(&Arr[I], &Arr[J]);
+        }
+        else if ((XI + YI == XJ + YJ) && (XI * XI + YI * YI > XJ * XJ + YJ * YJ))
+        {
+          Swap(&Arr[I], &Arr[J]);
+        }
+      }
+    }
+    return Arr;
+  }();
 };
 
 /*
 Use the following array to reorder transformed coefficients in a zfp block.
-The ordering is first by i + j + k, then by i^2 + j^2 + k^2. */
+The ordering is first by i + j + k, then by i^2 + j^2 + k^2.
+*/
 #define idx2_Index(i, j, k) ((i) + 4 * (j) + 16 * (k))
-constexpr i8
-Perm3[64] = {
+constexpr i8 Perm3[64] = {
   idx2_Index(0, 0, 0), /*  0 : 0 */
 
   idx2_Index(1, 0, 0), /*  1 : 1 */
@@ -8000,8 +10564,7 @@ Perm3[64] = {
 #undef idx2_Index
 
 #define idx2_Index(i, j) ((i) + 4 * (j))
-constexpr i8
-Perm2[16] = {
+constexpr i8 Perm2[16] = {
   idx2_Index(0, 0), /*  0 : 0 */
 
   idx2_Index(1, 0), /*  1 : 1 */
@@ -8027,80 +10590,117 @@ Perm2[16] = {
 };
 #undef idx2_Index
 
-idx2_TTi(t, u) void
-ForwardShuffle(t* IBlock, u* UBlock) {
+template <typename t, typename u> idx2_Inline void
+ForwardShuffle(t* IBlock, u* UBlock)
+{
   auto Mask = traits<u>::NBinaryMask;
   for (int I = 0; I < 64; ++I)
     UBlock[I] = (u)((IBlock[Perm3[I]] + Mask) ^ Mask);
 }
 
-idx2_TTi(t, u) void
-ForwardShuffle(t* idx2_Restrict IBlock, u* idx2_Restrict UBlock, int D) {
+template <typename t, typename u> idx2_Inline void
+ForwardShuffle(t* idx2_Restrict IBlock, u* idx2_Restrict UBlock, int D)
+{
   auto Mask = traits<u>::NBinaryMask;
-  switch (D) {
-    case 3: for (int I = 0; I < 64; ++I) UBlock[I] = (u)((IBlock[Perm3[I]] + Mask) ^ Mask); break;
-    case 2: for (int I = 0; I < 16; ++I) UBlock[I] = (u)((IBlock[Perm2[I]] + Mask) ^ Mask); break;
-    case 1: for (int I = 0; I <  4; ++I) UBlock[I] = (u)((IBlock[I       ] + Mask) ^ Mask); break;
-    case 0: for (int I = 0; I <  1; ++I) UBlock[I] = (u)((IBlock[I       ] + Mask) ^ Mask); break;
-    default: idx2_Assert(false);
+  switch (D)
+  {
+    case 3:
+      for (int I = 0; I < 64; ++I)
+        UBlock[I] = (u)((IBlock[Perm3[I]] + Mask) ^ Mask);
+      break;
+    case 2:
+      for (int I = 0; I < 16; ++I)
+        UBlock[I] = (u)((IBlock[Perm2[I]] + Mask) ^ Mask);
+      break;
+    case 1:
+      for (int I = 0; I < 4; ++I)
+        UBlock[I] = (u)((IBlock[I] + Mask) ^ Mask);
+      break;
+    case 0:
+      for (int I = 0; I < 1; ++I)
+        UBlock[I] = (u)((IBlock[I] + Mask) ^ Mask);
+      break;
+    default:
+      idx2_Assert(false);
   };
 }
 
-idx2_TTI(t, u, S) void
-ForwardShuffle2D(t* IBlock, u* UBlock) {
+template <typename t, typename u, int S> void
+ForwardShuffle2D(t* IBlock, u* UBlock)
+{
   auto Mask = traits<u>::NBinaryMask;
   for (int I = 0; I < S * S; ++I)
     UBlock[I] = (u)((IBlock[perm2<S>::Table[I]] + Mask) ^ Mask);
 }
 
-idx2_TT(t, u) void
-InverseShuffle(u* UBlock, t* IBlock) {
+template <typename t, typename u> void
+InverseShuffle(u* UBlock, t* IBlock)
+{
   auto Mask = traits<u>::NBinaryMask;
   for (int I = 0; I < 64; ++I)
     IBlock[Perm3[I]] = (t)((UBlock[I] ^ Mask) - Mask);
 }
 
-idx2_TTi(t, u) void
-InverseShuffle(u* idx2_Restrict UBlock, t* idx2_Restrict IBlock, int D) {
+template <typename t, typename u> idx2_Inline void
+InverseShuffle(u* idx2_Restrict UBlock, t* idx2_Restrict IBlock, int D)
+{
   auto Mask = traits<u>::NBinaryMask;
-  switch (D) {
-    case 3: for (int I = 0; I < 64; ++I) IBlock[Perm3[I]] = (t)((UBlock[I] ^ Mask) - Mask); break;
-    case 2: for (int I = 0; I < 16; ++I) IBlock[Perm2[I]] = (t)((UBlock[I] ^ Mask) - Mask); break;
-    case 1: for (int I = 0; I <  4; ++I) IBlock[I       ] = (t)((UBlock[I] ^ Mask) - Mask); break;
-    case 0: for (int I = 0; I <  1; ++I) IBlock[I       ] = (t)((UBlock[I] ^ Mask) - Mask); break;
-    default: idx2_Assert(false);
+  switch (D)
+  {
+    case 3:
+      for (int I = 0; I < 64; ++I)
+        IBlock[Perm3[I]] = (t)((UBlock[I] ^ Mask) - Mask);
+      break;
+    case 2:
+      for (int I = 0; I < 16; ++I)
+        IBlock[Perm2[I]] = (t)((UBlock[I] ^ Mask) - Mask);
+      break;
+    case 1:
+      for (int I = 0; I < 4; ++I)
+        IBlock[I] = (t)((UBlock[I] ^ Mask) - Mask);
+      break;
+    case 0:
+      for (int I = 0; I < 1; ++I)
+        IBlock[I] = (t)((UBlock[I] ^ Mask) - Mask);
+      break;
+    default:
+      idx2_Assert(false);
   };
 }
 
-idx2_TTI(t, u, S) void
-InverseShuffle2D(u* UBlock, t* IBlock) {
+template <typename t, typename u, int S> void
+InverseShuffle2D(u* UBlock, t* IBlock)
+{
   auto Mask = traits<u>::NBinaryMask;
   for (int I = 0; I < S * S; ++I)
     IBlock[perm2<S>::Table[I]] = (t)((UBlock[I] ^ Mask) - Mask);
 }
 
 // TODO: this function is only correct for block size 4
-idx2_T(t) void
-PadBlock1D(t* P, int N, int S) {
+template <typename t> void
+PadBlock1D(t* P, int N, int S)
+{
   idx2_Assert(P);
   idx2_Assert(0 <= N && N <= 4);
   idx2_Assert(S > 0);
-  switch (N) {
-  case 0:
-    P[0 * S] = 0; /* fall through */
-  case 1:
-    P[1 * S] = P[0 * S]; /* fall through */
-  case 2:
-    P[2 * S] = P[1 * S]; /* fall through */
-  case 3:
-    P[3 * S] = P[0 * S]; /* fall through */
-  default:
-    break;
+  switch (N)
+  {
+    case 0:
+      P[0 * S] = 0; /* fall through */
+    case 1:
+      P[1 * S] = P[0 * S]; /* fall through */
+    case 2:
+      P[2 * S] = P[1 * S]; /* fall through */
+    case 3:
+      P[3 * S] = P[0 * S]; /* fall through */
+    default:
+      break;
   }
 }
 
-idx2_T(t) void
-PadBlock3D(t* P, const v3i& N) {
+template <typename t> void
+PadBlock3D(t* P, const v3i& N)
+{
   for (int Z = 0; Z < 4; ++Z)
     for (int Y = 0; Y < 4; ++Y)
       PadBlock1D(P + Z * 16 + Y * 4, N.X, 1);
@@ -8114,8 +10714,9 @@ PadBlock3D(t* P, const v3i& N) {
       PadBlock1D(P + Y * 4 + X * 1, N.Z, 16);
 }
 
-idx2_T(t) void
-PadBlock2D(t* P, const v2i& N) {
+template <typename t> void
+PadBlock2D(t* P, const v2i& N)
+{
   for (int Y = 0; Y < 4; ++Y)
     PadBlock1D(P + Y * 4, N.X, 1);
 
@@ -8124,8 +10725,9 @@ PadBlock2D(t* P, const v2i& N) {
 }
 
 // D is the dimension, K is the size of the block
-idx2_TII(t, D, K) void
-Encode(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
+template <typename t, int D, int K> void
+Encode(t* Block, int B, i64 S, i8& N, bitstream* Bs)
+{
   static_assert(is_unsigned<t>::Value);
   int NVals = power<int, K>::Table[D];
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
@@ -8133,18 +10735,25 @@ Encode(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
   for (int I = 0; I < NVals; ++I)
     X += u64((Block[I] >> B) & 1u) << I;
   i8 P = (i8)Min((i64)N, S - BitSize(*Bs));
-  if (P > 0) {
+  if (P > 0)
+  {
     WriteLong(Bs, X, P);
     X >>= P; // P == 64 is fine since in that case we don't need X any more
   }
   // TODO: we may be able to speed this up by getting rid of the shift of X
   // or the call bit BitSize()
-  for (; BitSize(*Bs) < S && N < NVals;) {
-    if (Write(Bs, !!X)) { // group is significant
-      for (; BitSize(*Bs) < S && N + 1 < NVals;) {
-        if (Write(Bs, X & 1u)) { // found a significant coeff, break and retest
+  for (; BitSize(*Bs) < S && N < NVals;)
+  {
+    if (Write(Bs, !!X))
+    { // group is significant
+      for (; BitSize(*Bs) < S && N + 1 < NVals;)
+      {
+        if (Write(Bs, X & 1u))
+        { // found a significant coeff, break and retest
           break;
-        } else { // have not found a significant coeff, continue until we find one
+        }
+        else
+        { // have not found a significant coeff, continue until we find one
           X >>= 1;
           ++N;
         }
@@ -8153,85 +10762,107 @@ Encode(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
         break;
       X >>= 1;
       ++N;
-    } else {
+    }
+    else
+    {
       break;
     }
   }
 }
 
 extern int MyCounter;
-idx2_TII(t, D, K) void
-Decode(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
+
+template <typename t, int D, int K> void
+Decode(t* Block, int B, i64 S, i8& N, bitstream* Bs)
+{
   static_assert(is_unsigned<t>::Value);
   int NVals = power<int, K>::Table[D];
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
   i8 P = (i8)Min((i64)N, S - BitSize(*Bs));
   u64 X = P > 0 ? ReadLong(Bs, P) : 0;
-  //std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N) << std::endl;
-  for (; BitSize(*Bs) < S && N < NVals;) {
-    if (Read(Bs)) {
-      for (; BitSize(*Bs) < S && N + 1 < NVals;) {
-        if (Read(Bs)) {
+  // std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N)
+  // << std::endl;
+  for (; BitSize(*Bs) < S && N < NVals;)
+  {
+    if (Read(Bs))
+    {
+      for (; BitSize(*Bs) < S && N + 1 < NVals;)
+      {
+        if (Read(Bs))
+        {
           break;
-        } else {
+        }
+        else
+        {
           ++N;
         }
       }
       if (BitSize(*Bs) >= S)
         break;
       X += 1ull << (N++);
-    } else {
+    }
+    else
+    {
       break;
     }
   }
-  //std::cout << "N = " << int(N) << std::endl;
+  // std::cout << "N = " << int(N) << std::endl;
   /* deposit bit plane from x */
   for (int I = 0; X; ++I, X >>= 1)
     Block[I] += (t)(X & 1u) << B;
   //__m256i Add = _mm256_set1_epi32(t(1) << B); // TODO: should be epi64 with t == u64
-  //__m256i Mask = _mm256_set_epi32(0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7, 0xfffffffb, 0xfffffffd, 0xfffffffe);
-  //while (X) {
+  //__m256i Mask = _mm256_set_epi32(0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7,
+  //0xfffffffb, 0xfffffffd, 0xfffffffe); while (X) {
   //  __m256i Val = _mm256_set1_epi32(X);
   //  Val = _mm256_or_si256(Val, Mask);
   //  Val = _mm256_cmpeq_epi32(Val, _mm256_set1_epi64x(-1));
   //  //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-  //  _mm256_maskstore_epi32((int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block, Val), Add));
-  //  X >>= 8;
-  //  Block += 8;
+  //  _mm256_maskstore_epi32((int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block,
+  //  Val), Add)); X >>= 8; Block += 8;
   //}
   ++MyCounter;
 }
 
 // NOTE: this is the one being used
-idx2_T(t) void
-Encode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* idx2_Restrict BsIn) {
+template <typename t> void
+Encode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */ i8& N, bitstream* idx2_Restrict BsIn)
+{
   static_assert(is_unsigned<t>::Value);
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
   bitstream Bs = *BsIn;
   u64 X = 0;
   for (int I = 0; I < NVals; ++I)
     X += u64((Block[I] >> B) & 1u) << I;
-//  i8 P = (i8)Min((i64)N, S - BitSize(Bs));
+  //  i8 P = (i8)Min((i64)N, S - BitSize(Bs));
   i8 P = N;
-  if (P > 0) {
+  if (P > 0)
+  {
     WriteLong(&Bs, X, P);
     X >>= P; // P == 64 is fine since in that case we don't need X any more
   }
-  for (; /*BitSize(Bs) < S &&*/ N < NVals;) {
-    if (Write(&Bs, !!X)) { // group is significant
-      for (; /*BitSize(Bs) < S &&*/ N + 1 < NVals;) {
-        if (Write(&Bs, X & 1u)) { // found a significant coeff, break and retest
+  for (; /*BitSize(Bs) < S &&*/ N < NVals;)
+  {
+    if (Write(&Bs, !!X))
+    { // group is significant
+      for (; /*BitSize(Bs) < S &&*/ N + 1 < NVals;)
+      {
+        if (Write(&Bs, X & 1u))
+        { // found a significant coeff, break and retest
           break;
-        } else { // have not found a significant coeff, continue until we find one
+        }
+        else
+        { // have not found a significant coeff, continue until we find one
           X >>= 1;
           ++N;
         }
       }
-//      if (BitSize(Bs) >= S)
-//        break;
+      //      if (BitSize(Bs) >= S)
+      //        break;
       X >>= 1;
       ++N;
-    } else {
+    }
+    else
+    {
       break;
     }
   }
@@ -8239,127 +10870,168 @@ Encode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* id
 }
 
 #if defined(idx2_Avx2) && defined(__AVX2__)
-idx2_Ti(t) void
-TransposeAvx2(u64 X, int B, t* idx2_Restrict Block) {
+template <typename t> idx2_Inline void
+TransposeAvx2(u64 X, int B, t* idx2_Restrict Block)
+{
   __m256i Minus1 = _mm256_set1_epi64x(-1);
   __m256i Add = _mm256_set1_epi64x(t(1) << B); // TODO: should be epi64 with t == u64
-  __m256i Mask = _mm256_set_epi64x(0xfffffffffffffff7ll, 0xfffffffffffffffbll, 0xfffffffffffffffdll, 0xfffffffffffffffell);
-  //while (X) {
-    __m256i Val = _mm256_set1_epi64x(X);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block, Val), Add));
-    //X >>= 4;
-    //Block += 4;
+  __m256i Mask = _mm256_set_epi64x(
+    0xfffffffffffffff7ll, 0xfffffffffffffffbll, 0xfffffffffffffffdll, 0xfffffffffffffffell);
+  // while (X) {
+  __m256i Val = _mm256_set1_epi64x(X);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64(
+    (long long*)Block, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block, Val), Add));
+  // X >>= 4;
+  // Block += 4;
 
-    Val = _mm256_set1_epi64x(X >> 4);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 4, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 4, Val), Add));
-    //X >>= 4;
-    //Block += 4;
+  Val = _mm256_set1_epi64x(X >> 4);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 4,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 4, Val), Add));
+  // X >>= 4;
+  // Block += 4;
 
-    Val = _mm256_set1_epi64x(X >> 8);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 8, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 8, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 8);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 8,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 8, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 12);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 12, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 12, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 12);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 12,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 12, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 16);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 16, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 16, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 16);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 16,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 16, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 20);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 20, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 20, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 20);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 20,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 20, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 24);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 24, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 24, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 24);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 24,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 24, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 28);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 28, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 28, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 28);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 28,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 28, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 32);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 32, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 32, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 32);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 32,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 32, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 36);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 36, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 36, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 36);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 36,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 36, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 40);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 40, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 40, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 40);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 40,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 40, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 44);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 44, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 44, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 44);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 44,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 44, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 48);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 48, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 48, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 48);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 48,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 48, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 52);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 52, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 52, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 52);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 52,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 52, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 56);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 56, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 56, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 56);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 56,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 56, Val), Add));
 
-    Val = _mm256_set1_epi64x(X >> 60);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1);
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long*)Block + 60, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 60, Val), Add));
+  Val = _mm256_set1_epi64x(X >> 60);
+  Val = _mm256_or_si256(Val, Mask);
+  Val = _mm256_cmpeq_epi64(Val, Minus1);
+  // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+  _mm256_maskstore_epi64((long long*)Block + 60,
+                         Val,
+                         _mm256_add_epi64(_mm256_maskload_epi64((long long*)Block + 60, Val), Add));
   //}
 }
 #endif
 
 idx2_Inline void
-DecodeTest(u64* idx2_Restrict Block, int NVals, i8& N, bitstream* idx2_Restrict BsIn) {
+DecodeTest(u64* idx2_Restrict Block, int NVals, i8& N, bitstream* idx2_Restrict BsIn)
+{
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
   bitstream Bs = *BsIn;
   i8 P = N;
   u64 X = P > 0 ? ReadLong(&Bs, P) : 0;
-  for (; N < NVals;) {
-    if (Read(&Bs)) {
+  for (; N < NVals;)
+  {
+    if (Read(&Bs))
+    {
       for (; N + 1 < NVals;)
-        if (Read(&Bs)) break; else ++N;
+        if (Read(&Bs))
+          break;
+        else
+          ++N;
       X += 1ull << (N++);
-    } else {
+    }
+    else
+    {
       break;
     }
   }
@@ -8368,22 +11040,30 @@ DecodeTest(u64* idx2_Restrict Block, int NVals, i8& N, bitstream* idx2_Restrict 
 }
 
 // NOTE: This is the one being used
-idx2_T(t) void
-Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* idx2_Restrict BsIn) {
+template <typename t> void
+Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */ i8& N, bitstream* idx2_Restrict BsIn)
+{
   static_assert(is_unsigned<t>::Value);
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
   bitstream Bs = *BsIn;
-//  i8 P = (i8)Min((i64)N, S - BitSize(Bs));
+  //  i8 P = (i8)Min((i64)N, S - BitSize(Bs));
   i8 P = N;
   u64 X = P > 0 ? ReadLong(&Bs, P) : 0;
-  for (; /*BitSize(Bs) < S &&*/ N < NVals;) {
-    if (Read(&Bs)) {
+  for (; /*BitSize(Bs) < S &&*/ N < NVals;)
+  {
+    if (Read(&Bs))
+    {
       for (; /*BitSize(Bs) < S &&*/ N + 1 < NVals;)
-        if (Read(&Bs)) break; else ++N;
-      //if (BitSize(Bs) >= S)
-      //  break;
+        if (Read(&Bs))
+          break;
+        else
+          ++N;
+      // if (BitSize(Bs) >= S)
+      //   break;
       X += 1ull << (N++);
-    } else {
+    }
+    else
+    {
       break;
     }
   }
@@ -8396,15 +11076,22 @@ Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* id
 #if defined(idx2_Avx2) && defined(__AVX2__)
   __m256i Minus1 = _mm256_set1_epi64x(-1);
   __m256i Add = _mm256_set1_epi64x(t(1) << B);
-  __m256i Mask = _mm256_set_epi64x(0xfffffffffffffff7ll, 0xfffffffffffffffbll, 0xfffffffffffffffdll, 0xfffffffffffffffell);
-  while (X) { // the input value X is used as a mask to add the shifted 1 bits (in Add) to the 4 values in Block
+  __m256i Mask = _mm256_set_epi64x(
+    0xfffffffffffffff7ll, 0xfffffffffffffffbll, 0xfffffffffffffffdll, 0xfffffffffffffffell);
+  while (X)
+  { // the input value X is used as a mask to add the shifted 1 bits (in Add) to the 4 values in
+    // Block
     __m256i Val = _mm256_set1_epi64x(X);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi64(Val, Minus1); // "spread" the bits of X to 4 lanes
-    // TODO: to decode more than one bit plane, we can spread the bits of 8 bit planes (or more) to 4 lanes and then add only once
-    // we can even work with 32 8-bit lanes (_epu8 unsigned char) to do bit transposing and shift the values when adding back to the results later
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64((long long int*)Block, Val, _mm256_add_epi64(_mm256_maskload_epi64((long long int*)Block, Val), Add));
+    // TODO: to decode more than one bit plane, we can spread the bits of 8 bit planes (or more) to
+    // 4 lanes and then add only once we can even work with 32 8-bit lanes (_epu8 unsigned char) to
+    // do bit transposing and shift the values when adding back to the results later
+    // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    _mm256_maskstore_epi64(
+      (long long int*)Block,
+      Val,
+      _mm256_add_epi64(_mm256_maskload_epi64((long long int*)Block, Val), Add));
     X >>= 4;
     Block += 4;
   }
@@ -8416,42 +11103,51 @@ Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */i8& N, bitstream* id
 }
 
 #if defined(idx2_Avx2) && defined(__AVX2__)
-idx2_TII(t, D, K) void
-Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
+template <typename t, int D, int K> void
+Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs)
+{
   static_assert(is_unsigned<t>::Value);
   int NVals = power<int, K>::Table[D];
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
   i8 P = (i8)Min((i64)N, S - BitSize(*Bs));
   u64 X = P > 0 ? ReadLong(Bs, P) : 0;
-  //std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N) << std::endl;
-  for (; /*BitSize(*Bs) < S &&*/ N < NVals;) {
-    if (Read(Bs)) {
-      for (; /*BitSize(*Bs) < S &&*/ N + 1 < NVals;) {
-        if (Read(Bs)) {
+  // std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N)
+  // << std::endl;
+  for (; /*BitSize(*Bs) < S &&*/ N < NVals;)
+  {
+    if (Read(Bs))
+    {
+      for (; /*BitSize(*Bs) < S &&*/ N + 1 < NVals;)
+      {
+        if (Read(Bs))
           break;
-        } else {
+        else
           ++N;
-        }
       }
       /*if (BitSize(*Bs) >= S)
         break;*/
       X += 1ull << (N++);
-    } else {
+    }
+    else
+    {
       break;
     }
   }
-  //std::cout << "N = " << int(N) << std::endl;
+  // std::cout << "N = " << int(N) << std::endl;
   /* deposit bit plane from x */
-  //for (int I = 0; X; ++I, X >>= 1)
-  //  Block[I] += (t)(X & 1u) << B;
+  // for (int I = 0; X; ++I, X >>= 1)
+  //   Block[I] += (t)(X & 1u) << B;
   __m256i Add = _mm256_set1_epi32(t(1) << B); // TODO: should be epi64 with t == u64
-  __m256i Mask = _mm256_set_epi32(0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7, 0xfffffffb, 0xfffffffd, 0xfffffffe);
-  while (X) {
+  __m256i Mask = _mm256_set_epi32(
+    0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7, 0xfffffffb, 0xfffffffd, 0xfffffffe);
+  while (X)
+  {
     __m256i Val = _mm256_set1_epi32(X);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi32(Val, _mm256_set1_epi64x(-1));
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi32((int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block, Val), Add));
+    // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    _mm256_maskstore_epi32(
+      (int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block, Val), Add));
     X >>= 8;
     Block += 8;
   }
@@ -8459,31 +11155,30 @@ Decode4(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
 }
 #endif
 
-idx2_Ti(t) void
-TransposeNormal(u64 X, int B, t* idx2_Restrict Block) {
+template <typename t> idx2_Inline void
+TransposeNormal(u64 X, int B, t* idx2_Restrict Block)
+{
   for (int I = 0; X; ++I, X >>= 1)
     Block[I] += (t)(X & 1u) << B;
 }
 
-#define zfp_swap(x, y, l) \
-  do { \
-    const uint64 m[] = { \
-      0x5555555555555555ul, \
-      0x3333333333333333ul, \
-      0x0f0f0f0f0f0f0f0ful, \
-      0x00ff00ff00ff00fful, \
-      0x0000ffff0000fffful, \
-      0x00000000fffffffful, \
-    }; \
-    uint s = 1u << (l); \
-    uint64 v = ((x) ^ ((y) >> s)) & m[(l)]; \
-    (x) ^= v; \
-    (y) ^= v << s; \
+#define zfp_swap(x, y, l)                                                                          \
+  do                                                                                               \
+  {                                                                                                \
+    const uint64 m[] = {                                                                           \
+      0x5555555555555555ul, 0x3333333333333333ul, 0x0f0f0f0f0f0f0f0ful,                            \
+      0x00ff00ff00ff00fful, 0x0000ffff0000fffful, 0x00000000fffffffful,                            \
+    };                                                                                             \
+    uint s = 1u << (l);                                                                            \
+    uint64 v = ((x) ^ ((y) >> s)) & m[(l)];                                                        \
+    (x) ^= v;                                                                                      \
+    (y) ^= v << s;                                                                                 \
   } while (0)
 
 /* compress sequence of 4^3 = 64 unsigned integers */
-idx2_T(t) void
-TransposeRecursive(t* data, int NBps) {
+template <typename t> void
+TransposeRecursive(t* data, int NBps)
+{
   /* working space for 64 bit planes */
   u64 a00 = 0, a01 = 0, a02 = 0, a03 = 0, a04 = 0;
   u64 a05 = 0, a06 = 0, a07 = 0, a08 = 0, a09 = 0;
@@ -8499,63 +11194,97 @@ TransposeRecursive(t* data, int NBps) {
   u64 a37 = 0, a38 = 0, a39 = 0, a3a = 0, a3b = 0;
   u64 a3c = 0, a3d = 0, a3e = 0, a3f = 0;
 
-  if (NBps <= 0x02) goto A02;
-  if (NBps <= 0x04) goto A04;
-  if (NBps <= 0x06) goto A06;
-  if (NBps <= 0x08) goto A08;
-  if (NBps <= 0x0A) goto A0A;
-  if (NBps <= 0x0C) goto A0C;
-  if (NBps <= 0x0E) goto A0E;
-  if (NBps <= 0x10) goto A10;
-  if (NBps <= 0x12) goto A12;
-  if (NBps <= 0x14) goto A14;
-  if (NBps <= 0x16) goto A16;
-  if (NBps <= 0x18) goto A18;
-  if (NBps <= 0x1A) goto A1A;
-  if (NBps <= 0x1C) goto A1C;
-  if (NBps <= 0x1E) goto A1E;
-  if (NBps <= 0x20) goto A20;
-  if (NBps <= 0x22) goto A22;
-  if (NBps <= 0x24) goto A24;
-  if (NBps <= 0x26) goto A26;
-  if (NBps <= 0x28) goto A28;
-  if (NBps <= 0x2A) goto A2A;
-  if (NBps <= 0x2C) goto A2C;
-  if (NBps <= 0x2E) goto A2E;
-  if (NBps <= 0x30) goto A30;
-  if (NBps <= 0x32) goto A32;
-  if (NBps <= 0x34) goto A34;
-  if (NBps <= 0x36) goto A36;
-  if (NBps <= 0x38) goto A38;
-  if (NBps <= 0x3A) goto A3A;
-  if (NBps <= 0x3C) goto A3C;
-  if (NBps <= 0x3E) goto A3E;
+  if (NBps <= 0x02)
+    goto A02;
+  if (NBps <= 0x04)
+    goto A04;
+  if (NBps <= 0x06)
+    goto A06;
+  if (NBps <= 0x08)
+    goto A08;
+  if (NBps <= 0x0A)
+    goto A0A;
+  if (NBps <= 0x0C)
+    goto A0C;
+  if (NBps <= 0x0E)
+    goto A0E;
+  if (NBps <= 0x10)
+    goto A10;
+  if (NBps <= 0x12)
+    goto A12;
+  if (NBps <= 0x14)
+    goto A14;
+  if (NBps <= 0x16)
+    goto A16;
+  if (NBps <= 0x18)
+    goto A18;
+  if (NBps <= 0x1A)
+    goto A1A;
+  if (NBps <= 0x1C)
+    goto A1C;
+  if (NBps <= 0x1E)
+    goto A1E;
+  if (NBps <= 0x20)
+    goto A20;
+  if (NBps <= 0x22)
+    goto A22;
+  if (NBps <= 0x24)
+    goto A24;
+  if (NBps <= 0x26)
+    goto A26;
+  if (NBps <= 0x28)
+    goto A28;
+  if (NBps <= 0x2A)
+    goto A2A;
+  if (NBps <= 0x2C)
+    goto A2C;
+  if (NBps <= 0x2E)
+    goto A2E;
+  if (NBps <= 0x30)
+    goto A30;
+  if (NBps <= 0x32)
+    goto A32;
+  if (NBps <= 0x34)
+    goto A34;
+  if (NBps <= 0x36)
+    goto A36;
+  if (NBps <= 0x38)
+    goto A38;
+  if (NBps <= 0x3A)
+    goto A3A;
+  if (NBps <= 0x3C)
+    goto A3C;
+  if (NBps <= 0x3E)
+    goto A3E;
 
   /* 00, 01 */
-  //encode_bit_plane(a3f);
-  //encode_bit_plane(a3e);
+  // encode_bit_plane(a3f);
+  // encode_bit_plane(a3e);
   a3e = data[62], a3f = data[63];
   zfp_swap(a3e, a3f, 0);
   /* 3e, 3f */
-  //encode_bit_plane(a3d);
-  //encode_bit_plane(a3c);
+  // encode_bit_plane(a3d);
+  // encode_bit_plane(a3c);
 A3E:
-  a3c = data[60]; a3d = data[61];
+  a3c = data[60];
+  a3d = data[61];
   zfp_swap(a3c, a3d, 0);
 
   zfp_swap(a3d, a3f, 1);
   zfp_swap(a3c, a3e, 1);
   /* 3c, 3d */
-  //encode_bit_plane(a3b);
-  //encode_bit_plane(a3a);
+  // encode_bit_plane(a3b);
+  // encode_bit_plane(a3a);
 A3C:
-  a3a = data[58]; a3b = data[59];
+  a3a = data[58];
+  a3b = data[59];
   zfp_swap(a3a, a3b, 0);
   /* 3a, 3b */
-  //encode_bit_plane(a39);
-  //encode_bit_plane(a38);
+  // encode_bit_plane(a39);
+  // encode_bit_plane(a38);
 A3A:
-  a38 = data[56]; a39 = data[57];
+  a38 = data[56];
+  a39 = data[57];
   zfp_swap(a38, a39, 0);
 
   zfp_swap(a39, a3b, 1);
@@ -8566,32 +11295,36 @@ A3A:
   zfp_swap(a39, a3d, 2);
   zfp_swap(a38, a3c, 2);
   /* 38, 39 */
-  //encode_bit_plane(a37);
-  //encode_bit_plane(a36);
+  // encode_bit_plane(a37);
+  // encode_bit_plane(a36);
 A38:
-  a36 = data[54]; a37 = data[55];
+  a36 = data[54];
+  a37 = data[55];
   zfp_swap(a36, a37, 0);
   /* 36, 37 */
 
-  //encode_bit_plane(a35);
-  //encode_bit_plane(a34);
+  // encode_bit_plane(a35);
+  // encode_bit_plane(a34);
 A36:
-  a34 = data[52]; a35 = data[53];
+  a34 = data[52];
+  a35 = data[53];
   zfp_swap(a34, a35, 0);
 
   zfp_swap(a35, a37, 1);
   zfp_swap(a34, a36, 1);
   /* 34, 35 */
-  //encode_bit_plane(a33);
-  //encode_bit_plane(a32);
+  // encode_bit_plane(a33);
+  // encode_bit_plane(a32);
 A34:
-  a32 = data[50]; a33 = data[51];
+  a32 = data[50];
+  a33 = data[51];
   zfp_swap(a32, a33, 0);
   /* 32, 33 */
-  //encode_bit_plane(a31);
-  //encode_bit_plane(a30);
+  // encode_bit_plane(a31);
+  // encode_bit_plane(a30);
 A32:
-  a30 = data[48]; a31 = data[49];
+  a30 = data[48];
+  a31 = data[49];
   zfp_swap(a30, a31, 0);
 
   zfp_swap(a31, a33, 1);
@@ -8611,32 +11344,36 @@ A32:
   zfp_swap(a31, a39, 3);
   zfp_swap(a30, a38, 3);
   /* 30, 31 */
-  //encode_bit_plane(a2f);
-  //encode_bit_plane(a2e);
+  // encode_bit_plane(a2f);
+  // encode_bit_plane(a2e);
 A30:
-  a2e = data[46]; a2f = data[47];
+  a2e = data[46];
+  a2f = data[47];
   zfp_swap(a2e, a2f, 0);
   /* 2e, 2f */
-  //encode_bit_plane(a2d);
-  //encode_bit_plane(a2c);
+  // encode_bit_plane(a2d);
+  // encode_bit_plane(a2c);
 A2E:
-  a2c = data[44]; a2d = data[45];
+  a2c = data[44];
+  a2d = data[45];
   zfp_swap(a2c, a2d, 0);
 
   zfp_swap(a2d, a2f, 1);
   zfp_swap(a2c, a2e, 1);
   /* 2c, 2d */
-  //encode_bit_plane(a2b);
-  //encode_bit_plane(a2a);
+  // encode_bit_plane(a2b);
+  // encode_bit_plane(a2a);
 A2C:
-  a2a = data[42]; a2b = data[43];
+  a2a = data[42];
+  a2b = data[43];
   zfp_swap(a2a, a2b, 0);
   /* 2a, 2b */
 
-  //encode_bit_plane(a29);
-  //encode_bit_plane(a28);
+  // encode_bit_plane(a29);
+  // encode_bit_plane(a28);
 A2A:
-  a28 = data[40]; a29 = data[41];
+  a28 = data[40];
+  a29 = data[41];
   zfp_swap(a28, a29, 0);
 
   zfp_swap(a29, a2b, 1);
@@ -8647,31 +11384,35 @@ A2A:
   zfp_swap(a29, a2d, 2);
   zfp_swap(a28, a2c, 2);
   /* 28, 29 */
-  //encode_bit_plane(a27);
-  //encode_bit_plane(a26);
+  // encode_bit_plane(a27);
+  // encode_bit_plane(a26);
 A28:
-  a26 = data[38]; a27 = data[39];
+  a26 = data[38];
+  a27 = data[39];
   zfp_swap(a26, a27, 0);
   /* 26, 27 */
-  //encode_bit_plane(a25);
-  //encode_bit_plane(a24);
+  // encode_bit_plane(a25);
+  // encode_bit_plane(a24);
 A26:
-  a24 = data[36]; a25 = data[37];
+  a24 = data[36];
+  a25 = data[37];
   zfp_swap(a24, a25, 0);
 
   zfp_swap(a25, a27, 1);
   zfp_swap(a24, a26, 1);
   /* 24, 25 */
-  //encode_bit_plane(a23);
-  //encode_bit_plane(a22);
+  // encode_bit_plane(a23);
+  // encode_bit_plane(a22);
 A24:
-  a22 = data[34]; a23 = data[35];
+  a22 = data[34];
+  a23 = data[35];
   zfp_swap(a22, a23, 0);
   /* 22, 23 */
-  //encode_bit_plane(a21);
-  //encode_bit_plane(a20);
+  // encode_bit_plane(a21);
+  // encode_bit_plane(a20);
 A22:
-  a20 = data[32]; a21 = data[33];
+  a20 = data[32];
+  a21 = data[33];
   zfp_swap(a20, a21, 0);
 
   zfp_swap(a21, a23, 1);
@@ -8708,31 +11449,35 @@ A22:
   zfp_swap(a21, a31, 4);
   zfp_swap(a20, a30, 4);
   /* 20, 21 */
-  //encode_bit_plane(a1f);
-  //encode_bit_plane(a1e);
+  // encode_bit_plane(a1f);
+  // encode_bit_plane(a1e);
 A20:
-  a1e = data[30]; a1f = data[31];
+  a1e = data[30];
+  a1f = data[31];
   zfp_swap(a1e, a1f, 0);
   /* 1e, 1f */
-  //encode_bit_plane(a1d);
-  //encode_bit_plane(a1c);
+  // encode_bit_plane(a1d);
+  // encode_bit_plane(a1c);
 A1E:
-  a1c = data[28]; a1d = data[29];
+  a1c = data[28];
+  a1d = data[29];
   zfp_swap(a1c, a1d, 0);
 
   zfp_swap(a1d, a1f, 1);
   zfp_swap(a1c, a1e, 1);
   /* 1c, 1d */
-  //encode_bit_plane(a1b);
-  //encode_bit_plane(a1a);
+  // encode_bit_plane(a1b);
+  // encode_bit_plane(a1a);
 A1C:
-  a1a = data[26]; a1b = data[27];
+  a1a = data[26];
+  a1b = data[27];
   zfp_swap(a1a, a1b, 0);
   /* 1a, 1b */
-  //encode_bit_plane(a19);
-  //encode_bit_plane(a18);
+  // encode_bit_plane(a19);
+  // encode_bit_plane(a18);
 A1A:
-  a18 = data[24]; a19 = data[25];
+  a18 = data[24];
+  a19 = data[25];
   zfp_swap(a18, a19, 0);
 
   zfp_swap(a19, a1b, 1);
@@ -8743,34 +11488,38 @@ A1A:
   zfp_swap(a19, a1d, 2);
   zfp_swap(a18, a1c, 2);
   /* 18, 19 */
-  //encode_bit_plane(a17);
-  //encode_bit_plane(a16);
+  // encode_bit_plane(a17);
+  // encode_bit_plane(a16);
 A18:
-  a16 = data[22]; a17 = data[23];
+  a16 = data[22];
+  a17 = data[23];
   zfp_swap(a16, a17, 0);
   /* 16, 17 */
 
-  //encode_bit_plane(a15);
-  //encode_bit_plane(a14);
+  // encode_bit_plane(a15);
+  // encode_bit_plane(a14);
 A16:
-  a14 = data[20]; a15 = data[21];
+  a14 = data[20];
+  a15 = data[21];
   zfp_swap(a14, a15, 0);
 
   zfp_swap(a15, a17, 1);
   zfp_swap(a14, a16, 1);
   /* 14, 15 */
 
-  //encode_bit_plane(a13);
-  //encode_bit_plane(a12);
+  // encode_bit_plane(a13);
+  // encode_bit_plane(a12);
 A14:
-  a12 = data[18]; a13 = data[19];
+  a12 = data[18];
+  a13 = data[19];
   zfp_swap(a12, a13, 0);
   /* 12, 13 */
 
-  //encode_bit_plane(a11);
-  //encode_bit_plane(a10);
+  // encode_bit_plane(a11);
+  // encode_bit_plane(a10);
 A12:
-  a10 = data[16]; a11 = data[17];
+  a10 = data[16];
+  a11 = data[17];
   zfp_swap(a10, a11, 0);
 
   zfp_swap(a11, a13, 1);
@@ -8791,15 +11540,16 @@ A12:
   zfp_swap(a10, a18, 3);
   /* 10, 11 */
 
-  //encode_bit_plane(a0f);
-  //encode_bit_plane(a0e);
+  // encode_bit_plane(a0f);
+  // encode_bit_plane(a0e);
 A10:
-  a0e = data[14]; a0f = data[15];
+  a0e = data[14];
+  a0f = data[15];
   zfp_swap(a0e, a0f, 0);
   /* 0e, 0f */
 
-  //encode_bit_plane(a0d);
-  //encode_bit_plane(a0c);
+  // encode_bit_plane(a0d);
+  // encode_bit_plane(a0c);
 A0E:
   a0c = data[12], a0d = data[13];
   zfp_swap(a0c, a0d, 0);
@@ -8808,17 +11558,19 @@ A0E:
   zfp_swap(a0c, a0e, 1);
   /* 0c, 0d */
 
-  //encode_bit_plane(a0b);
-  //encode_bit_plane(a0a);
+  // encode_bit_plane(a0b);
+  // encode_bit_plane(a0a);
 A0C:
-  a0a = data[10]; a0b = data[11];
+  a0a = data[10];
+  a0b = data[11];
   zfp_swap(a0a, a0b, 0);
   /* 0a, 0b */
 
-  //encode_bit_plane(a09);
-  //encode_bit_plane(a08);
+  // encode_bit_plane(a09);
+  // encode_bit_plane(a08);
 A0A:
-  a08 = data[8]; a09 = data[9];
+  a08 = data[8];
+  a09 = data[9];
   zfp_swap(a08, a09, 0);
 
   zfp_swap(a09, a0b, 1);
@@ -8829,31 +11581,35 @@ A0A:
   zfp_swap(a09, a0d, 2);
   zfp_swap(a08, a0c, 2);
   /* 08, 09 */
-  //encode_bit_plane(a07);
-  //encode_bit_plane(a06);
+  // encode_bit_plane(a07);
+  // encode_bit_plane(a06);
 A08:
-  a06 = data[6]; a07 = data[7];
+  a06 = data[6];
+  a07 = data[7];
   zfp_swap(a06, a07, 0);
   /* 06, 07 */
-  //encode_bit_plane(a05);
-  //encode_bit_plane(a04);
+  // encode_bit_plane(a05);
+  // encode_bit_plane(a04);
 A06:
-  a04 = data[4]; a05 = data[5];
+  a04 = data[4];
+  a05 = data[5];
   zfp_swap(a04, a05, 0);
 
   zfp_swap(a05, a07, 1);
   zfp_swap(a04, a06, 1);
   /* 04, 05 */
-  //encode_bit_plane(a03);
-  //encode_bit_plane(a02);
+  // encode_bit_plane(a03);
+  // encode_bit_plane(a02);
 A04:
-  a02 = data[2]; a03 = data[3];
+  a02 = data[2];
+  a03 = data[3];
   zfp_swap(a02, a03, 0);
   /* 02, 03 */
-  //encode_bit_plane(a01);
-  //encode_bit_plane(a00);
+  // encode_bit_plane(a01);
+  // encode_bit_plane(a00);
 A02:
-  a00 = data[0]; a01 = data[1];
+  a00 = data[0];
+  a01 = data[1];
   zfp_swap(a00, a01, 0);
 
   zfp_swap(a01, a03, 1);
@@ -8924,187 +11680,269 @@ A02:
   zfp_swap(a00, a20, 5);
 
   /* copy 64x64 matrix from input */
-  data[0x3f-0x00] = a00; data[0x3f-0x01] = a01; data[0x3f-0x02] = a02; data[0x3f-0x03] = a03;
-  data[0x3f-0x04] = a04; data[0x3f-0x05] = a05; data[0x3f-0x06] = a06; data[0x3f-0x07] = a07;
-  data[0x3f-0x08] = a08; data[0x3f-0x09] = a09; data[0x3f-0x0a] = a0a; data[0x3f-0x0b] = a0b;
-  data[0x3f-0x0c] = a0c; data[0x3f-0x0d] = a0d; data[0x3f-0x0e] = a0e; data[0x3f-0x0f] = a0f;
-  data[0x3f-0x10] = a10; data[0x3f-0x11] = a11; data[0x3f-0x12] = a12; data[0x3f-0x13] = a13;
-  data[0x3f-0x14] = a14; data[0x3f-0x15] = a15; data[0x3f-0x16] = a16; data[0x3f-0x17] = a17;
-  data[0x3f-0x18] = a18; data[0x3f-0x19] = a19; data[0x3f-0x1a] = a1a; data[0x3f-0x1b] = a1b;
-  data[0x3f-0x1c] = a1c; data[0x3f-0x1d] = a1d; data[0x3f-0x1e] = a1e; data[0x3f-0x1f] = a1f;
-  data[0x3f-0x20] = a20; data[0x3f-0x21] = a21; data[0x3f-0x22] = a22; data[0x3f-0x23] = a23;
-  data[0x3f-0x24] = a24; data[0x3f-0x25] = a25; data[0x3f-0x26] = a26; data[0x3f-0x27] = a27;
-  data[0x3f-0x28] = a28; data[0x3f-0x29] = a29; data[0x3f-0x2a] = a2a; data[0x3f-0x2b] = a2b;
-  data[0x3f-0x2c] = a2c; data[0x3f-0x2d] = a2d; data[0x3f-0x2e] = a2e; data[0x3f-0x2f] = a2f;
-  data[0x3f-0x30] = a30; data[0x3f-0x31] = a31; data[0x3f-0x32] = a32; data[0x3f-0x33] = a33;
-  data[0x3f-0x34] = a34; data[0x3f-0x35] = a35; data[0x3f-0x36] = a36; data[0x3f-0x37] = a37;
-  data[0x3f-0x38] = a38; data[0x3f-0x39] = a39; data[0x3f-0x3a] = a3a; data[0x3f-0x3b] = a3b;
-  data[0x3f-0x3c] = a3c; data[0x3f-0x3d] = a3d; data[0x3f-0x3e] = a3e; data[0x3f-0x3f] = a3f;
+  data[0x3f - 0x00] = a00;
+  data[0x3f - 0x01] = a01;
+  data[0x3f - 0x02] = a02;
+  data[0x3f - 0x03] = a03;
+  data[0x3f - 0x04] = a04;
+  data[0x3f - 0x05] = a05;
+  data[0x3f - 0x06] = a06;
+  data[0x3f - 0x07] = a07;
+  data[0x3f - 0x08] = a08;
+  data[0x3f - 0x09] = a09;
+  data[0x3f - 0x0a] = a0a;
+  data[0x3f - 0x0b] = a0b;
+  data[0x3f - 0x0c] = a0c;
+  data[0x3f - 0x0d] = a0d;
+  data[0x3f - 0x0e] = a0e;
+  data[0x3f - 0x0f] = a0f;
+  data[0x3f - 0x10] = a10;
+  data[0x3f - 0x11] = a11;
+  data[0x3f - 0x12] = a12;
+  data[0x3f - 0x13] = a13;
+  data[0x3f - 0x14] = a14;
+  data[0x3f - 0x15] = a15;
+  data[0x3f - 0x16] = a16;
+  data[0x3f - 0x17] = a17;
+  data[0x3f - 0x18] = a18;
+  data[0x3f - 0x19] = a19;
+  data[0x3f - 0x1a] = a1a;
+  data[0x3f - 0x1b] = a1b;
+  data[0x3f - 0x1c] = a1c;
+  data[0x3f - 0x1d] = a1d;
+  data[0x3f - 0x1e] = a1e;
+  data[0x3f - 0x1f] = a1f;
+  data[0x3f - 0x20] = a20;
+  data[0x3f - 0x21] = a21;
+  data[0x3f - 0x22] = a22;
+  data[0x3f - 0x23] = a23;
+  data[0x3f - 0x24] = a24;
+  data[0x3f - 0x25] = a25;
+  data[0x3f - 0x26] = a26;
+  data[0x3f - 0x27] = a27;
+  data[0x3f - 0x28] = a28;
+  data[0x3f - 0x29] = a29;
+  data[0x3f - 0x2a] = a2a;
+  data[0x3f - 0x2b] = a2b;
+  data[0x3f - 0x2c] = a2c;
+  data[0x3f - 0x2d] = a2d;
+  data[0x3f - 0x2e] = a2e;
+  data[0x3f - 0x2f] = a2f;
+  data[0x3f - 0x30] = a30;
+  data[0x3f - 0x31] = a31;
+  data[0x3f - 0x32] = a32;
+  data[0x3f - 0x33] = a33;
+  data[0x3f - 0x34] = a34;
+  data[0x3f - 0x35] = a35;
+  data[0x3f - 0x36] = a36;
+  data[0x3f - 0x37] = a37;
+  data[0x3f - 0x38] = a38;
+  data[0x3f - 0x39] = a39;
+  data[0x3f - 0x3a] = a3a;
+  data[0x3f - 0x3b] = a3b;
+  data[0x3f - 0x3c] = a3c;
+  data[0x3f - 0x3d] = a3d;
+  data[0x3f - 0x3e] = a3e;
+  data[0x3f - 0x3f] = a3f;
 }
 
 #if defined(idx2_Avx2) && defined(__AVX2__)
-idx2_TII(t, D, K) void
-Decode2(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
+template <typename t, int D, int K> void
+Decode2(t* Block, int B, i64 S, i8& N, bitstream* Bs)
+{
   static_assert(is_unsigned<t>::Value);
   int NVals = power<int, K>::Table[D];
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
   i8 P = (i8)Min((i64)N, S - BitSize(*Bs));
   u64 X = P > 0 ? ReadLong(Bs, P) : 0;
-  //std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N) << std::endl;
+  // std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N)
+  // << std::endl;
   bool ExpectGroupTestBit = true;
-  while (N < NVals) {
+  while (N < NVals)
+  {
     Refill(Bs);
     int MaxBits = 64 - Bs->BitPos;
     u64 Next = Peek(Bs, MaxBits);
-    i8 BitCurr = -1 + !ExpectGroupTestBit; i8 BitPrev = BitCurr;
-    if (ExpectGroupTestBit) {
+    i8 BitCurr = -1 + !ExpectGroupTestBit;
+    i8 BitPrev = BitCurr;
+    if (ExpectGroupTestBit)
+    {
       BitCurr = Lsb(Next, -1);
-      if (BitCurr != 0) {
+      if (BitCurr != 0)
+      {
         // there are no 1 bits, or the first bit is not 1 (the group is insignificant)
         Consume(Bs, 1);
         break;
       }
       /* group test bit is 1, at position 0. now move on to the next value 1-bit */
       idx2_Assert(BitCurr == 0);
-      //if ((BitCurr = TzCnt(Next = UnsetBit(Next, 0), MaxBits)) != MaxBits) // could be MaxBits
+      // if ((BitCurr = TzCnt(Next = UnsetBit(Next, 0), MaxBits)) != MaxBits) // could be MaxBits
       BitCurr = Lsb(Next = UnsetBit(Next, 0), MaxBits);
       BitPrev = 0;
       if (BitCurr - BitPrev >= NVals - N)
         goto JUMP2;
-    } else {
+    }
+    else
+    {
       goto JUMP;
     }
     /* BitCurr == position of the next value 1-bit (could be -1) */
-    while (true) { // we loop through every other 1-bit
+    while (true)
+    { // we loop through every other 1-bit
       N += BitCurr - BitPrev;
-      if (BitCurr < MaxBits || N == NVals) {
+      if (BitCurr < MaxBits || N == NVals)
+      {
         X += 1ull << (N - 1);
-        //Block[N - 1] += 1ull << (N - 1);
+        // Block[N - 1] += 1ull << (N - 1);
       }
-      if (BitCurr + 1 >= MaxBits) { // there is no bit left
+      if (BitCurr + 1 >= MaxBits)
+      { // there is no bit left
         ExpectGroupTestBit = BitCurr < MaxBits;
         Consume(Bs, MaxBits);
         goto OUTER;
-      } else if (!BitSet(Next, BitCurr + 1)) { // next group test bit is 0
+      }
+      else if (!BitSet(Next, BitCurr + 1))
+      { // next group test bit is 0
         Consume(Bs, BitCurr + 2);
         goto DONE;
-      } else { // next group test bit is 1
+      }
+      else
+      {                                        // next group test bit is 1
         Next &= ~(3ull << (BitCurr + 1)) >> 1; // unset BitCurr and BitCurr + 1
         BitPrev = BitCurr + 1;
-JUMP:
+      JUMP:
         BitCurr = Lsb(Next, MaxBits);
-        if (BitCurr - BitPrev >= NVals - N) {
-JUMP2:
+        if (BitCurr - BitPrev >= NVals - N)
+        {
+        JUMP2:
           Consume(Bs, (NVals - N) + BitPrev);
           N = NVals;
           X += 1ull << (NVals - 1);
-          //Block[NVals - 1] += 1ull << (NVals - 1);
+          // Block[NVals - 1] += 1ull << (NVals - 1);
           goto DONE;
         }
       }
     }
-OUTER:;
+  OUTER:;
   }
 DONE:
-  //std::cout << "N = " << int(N) << std::endl;
+  // std::cout << "N = " << int(N) << std::endl;
   ++MyCounter;
 
   /* deposit bit plane from x */
-  //for (int I = 0; X; ++I, X >>= 1)
-  //  Block[I] += (t)(X & 1u) << B;
+  // for (int I = 0; X; ++I, X >>= 1)
+  //   Block[I] += (t)(X & 1u) << B;
   __m256i Add = _mm256_set1_epi32(t(1) << B); // TODO: should be epi64 with t == u64
-  __m256i Mask = _mm256_set_epi32(0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7, 0xfffffffb, 0xfffffffd, 0xfffffffe);
-  while (X) {
+  __m256i Mask = _mm256_set_epi32(
+    0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7, 0xfffffffb, 0xfffffffd, 0xfffffffe);
+  while (X)
+  {
     __m256i Val = _mm256_set1_epi32(X);
     Val = _mm256_or_si256(Val, Mask);
     Val = _mm256_cmpeq_epi32(Val, _mm256_set1_epi64x(-1));
-    //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi32((int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block, Val), Add));
+    // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    _mm256_maskstore_epi32(
+      (int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block, Val), Add));
     X >>= 8;
     Block += 8;
   }
 }
 #endif
 
-idx2_TII(t, D, K) void
-Decode3(t* Block, int B, i64 S, i8& N, bitstream* Bs) {
+template <typename t, int D, int K> void
+Decode3(t* Block, int B, i64 S, i8& N, bitstream* Bs)
+{
   static_assert(is_unsigned<t>::Value);
   int NVals = power<int, K>::Table[D];
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
   i8 P = (i8)Min((i64)N, S - BitSize(*Bs));
   u64 X = P > 0 ? ReadLong(Bs, P) : 0;
-  //std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N) << std::endl;
+  // std::cout << "Counter " << MyCounter << "P = " << int(P) << " X = " << X << " N = " << int(N)
+  // << std::endl;
   bool ExpectGroupTestBit = true;
-  while (N < NVals) {
+  while (N < NVals)
+  {
     Refill(Bs);
     int MaxBits = 64 - Bs->BitPos;
     u64 Next = Peek(Bs, MaxBits);
-    i8 BitCurr = -1 + !ExpectGroupTestBit; i8 BitPrev = BitCurr;
-    if (ExpectGroupTestBit) {
+    i8 BitCurr = -1 + !ExpectGroupTestBit;
+    i8 BitPrev = BitCurr;
+    if (ExpectGroupTestBit)
+    {
       BitCurr = Lsb(Next, -1);
-      if (BitCurr != 0) {
+      if (BitCurr != 0)
+      {
         // there are no 1 bits, or the first bit is not 1 (the group is insignificant)
         Consume(Bs, 1);
         break;
       }
       /* group test bit is 1, at position 0. now move on to the next value 1-bit */
       idx2_Assert(BitCurr == 0);
-      //if ((BitCurr = TzCnt(Next = UnsetBit(Next, 0), MaxBits)) != MaxBits) // could be MaxBits
+      // if ((BitCurr = TzCnt(Next = UnsetBit(Next, 0), MaxBits)) != MaxBits) // could be MaxBits
       BitCurr = Lsb(Next = UnsetBit(Next, 0), MaxBits);
       BitPrev = 0;
       if (BitCurr - BitPrev >= NVals - N)
         goto JUMP2;
-    } else {
+    }
+    else
+    {
       goto JUMP;
     }
     /* BitCurr == position of the next value 1-bit (could be -1) */
-    while (true) { // we loop through every other 1-bit
+    while (true)
+    { // we loop through every other 1-bit
       N += BitCurr - BitPrev;
-      if (BitCurr < MaxBits || N == NVals) {
+      if (BitCurr < MaxBits || N == NVals)
+      {
         X += 1ull << (N - 1);
-        //Block[N - 1] += 1ull << (N - 1);
+        // Block[N - 1] += 1ull << (N - 1);
       }
-      if (BitCurr + 1 >= MaxBits) { // there is no bit left
+      if (BitCurr + 1 >= MaxBits)
+      { // there is no bit left
         ExpectGroupTestBit = BitCurr < MaxBits;
         Consume(Bs, MaxBits);
         goto OUTER;
-      } else if (!BitSet(Next, BitCurr + 1)) { // next group test bit is 0
+      }
+      else if (!BitSet(Next, BitCurr + 1))
+      { // next group test bit is 0
         Consume(Bs, BitCurr + 2);
         goto DONE;
-      } else { // next group test bit is 1
+      }
+      else
+      {                                        // next group test bit is 1
         Next &= ~(3ull << (BitCurr + 1)) >> 1; // unset BitCurr and BitCurr + 1
         BitPrev = BitCurr + 1;
-JUMP:
+      JUMP:
         BitCurr = Lsb(Next, MaxBits);
-        if (BitCurr - BitPrev >= NVals - N) {
-JUMP2:
+        if (BitCurr - BitPrev >= NVals - N)
+        {
+        JUMP2:
           Consume(Bs, (NVals - N) + BitPrev);
           N = NVals;
           X += 1ull << (NVals - 1);
-          //Block[NVals - 1] += 1ull << (NVals - 1);
+          // Block[NVals - 1] += 1ull << (NVals - 1);
           goto DONE;
         }
       }
     }
-OUTER:;
+  OUTER:;
   }
 DONE:
-  //std::cout << "N = " << int(N) << std::endl;
+  // std::cout << "N = " << int(N) << std::endl;
   ++MyCounter;
 
   /* deposit bit plane from x */
   for (int I = 0; X; ++I, X >>= 1)
     Block[I] += (t)(X & 1u) << B;
   //__m256i Add = _mm256_set1_epi32(t(1) << B); // TODO: should be epi64 with t == u64
-  //__m256i Mask = _mm256_set_epi32(0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7, 0xfffffffb, 0xfffffffd, 0xfffffffe);
-  //while (X) {
+  //__m256i Mask = _mm256_set_epi32(0xffffff7f, 0xffffffbf, 0xffffffdf, 0xffffffef, 0xfffffff7,
+  //0xfffffffb, 0xfffffffd, 0xfffffffe); while (X) {
   //  __m256i Val = _mm256_set1_epi32(X);
   //  Val = _mm256_or_si256(Val, Mask);
   //  Val = _mm256_cmpeq_epi32(Val, _mm256_set1_epi64x(-1));
   //  //int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-  //  _mm256_maskstore_epi32((int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block, Val), Add));
-  //  X >>= 8;
-  //  Block += 8;
+  //  _mm256_maskstore_epi32((int*)Block, Val, _mm256_add_epi32(_mm256_maskload_epi32((int*)Block,
+  //  Val), Add)); X >>= 8; Block += 8;
   //}
 }
 
@@ -9121,6 +11959,7 @@ error<idx2_err_code>
 Init(idx2_file* Idx2, const params& P);
 
 struct brick_copier;
+
 /*
 Encode a volume.
 */
@@ -9158,12 +11997,18 @@ Destroy(idx2_file* Idx2);
 namespace idx2
 {
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
       int J = 0;
-      while (Val[J] = Args[I+1][J]) { ++J; }
+      while (Val[J] = Args[I + 1][J])
+      {
+        ++J;
+      }
       return true;
     }
   }
@@ -9171,10 +12016,13 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
       *Val = Args[I + 1];
       return true;
     }
@@ -9183,9 +12031,11 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val)
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, int* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, int* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I) {
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
     if (strncmp(Args[I], Opt, 32) == 0)
       return ToInt(Args[I + 1], Val);
   }
@@ -9193,23 +12043,28 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, int* Val)
   return false;
 }
 
-// TODO: we need a function that parse from string to i64
-bool OptVal(int NArgs, cstr* Args, cstr Opt, i64* V)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, i64* V)
 {
-  for (int I = 0; I + 1 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
-      return ToInt64(Args[I+1], V);
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
+      return ToInt64(Args[I + 1], V);
     }
   }
 
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val)
 {
   int IntVal;
-  for (int I = 0; I + 1 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
       bool Success = ToInt(Args[I + 1], &IntVal);
       *Val = (u8)IntVal;
       return Success;
@@ -9219,10 +12074,13 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val)
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
       Val->First = Args[I + 1][0];
       return ToInt(Args[I + 2], &Val->Second);
     }
@@ -9231,41 +12089,47 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val)
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, v3i* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, v3i* Val)
 {
-  for (int I = 0; I + 3 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
-      return
-        ToInt(Args[I + 1], &Val->X) &&
-        ToInt(Args[I + 2], &Val->Y) &&
-        ToInt(Args[I + 3], &Val->Z);
+  for (int I = 0; I + 3 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
+      return ToInt(Args[I + 1], &Val->X) && ToInt(Args[I + 2], &Val->Y) &&
+             ToInt(Args[I + 3], &Val->Z);
     }
   }
 
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<i64>* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, v3<i64>* Val)
 {
-  for (int I = 0; I + 3 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
-      return
-        ToInt64(Args[I+1], &Val->X) &&
-        ToInt64(Args[I+2], &Val->Y) &&
-        ToInt64(Args[I+3], &Val->Z);
+  for (int I = 0; I + 3 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
+      return ToInt64(Args[I + 1], &Val->X) && ToInt64(Args[I + 2], &Val->Y) &&
+             ToInt64(Args[I + 3], &Val->Z);
     }
   }
 
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals)
 {
   Clear(Vals);
-  for (int I = 0; I < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
+  for (int I = 0; I < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
       int J = I;
-      while (true) {
+      while (true)
+      {
         ++J;
         int X;
         if (J < NArgs && ToInt(Args[J], &X))
@@ -9280,23 +12144,27 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals)
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val)
 {
-  for (int I = 0; I + 2 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
-      return
-        ToInt(Args[I + 1], &Val->X) &&
-        ToInt(Args[I + 2], &Val->Y);
+  for (int I = 0; I + 2 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
+      return ToInt(Args[I + 1], &Val->X) && ToInt(Args[I + 2], &Val->Y);
     }
   }
 
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I) {
-    if (strncmp(Args[I], Opt, 32) == 0) {
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
       bool Success = true;
       (*Val)[0].First = Args[I + 1][0];
       Success = Success && ToInt(Args[I + 2], &(*Val)[0].Second);
@@ -9311,9 +12179,11 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val)
   return false;
 }
 
-bool OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val)
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I) {
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
     if (strncmp(Args[I], Opt, 32) == 0)
       return ToDouble(Args[I + 1], Val);
   }
@@ -9321,9 +12191,11 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val)
   return false;
 }
 
-bool OptExists(int NArgs, cstr* Args, cstr Opt)
+bool
+OptExists(int NArgs, cstr* Args, cstr Opt)
 {
-  for (int I = 0; I < NArgs; ++I) {
+  for (int I = 0; I < NArgs; ++I)
+  {
     if (strcmp(Args[I], Opt) == 0)
       return true;
   }
@@ -9331,33 +12203,36 @@ bool OptExists(int NArgs, cstr* Args, cstr Opt)
   return false;
 }
 
-idx2_T(e)
-bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val)
-{
-  cstr BufPtr = nullptr;
-  if (!OptVal(NArgs, Args, Opt, &BufPtr))
-    return false;
-  *Val = StringTo<e>()(BufPtr);
-
-  return true;
-}
-
 } // namespace idx2
 
 #include <signal.h>
 
-namespace idx2 {
+namespace idx2
+{
 
-void AbortHandler(int Signum) {
+void
+AbortHandler(int Signum)
+{
   cstr Name = nullptr;
-  switch (Signum) {
-    case SIGABRT: Name = "SIGABRT"; break;
-    case SIGSEGV: Name = "SIGSEGV"; break;
+  switch (Signum)
+  {
+    case SIGABRT:
+      Name = "SIGABRT";
+      break;
+    case SIGSEGV:
+      Name = "SIGSEGV";
+      break;
 #if !defined(_WIN32)
-    case SIGBUS : Name = "SIGBUS" ; break;
+    case SIGBUS:
+      Name = "SIGBUS";
+      break;
 #endif
-    case SIGILL : Name = "SIGILL" ; break;
-    case SIGFPE : Name = "SIGFPE" ; break;
+    case SIGILL:
+      Name = "SIGILL";
+      break;
+    case SIGFPE:
+      Name = "SIGFPE";
+      break;
   };
   if (Name)
     fprintf(stderr, "Caught signal %d (%s)\n", Signum, Name);
@@ -9369,14 +12244,16 @@ void AbortHandler(int Signum) {
   exit(Signum);
 }
 
-void SetHandleAbortSignals(handler& Handler) {
+void
+SetHandleAbortSignals(handler& Handler)
+{
   signal(SIGABRT, Handler);
   signal(SIGSEGV, Handler);
 #if !defined(_WIN32)
-  signal(SIGBUS,  Handler);
+  signal(SIGBUS, Handler);
 #endif
-  signal(SIGILL,  Handler);
-  signal(SIGFPE,  Handler);
+  signal(SIGILL, Handler);
+  signal(SIGFPE, Handler);
 }
 
 } // namespace idx2
@@ -9384,13 +12261,11 @@ void SetHandleAbortSignals(handler& Handler) {
 #include <ctype.h>
 #include <stdio.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 cstr
-ToRawFileName
-( /* Serialize the given metadata to a file name */
-  const metadata& Meta
-) /*---------------------------------------------*/
+ToRawFileName(const metadata& Meta)
 {
   printer Pr(Meta.String, sizeof(Meta.String));
   idx2_Print(&Pr, "%s-", Meta.Name);
@@ -9403,10 +12278,7 @@ ToRawFileName
 }
 
 cstr
-ToString
-( /* Serialize the given metadata to a string */
-  const metadata& Meta
-) /*------------------------------------------*/
+ToString(const metadata& Meta)
 {
   printer Pr(Meta.String, sizeof(Meta.String));
   idx2_Print(&Pr, "name = %s\n", Meta.Name);
@@ -9420,20 +12292,19 @@ ToString
 
 /* MIRANDA-DENSITY-[96-96-96]-Float64.raw */
 error<>
-StrToMetaData
-( /* Parse metadata from a file name */
-  stref FilePath,
-  metadata* Meta
-) /*---------------------------------*/
+StrToMetaData(stref FilePath, metadata* Meta)
 {
   stref FileName = GetFileName(FilePath);
   char DType[8];
-  idx2_ReturnErrorIf
-  (
-    6 != sscanf(FileName.ConstPtr, "%[^-]-%[^-]-[%d-%d-%d]-%[^.]",
-                Meta->Name, Meta->Field, &Meta->Dims3.X, &Meta->Dims3.Y, &Meta->Dims3.Z, DType),
-    err_code::ParseFailed
-  );
+  idx2_ReturnErrorIf(6 != sscanf(FileName.ConstPtr,
+                                 "%[^-]-%[^-]-[%d-%d-%d]-%[^.]",
+                                 Meta->Name,
+                                 Meta->Field,
+                                 &Meta->Dims3.X,
+                                 &Meta->Dims3.Y,
+                                 &Meta->Dims3.Z,
+                                 DType),
+                     err_code::ParseFailed);
 
   DType[0] = (char)tolower(DType[0]);
   Meta->DType = StringTo<dtype>()(stref(DType));
@@ -9446,13 +12317,10 @@ file = MIRANDA-DENSITY-[96-96-96]-Float64.raw
 name = MIRANDA
 field = DATA
 dimensions = 96 96 96
-type = float64 */
+type = float64
+*/
 error<>
-ReadMetaData
-(
-  cstr FileName,
-  metadata* Meta
-)
+ReadMetaData(cstr FileName, metadata* Meta)
 {
   buffer Buf;
   error Ok = ReadFile(FileName, &Buf);
@@ -9461,33 +12329,47 @@ ReadMetaData
   idx2_CleanUp(0, DeallocBuf(&Buf));
   stref Str((cstr)Buf.Data, (int)Buf.Bytes);
   tokenizer TkLine(Str, "\r\n");
-  for (stref Line = Next(&TkLine); Line; Line = Next(&TkLine)) {
+  for (stref Line = Next(&TkLine); Line; Line = Next(&TkLine))
+  {
     tokenizer TkEq(Line, "=");
     stref Attr = Trim(Next(&TkEq));
     stref Value = Trim(Next(&TkEq));
     if (!Attr || !Value)
       return idx2_Error(err_code::ParseFailed, "File %s", FileName);
 
-    if (Attr == "name") {
+    if (Attr == "name")
+    {
       stref NameStr = idx2_StRef(Meta->Name);
       Copy(Trim(Value), &NameStr);
-    } else if (Attr == "field") {
+    }
+    else if (Attr == "field")
+    {
       stref FieldStr = idx2_StRef(Meta->Field);
       Copy(Trim(Value), &FieldStr);
-    } else if (Attr == "dimensions") {
+    }
+    else if (Attr == "dimensions")
+    {
       tokenizer TkSpace(Value, " ");
       int D = 0;
-      for (stref Dim = Next(&TkSpace); Dim && D < 4; Dim = Next(&TkSpace), ++D) {
+      for (stref Dim = Next(&TkSpace); Dim && D < 4; Dim = Next(&TkSpace), ++D)
+      {
         if (!ToInt(Dim, &Meta->Dims3[D]))
           return idx2_Error(err_code::ParseFailed, "File %s", FileName);
       }
-      if (D >= 4) return idx2_Error(err_code::DimensionsTooMany, "File %s", FileName);
-      if (D <= 2) Meta->Dims3[2] = 1;
-      if (D <= 1) Meta->Dims3[1] = 1;
-    } else if (Attr == "type") {
+      if (D >= 4)
+        return idx2_Error(err_code::DimensionsTooMany, "File %s", FileName);
+      if (D <= 2)
+        Meta->Dims3[2] = 1;
+      if (D <= 1)
+        Meta->Dims3[1] = 1;
+    }
+    else if (Attr == "type")
+    {
       if ((Meta->DType = StringTo<dtype>()(Value)) == dtype::__Invalid__)
         return idx2_Error(err_code::TypeNotSupported, "File %s", FileName);
-    } else {
+    }
+    else
+    {
       return idx2_Error(err_code::AttributeNotFound, "File %s", FileName);
     }
   }
@@ -9499,7 +12381,7 @@ ReadMetaData
 #include <string.h>
 
 #if defined(_WIN32)
-  /*
+/*
  * Dirent interface for Microsoft Visual Studio
  *
  * Copyright (C) 1998-2019 Toni Ronkko
@@ -10658,92 +13540,76 @@ dirent_set_errno(
 #endif
 #endif /*DIRENT_H*/
 
-  #include <direct.h>
-  #include <io.h>
-  #include <Windows.h>
-  #include <sys/types.h>
-  #include <sys/stat.h>
-  #define GetCurrentDir _getcwd
-  #define MkDir(Dir) _mkdir(Dir)
-  #define Access(Dir) _access(Dir, 0)
-  #define Stat(Path, S) _stat64(Path, S)
-  #define stat _stat64
+#include <Windows.h>
+#include <direct.h>
+#include <io.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#define GetCurrentDir _getcwd
+#define MkDir(Dir) _mkdir(Dir)
+#define Access(Dir) _access(Dir, 0)
+#define Stat(Path, S) _stat64(Path, S)
+#define stat _stat64
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
-  #include <dirent.h>
-  #include <sys/stat.h>
-  #include <unistd.h>
-  #define GetCurrentDir getcwd
-  #define MkDir(Dir) mkdir(Dir, 0733)
-  #define Access(Dir) access(Dir, F_OK)
-  #define Stat(Path, S) stat(Path, S)
-  //#define stat struct stat
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#define MkDir(Dir) mkdir(Dir, 0733)
+#define Access(Dir) access(Dir, F_OK)
+#define Stat(Path, S) stat(Path, S)
+//#define stat struct stat
 #endif
 
 namespace idx2
 {
 
-/* Default constructor
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 path::path() = default;
 
-/* Init a path from a string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 path::path(const stref& Str)
 {
   Init(this, Str);
 }
 
-/* Init a path from a string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-void Init(path* Path, const stref& Str)
+void
+Init(path* Path, const stref& Str)
 {
   Path->Parts[0] = Str;
   Path->NParts = 1;
 }
 
-/* Append a component to a path
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-void Append(path* Path, const stref& Part)
+void
+Append(path* Path, const stref& Part)
 {
   idx2_Assert(Path->NParts < Path->NPartsMax, "too many path parts");
   Path->Parts[Path->NParts++] = Part;
 }
 
-/* Get the file name (exclude the path) from a path string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-stref GetFileName(const stref& Path)
+stref
+GetFileName(const stref& Path)
 {
   idx2_Assert(!Contains(Path, '\\'));
   cstr LastSlash = FindLast(RevBegin(Path), RevEnd(Path), '/');
   if (LastSlash != RevEnd(Path))
-    return SubString
-    (
-      Path,
-      int(LastSlash - Begin(Path) + 1),
-      Path.Size - int(LastSlash - Begin(Path))
-    );
+    return SubString(
+      Path, int(LastSlash - Begin(Path) + 1), Path.Size - int(LastSlash - Begin(Path)));
 
   return Path;
 }
 
-/* Get the path name (exclude the file name) from a path string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-stref GetDirName(const stref& Path)
+stref
+GetDirName(const stref& Path)
 {
   idx2_Assert(!Contains(Path, '\\'));
   cstr LastSlash = FindLast(RevBegin(Path), RevEnd(Path), '/');
   if (LastSlash != RevEnd(Path))
-    return SubString
-    (
-      Path, 0, int(LastSlash - Begin(Path))
-    );
+    return SubString(Path, 0, int(LastSlash - Begin(Path)));
 
   return Path;
 }
 
-/* Convert a path to a string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-cstr ToString(const path& Path)
+cstr
+ToString(const path& Path)
 {
   printer Pr(ScratchBuf, sizeof(ScratchBuf));
   for (int I = 0; I < Path.NParts; ++I)
@@ -10755,33 +13621,31 @@ cstr ToString(const path& Path)
   return ScratchBuf;
 }
 
-/* Return true if the given path is relative
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-bool IsRelative(const stref& Path)
+bool
+IsRelative(const stref& Path)
 {
   stref& PathR = const_cast<stref&>(Path);
-  if (PathR.Size > 0 && PathR[0] == '/')  // e.g. /usr/local
+  if (PathR.Size > 0 && PathR[0] == '/') // e.g. /usr/local
     return false;
-  if (PathR.Size > 2 && PathR[1] == ':' && PathR[2] == '/')  // e.g. C:/Users
+  if (PathR.Size > 2 && PathR[1] == ':' && PathR[2] == '/') // e.g. C:/Users
     return false;
 
   return true;
 }
 
-/* Given a path, create a full hierarchy of directories
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-bool CreateFullDir(const stref& Path)
+bool
+CreateFullDir(const stref& Path)
 {
   cstr PathCopy = ToString(Path);
   int Error = 0;
   str P = (str)PathCopy;
 
   for // loop through the components (between two '/')
-  (/*-----------------------------------------------*/
+  (
     P = (str)strchr(PathCopy, '/');
     P;
     P = (str)strchr(P + 1, '/')
-  )/*-----------------------------------------------*/
+  )
   {
     *P = '\0';
     Error = MkDir(PathCopy);
@@ -10793,28 +13657,23 @@ bool CreateFullDir(const stref& Path)
   return (Error == 0);
 }
 
-/* Return true if a path exists
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-bool DirExists(const stref& Path)
+bool
+DirExists(const stref& Path)
 {
   cstr PathCopy = ToString(Path);
 
   return Access(PathCopy) == 0;
 }
 
-/* Remove a path with all files recursively from disk
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-void RemoveDir(cstr Path)
+void
+RemoveDir(cstr Path)
 {
   struct dirent* Entry = nullptr;
   DIR* Dir = nullptr;
   Dir = opendir(Path);
-  char AbsPath[257] = {0};
+  char AbsPath[257] = { 0 };
 
-  while // loop through items under Dir
-  (/*--------------------------------*/
-    Entry = readdir(Dir)
-  )/*--------------------------------*/
+  while (Entry = readdir(Dir))
   {
     if (*(Entry->d_name) == '.')
       continue;
@@ -10837,24 +13696,20 @@ void RemoveDir(cstr Path)
   remove(Path);
 }
 
-/* Get the extension from a path
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-stref GetExtension(const stref& Path)
+stref
+GetExtension(const stref& Path)
 {
   cstr LastDot = FindLast(RevBegin(Path), RevEnd(Path), '.');
-  if (LastDot == RevEnd(Path)) return stref();
+  if (LastDot == RevEnd(Path))
+    return stref();
 
-  return SubString(Path, int(LastDot+1-Begin(Path)), int(End(Path)-1-LastDot));
+  return SubString(Path, int(LastDot + 1 - Begin(Path)), int(End(Path) - 1 - LastDot));
 }
 
-/* Get the size of a file in bytes (-1 if there is error)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-i64 GetFileSize(const stref& Path)
+i64
+GetFileSize(const stref& Path)
 {
-  idx2_RAII(char, C = Path.Ptr[Path.Size],
-    Path.Ptr[Path.Size] = '\0',
-    Path.Ptr[Path.Size] = C
-  );
+  idx2_RAII(char, C = Path.Ptr[Path.Size], Path.Ptr[Path.Size] = '\0', Path.Ptr[Path.Size] = C);
   struct ::stat S;
   if (0 != ::Stat(Path.Ptr, &S))
     return -1;
@@ -10873,18 +13728,24 @@ i64 GetFileSize(const stref& Path)
 namespace idx2
 {
 
-printer::
-printer() = default;
+printer::printer() = default;
 
-printer::
-printer(char* BufIn, int SizeIn) : Buf(BufIn), Size(SizeIn), File(nullptr) {}
+printer::printer(char* BufIn, int SizeIn)
+  : Buf(BufIn)
+  , Size(SizeIn)
+  , File(nullptr)
+{
+}
 
-printer::
-printer(FILE* FileIn) : Buf(nullptr), Size(0), File(FileIn) {}
+printer::printer(FILE* FileIn)
+  : Buf(nullptr)
+  , Size(0)
+  , File(FileIn)
+{
+}
 
 void
-Reset
-(printer* Pr, char* Buf, int Size)
+Reset(printer* Pr, char* Buf, int Size)
 {
   Pr->Buf = Buf;
   Pr->Size = Size;
@@ -10892,18 +13753,21 @@ Reset
 }
 
 void
-Reset(printer* Pr, FILE* File) {
+Reset(printer* Pr, FILE* File)
+{
   Pr->Buf = nullptr;
   Pr->Size = 0;
   Pr->File = File;
 }
 
-}
+} // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 error<>
-ReadFile(cstr FileName, buffer* Buf) {
+ReadFile(cstr FileName, buffer* Buf)
+{
   idx2_Assert((Buf->Data && Buf->Bytes) || (!Buf->Data && !Buf->Bytes));
 
   FILE* Fp = fopen(FileName, "rb");
@@ -10932,7 +13796,8 @@ ReadFile(cstr FileName, buffer* Buf) {
 }
 
 error<>
-WriteBuffer(cstr FileName, const buffer& Buf) {
+WriteBuffer(cstr FileName, const buffer& Buf)
+{
   idx2_Assert(Buf.Data && Buf.Bytes);
 
   FILE* Fp = fopen(FileName, "wb");
@@ -10951,46 +13816,61 @@ WriteBuffer(cstr FileName, const buffer& Buf) {
 #include <stdio.h>
 #include <string.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 void
-SetBufferMode(logger* Logger, buffer_mode Mode) { Logger->Mode = Mode; }
+SetBufferMode(logger* Logger, buffer_mode Mode)
+{
+  Logger->Mode = Mode;
+}
 
 void
-SetBufferMode(buffer_mode Mode) { SetBufferMode(&GlobalLogger, Mode); }
+SetBufferMode(buffer_mode Mode)
+{
+  SetBufferMode(&GlobalLogger, Mode);
+}
 
 FILE*
-GetFileHandle(logger* Logger, cstr FileName) {
+GetFileHandle(logger* Logger, cstr FileName)
+{
   int MaxSlots = Size(Logger->FHandles);
   u32 FullHash = Murmur3_32((u8*)FileName, (int)strlen(FileName), 37);
   int Idx = FullHash % MaxSlots;
   FILE** Fp = &Logger->FHandles[Idx];
   bool Collision = *Fp && (Logger->FNameHashes[Idx] != FullHash ||
                            strncmp(FileName, Logger->FNames[Idx], 64) != 0);
-  if (Collision) { // collision, find the next empty slot
-    for (int I = 0; I < MaxSlots; ++I) {
+  if (Collision)
+  { // collision, find the next empty slot
+    for (int I = 0; I < MaxSlots; ++I)
+    {
       int J = (Idx + I) % MaxSlots;
       Fp = &Logger->FHandles[J];
-      if (!Logger->FNames[J] || strncmp(FileName, Logger->FNames[J], 64) == 0) {
+      if (!Logger->FNames[J] || strncmp(FileName, Logger->FNames[J], 64) == 0)
+      {
         Idx = J;
         break;
       }
     }
   }
-  if (!*Fp) { // empty slot, open a new file for logging
+  if (!*Fp)
+  { // empty slot, open a new file for logging
     idx2_Assert(!Logger->FNames[Idx]);
     idx2_Assert(!Logger->FHandles[Idx]);
     *Fp = fopen(FileName, "w");
     idx2_AbortIf(!*Fp, "File %s cannot be created", FileName);
     if (Logger->Mode == buffer_mode::Full) // full buffering
       setvbuf(*Fp, nullptr, _IOFBF, BUFSIZ);
-    else if (Logger->Mode == buffer_mode::Line) // line buffering (same as full buffering on Windows)
+    else if (Logger->Mode ==
+             buffer_mode::Line) // line buffering (same as full buffering on Windows)
       setvbuf(*Fp, nullptr, _IOLBF, BUFSIZ);
     else // no buffering
       setvbuf(*Fp, nullptr, _IONBF, 0);
     Logger->FNames[Idx] = FileName;
     Logger->FNameHashes[Idx] = FullHash;
-  } else if (Collision) { // no more open slots
+  }
+  else if (Collision)
+  { // no more open slots
     idx2_Abort("No more logger slots");
   }
   return *Fp;
@@ -11002,10 +13882,12 @@ GetFileHandle(logger* Logger, cstr FileName) {
 
 // TODO: some of these functions can be made inline
 
-namespace idx2 {
+namespace idx2
+{
 
 i64
-MemCopy(const buffer& Src, buffer* Dst) {
+MemCopy(const buffer& Src, buffer* Dst)
+{
   idx2_Assert(Dst->Data, "Copy to null");
   idx2_Assert(Src.Data || Src.Bytes == 0, "Copy from null");
   idx2_Assert(Dst->Bytes >= Src.Bytes, "Copy to a smaller buffer");
@@ -11014,7 +13896,8 @@ MemCopy(const buffer& Src, buffer* Dst) {
 }
 
 i64
-MemCopy(const buffer& Src, buffer* Dst, u64 Bytes) {
+MemCopy(const buffer& Src, buffer* Dst, u64 Bytes)
+{
   idx2_Assert(Dst->Data, "Copy to null");
   idx2_Assert(Src.Data || Src.Bytes == 0, "Copy from null");
   idx2_Assert(Dst->Bytes >= Src.Bytes, "Copy to a smaller buffer");
@@ -11023,33 +13906,41 @@ MemCopy(const buffer& Src, buffer* Dst, u64 Bytes) {
 }
 
 buffer
-operator+(const buffer& Buf, i64 Bytes) {
-  return buffer{Buf.Data + Bytes, Buf.Bytes - Bytes};
+operator+(const buffer& Buf, i64 Bytes)
+{
+  return buffer{ Buf.Data + Bytes, Buf.Bytes - Bytes };
 }
 
 void
-ZeroBuf(buffer* Buf) {
+ZeroBuf(buffer* Buf)
+{
   idx2_Assert(Buf->Data);
   memset(Buf->Data, 0, size_t(Buf->Bytes));
 }
 
-idx2_T(t) void
-ZeroBufT(buffer_t<t>* Buf) {
+template <typename t> void
+ZeroBufT(buffer_t<t>* Buf)
+{
   idx2_Assert(Buf->Data);
   memset(Buf->Data, 0, Buf->Size * sizeof(t));
 }
 
 void
-AllocBuf(buffer* Buf, i64 Bytes, allocator* Alloc) {
+AllocBuf(buffer* Buf, i64 Bytes, allocator* Alloc)
+{
   Alloc->Alloc(Buf, Bytes);
 }
 
 void
-CallocBuf(buffer* Buf, i64 Bytes, allocator* Alloc) {
+CallocBuf(buffer* Buf, i64 Bytes, allocator* Alloc)
+{
   idx2_Assert(!Buf->Data || Buf->Bytes == 0, "Buffer not freed before allocating new memory");
-  if (Alloc == &Mallocator()) {
+  if (Alloc == &Mallocator())
+  {
     Buf->Data = (byte*)calloc(size_t(Bytes), 1);
-  }  else {
+  }
+  else
+  {
     AllocBuf(Buf, Bytes, Alloc);
     ZeroBuf(Buf);
   }
@@ -11059,13 +13950,15 @@ CallocBuf(buffer* Buf, i64 Bytes, allocator* Alloc) {
 }
 
 void
-DeallocBuf(buffer* Buf) {
+DeallocBuf(buffer* Buf)
+{
   idx2_Assert(Buf->Alloc);
   Buf->Alloc->Dealloc(Buf);
 }
 
 bool
-mallocator::Alloc(buffer* Buf, i64 Bytes) {
+mallocator::Alloc(buffer* Buf, i64 Bytes)
+{
   idx2_Assert(!Buf->Data || Buf->Bytes == 0, "Buffer not freed before allocating new memory");
   Buf->Data = (byte*)malloc(size_t(Bytes));
   idx2_AbortIf(!(Buf->Data), "Out of memory: cannot allocate %" PRIx64 " bytes\n", Bytes);
@@ -11075,7 +13968,8 @@ mallocator::Alloc(buffer* Buf, i64 Bytes) {
 }
 
 void
-mallocator::Dealloc(buffer* Buf) {
+mallocator::Dealloc(buffer* Buf)
+{
   free(Buf->Data);
   Buf->Data = nullptr;
   Buf->Bytes = 0;
@@ -11083,17 +13977,22 @@ mallocator::Dealloc(buffer* Buf) {
 }
 
 void
-mallocator::DeallocAll() { /* empty */ }
+mallocator::DeallocAll()
+{ /* empty */
+}
 
-linear_allocator::
-linear_allocator() = default;
+linear_allocator::linear_allocator() = default;
 
-linear_allocator::
-linear_allocator(const buffer& Buf) : Block(Buf) {}
+linear_allocator::linear_allocator(const buffer& Buf)
+  : Block(Buf)
+{
+}
 
-bool linear_allocator::
-Alloc(buffer* Buf, i64 Bytes) {
-  if (CurrentBytes + Bytes <= Block.Bytes) {
+bool
+linear_allocator::Alloc(buffer* Buf, i64 Bytes)
+{
+  if (CurrentBytes + Bytes <= Block.Bytes)
+  {
     Buf->Data = Block.Data + CurrentBytes;
     Buf->Bytes = Bytes;
     Buf->Alloc = this;
@@ -11103,9 +14002,11 @@ Alloc(buffer* Buf, i64 Bytes) {
   return false;
 }
 
-void linear_allocator::
-Dealloc(buffer* Buf) {
-  if (Buf->Data + Buf->Bytes == Block.Data + CurrentBytes) {
+void
+linear_allocator::Dealloc(buffer* Buf)
+{
+  if (Buf->Data + Buf->Bytes == Block.Data + CurrentBytes)
+  {
     Buf->Data = nullptr;
     Buf->Bytes = 0;
     Buf->Alloc = nullptr;
@@ -11113,33 +14014,38 @@ Dealloc(buffer* Buf) {
   }
 }
 
-void linear_allocator::
-DeallocAll() {
+void
+linear_allocator::DeallocAll()
+{
   CurrentBytes = 0;
 }
 
-bool linear_allocator::
-Own(const buffer& Buf) const {
+bool
+linear_allocator::Own(const buffer& Buf) const
+{
   return Block.Data <= Buf.Data && Buf.Data < Block.Data + CurrentBytes;
 }
 
-free_list_allocator::
-free_list_allocator() = default;
+free_list_allocator::free_list_allocator() = default;
 
-free_list_allocator::
-free_list_allocator(i64 MinBytesIn, i64 MaxBytesIn, allocator* ParentIn)
+free_list_allocator::free_list_allocator(i64 MinBytesIn, i64 MaxBytesIn, allocator* ParentIn)
   : MinBytes(MinBytesIn)
   , MaxBytes(MaxBytesIn)
-  , Parent(ParentIn) {}
+  , Parent(ParentIn)
+{
+}
 
-free_list_allocator::
-free_list_allocator(i64 Bytes, allocator* ParentIn)
-  : free_list_allocator(Bytes, Bytes, ParentIn) {}
+free_list_allocator::free_list_allocator(i64 Bytes, allocator* ParentIn)
+  : free_list_allocator(Bytes, Bytes, ParentIn)
+{
+}
 
-bool free_list_allocator::
-Alloc(buffer* Buf, i64 Bytes) {
+bool
+free_list_allocator::Alloc(buffer* Buf, i64 Bytes)
+{
   idx2_Assert(Parent);
-  if (MinBytes <= Bytes && Bytes <= MaxBytes && Head) {
+  if (MinBytes <= Bytes && Bytes <= MaxBytes && Head)
+  {
     Buf->Data = (byte*)Head;
     Buf->Bytes = Bytes;
     Buf->Alloc = this;
@@ -11152,25 +14058,31 @@ Alloc(buffer* Buf, i64 Bytes) {
   return Result;
 }
 
-void free_list_allocator::
-Dealloc(buffer* Buf) {
+void
+free_list_allocator::Dealloc(buffer* Buf)
+{
   idx2_Assert(Parent);
-  if (MinBytes <= Buf->Bytes && Buf->Bytes <= MaxBytes) {
+  if (MinBytes <= Buf->Bytes && Buf->Bytes <= MaxBytes)
+  {
     Buf->Bytes = 0;
     Buf->Alloc = this;
     node* P = (node*)(Buf->Data);
     P->Next = Head;
     Head = P;
-  } else {
+  }
+  else
+  {
     Parent->Dealloc(Buf);
   }
 }
 
 // NOTE: the client may want to call Parent->DeallocateAll() as well
-void free_list_allocator::
-DeallocAll() {
+void
+free_list_allocator::DeallocAll()
+{
   idx2_Assert(Parent);
-  while (Head) {
+  while (Head)
+  {
     node* Next = Head->Next;
     buffer Buf((byte*)Head, MaxBytes, Parent);
     Parent->Dealloc(&Buf);
@@ -11178,35 +14090,39 @@ DeallocAll() {
   }
 }
 
-fallback_allocator::
-fallback_allocator() = default;
+fallback_allocator::fallback_allocator() = default;
 
-fallback_allocator::
-fallback_allocator(owning_allocator* PrimaryIn, allocator* SecondaryIn)
+fallback_allocator::fallback_allocator(owning_allocator* PrimaryIn, allocator* SecondaryIn)
   : Primary(PrimaryIn)
-  , Secondary(SecondaryIn) {}
+  , Secondary(SecondaryIn)
+{
+}
 
-bool fallback_allocator::
-Alloc(buffer* Buf, i64 Size) {
+bool
+fallback_allocator::Alloc(buffer* Buf, i64 Size)
+{
   bool Success = Primary->Alloc(Buf, Size);
   return Success ? Success : Secondary->Alloc(Buf, Size);
 }
 
-void fallback_allocator::
-Dealloc(buffer* Buf) {
+void
+fallback_allocator::Dealloc(buffer* Buf)
+{
   if (Primary->Own(*Buf))
     return Primary->Dealloc(Buf);
   Secondary->Dealloc(Buf);
 }
 
-void fallback_allocator::
-DeallocAll() {
+void
+fallback_allocator::DeallocAll()
+{
   Primary->DeallocAll();
   Secondary->DeallocAll();
 }
 
 void
-Clone(const buffer& Src, buffer* Dst, allocator* Alloc) {
+Clone(const buffer& Src, buffer* Dst, allocator* Alloc)
+{
   if (Dst->Data && Dst->Bytes != Src.Bytes)
     DeallocBuf(Dst);
   if (!Dst->Data && Dst->Bytes == 0)
@@ -11216,25 +14132,24 @@ Clone(const buffer& Src, buffer* Dst, allocator* Alloc) {
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 error<mmap_err_code>
-OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
+OpenFile(mmap_file* MMap, cstr Name, map_mode Mode)
+{
 #if defined(_WIN32)
-  MMap->File =
-    CreateFileA(Name,
-                Mode == map_mode::Read ? GENERIC_READ
-                          : GENERIC_READ | GENERIC_WRITE,
-                0,
-                NULL,
-                OPEN_ALWAYS,
-                FILE_ATTRIBUTE_NORMAL,
-                NULL);
+  MMap->File = CreateFileA(Name,
+                           Mode == map_mode::Read ? GENERIC_READ : GENERIC_READ | GENERIC_WRITE,
+                           0,
+                           NULL,
+                           OPEN_ALWAYS,
+                           FILE_ATTRIBUTE_NORMAL,
+                           NULL);
   if (MMap->File == INVALID_HANDLE_VALUE)
     return idx2_Error(mmap_err_code::FileCreateFailed);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
-  MMap->File = open(Name, Mode == map_mode::Read ? O_RDONLY
-                                                 : O_RDWR | O_CREAT | O_TRUNC, 0600);
+  MMap->File = open(Name, Mode == map_mode::Read ? O_RDONLY : O_RDWR | O_CREAT | O_TRUNC, 0600);
   if (MMap->File == -1)
     return idx2_Error(mmap_err_code::FileCreateFailed);
 #endif
@@ -11246,10 +14161,11 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode) {
 static bool
 mac_fallocate(file_handle fd, i64 aLength)
 {
-  fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, aLength};
+  fstore_t store = { F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, aLength };
   // Try to get a continous chunk of disk space
   int ret = fcntl(fd, F_PREALLOCATE, &store);
-    if (-1 == ret) {
+  if (-1 == ret)
+  {
     // OK, perhaps we are too fragmented, allocate non-continuous
     store.fst_flags = F_ALLOCATEALL;
     ret = fcntl(fd, F_PREALLOCATE, &store);
@@ -11264,30 +14180,29 @@ mac_fallocate(file_handle fd, i64 aLength)
 
 /* Size is only used when Mode is Write or ReadWrite */
 error<mmap_err_code>
-MapFile(mmap_file* MMap, i64 Bytes) {
+MapFile(mmap_file* MMap, i64 Bytes)
+{
 #if defined(_WIN32)
-  LARGE_INTEGER FileSize{{0, 0}};
+  LARGE_INTEGER FileSize{ { 0, 0 } };
   if (!GetFileSizeEx(MMap->File, &FileSize) || Bytes != 0)
     FileSize.QuadPart = Bytes;
   MMap->FileMapping =
     CreateFileMapping(MMap->File,
                       NULL,
-                      MMap->Mode == map_mode::Read ? PAGE_READONLY
-                                                   : PAGE_READWRITE,
+                      MMap->Mode == map_mode::Read ? PAGE_READONLY : PAGE_READWRITE,
                       FileSize.HighPart,
                       FileSize.LowPart,
                       0);
   if (MMap->FileMapping == NULL)
     return idx2_Error(mmap_err_code::MappingFailed);
 
-  LPVOID MapAddress =
-    MapViewOfFile(MMap->FileMapping,
-                  MMap->Mode == map_mode::Read ? FILE_MAP_READ
-                    : MMap->Mode == map_mode::Write ? FILE_MAP_WRITE
-                      : FILE_MAP_ALL_ACCESS,
-                  0,
-                  0,
-                  0);
+  LPVOID MapAddress = MapViewOfFile(MMap->FileMapping,
+                                    MMap->Mode == map_mode::Read    ? FILE_MAP_READ
+                                    : MMap->Mode == map_mode::Write ? FILE_MAP_WRITE
+                                                                    : FILE_MAP_ALL_ACCESS,
+                                    0,
+                                    0,
+                                    0);
   if (MapAddress == NULL)
     return idx2_Error(mmap_err_code::MapViewFailed);
   MMap->Buf.Data = (byte*)MapAddress;
@@ -11300,20 +14215,19 @@ MapFile(mmap_file* MMap, i64 Bytes) {
   else if (fstat(MMap->File, &Stat) == 0)
     FileSize = Stat.st_size;
   if (MMap->Mode == map_mode::Write)
-    #if defined(__APPLE__)
-      if (!mac_fallocate(MMap->File, FileSize))
-        return idx2_Error(mmap_err_code::AllocateFailed);
-    #else
-      if (posix_fallocate(MMap->File, 0, FileSize) == -1)
-        return idx2_Error(mmap_err_code::AllocateFailed);
-    #endif
-  void* MapAddress =
-    mmap(0,
-         FileSize,
-         MMap->Mode == map_mode::Read ? PROT_READ : PROT_READ | PROT_WRITE,
-         MAP_SHARED,
-         MMap->File,
-         0);
+#if defined(__APPLE__)
+    if (!mac_fallocate(MMap->File, FileSize))
+      return idx2_Error(mmap_err_code::AllocateFailed);
+#else
+    if (posix_fallocate(MMap->File, 0, FileSize) == -1)
+      return idx2_Error(mmap_err_code::AllocateFailed);
+#endif
+  void* MapAddress = mmap(0,
+                          FileSize,
+                          MMap->Mode == map_mode::Read ? PROT_READ : PROT_READ | PROT_WRITE,
+                          MAP_SHARED,
+                          MMap->File,
+                          0);
   if (MapAddress == MAP_FAILED)
     return idx2_Error(mmap_err_code::MapViewFailed);
   MMap->Buf.Data = (byte*)MapAddress;
@@ -11324,20 +14238,24 @@ MapFile(mmap_file* MMap, i64 Bytes) {
 
 /* (Non-blocking) flush dirty pages */
 error<mmap_err_code>
-FlushFile(mmap_file* MMap, byte* Start, i64 Bytes) {
+FlushFile(mmap_file* MMap, byte* Start, i64 Bytes)
+{
 #if defined(_WIN32)
-  bool Result = Start ? FlushViewOfFile(Start, (size_t)Bytes)
-                      : FlushViewOfFile(MMap->Buf.Data, (size_t)Bytes);
+  bool Result =
+    Start ? FlushViewOfFile(Start, (size_t)Bytes) : FlushViewOfFile(MMap->Buf.Data, (size_t)Bytes);
   if (!Result)
     return idx2_Error(mmap_err_code::FlushFailed);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   int Result;
-  if (Start) {
+  if (Start)
+  {
     idx2_Assert(MMap->Buf.Data <= Start && Start < MMap->Buf.Data + MMap->Buf.Bytes);
     idx2_Assert(Bytes <= (MMap->Buf.Data + MMap->Buf.Bytes) - Start);
     Result = Bytes ? msync(Start, Bytes, MS_ASYNC)
                    : msync(Start, MMap->Buf.Bytes - (Start - MMap->Buf.Data), MS_ASYNC);
-  } else {
+  }
+  else
+  {
     idx2_Assert(Bytes <= MMap->Buf.Bytes);
     Result = Bytes ? msync(MMap->Buf.Data, Bytes, MS_ASYNC)
                    : msync(MMap->Buf.Data, MMap->Buf.Bytes, MS_ASYNC);
@@ -11348,10 +14266,12 @@ FlushFile(mmap_file* MMap, byte* Start, i64 Bytes) {
   return idx2_Error(mmap_err_code::NoError);
 }
 
-/* (Blocking) flush file metadata and ensure file is physically written.
- * Meant to be called at the very end */
+/*
+(Blocking) flush file metadata and ensure file is physically written. Meant to be called at the very
+end */
 error<mmap_err_code>
-SyncFile(mmap_file* MMap) {
+SyncFile(mmap_file* MMap)
+{
 #if defined(_WIN32)
   if (!FlushFileBuffers(MMap->File))
     return idx2_Error(mmap_err_code::SyncFailed);
@@ -11364,9 +14284,11 @@ SyncFile(mmap_file* MMap) {
 
 /* Unmap the file and close all handles */
 error<mmap_err_code>
-UnmapFile(mmap_file* MMap) {
+UnmapFile(mmap_file* MMap)
+{
 #if defined(_WIN32)
-  if (!UnmapViewOfFile(MMap->Buf.Data)) {
+  if (!UnmapViewOfFile(MMap->Buf.Data))
+  {
     CloseHandle(MMap->FileMapping);
     return idx2_Error(mmap_err_code::UnmapFailed);
   }
@@ -11376,13 +14298,15 @@ UnmapFile(mmap_file* MMap) {
   if (munmap(MMap->Buf.Data, MMap->Buf.Bytes) == -1)
     return idx2_Error(mmap_err_code::UnmapFailed);
 #endif
-  MMap->Buf.Data = nullptr; MMap->Buf.Bytes = 0;
+  MMap->Buf.Data = nullptr;
+  MMap->Buf.Bytes = 0;
   return idx2_Error(mmap_err_code::NoError);
 }
 
 /* Close the file */
 error<mmap_err_code>
-CloseFile(mmap_file* MMap) {
+CloseFile(mmap_file* MMap)
+{
 #if defined(_WIN32)
   if (!CloseHandle(MMap->File))
     return idx2_Error(mmap_err_code::FileCloseFailed);
@@ -11390,7 +14314,8 @@ CloseFile(mmap_file* MMap) {
   if (close(MMap->File) == -1)
     return idx2_Error(mmap_err_code::FileCloseFailed);
 #endif
-  MMap->Buf.Data = nullptr; MMap->Buf.Bytes = 0;
+  MMap->Buf.Data = nullptr;
+  MMap->Buf.Bytes = 0;
   return idx2_Error(mmap_err_code::NoError);
 }
 
@@ -11402,14 +14327,18 @@ CloseFile(mmap_file* MMap) {
 // https://stackoverflow.com/questions/22467604/how-can-you-use-capturestackbacktrace-to-capture-the-exception-stack-not-the-ca
 #include <process.h>
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <DbgHelp.h>
 
-namespace idx2 {
+#include <DbgHelp.h>
+#include <Windows.h>
+
+namespace idx2
+{
 
 static mutex StacktraceMutex;
+
 bool
-PrintStacktrace(printer* Pr) {
+PrintStacktrace(printer* Pr)
+{
   lock Lck(&StacktraceMutex);
   idx2_Print(Pr, "Stack trace:\n");
   SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_INCLUDE_32BIT_MODULES | SYMOPT_UNDNAME);
@@ -11425,10 +14354,17 @@ PrintStacktrace(printer* Pr) {
   if (!SymInitialize(Process, "http://msdl.microsoft.com/download/symbols", true))
     return false;
 
-  for (ULONG Frame = 0; ; ++Frame) {
-    bool Result = StackWalk64(IMAGE_FILE_MACHINE_AMD64, Process, Thread,
-                              &Stack, &Context, nullptr,
-      SymFunctionTableAccess64, SymGetModuleBase64, nullptr);
+  for (ULONG Frame = 0;; ++Frame)
+  {
+    bool Result = StackWalk64(IMAGE_FILE_MACHINE_AMD64,
+                              Process,
+                              Thread,
+                              &Stack,
+                              &Context,
+                              nullptr,
+                              SymFunctionTableAccess64,
+                              SymGetModuleBase64,
+                              nullptr);
     if (!Result)
       break;
     PSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
@@ -11438,45 +14374,54 @@ PrintStacktrace(printer* Pr) {
     IMAGEHLP_LINE64 Line;
     Line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
     DWORD Offset = 0;
-    if (SymGetLineFromAddr64(Process, Stack.AddrPC.Offset, &Offset, &Line)) {
-      idx2_Print(Pr, "Function %s, file %s, line %lu: \n",
-               PSymbol->Name, Line.FileName, Line.LineNumber);
-    } else { // failed to get the line number
+    if (SymGetLineFromAddr64(Process, Stack.AddrPC.Offset, &Offset, &Line))
+    {
+      idx2_Print(
+        Pr, "Function %s, file %s, line %lu: \n", PSymbol->Name, Line.FileName, Line.LineNumber);
+    }
+    else
+    { // failed to get the line number
       HMODULE HModule = nullptr;
       char Module[256] = "";
       GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                        (LPCTSTR)(Stack.AddrPC.Offset), &HModule);
+                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                        (LPCTSTR)(Stack.AddrPC.Offset),
+                        &HModule);
       if (HModule)
         GetModuleFileNameA(HModule, Module, 256);
-      idx2_Print(Pr, "Function %s, file %s, address 0x%0llX\n",
-               PSymbol->Name, Module, PSymbol->Address);
+      idx2_Print(
+        Pr, "Function %s, file %s, address 0x%0llX\n", PSymbol->Name, Module, PSymbol->Address);
     }
   }
   return SymCleanup(Process);
 }
 
 } // namespace idx2
+
 #elif defined(__linux__) || defined(__APPLE__)
 // Adapted from
 // stacktrace.h (c) 2008, Timo Bingmann from http://idlebox.net/
 // published under the WTFPL v2.0
+
+#include <cxxabi.h>
+#include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <execinfo.h>
-#include <cxxabi.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 // TODO: get the line number (add2line)
 bool
-PrintStacktrace(printer* Pr) {
+PrintStacktrace(printer* Pr)
+{
   idx2_Print(Pr, "Stack trace:\n");
   constexpr int MaxFrames = 63;
   void* AddrList[MaxFrames + 1]; // Storage array for stack trace address data
   /* Retrieve current stack addresses */
   int AddrLen = backtrace(AddrList, sizeof(AddrList) / sizeof(void*));
-  if (AddrLen == 0) {
+  if (AddrLen == 0)
+  {
     idx2_Print(Pr, "  <empty, possibly corrupt>\n");
     return false;
   }
@@ -11486,69 +14431,79 @@ PrintStacktrace(printer* Pr) {
   char Buffer[128];
   char* FuncName = Buffer;
   // iterate over the returned symbol lines (skip the first)
-  for (int I = 1; I < AddrLen; ++I) {
+  for (int I = 1; I < AddrLen; ++I)
+  {
     // fprintf(stderr, "%s\n", SymbolList[I]);
-	  char* BeginName = 0, *BeginOffset = 0, *EndOffset = 0;
+    char *BeginName = 0, *BeginOffset = 0, *EndOffset = 0;
     /* Find parentheses and +address offset surrounding the mangled name:
     e.g., ./module(function+0x15c) [0x8048a6d] */
-    for (char* P = SymbolList[I]; *P; ++P) {
+    for (char* P = SymbolList[I]; *P; ++P)
+    {
       if (*P == '(')
         BeginName = P;
       else if (*P == '+')
         BeginOffset = P;
-      else if (*P == ')' && BeginOffset) {
+      else if (*P == ')' && BeginOffset)
+      {
         EndOffset = P;
         break;
       }
     }
-    if (BeginName && BeginOffset && EndOffset && BeginName < BeginOffset) {
+    if (BeginName && BeginOffset && EndOffset && BeginName < BeginOffset)
+    {
       *BeginName++ = '\0';
-	    *BeginOffset++ = '\0';
-	    *EndOffset = '\0';
-	    /* mangled name is now in [BeginName, BeginOffset) and caller offset in
-      [BeginOffset, EndOffset) */
-	    int Status;
-	    char* Ret = abi::__cxa_demangle(BeginName, FuncName, &FuncNameSize, &Status);
-	    if (Status == 0) {
-		    FuncName = Ret; // use possibly realloc()-ed string
-		    idx2_Print(Pr, "  %s: %s +%s [%p]\n",
-                 SymbolList[I], FuncName, BeginOffset, AddrList[I]);
-	    } else { // demangling failed
-		    idx2_Print(Pr, "  %s: %s() +%s [%p]\n",
-                 SymbolList[I], BeginName, BeginOffset, AddrList[I]);
-	    }
+      *BeginOffset++ = '\0';
+      *EndOffset = '\0';
+      /* mangled name is now in [BeginName, BeginOffset) and caller offset in
+[BeginOffset, EndOffset) */
+      int Status;
+      char* Ret = abi::__cxa_demangle(BeginName, FuncName, &FuncNameSize, &Status);
+      if (Status == 0)
+      {
+        FuncName = Ret; // use possibly realloc()-ed string
+        idx2_Print(Pr, "  %s: %s +%s [%p]\n", SymbolList[I], FuncName, BeginOffset, AddrList[I]);
+      }
+      else
+      { // demangling failed
+        idx2_Print(Pr, "  %s: %s() +%s [%p]\n", SymbolList[I], BeginName, BeginOffset, AddrList[I]);
+      }
       /* get file names and line numbers using addr2line */
       constexpr int BufLen = 1024;
       char Syscom[BufLen];
-      //last parameter is the name of this app
-      snprintf(Syscom, BufLen,"addr2line %p -e %s", AddrList[I], "main");
+      // last parameter is the name of this app
+      snprintf(Syscom, BufLen, "addr2line %p -e %s", AddrList[I], "main");
       FILE* F = popen(Syscom, "r");
-      if (F) {
+      if (F)
+      {
         char Buffer[BufLen] = { 0 };
         while (fgets(Buffer, sizeof(Buffer), F))
           idx2_Print(Pr, "    %s", Buffer);
         pclose(F);
       }
-    } else { // couldn't parse the line? print the whole line.
+    }
+    else
+    { // couldn't parse the line? print the whole line.
       idx2_Print(Pr, "  %s\n", SymbolList[I]);
     }
-
   }
   free(SymbolList);
   return true;
 }
 
 } // namespace idx2
+
 #endif
 
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 cstr
-ToString(const stref& Str) {
+ToString(const stref& Str)
+{
   idx2_Assert(Str.Size < (int)sizeof(ScratchBuf));
   if (Str.Ptr != ScratchBuf)
     snprintf(ScratchBuf, sizeof(ScratchBuf), "%.*s", Str.Size, Str.Ptr);
@@ -11556,12 +14511,14 @@ ToString(const stref& Str) {
 }
 
 bool
-operator==(const stref& Lhs, const stref& Rhs) {
+operator==(const stref& Lhs, const stref& Rhs)
+{
   stref& LhsR = const_cast<stref&>(Lhs);
   stref& RhsR = const_cast<stref&>(Rhs);
   if (LhsR.Size != RhsR.Size)
     return false;
-  for (int I = 0; I < LhsR.Size; ++I) {
+  for (int I = 0; I < LhsR.Size; ++I)
+  {
     if (LhsR[I] != RhsR[I])
       return false;
   }
@@ -11569,9 +14526,11 @@ operator==(const stref& Lhs, const stref& Rhs) {
 }
 
 stref
-TrimLeft(const stref& Str) {
+TrimLeft(const stref& Str)
+{
   stref StrOut = Str;
-  while (StrOut.Size && isspace(*StrOut.Ptr)) {
+  while (StrOut.Size && isspace(*StrOut.Ptr))
+  {
     ++StrOut.Ptr;
     --StrOut.Size;
   }
@@ -11579,7 +14538,8 @@ TrimLeft(const stref& Str) {
 }
 
 stref
-TrimRight(const stref& Str) {
+TrimRight(const stref& Str)
+{
   stref StrOut = Str;
   while (StrOut.Size && isspace(StrOut[StrOut.Size - 1]))
     --StrOut.Size;
@@ -11587,36 +14547,44 @@ TrimRight(const stref& Str) {
 }
 
 stref
-Trim(const stref& Str) { return TrimLeft(TrimRight(Str)); }
+Trim(const stref& Str)
+{
+  return TrimLeft(TrimRight(Str));
+}
 
 stref
-SubString(const stref& Str, int Begin, int Size) {
+SubString(const stref& Str, int Begin, int Size)
+{
   if (!Str || Begin >= Str.Size)
     return stref();
   return stref(Str.Ptr + Begin, Min(Size, Str.Size));
 }
 
 void
-Copy(const stref& Src, stref* Dst, bool AddNull) {
+Copy(const stref& Src, stref* Dst, bool AddNull)
+{
   int NumBytes = Min(Dst->Size, Src.Size);
   memcpy(Dst->Ptr, Src.Ptr, size_t(NumBytes));
   if (AddNull)
     Dst->Ptr[NumBytes] = 0;
 }
 
-bool ToInt(const stref& Str, int* Result)
+bool
+ToInt(const stref& Str, int* Result)
 {
   stref& StrR = const_cast<stref&>(Str);
   if (!StrR || StrR.Size <= 0)
     return false;
 
   int Mult = 1, Start = 0;
-  if (StrR[0] == '-') {
+  if (StrR[0] == '-')
+  {
     Mult = -1;
     Start = 1;
   }
   *Result = 0;
-  for (int I = 0; I < Str.Size - Start; ++I) {
+  for (int I = 0; I < Str.Size - Start; ++I)
+  {
     int V = StrR[StrR.Size - I - 1] - '0';
     if (V >= 0 && V < 10)
       *Result += Mult * (V * power<int, 10>()[I]);
@@ -11626,22 +14594,28 @@ bool ToInt(const stref& Str, int* Result)
   return true;
 }
 
-bool ToInt64(const stref& Str, i64* Result)
+bool
+ToInt64(const stref& Str, i64* Result)
 {
   stref& StrR = const_cast<stref&>(Str);
   if (!StrR || StrR.Size <= 0)
     return false;
 
   i64 Mult = 1, Start = 0;
-  if (StrR[0] == '-') {
+  if (StrR[0] == '-')
+  {
     Mult = -1;
     Start = 1;
   }
   *Result = 0;
-  for (int I = 0; I < Str.Size - Start; ++I) {
-    int V = StrR[StrR.Size-I-1] - '0';
-    if (V>=0 && V<10)
-      *Result += Mult * (V * Pow(i64(10), I)); // TODO: precompute the pow table (somehow I can't use pow like for int)
+  for (int I = 0; I < Str.Size - Start; ++I)
+  {
+    int V = StrR[StrR.Size - I - 1] - '0';
+    if (V >= 0 && V < 10)
+      *Result +=
+        Mult *
+        (V *
+         Pow(i64(10), I)); // TODO: precompute the pow table (somehow I can't use pow like for int)
     else
       return false;
   }
@@ -11650,7 +14624,8 @@ bool ToInt64(const stref& Str, i64* Result)
 }
 
 bool
-ToDouble(const stref& Str, f64* Result) {
+ToDouble(const stref& Str, f64* Result)
+{
   if (!Str || Str.Size <= 0)
     return false;
   char* EndPtr = nullptr;
@@ -11663,13 +14638,16 @@ ToDouble(const stref& Str, f64* Result) {
 /* tokenizer stuff */
 
 stref
-Next(tokenizer* Tk) {
+Next(tokenizer* Tk)
+{
   while (Tk->Pos < Tk->Input.Size && Contains(Tk->Delims, Tk->Input[Tk->Pos]))
     ++Tk->Pos;
 
-  if (Tk->Pos < Tk->Input.Size) {
+  if (Tk->Pos < Tk->Input.Size)
+  {
     int Length = 0;
-    while (Tk->Pos < Tk->Input.Size && !Contains(Tk->Delims, Tk->Input[Tk->Pos])) {
+    while (Tk->Pos < Tk->Input.Size && !Contains(Tk->Delims, Tk->Input[Tk->Pos]))
+    {
       ++Tk->Pos;
       ++Length;
     }
@@ -11679,19 +14657,26 @@ Next(tokenizer* Tk) {
 }
 
 void
-Reset(tokenizer* Tk) { Tk->Pos = 0; }
-
+Reset(tokenizer* Tk)
+{
+  Tk->Pos = 0;
 }
 
-namespace idx2 {
+} // namespace idx2
+
+namespace idx2
+{
 
 u32
-Murmur3_32(u8* Key, int Len, u32 Seed) {
+Murmur3_32(u8* Key, int Len, u32 Seed)
+{
   u32 H = Seed;
-  if (Len > 3) {
+  if (Len > 3)
+  {
     u32* Key_x4 = (u32*)Key;
     int I = Len >> 2;
-    do {
+    do
+    {
       u32 K = *Key_x4++;
       K *= 0xcc9e2d51;
       K = (K << 15) | (K >> 17);
@@ -11702,11 +14687,13 @@ Murmur3_32(u8* Key, int Len, u32 Seed) {
     } while (--I);
     Key = (u8*)Key_x4;
   }
-  if (Len & 3) {
+  if (Len & 3)
+  {
     int I = Len & 3;
     u32 K = 0;
     Key = &Key[I - 1];
-    do {
+    do
+    {
       K <<= 8;
       K |= *Key--;
     } while (--K);
@@ -11773,7 +14760,7 @@ typedef struct SExpr {
         bool b;
         int i;
         float f;
-
+        
         // For strings as well as IDs
         SExprString s;
 
@@ -11795,7 +14782,7 @@ typedef enum SExprResultType {
 
 typedef struct SExprResult {
     SExprResultType type;
-
+    
     union
     {
         SExpr* expr;
@@ -11920,7 +14907,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
         } else if(SExprStringEqual(parser->src, &s, "false")) {
             static SExpr sfalse = {SE_BOOL};
             sfalse.b = false;
-
+            
             return &sfalse;
         }
 
@@ -11955,7 +14942,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
             SExpr* expr = SExprAlloc(parser, SE_FLOAT);
             expr->f = (float)strtod(buf, NULL);
             return expr;
-        }
+        }    
 
         SExpr* expr = SExprAlloc(parser, SE_INT);
         expr->i = strtol(buf, NULL, 10);
@@ -12000,7 +14987,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
 
         if(parser->last == ')' || parser->last == ']' || parser->last == '}') {
             parser->last = SExprGetChar(parser);
-
+            
             static SExpr nil = {SE_NIL};
             return &nil;
         }
@@ -12023,7 +15010,7 @@ SEXPR_DEF SExpr* SExprParseValue(SExprParser* parser)
 				tail = elem;
             }
 
-			while(parser->last && isspace(parser->last)) {
+			while(parser->last && isspace(parser->last)) {		
 				if(parser->last == '\n') {
 					parser->lineNumber++;
 				}
@@ -15651,9 +18638,9 @@ typedef enum {
                               * Default level is ZSTD_CLEVEL_DEFAULT==3.
                               * Special: value 0 means default, which is controlled by ZSTD_CLEVEL_DEFAULT.
                               * Note 1 : it's possible to pass a negative compression level.
-                              * Note 2 : setting a level does not automatically set all other compression parameters
-                              *   to default. Setting this will however eventually dynamically impact the compression
-                              *   parameters which have not been manually set. The manually set
+                              * Note 2 : setting a level does not automatically set all other compression parameters 
+                              *   to default. Setting this will however eventually dynamically impact the compression 
+                              *   parameters which have not been manually set. The manually set 
                               *   ones will 'stick'. */
     /* Advanced compression parameters :
      * It's possible to pin down compression parameters to some specific values.
@@ -39844,29 +42831,120 @@ size_t ZSTD_decompressBlock(ZSTD_DCtx* dctx,
 #pragma GCC diagnostic pop
 #endif
 
-namespace idx2 {
+namespace idx2
+{
 
 free_list_allocator BrickAlloc_;
 
-void Dealloc(params* P) { Dealloc(&P->RdoLevels); }
-void SetName(idx2_file* Idx2, cstr Name) { snprintf(Idx2->Name, sizeof(Idx2->Name), "%s", Name); }
-void SetField(idx2_file* Idx2, cstr Field) { snprintf(Idx2->Field, sizeof(Idx2->Field), "%s", Field); }
-void SetVersion(idx2_file* Idx2, const v2i& Ver) { Idx2->Version = Ver; }
-void SetDimensions(idx2_file* Idx2, const v3i& Dims3) { Idx2->Dims3 = Dims3; }
-void SetDataType(idx2_file* Idx2, dtype DType) { Idx2->DType = DType; }
-void SetBrickSize(idx2_file* Idx2, const v3i& BrickDims3) { Idx2->BrickDims3 = BrickDims3; }
-void SetNumIterations(idx2_file* Idx2, i8 NLevels) { Idx2->NLevels = NLevels; }
-void SetAccuracy(idx2_file* Idx2, f64 Accuracy) { Idx2->Accuracy = Accuracy; }
-void SetChunksPerFile(idx2_file* Idx2, int ChunksPerFile) { Idx2->ChunksPerFileIn = ChunksPerFile; }
-void SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk) { Idx2->BricksPerChunkIn = BricksPerChunk; }
-void SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir) { Idx2->FilesPerDir = FilesPerDir; }
-void SetDir(idx2_file* Idx2, cstr Dir) { Idx2->Dir = Dir; }
-void SetGroupLevels(idx2_file* Idx2, bool GroupLevels) { Idx2->GroupLevels = GroupLevels; }
-void SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels) { Idx2->GroupSubLevels = GroupSubLevels; }
-void SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes) { Idx2->GroupBitPlanes = GroupBitPlanes; }
-void SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels) { Clear(&Idx2->QualityLevelsIn); idx2_ForEach(It, QualityLevels) { PushBack(&Idx2->QualityLevelsIn, (int)*It); }; }
+void
+Dealloc(params* P)
+{
+  Dealloc(&P->RdoLevels);
+}
 
-void Dealloc(idx2_file* Idx2) {
+void
+SetName(idx2_file* Idx2, cstr Name)
+{
+  snprintf(Idx2->Name, sizeof(Idx2->Name), "%s", Name);
+}
+
+void
+SetField(idx2_file* Idx2, cstr Field)
+{
+  snprintf(Idx2->Field, sizeof(Idx2->Field), "%s", Field);
+}
+
+void
+SetVersion(idx2_file* Idx2, const v2i& Ver)
+{
+  Idx2->Version = Ver;
+}
+
+void
+SetDimensions(idx2_file* Idx2, const v3i& Dims3)
+{
+  Idx2->Dims3 = Dims3;
+}
+
+void
+SetDataType(idx2_file* Idx2, dtype DType)
+{
+  Idx2->DType = DType;
+}
+
+void
+SetBrickSize(idx2_file* Idx2, const v3i& BrickDims3)
+{
+  Idx2->BrickDims3 = BrickDims3;
+}
+
+void
+SetNumIterations(idx2_file* Idx2, i8 NLevels)
+{
+  Idx2->NLevels = NLevels;
+}
+
+void
+SetAccuracy(idx2_file* Idx2, f64 Accuracy)
+{
+  Idx2->Accuracy = Accuracy;
+}
+
+void
+SetChunksPerFile(idx2_file* Idx2, int ChunksPerFile)
+{
+  Idx2->ChunksPerFileIn = ChunksPerFile;
+}
+
+void
+SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk)
+{
+  Idx2->BricksPerChunkIn = BricksPerChunk;
+}
+
+void
+SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir)
+{
+  Idx2->FilesPerDir = FilesPerDir;
+}
+
+void
+SetDir(idx2_file* Idx2, cstr Dir)
+{
+  Idx2->Dir = Dir;
+}
+
+void
+SetGroupLevels(idx2_file* Idx2, bool GroupLevels)
+{
+  Idx2->GroupLevels = GroupLevels;
+}
+
+void
+SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels)
+{
+  Idx2->GroupSubLevels = GroupSubLevels;
+}
+
+void
+SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes)
+{
+  Idx2->GroupBitPlanes = GroupBitPlanes;
+}
+
+void
+SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels)
+{
+  Clear(&Idx2->QualityLevelsIn);
+  idx2_ForEach (It, QualityLevels)
+  {
+    PushBack(&Idx2->QualityLevelsIn, (int)*It);
+  };
+}
+
+void
+Dealloc(idx2_file* Idx2)
+{
   Dealloc(&Idx2->BrickOrderStrs);
   Dealloc(&Idx2->ChunkOrderStrs);
   Dealloc(&Idx2->FileOrderStrs);
@@ -39877,31 +42955,25 @@ void Dealloc(idx2_file* Idx2) {
 }
 
 grid
-GetGrid
-(
-  const extent& Ext,
-  int Iter,
-  u8 Mask,
-  const array<subband>& Subbands
-)
+GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands)
 {
   v3i Strd3(1); // start with stride (1, 1, 1)
-  idx2_For(int, D, 0, 3)
+  idx2_For (int, D, 0, 3)
     Strd3[D] <<= Iter; // TODO: only work with 1 transform pass per level
   v3i Div(0);
 
-  idx2_For(u8, Sb, 0, 8)
+  idx2_For (u8, Sb, 0, 8)
   {
     if (!BitSet(Mask, Sb))
       continue;
     v3i Lh3 = Subbands[Sb].LowHigh3;
-
-    idx2_For(int, D, 0, 3)
+    idx2_For (int, D, 0, 3)
       Div[D] = Max(Div[D], Lh3[D]);
   }
 
-  idx2_For(int, D, 0, 3)
-    if (Div[D] == 0) Strd3[D] <<= 1;
+  idx2_For (int, D, 0, 3)
+    if (Div[D] == 0)
+      Strd3[D] <<= 1;
 
   v3i First3 = From(Ext), Last3 = Last(Ext);
   First3 = ((First3 + Strd3 - 1) / Strd3) * Strd3;
@@ -39911,11 +42983,12 @@ GetGrid
   return grid(First3, Dims3, Strd3);
 }
 
-}
+} // namespace idx2
 
 #include <math.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 struct grid;
 struct volume;
@@ -39923,46 +42996,64 @@ struct volume;
 // TODO: avoid having too many overloaded functions here
 
 /* Computing errors between two functions */
-idx2_T(t) f64 SqError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf);
-idx2_T(t) f64 SqError(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol);
-idx2_T(t) f64 SqError(const volume& FVol, const volume& GVol);
+template <typename t> f64 SqError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf);
+template <typename t> f64 SqError(const grid& FGrid,
+                                  const volume& FVol,
+                                  const grid& GGrid,
+                                  const volume& GVol);
+template <typename t> f64 SqError(const volume& FVol, const volume& GVol);
 
-idx2_T(t) f64 RMSError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf);
-idx2_T(t) f64 RMSError(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol);
-idx2_T(t) f64 RMSError(const volume& FVol, const volume& GVol);
+template <typename t> f64 RMSError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf);
+template <typename t> f64 RMSError(const grid& FGrid,
+                                   const volume& FVol,
+                                   const grid& GGrid,
+                                   const volume& GVol);
+template <typename t> f64 RMSError(const volume& FVol, const volume& GVol);
 
-idx2_T(t) f64 PSNR(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf);
-idx2_T(t) f64 PSNR(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol);
-idx2_T(t) f64 PSNR(const volume& FVol, const volume& GVol);
+template <typename t> f64 PSNR(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf);
+template <typename t> f64 PSNR(const grid& FGrid,
+                               const volume& FVol,
+                               const grid& GGrid,
+                               const volume& GVol);
+template <typename t> f64 PSNR(const volume& FVol, const volume& GVol);
 
 /* Negabinary */
-idx2_TTi(t, u) void
-FwdNegaBinary(const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
+template <typename t, typename u> idx2_Inline void
+FwdNegaBinary(const buffer_t<t>& SBuf, buffer_t<u>* DBuf)
+{
   idx2_Assert(is_signed<t>::Value);
   idx2_Assert((is_same_type<typename traits<t>::unsigned_t, u>::Value));
   idx2_Asser(SBuf.Size == DBuf->Size);
   const auto Mask = traits<u>::NBinaryMask;
-  idx2_For(int, I, 0, Size(SBuf)) (*DBuf)[I] = u((SBuf[I] + Mask) ^ Mask);
+  idx2_For(int, I, 0, Size(SBuf))(*DBuf)[I] = u((SBuf[I] + Mask) ^ Mask);
 }
 
-idx2_T(t) void FwdNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol);
+template <typename t> void FwdNegaBinary(const grid& SGrid,
+                                         const volume& SVol,
+                                         const grid& DGrid,
+                                         volume* DVol);
 void FwdNegaBinary(const volume& SVol, volume* DVol);
 
-idx2_TTi(t, u) void
-InvNegaBinary(const buffer_t<u>& SBuf, buffer_t<t>* DBuf) {
+template <typename t, typename u> idx2_Inline void
+InvNegaBinary(const buffer_t<u>& SBuf, buffer_t<t>* DBuf)
+{
   idx2_Assert(is_signed<t>::Value);
   idx2_Assert((is_same_type<typename traits<t>::unsigned_t, u>::Value));
   idx2_Assert(SBuf.Size == DBuf->Size);
   auto Mask = traits<u>::NBinaryMask;
-  idx2_For(int, I, 0, Size(SBuf)) (*DBuf)[I] = t((SBuf[I] ^ Mask) - Mask);
+  idx2_For(int, I, 0, Size(SBuf))(*DBuf)[I] = t((SBuf[I] ^ Mask) - Mask);
 }
 
-idx2_T(t) void InvNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol);
+template <typename t> void InvNegaBinary(const grid& SGrid,
+                                         const volume& SVol,
+                                         const grid& DGrid,
+                                         volume* DVol);
 void InvNegaBinary(const volume& SVol, volume* DVol);
 
 /* Quantization */
-idx2_TTi(t, u) int
-Quantize(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
+template <typename t, typename u> idx2_Inline int
+Quantize(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf)
+{
   idx2_Assert(is_floating_point<t>::Value);
   idx2_Assert(is_integral<u>::Value);
   idx2_Assert(idx2_BitSizeOf(t) >= Bits);
@@ -39972,12 +43063,13 @@ Quantize(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
   idx2_For(int, I, 0, Size(SBuf)) MaxAbs = Max(MaxAbs, (t)fabs(SBuf[I]));
   int EMax = Exponent(MaxAbs);
   f64 Scale = ldexp(1, Bits - 1 - EMax);
-  idx2_For(int, I, 0, Size(SBuf)) (*DBuf)[I] = u(Scale * SBuf[I]);
+  idx2_For(int, I, 0, Size(SBuf))(*DBuf)[I] = u(Scale * SBuf[I]);
   return EMax;
 }
 
-idx2_TTi(t, u) int
-QuantizeF32(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
+template <typename t, typename u> idx2_Inline int
+QuantizeF32(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf)
+{
   idx2_Assert(is_floating_point<t>::Value);
   idx2_Assert(is_integral<u>::Value);
   idx2_Assert(idx2_BitSizeOf(t) >= Bits);
@@ -39987,12 +43079,13 @@ QuantizeF32(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
   idx2_For(int, I, 0, Size(SBuf)) MaxAbs = Max(MaxAbs, (t)fabs(SBuf[I]));
   int EMax = Exponent<f32>((f32)MaxAbs);
   f64 Scale = ldexp(1, Bits - 1 - EMax);
-  idx2_For(int, I, 0, Size(SBuf)) (*DBuf)[I] = u(Scale * SBuf[I]);
+  idx2_For(int, I, 0, Size(SBuf))(*DBuf)[I] = u(Scale * SBuf[I]);
   return EMax;
 }
 
-idx2_TTi(t, u) int
-QuantizeF64(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
+template <typename t, typename u> idx2_Inline int
+QuantizeF64(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf)
+{
   idx2_Assert(is_floating_point<t>::Value);
   idx2_Assert(is_integral<u>::Value);
   idx2_Assert(idx2_BitSizeOf(t) >= Bits);
@@ -40002,96 +43095,117 @@ QuantizeF64(int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
   idx2_For(int, I, 0, Size(SBuf)) MaxAbs = Max(MaxAbs, (t)fabs(SBuf[I]));
   int EMax = Exponent<f64>((f64)MaxAbs);
   f64 Scale = ldexp(1, Bits - 1 - EMax);
-  idx2_For(int, I, 0, Size(SBuf)) (*DBuf)[I] = u(Scale * SBuf[I]);
+  idx2_For(int, I, 0, Size(SBuf))(*DBuf)[I] = u(Scale * SBuf[I]);
   return EMax;
 }
 
-idx2_T(t) int Quantize(int Bits, const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol);
+template <typename t> int Quantize(int Bits,
+                                   const grid& SGrid,
+                                   const volume& SVol,
+                                   const grid& DGrid,
+                                   volume* DVol);
 int Quantize(int Bits, const volume& SVol, volume* DVol);
 
-idx2_TTi(t, u) void
-Dequantize(int EMax, int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf) {
+template <typename t, typename u> idx2_Inline void
+Dequantize(int EMax, int Bits, const buffer_t<t>& SBuf, buffer_t<u>* DBuf)
+{
   idx2_Assert(is_integral<t>::Value);
   idx2_Assert(is_floating_point<u>::Value);
   idx2_Assert(idx2_BitSizeOf(t) >= Bits);
   idx2_Assert(idx2_BitSizeOf(u) >= Bits);
   idx2_Assert(SBuf.Size == DBuf->Size);
   f64 Scale = 1.0 / ldexp(1, Bits - 1 - EMax);
-  idx2_For(int, I, 0, Size(SBuf)) (*DBuf)[I] = (Scale * SBuf[I]);
+  idx2_For(int, I, 0, Size(SBuf))(*DBuf)[I] = (Scale * SBuf[I]);
 }
 
-idx2_T(t) void Dequantize(int EMax, int Bits, const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol);
+template <typename t> void Dequantize(int EMax,
+                                      int Bits,
+                                      const grid& SGrid,
+                                      const volume& SVol,
+                                      const grid& DGrid,
+                                      volume* DVol);
+
 void Dequantize(int EMax, int Bits, const volume& SVol, volume* DVol);
 
 /* Convert the type */
-idx2_T(t) void ConvertType(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol);
+template <typename t> void ConvertType(const grid& SGrid,
+                                       const volume& SVol,
+                                       const grid& DGrid,
+                                       volume* DVol);
+
 void ConvertType(const volume& SVol, volume* DVol);
 
-idx2_T(t) f64 Norm(const t& Begin, const t& End);
-idx2_T(c) void Upsample(const c& In, c* Out);
-idx2_T(c) void Convolve(const c& F, const c& G, c* H);
+template <typename t> f64 Norm(const t& Begin, const t& End);
+template <typename c> void Upsample(const c& In, c* Out);
+template <typename c> void Convolve(const c& F, const c& G, c* H);
 
 } // namespace idx2
 
-//template implementation
-
-namespace idx2 {
+namespace idx2
+{
 
 // TODO: think of a way that does not require writing a function three times
 
-idx2_T(t) f64
-SqError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf) {
+template <typename t> f64
+SqError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf)
+{
   idx2_Assert(FBuf.Size == GBuf.Size);
   extent Ext(v3i(FBuf.Size, 1, 1));
   return SqError<t>(Ext, volume(FBuf), Ext, volume(GBuf));
 }
 
-idx2_T(t) f64
-SqError(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol) {
+template <typename t> f64
+SqError(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol)
+{
   idx2_Assert(Dims(FGrid) <= Dims(FVol));
   idx2_Assert(Dims(GGrid) <= Dims(GVol));
   idx2_Assert(Dims(FGrid) == Dims(GGrid));
   auto FIt = Begin<t>(FGrid, FVol), FEnd = End<t>(FGrid, FVol);
   auto GIt = Begin<t>(GGrid, GVol);
   f64 Err = 0;
-  for (; FIt != FEnd; ++FIt, ++GIt) {
+  for (; FIt != FEnd; ++FIt, ++GIt)
+  {
     f64 Diff = f64(*FIt) - f64(*GIt);
     Err += Diff * Diff;
   }
   return Err;
 }
 
-idx2_T(t) f64
-SqError(const volume& FVol, const volume& GVol) {
+template <typename t> f64
+SqError(const volume& FVol, const volume& GVol)
+{
   return SqError<t>(grid(FVol), FVol, grid(GVol), GVol);
 }
 
-idx2_T(t) f64
-RMSError(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol) {
+template <typename t> f64
+RMSError(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol)
+{
   return sqrt(SqError<t>(FGrid, FVol, GGrid, GVol) / Size(FGrid));
 }
 
-// idx2_T(t) f64
+// template <typename t> f64
 // RMSError(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf) {
 //   idx2_Assert(FBuf.Size == GBuf.Size);
 //   grid Ext(v3i(FBuf.Size, 1, 1));
 //   return RMSError(Ext, volume(FBuf), Ext, volume(GBuf));
 // }
 
-idx2_T(t) f64
-RMSError(const volume& FVol, const volume& GVol) {
+template <typename t> f64
+RMSError(const volume& FVol, const volume& GVol)
+{
   return RMSError<t>(grid(FVol), FVol, grid(GVol), GVol);
 }
 
-// idx2_T(t) f64
+// template <typename t> f64
 // PSNR(const buffer_t<t>& FBuf, const buffer_t<t>& GBuf) {
 //   idx2_Assert(FBuf.Size == GBuf.Size);
 //   grid Ext(v3i(FBuf.Size, 1, 1));
 //   return PSNR(Ext, volume(FBuf), Ext, volume(GBuf));
 // }
 
-idx2_T(t) f64
-PSNR(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol) {
+template <typename t> f64
+PSNR(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVol)
+{
   idx2_Assert(Dims(FGrid) <= Dims(FVol));
   idx2_Assert(Dims(GGrid) <= Dims(GVol));
   idx2_Assert(Dims(FGrid) == Dims(GGrid));
@@ -40099,7 +43213,8 @@ PSNR(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVo
   auto GIt = Begin<t>(GGrid, GVol);
   f64 Err = 0;
   t MinElem = traits<t>::Max, MaxElem = traits<t>::Min;
-  for (; FIt != FEnd; ++FIt, ++GIt) {
+  for (; FIt != FEnd; ++FIt, ++GIt)
+  {
     f64 Diff = f64(*FIt) - f64(*GIt);
     Err += Diff * Diff;
     MinElem = Min(MinElem, *FIt);
@@ -40110,13 +43225,15 @@ PSNR(const grid& FGrid, const volume& FVol, const grid& GGrid, const volume& GVo
   return 20.0 * log10(D) - 10.0 * log10(Err);
 }
 
-idx2_T(t) f64
-PSNR(const volume& FVol, const volume& GVol) {
+template <typename t> f64
+PSNR(const volume& FVol, const volume& GVol)
+{
   return PSNR<t>(grid(FVol), FVol, grid(GVol), GVol);
 }
 
-idx2_T(t) void
-FwdNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+template <typename t> void
+FwdNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
+{
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), UnsignedType(SVol.Type));
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
@@ -40132,15 +43249,17 @@ FwdNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* 
     *DIt = u((*SIt + Mask) ^ Mask);
 }
 
-idx2_T(t) void
-FwdNegaBinary(const volume& SVol, volume* DVol) {
+template <typename t> void
+FwdNegaBinary(const volume& SVol, volume* DVol)
+{
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), UnsignedType(SVol.Type));
   return FwdNegaBinary<t>(grid(SVol), SVol, grid(*DVol), DVol);
 }
 
-idx2_T(t) void
-InvNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+template <typename t> void
+InvNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
+{
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), SignedType(SVol.Type));
@@ -40156,15 +43275,17 @@ InvNegaBinary(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* 
     *DIt = t((*SIt ^ Mask) - Mask);
 }
 
-idx2_T(t) void
-InvNegaBinary(const volume& SVol, volume* DVol) {
+template <typename t> void
+InvNegaBinary(const volume& SVol, volume* DVol)
+{
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), SignedType(SVol.Type));
   return InvNegaBinary<t>(grid(SVol), SVol, grid(*DVol), DVol);
 }
 
-idx2_T(t) int
-Quantize(int Bits, const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+template <typename t> int
+Quantize(int Bits, const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
+{
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), IntType(SVol.Type));
@@ -40189,15 +43310,22 @@ Quantize(int Bits, const grid& SGrid, const volume& SVol, const grid& DGrid, vol
   return EMax;
 }
 
-idx2_T(t) int
-Quantize(int Bits, const volume& SVol, volume* DVol) {
+template <typename t> int
+Quantize(int Bits, const volume& SVol, volume* DVol)
+{
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), IntType(SVol.Type));
   return Quantize<t>(Bits, grid(SVol), SVol, grid(*DVol), DVol);
 }
 
-idx2_T(t) void
-Dequantize(int EMax, int Bits, const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+template <typename t> void
+Dequantize(int EMax,
+           int Bits,
+           const grid& SGrid,
+           const volume& SVol,
+           const grid& DGrid,
+           volume* DVol)
+{
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), FloatType(SVol.Type));
@@ -40214,15 +43342,17 @@ Dequantize(int EMax, int Bits, const grid& SGrid, const volume& SVol, const grid
     *DIt = (Scale * *SIt);
 }
 
-idx2_T(t) void
-Dequantize(int EMax, int Bits, const volume& SVol, volume* DVol) {
+template <typename t> void
+Dequantize(int EMax, int Bits, const volume& SVol, volume* DVol)
+{
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), FloatType(SVol.Type));
   return Dequantize<t>(EMax, Bits, grid(SVol), SVol, grid(*DVol), DVol);
 }
 
-idx2_T(t) void
-ConvertType(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol) {
+template <typename t> void
+ConvertType(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DVol)
+{
   idx2_Assert(DVol->Type != dtype::__Invalid__);
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   if (!DVol->Buffer)
@@ -40236,8 +43366,9 @@ ConvertType(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* DV
     *DIt = (t)(*SIt);
 }
 
-idx2_T(t) void
-ConvertType(const volume& SVol, volume* DVol) {
+template <typename t> void
+ConvertType(const volume& SVol, volume* DVol)
+{
   idx2_Assert(DVol->Type != dtype::__Invalid__);
   if (!DVol->Buffer)
     *DVol = volume(Dims(SVol), DVol->Type);
@@ -40245,8 +43376,9 @@ ConvertType(const volume& SVol, volume* DVol) {
 }
 
 // TODO: receive one container
-idx2_T(t) f64
-Norm(const t& Begin, const t& End) {
+template <typename t> f64
+Norm(const t& Begin, const t& End)
+{
   f64 Result = 0;
   for (auto It = Begin; It != End; ++It)
     Result += (*It) * (*It);
@@ -40254,25 +43386,29 @@ Norm(const t& Begin, const t& End) {
 }
 
 // TODO: use concept to constraint Input and Output
-idx2_T(c) void
-Upsample(const c& In, c* Out) {
+template <typename c> void
+Upsample(const c& In, c* Out)
+{
   i64 N = Size(In);
   i64 M = N * 2 - 1;
   Resize(Out, M);
   (*Out)[M - 1] = In[(M - 1) >> 1];
-  for (i64 I = M - 3; I >= 0; I -= 2) {
-    (*Out)[I    ] = In[I >> 1];
+  for (i64 I = M - 3; I >= 0; I -= 2)
+  {
+    (*Out)[I] = In[I >> 1];
     (*Out)[I + 1] = 0;
   }
 }
 
 /* Compute H = F * G */
-idx2_T(c) void
-Convolve(const c& F, const c& G, c* H) {
+template <typename c> void
+Convolve(const c& F, const c& G, c* H)
+{
   i64 N = Size(F), M = Size(G);
   i64 P = N + M - 1;
   Resize(H, P);
-  for (i64 I = 0; I < P; ++I) {
+  for (i64 I = 0; I < P; ++I)
+  {
     using type = typename remove_cv_ref<decltype(F[0])>::type;
     type Acc = 0;
     i64 K = Min(N - 1, I);
@@ -40285,7 +43421,8 @@ Convolve(const c& F, const c& G, c* H) {
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 static u64 BytesRdos_ = 0;
 static u64 DecodeIOTime_ = 0;
@@ -40297,112 +43434,202 @@ void
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf);
 
 static error<idx2_err_code>
-ReadFileExponents(decode_data* D, hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt, const file_id& FileId);
+ReadFileExponents(decode_data* D,
+                  hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
+                  const file_id& FileId);
+
 static expected<const chunk_exp_cache*, idx2_err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level);
+
 static error<idx2_err_code>
-ReadFileRdos(const idx2_file& Idx2, hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt, const file_id& FileId);
+ReadFileRdos(const idx2_file& Idx2,
+             hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
+             const file_id& FileId);
+
 static expected<const chunk_rdo_cache*, idx2_err_code>
 ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter);
+
 static error<idx2_err_code>
 ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, const file_id& FileId);
+
 static expected<const chunk_cache*, idx2_err_code>
 ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i16 BitPlane);
+
 static error<idx2_err_code>
-DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& SbGrid, volume* BVol);
+DecodeSubband(const idx2_file& Idx2,
+              decode_data* D,
+              f64 Accuracy,
+              const grid& SbGrid,
+              volume* BVol);
+
 static void
 DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64 Accuracy);
+
 static void
 DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddress, int L);
 
-void decode_all::
-Init(const idx2_file& Idx2_) { this->Idx2 = &Idx2_; Ext = extent(Idx2_.Dims3); }
-extent decode_all::
-GetExtent() const { return Ext; }
-f64 decode_all::
-GetAccuracy() const { return Accuracy; }
-int decode_all::
-GetQuality() const { return QualityLevel; }
-void decode_all::
-SetExtent(const extent& Ext_) { this->Ext = Ext_; }
-void decode_all::
-SetIteration(int Iter_) { this->Iter = Iter_; }
-void decode_all::
-SetAccuracy(f64 Accuracy_) { this->Accuracy = Accuracy_; }
-void decode_all::
-SetQuality(int Quality_) { this->QualityLevel = Quality_; }
-void decode_all::
-SetMask(u8 Mask_) { this->Mask = Mask_; }
-int decode_all::GetIteration() const { return Iter; }
-u8 decode_all::GetMask() const { return Mask; }
-void decode_all::
-Destroy() { return; }
+void
+decode_all::Init(const idx2_file& Idx2_)
+{
+  this->Idx2 = &Idx2_;
+  Ext = extent(Idx2_.Dims3);
+}
+
+extent
+decode_all::GetExtent() const
+{
+  return Ext;
+}
+
+f64
+decode_all::GetAccuracy() const
+{
+  return Accuracy;
+}
+
+int
+decode_all::GetQuality() const
+{
+  return QualityLevel;
+}
+
+void
+decode_all::SetExtent(const extent& Ext_)
+{
+  this->Ext = Ext_;
+}
+
+void
+decode_all::SetIteration(int Iter_)
+{
+  this->Iter = Iter_;
+}
+
+void
+decode_all::SetAccuracy(f64 Accuracy_)
+{
+  this->Accuracy = Accuracy_;
+}
+
+void
+decode_all::SetQuality(int Quality_)
+{
+  this->QualityLevel = Quality_;
+}
+
+void
+decode_all::SetMask(u8 Mask_)
+{
+  this->Mask = Mask_;
+}
+
+int
+decode_all::GetIteration() const
+{
+  return Iter;
+}
+
+u8
+decode_all::GetMask() const
+{
+  return Mask;
+}
+
+void
+decode_all::Destroy()
+{
+  return;
+}
 
 static idx2_Inline bool
-IsEmpty(const chunk_exp_cache& ChunkExpCache) {
+IsEmpty(const chunk_exp_cache& ChunkExpCache)
+{
   return Size(ChunkExpCache.BrickExpsStream.Stream) == 0;
 }
+
 static void
-Dealloc(chunk_exp_cache* ChunkExpCache) {
+Dealloc(chunk_exp_cache* ChunkExpCache)
+{
   Dealloc(&ChunkExpCache->BrickExpsStream);
 }
+
 static void
-Dealloc(chunk_rdo_cache* ChunkRdoCache) {
+Dealloc(chunk_rdo_cache* ChunkRdoCache)
+{
   Dealloc(&ChunkRdoCache->TruncationPoints);
 }
 
 static void
-Dealloc(chunk_cache* ChunkCache) {
+Dealloc(chunk_cache* ChunkCache)
+{
   Dealloc(&ChunkCache->Bricks);
   Dealloc(&ChunkCache->BrickSzs);
   Dealloc(&ChunkCache->ChunkStream);
 }
 
 static void
-Dealloc(file_exp_cache* FileExpCache) {
-  idx2_ForEach(ChunkExpCacheIt, FileExpCache->ChunkExpCaches) Dealloc(ChunkExpCacheIt);
+Dealloc(file_exp_cache* FileExpCache)
+{
+  idx2_ForEach (ChunkExpCacheIt, FileExpCache->ChunkExpCaches)
+    Dealloc(ChunkExpCacheIt);
   Dealloc(&FileExpCache->ChunkExpCaches);
   Dealloc(&FileExpCache->ChunkExpSzs);
 }
+
 static void
-Dealloc(file_rdo_cache* FileRdoCache) {
-  idx2_ForEach(TileRdoCacheIt, FileRdoCache->TileRdoCaches) { Dealloc(TileRdoCacheIt); }
+Dealloc(file_rdo_cache* FileRdoCache)
+{
+  idx2_ForEach (TileRdoCacheIt, FileRdoCache->TileRdoCaches)
+  {
+    Dealloc(TileRdoCacheIt);
+  }
 }
 
 static void
-Dealloc(file_cache* FileCache) {
+Dealloc(file_cache* FileCache)
+{
   Dealloc(&FileCache->ChunkSizes);
-  idx2_ForEach(ChunkCacheIt, FileCache->ChunkCaches) Dealloc(ChunkCacheIt.Val);
+  idx2_ForEach (ChunkCacheIt, FileCache->ChunkCaches)
+    Dealloc(ChunkCacheIt.Val);
   Dealloc(&FileCache->ChunkCaches);
 }
 
 static void
-Init(file_cache_table* FileCacheTable) {
+Init(file_cache_table* FileCacheTable)
+{
   Init(&FileCacheTable->FileCaches, 8);
   Init(&FileCacheTable->FileExpCaches, 5);
   Init(&FileCacheTable->FileRdoCaches, 5);
 }
+
 static void
-Dealloc(file_cache_table* FileCacheTable) {
-  idx2_ForEach(FileCacheIt, FileCacheTable->FileCaches) Dealloc(FileCacheIt.Val);
+Dealloc(file_cache_table* FileCacheTable)
+{
+  idx2_ForEach (FileCacheIt, FileCacheTable->FileCaches)
+    Dealloc(FileCacheIt.Val);
   Dealloc(&FileCacheTable->FileCaches);
-  idx2_ForEach(FileExpCacheIt, FileCacheTable->FileExpCaches) Dealloc(FileExpCacheIt.Val);
-  idx2_ForEach(FileRdoCacheIt, FileCacheTable->FileRdoCaches) Dealloc(FileRdoCacheIt.Val);
+  idx2_ForEach (FileExpCacheIt, FileCacheTable->FileExpCaches)
+    Dealloc(FileExpCacheIt.Val);
+  idx2_ForEach (FileRdoCacheIt, FileCacheTable->FileRdoCaches)
+    Dealloc(FileRdoCacheIt.Val);
 }
 
 static void
-Init(decode_data* D, allocator* Alloc = nullptr) {
+Init(decode_data* D, allocator* Alloc = nullptr)
+{
   Init(&D->BrickPool, 5);
   D->Alloc = Alloc ? Alloc : &BrickAlloc_;
   Init(&D->FcTable);
   Init(&D->Streams, 7);
-//  Reserve(&D->RequestedChunks, 64);
+  //  Reserve(&D->RequestedChunks, 64);
 }
 
 static void
-Dealloc(decode_data* D) {
+Dealloc(decode_data* D)
+{
   D->Alloc->DeallocAll();
-  idx2_ForEach(BrickVolIt, D->BrickPool) Dealloc(&BrickVolIt.Val->Vol);
+  idx2_ForEach (BrickVolIt, D->BrickPool)
+    Dealloc(&BrickVolIt.Val->Vol);
   Dealloc(&D->BrickPool);
   Dealloc(&D->FcTable);
   Dealloc(&D->BlockStream);
@@ -40411,35 +43638,35 @@ Dealloc(decode_data* D) {
   Dealloc(&D->ChunkEMaxSzsStream);
   Dealloc(&D->ChunkAddrsStream);
   Dealloc(&D->ChunkSzsStream);
-//  Dealloc(&D->RequestedChunks);
+  //  Dealloc(&D->RequestedChunks);
 }
 
 static void
-DecompressBufZstd(const buffer& Input, bitstream* Output) {
+DecompressBufZstd(const buffer& Input, bitstream* Output)
+{
   unsigned long long const OutputSize = ZSTD_getFrameContentSize(Input.Data, Size(Input));
   GrowToAccomodate(Output, OutputSize - Size(*Output));
   size_t const Result = ZSTD_decompress(Output->Stream.Data, OutputSize, Input.Data, Size(Input));
-  if (Result != OutputSize) {
+  if (Result != OutputSize)
+  {
     fprintf(stderr, "Zstd decompression failed\n");
     exit(1);
   }
 }
 
 static error<idx2_err_code>
-ReadFileExponents
-(
-  decode_data* D,
-  hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
-  const file_id& FileId
-)
+ReadFileExponents(decode_data* D,
+                  hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
+                  const file_id& FileId)
 {
   timer IOTimer;
   StartTimer(&IOTimer);
-  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
+  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
   idx2_FSeek(Fp, 0, SEEK_END);
   int S = 0; // total bytes of the encoded chunk sizes
   ReadBackwardPOD(Fp, &S);
-//  idx2_AbortIf(ChunkEMaxSzsSz > 0, "Invalid ChunkEMaxSzsSz from file %s\n", FileId.Name.ConstPtr); // TODO: we need better validity checking
+  //  idx2_AbortIf(ChunkEMaxSzsSz > 0, "Invalid ChunkEMaxSzsSz from file %s\n",
+  //  FileId.Name.ConstPtr); // TODO: we need better validity checking
   Rewind(&D->ChunkEMaxSzsStream);
   GrowToAccomodate(&D->ChunkEMaxSzsStream, S - Size(D->ChunkEMaxSzsStream));
   ReadBackwardBuffer(Fp, &D->ChunkEMaxSzsStream.Stream, S);
@@ -40450,9 +43677,7 @@ ReadFileExponents
   Reserve(&FileExpCache.ChunkExpSzs, S);
   i32 CeSz = 0;
   while (Size(D->ChunkEMaxSzsStream) < S)
-    PushBack(
-      &FileExpCache.ChunkExpSzs,
-      CeSz += (i32)ReadVarByte(&D->ChunkEMaxSzsStream));
+    PushBack(&FileExpCache.ChunkExpSzs, CeSz += (i32)ReadVarByte(&D->ChunkEMaxSzsStream));
   Resize(&FileExpCache.ChunkExpCaches, Size(FileExpCache.ChunkExpSzs));
   idx2_Assert(Size(D->ChunkEMaxSzsStream) == S);
   Insert(FileExpCacheIt, FileId.Id, FileExpCache);
@@ -40461,10 +43686,13 @@ ReadFileExponents
 }
 
 static error<idx2_err_code>
-ReadFileRdos(const idx2_file& Idx2, hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt, const file_id& FileId) {
+ReadFileRdos(const idx2_file& Idx2,
+             hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
+             const file_id& FileId)
+{
   timer IOTimer;
   StartTimer(&IOTimer);
-  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
+  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
   idx2_FSeek(Fp, 0, SEEK_END);
   int NumChunks = 0;
   i64 Sz = idx2_FTell(Fp) - sizeof(NumChunks);
@@ -40476,45 +43704,57 @@ ReadFileRdos(const idx2_file& Idx2, hash_table<u64, file_rdo_cache>::iterator* F
   ReadBackwardBuffer(Fp, &CompresBuf);
   DecodeIOTime_ += ElapsedTime(&IOTimer);
   BytesRdos_ += Size(CompresBuf);
-  idx2_RAII(bitstream, Bs,);
+  idx2_RAII(bitstream, Bs, );
   DecompressBufZstd(CompresBuf, &Bs);
   int Pos = 0;
-  idx2_For(int, I, 0, Size(FileRdoCache.TileRdoCaches)) {
+  idx2_For (int, I, 0, Size(FileRdoCache.TileRdoCaches))
+  {
     chunk_rdo_cache& TileRdoCache = FileRdoCache.TileRdoCaches[I];
     Resize(&TileRdoCache.TruncationPoints, Size(Idx2.RdoLevels) * Size(Idx2.Subbands));
-    idx2_ForEach(It, TileRdoCache.TruncationPoints) *It = ((const i16*)Bs.Stream.Data)[Pos++];
+    idx2_ForEach (It, TileRdoCache.TruncationPoints)
+      *It = ((const i16*)Bs.Stream.Data)[Pos++];
   }
   Insert(FileRdoCacheIt, FileId.Id, FileRdoCache);
   return idx2_Error(idx2_err_code::NoError);
 }
 
 static expected<const chunk_rdo_cache*, idx2_err_code>
-ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter) {
+ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter)
+{
   file_id FileId = ConstructFilePathRdos(Idx2, Brick, Iter);
   auto FileRdoCacheIt = Lookup(&D->FcTable.FileRdoCaches, FileId.Id);
-  if (!FileRdoCacheIt) {
+  if (!FileRdoCacheIt)
+  {
     auto ReadFileOk = ReadFileRdos(Idx2, &FileRdoCacheIt, FileId);
-    if (!ReadFileOk) idx2_PropagateError(ReadFileOk);
+    if (!ReadFileOk)
+      idx2_PropagateError(ReadFileOk);
   }
-  if (!FileRdoCacheIt) return idx2_Error(idx2_err_code::FileNotFound);
+  if (!FileRdoCacheIt)
+    return idx2_Error(idx2_err_code::FileNotFound);
   file_rdo_cache* FileRdoCache = FileRdoCacheIt.Val;
   return &FileRdoCache->TileRdoCaches[D->ChunkInFile];
 }
 
 /* Given a brick address, open the file associated with the brick and cache its chunk information */
 static error<idx2_err_code>
-ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, const file_id& FileId) {
+ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, const file_id& FileId)
+{
   timer IOTimer;
   StartTimer(&IOTimer);
-  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"),, if (Fp) fclose(Fp));
+  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
   idx2_FSeek(Fp, 0, SEEK_END);
-  int NChunks = 0; ReadBackwardPOD(Fp, &NChunks);
+  int NChunks = 0;
+  ReadBackwardPOD(Fp, &NChunks);
   // TODO: check if there are too many NChunks
 
   /* read and decompress chunk addresses */
   int IniChunkAddrsSz = NChunks * (int)sizeof(u64);
-  int ChunkAddrsSz; ReadBackwardPOD(Fp, &ChunkAddrsSz);
-  idx2_RAII(buffer, CpresChunkAddrs, AllocBuf(&CpresChunkAddrs, ChunkAddrsSz), DeallocBuf(&CpresChunkAddrs)); // TODO: move to decode_data
+  int ChunkAddrsSz;
+  ReadBackwardPOD(Fp, &ChunkAddrsSz);
+  idx2_RAII(buffer,
+            CpresChunkAddrs,
+            AllocBuf(&CpresChunkAddrs, ChunkAddrsSz),
+            DeallocBuf(&CpresChunkAddrs)); // TODO: move to decode_data
   ReadBackwardBuffer(Fp, &CpresChunkAddrs, ChunkAddrsSz);
   BytesData_ += ChunkAddrsSz;
   DecodeIOTime_ += ElapsedTime(&IOTimer);
@@ -40537,10 +43777,12 @@ ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, con
   file_cache FileCache;
   i64 AccumSize = 0;
   Init(&FileCache.ChunkCaches, 10);
-  idx2_For(int, I, 0, NChunks) {
+  idx2_For (int, I, 0, NChunks)
+  {
     i64 ChunkSize = ReadVarByte(&D->ChunkSzsStream);
     u64 ChunkAddr = *((u64*)D->ChunkAddrsStream.Stream.Data + I);
-    chunk_cache ChunkCache; ChunkCache.ChunkPos = I;
+    chunk_cache ChunkCache;
+    ChunkCache.ChunkPos = I;
     Insert(&FileCache.ChunkCaches, ChunkAddr, ChunkCache);
     PushBack(&FileCache.ChunkSizes, AccumSize += ChunkSize);
   }
@@ -40552,19 +43794,24 @@ ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, con
 /* Given a brick address, read the exponent chunk associated with the brick and cache it */
 // TODO: remove the last two params (already stored in D)
 static expected<const chunk_exp_cache*, idx2_err_code>
-ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level) {
+ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level)
+{
   file_id FileId = ConstructFilePathExponents(Idx2, Brick, Iter, Level);
   auto FileExpCacheIt = Lookup(&D->FcTable.FileExpCaches, FileId.Id);
-  if (!FileExpCacheIt) {
+  if (!FileExpCacheIt)
+  {
     auto ReadFileOk = ReadFileExponents(D, &FileExpCacheIt, FileId);
-    if (!ReadFileOk) idx2_PropagateError(ReadFileOk);
+    if (!ReadFileOk)
+      idx2_PropagateError(ReadFileOk);
   }
-  if (!FileExpCacheIt) return idx2_Error(idx2_err_code::FileNotFound);
+  if (!FileExpCacheIt)
+    return idx2_Error(idx2_err_code::FileNotFound);
   file_exp_cache* FileExpCache = FileExpCacheIt.Val;
   idx2_Assert(D->ChunkInFile < Size(FileExpCache->ChunkExpSzs));
 
   /* find the appropriate chunk */
-  if (IsEmpty(FileExpCache->ChunkExpCaches[D->ChunkInFile])) {
+  if (IsEmpty(FileExpCache->ChunkExpCaches[D->ChunkInFile]))
+  {
     timer IOTimer;
     StartTimer(&IOTimer);
     idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
@@ -40577,7 +43824,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8
     // TODO: calculate the number of bricks in this chunk in a different way to verify correctness
     Resize(&D->CompressedChunkExps, ChunkExpSize);
     ReadBuffer(Fp, &D->CompressedChunkExps, ChunkExpSize);
-    DecompressBufZstd(buffer{D->CompressedChunkExps.Data, ChunkExpSize}, &ChunkExpStream);
+    DecompressBufZstd(buffer{ D->CompressedChunkExps.Data, ChunkExpSize }, &ChunkExpStream);
     BytesExps_ += ChunkExpSize;
     DecodeIOTime_ += ElapsedTime(&IOTimer);
     InitRead(&ChunkExpStream, ChunkExpStream.Stream);
@@ -40588,23 +43835,29 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8
 
 /* Given a brick address, read the chunk associated with the brick and cache the chunk */
 static expected<const chunk_cache*, idx2_err_code>
-ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i16 BitPlane) {
+ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
+{
   file_id FileId = ConstructFilePath(Idx2, Brick, Iter, Level, BitPlane);
   auto FileCacheIt = Lookup(&D->FcTable.FileCaches, FileId.Id);
-  if (!FileCacheIt) {
+  if (!FileCacheIt)
+  {
     auto ReadFileOk = ReadFile(D, &FileCacheIt, FileId);
-    if (!ReadFileOk) idx2_PropagateError(ReadFileOk);
+    if (!ReadFileOk)
+      idx2_PropagateError(ReadFileOk);
   }
-  if (!FileCacheIt) return idx2_Error(idx2_err_code::FileNotFound);
+  if (!FileCacheIt)
+    return idx2_Error(idx2_err_code::FileNotFound);
 
   /* find the appropriate chunk */
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Iter, Level, BitPlane);
   file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
   ChunkCacheIt = Lookup(&FileCache->ChunkCaches, ChunkAddress);
-  if (!ChunkCacheIt) return idx2_Error(idx2_err_code::ChunkNotFound);
+  if (!ChunkCacheIt)
+    return idx2_Error(idx2_err_code::ChunkNotFound);
   chunk_cache* ChunkCache = ChunkCacheIt.Val;
-  if (Size(ChunkCache->ChunkStream.Stream) == 0) {
+  if (Size(ChunkCache->ChunkStream.Stream) == 0)
+  {
     timer IOTimer;
     StartTimer(&IOTimer);
     idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
@@ -40612,13 +43865,19 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
     i64 ChunkOffset = ChunkPos > 0 ? FileCache->ChunkSizes[ChunkPos - 1] : 0;
     i64 ChunkSize = FileCache->ChunkSizes[ChunkPos] - ChunkOffset;
     idx2_FSeek(Fp, ChunkOffset, SEEK_SET);
-    bitstream ChunkStream; InitWrite(&ChunkStream, ChunkSize); // NOTE: not a memory leak since we will keep track of this in ChunkCache
+    bitstream ChunkStream;
+    InitWrite(&ChunkStream,
+              ChunkSize); // NOTE: not a memory leak since we will keep track of this in ChunkCache
     ReadBuffer(Fp, &ChunkStream.Stream);
     BytesData_ += Size(ChunkStream.Stream);
     DecodeIOTime_ += ElapsedTime(&IOTimer);
-    DecompressChunk(&ChunkStream, ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunks[Iter])); // TODO: check for error
-//    PushBack(&D->RequestedChunks, t2<u64, u64>{ChunkAddress, FileId.Id});
+    DecompressChunk(&ChunkStream,
+                    ChunkCache,
+                    ChunkAddress,
+                    Log2Ceil(Idx2.BricksPerChunks[Iter])); // TODO: check for error
+    //    PushBack(&D->RequestedChunks, t2<u64, u64>{ChunkAddress, FileId.Id});
   }
+
   return ChunkCacheIt.Val;
 }
 
@@ -40626,14 +43885,8 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
 // TODO: we can detect the precision and switch to the avx2 version that uses float for better
 // performance
 // TODO: if a block does not decode any bit plane, no need to copy data afterwards
-static error<idx2_err_code> DecodeSubband
-(
-  const idx2_file& Idx2,
-  decode_data* D,
-  f64 Accuracy,
-  const grid& SbGrid,
-  volume* BVol
-)
+static error<idx2_err_code>
+DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& SbGrid, volume* BVol)
 {
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
@@ -40642,22 +43895,26 @@ static error<idx2_err_code> DecodeSubband
   int MinBitPlane = traits<i16>::Min;
   if (Size(Idx2.RdoLevels) > 0 && D->QualityLevel >= 0)
   {
-//    printf("reading rdo\n");
+    //    printf("reading rdo\n");
     auto ReadChunkRdoResult = ReadChunkRdos(Idx2, D, Brick, D->Iter);
-    if (!ReadChunkRdoResult) return Error(ReadChunkRdoResult);
+    if (!ReadChunkRdoResult)
+      return Error(ReadChunkRdoResult);
     const chunk_rdo_cache* ChunkRdoCache = Value(ReadChunkRdoResult);
     int Ql = Min(D->QualityLevel, (int)Size(Idx2.RdoLevels) - 1);
     MinBitPlane = ChunkRdoCache->TruncationPoints[D->Level * Size(Idx2.RdoLevels) + Ql];
   }
-  if (MinBitPlane == traits<i16>::Max) return idx2_Error(idx2_err_code::NoError);
+
+  if (MinBitPlane == traits<i16>::Max)
+    return idx2_Error(idx2_err_code::NoError);
   int BlockCount = Prod(NBlocks3);
   if (D->Level == 0 && D->Iter + 1 < Idx2.NLevels)
-  {
     BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
-  }
+
   /* first, read the block exponents */
   auto ReadChunkExpResult = ReadChunkExponents(Idx2, D, Brick, D->Iter, D->Level);
-  if (!ReadChunkExpResult) return Error(ReadChunkExpResult);
+  if (!ReadChunkExpResult)
+    return Error(ReadChunkExpResult);
+
   const chunk_exp_cache* ChunkExpCache = Value(ReadChunkExpResult);
   i32 BrickExpOffset = (D->BrickInChunk * BlockCount) * (SizeOf(Idx2.DType) > 4 ? 2 : 1);
   bitstream BrickExpsStream = ChunkExpCache->BrickExpsStream;
@@ -40667,7 +43924,7 @@ static error<idx2_err_code> DecodeSubband
   /* gather the streams (for the different bit planes) */
   auto& Streams = D->Streams;
   Clear(&Streams);
-  idx2_InclusiveFor(u32, Block, 0, LastBlock)
+  idx2_InclusiveFor (u32, Block, 0, LastBlock)
   { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
@@ -40679,28 +43936,37 @@ static error<idx2_err_code> DecodeSubband
     f64 BlockFloats[4 * 4 * 4];
     buffer_t BufFloats(BlockFloats, NVals);
     buffer_t BufInts((i64*)BlockFloats, NVals);
-    u64 BlockUInts [4 * 4 * 4] = {}; buffer_t BufUInts (BlockUInts , Prod(BlockDims3));
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
-    if (CodedInNextIter) continue; // CodedInNextIter just means that this block belongs to the LLL subband?
+    u64 BlockUInts[4 * 4 * 4] = {};
+    buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
+    bool CodedInNextIter =
+      D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+    if (CodedInNextIter)
+      continue; // CodedInNextIter just means that this block belongs to the LLL subband?
     // we read the exponent for the block
     i16 EMax = SizeOf(Idx2.DType) > 4
-      ? (i16)Read(&BrickExpsStream, 16) - traits<f64>::ExpBias
-      : (i16)Read(&BrickExpsStream, traits<f32>::ExpBits) - traits<f32>::ExpBias;
+                 ? (i16)Read(&BrickExpsStream, 16) - traits<f64>::ExpBias
+                 : (i16)Read(&BrickExpsStream, traits<f32>::ExpBits) - traits<f32>::ExpBias;
     i8 N = 0;
     i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType) + (24 + NDims)), NBitPlanes);
     int NBitPlanesDecoded = Exponent(Accuracy) - 6 - EMax + 1;
     i8 NBps = 0;
-    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
+    idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
-      if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1) break; // this bit plane is not needed to satisfy the input accuracy
-      if (RealBp < MinBitPlane) break; // break due to rdo optimization
+      if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1)
+        break; // this bit plane is not needed to satisfy the input accuracy
+      if (RealBp < MinBitPlane)
+        break; // break due to rdo optimization
       auto StreamIt = Lookup(&Streams, RealBp);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
         auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Iter, D->Level, RealBp);
-        if (!ReadChunkResult) { idx2_Assert(false); return Error(ReadChunkResult); }
+        if (!ReadChunkResult)
+        {
+          idx2_Assert(false);
+          return Error(ReadChunkResult);
+        }
         const chunk_cache* ChunkCache = Value(ReadChunkResult);
         auto BrickIt = BinarySearch(idx2_Range(ChunkCache->Bricks), Brick);
         idx2_Assert(BrickIt != End(ChunkCache->Bricks));
@@ -40711,24 +43977,30 @@ static error<idx2_err_code> DecodeSubband
         BrickOffset += Size(ChunkCache->ChunkStream);
         Insert(&StreamIt, RealBp, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
-        SeekToByte(Stream, BrickOffset); // seek to the correct byte offset of the brick in the chunk
-      } else {
+        SeekToByte(Stream,
+                   BrickOffset); // seek to the correct byte offset of the brick in the chunk
+      }
+      else
+      {
         Stream = StreamIt.Val;
       }
       /* zfp decode */
       ++NBps;
-//      timer Timer; StartTimer(&Timer);
+      //      timer Timer; StartTimer(&Timer);
       if (NBitPlanesDecoded <= 8)
         Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
       else
-        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream); // delay the transpose of bits to later
-//      DecodeTime_ += Seconds(ElapsedTime(&Timer));
-    } // end bit plane loop
+        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp],
+                   NVals,
+                   N,
+                   Stream); // delay the transpose of bits to later
+                            //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+    }                       // end bit plane loop
     if (NBitPlanesDecoded > 8)
     {
-//      timer Timer; StartTimer(&Timer);
+      //      timer Timer; StartTimer(&Timer);
       TransposeRecursive(BlockUInts, NBps); // transpose using the recursive algorithm
-//      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+                                            //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
     }
     /* do inverse zfp transform but only if any bit plane is decoded */
     if (NBps > 0)
@@ -40741,11 +44013,12 @@ static error<idx2_err_code> DecodeSubband
       v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
       timer DataTimer;
       StartTimer(&DataTimer);
-      idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1))
+      idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
       { // sample loop
         idx2_Assert(D3 + S3 < SbDims3);
         BVol->At<f64>(From3, Strd3, D3 + S3) = BlockFloats[J++];
-      } idx2_EndFor3 // end sample loop
+      }
+      idx2_EndFor3; // end sample loop
       DataMovementTime_ += ElapsedTime(&DataTimer);
     }
   }
@@ -40754,28 +44027,21 @@ static error<idx2_err_code> DecodeSubband
 }
 
 static void
-DecodeBrick
-(/*----------------------------*/
-  const idx2_file& Idx2,
-  const params& P,
-  decode_data* D,
-  u8 Mask,
-  f64 Accuracy
-)/*----------------------------*/
+DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64 Accuracy)
 {
   i8 Iter = D->Iter;
   u64 Brick = D->Brick[Iter];
-//  if ((Brick >> Idx2.BricksPerChunks[Iter]) != D->LastTile) {
-//    idx2_ForEach(It, D->RequestedChunks) {
-//      auto& FileCache = D->FcTable.FileCaches[It->Second];
-//      auto ChunkCacheIt = Lookup(&FileCache.ChunkCaches, It->First);
-//      Dealloc(ChunkCacheIt.Val);
-//      Delete(&FileCache.ChunkCaches, It->First); // TODO: write a delete that works on iterator
-//    }
-//    Clear(&D->RequestedChunks);
-//    D->LastTile = Brick >> Idx2.BricksPerChunks[Iter];
-//  }
-//  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
+  //  if ((Brick >> Idx2.BricksPerChunks[Iter]) != D->LastTile) {
+  //    idx2_ForEach(It, D->RequestedChunks) {
+  //      auto& FileCache = D->FcTable.FileCaches[It->Second];
+  //      auto ChunkCacheIt = Lookup(&FileCache.ChunkCaches, It->First);
+  //      Dealloc(ChunkCacheIt.Val);
+  //      Delete(&FileCache.ChunkCaches, It->First); // TODO: write a delete that works on iterator
+  //    }
+  //    Clear(&D->RequestedChunks);
+  //    D->LastTile = Brick >> Idx2.BricksPerChunks[Iter];
+  //  }
+  //  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
   auto BrickIt = Lookup(&D->BrickPool, GetBrickKey(Iter, Brick));
   idx2_Assert(BrickIt);
   volume& BVol = BrickIt.Val->Vol;
@@ -40784,17 +44050,21 @@ DecodeBrick
   // TODO: test this logic
   idx2_Assert(Size(Idx2.Subbands) <= 8);
   u8 DecodeSbMask = Mask; // TODO: need change if we support more than one transform pass per brick
-  idx2_For(u8, Sb, 0, 8)
+  idx2_For (u8, Sb, 0, 8)
   {
-    if (!BitSet(Mask, Sb)) continue;
-    idx2_For(u8, S, 0, 8) if ((Sb | S) <= Sb) DecodeSbMask = SetBit(DecodeSbMask, S);
+    if (!BitSet(Mask, Sb))
+      continue;
+    idx2_For (u8, S, 0, 8)
+      if ((Sb | S) <= Sb)
+        DecodeSbMask = SetBit(DecodeSbMask, S);
   } // end subband loop
 
   /* recursively decode the brick, one subband at a time */
   idx2_Assert(Size(Idx2.Subbands) == 8);
-  idx2_For(i8, Sb, 0, (i8)Size(Idx2.Subbands))
+  idx2_For (i8, Sb, 0, (i8)Size(Idx2.Subbands))
   {
-    if (!BitSet(DecodeSbMask, Sb)) continue;
+    if (!BitSet(DecodeSbMask, Sb))
+      continue;
     const subband& S = Idx2.Subbands[Sb];
     v3i SbDimsNonExt3 = idx2_NonExtDims(Dims(S.Grid));
     i8 NextIter = Iter + 1;
@@ -40814,13 +44084,13 @@ DecodeBrick
       if (PbIt.Val->NChildren == 0)
       {
         v3i From3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
-        v3i NChildren3 = Dims(
-          Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3s[Iter])));
+        v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3s[Iter])));
         PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
       }
       ++PbIt.Val->NChildren;
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
-      grid SbGridNonExt = S.Grid; SetDims(&SbGridNonExt, SbDimsNonExt3);
+      grid SbGridNonExt = S.Grid;
+      SetDims(&SbGridNonExt, SbDimsNonExt3);
       extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
       CopyExtentGrid<f64, f64>(ToGrid, PbIt.Val->Vol, SbGridNonExt, &BVol);
       if (PbIt.Val->NChildren == PbIt.Val->NChildrenMax)
@@ -40832,8 +44102,8 @@ DecodeBrick
     D->Level = Sb;
     if (Sb == 0 || Iter >= D->EffIter)
     { // NOTE: the check for Sb == 0 prevents the output volume from having blocking artifacts
-      //if      (Idx2.Version == v2i(0, 0)) DecodeSubbandV0_0(Idx2, D, S.Grid, &BVol);
-      //else if (Idx2.Version == v2i(0, 1)) DecodeSubbandV0_1(Idx2, D, S.Grid, &BVol);
+      // if      (Idx2.Version == v2i(0, 0)) DecodeSubbandV0_0(Idx2, D, S.Grid, &BVol);
+      // else if (Idx2.Version == v2i(0, 1)) DecodeSubbandV0_1(Idx2, D, S.Grid, &BVol);
       if (Idx2.Version == v2i(1, 0))
         DecodeSubband(Idx2, D, Accuracy, S.Grid, &BVol);
     }
@@ -40841,7 +44111,7 @@ DecodeBrick
   // TODO: inverse transform only to the necessary level
   if (!P.WaveletOnly)
   {
-//    printf("inverting\n");
+    //    printf("inverting\n");
     if (Iter + 1 < Idx2.NLevels)
       InverseCdf53(Idx2.BrickDimsExt3, D->Iter, Idx2.Subbands, Idx2.Td, &BVol, false);
     else
@@ -40851,14 +44121,10 @@ DecodeBrick
 
 /* TODO: dealloc chunks after we are done with them */
 void
-Decode
-(/*--------------------------*/
-  const idx2_file& Idx2,
-  const params& P,
-  buffer* OutBuf
-)/*--------------------------*/
+Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 {
-  timer DecodeTimer; StartTimer(&DecodeTimer);
+  timer DecodeTimer;
+  StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
   u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128;
   grid OutGrid = GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands);
@@ -40867,21 +44133,21 @@ Decode
   volume OutVolMem;
   idx2_CleanUp(if (P.OutMode == params::out_mode::WriteToFile) { Unmap(&OutVol); });
 
-  idx2_Case_1 (P.OutMode == params::out_mode::WriteToFile)
+  if (P.OutMode == params::out_mode::WriteToFile)
   {
     metadata Met;
     memcpy(Met.Name, Idx2.Name, sizeof(Met.Name));
     memcpy(Met.Field, Idx2.Field, sizeof(Met.Field));
     Met.Dims3 = Dims(OutGrid);
     Met.DType = Idx2.DType;
-  //  printf("zfp decode time = %f\n", DecodeTime_);
+    //  printf("zfp decode time = %f\n", DecodeTime_);
     cstr OutFile = P.OutFile ? idx2_PrintScratch("%s/%s", P.OutDir, P.OutFile)
                              : idx2_PrintScratch("%s/%s", P.OutDir, ToRawFileName(Met));
-//    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
+    //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);
   }
-  idx2_Case_2 (P.OutMode == params::out_mode::KeepInMemory)
+  else if (P.OutMode == params::out_mode::KeepInMemory)
   {
     OutVolMem.Buffer = *OutBuf;
     SetDims(&OutVolMem, Dims(OutGrid));
@@ -40892,53 +44158,56 @@ Decode
   BrickAlloc_ = free_list_allocator(BrickBytes);
   // TODO: move the decode_data into idx2_file itself
   idx2_RAII(decode_data, D, Init(&D, &BrickAlloc_));
-//  D.QualityLevel = Dw->GetQuality();
+  //  D.QualityLevel = Dw->GetQuality();
   D.EffIter = P.DecodeLevel; // effective level (levels smaller than this won't be decoded)
   f64 Accuracy = Max(Idx2.Accuracy, P.DecodeAccuracy);
-//  i64 CountZeroes = 0;
+  //  i64 CountZeroes = 0;
 
-  idx2_InclusiveForBackward(i8, Iter, Idx2.NLevels - 1, 0)
+  idx2_InclusiveForBackward (i8, Iter, Idx2.NLevels - 1, 0)
   {
-    if (Iter < P.OutputLevel) break;
+    if (Iter < P.OutputLevel)
+      break;
 
-    extent Ext = P.DecodeExtent; // this is in unit of samples
+    extent Ext = P.DecodeExtent;                  // this is in unit of samples
     v3i B3, Bf3, Bl3, C3, Cf3, Cl3, F3, Ff3, Fl3; // Brick dimensions, brick first, brick last
     B3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Iter);
     C3 = Idx2.BricksPerChunk3s[Iter] * B3;
     F3 = C3 * Idx2.ChunksPerFile3s[Iter];
 
-    Bf3 = From(Ext) / B3; Bl3 = Last(Ext) / B3;
-    Cf3 = From(Ext) / C3; Cl3 = Last(Ext) / C3;
-    Ff3 = From(Ext) / F3; Fl3 = Last(Ext) / F3;
+    Bf3 = From(Ext) / B3;
+    Bl3 = Last(Ext) / B3;
+    Cf3 = From(Ext) / C3;
+    Cl3 = Last(Ext) / C3;
+    Ff3 = From(Ext) / F3;
+    Fl3 = Last(Ext) / F3;
 
     extent ExtentInBricks(Bf3, Bl3 - Bf3 + 1);
     extent ExtentInChunks(Cf3, Cl3 - Cf3 + 1);
-    extent ExtentInFiles (Ff3, Fl3 - Ff3 + 1);
+    extent ExtentInFiles(Ff3, Fl3 - Ff3 + 1);
 
     extent VolExt(Idx2.Dims3);
     v3i Vbf3, Vbl3, Vcf3, Vcl3, Vff3, Vfl3; // VolBrickFirst, VolBrickLast
-    Vbf3 = From(VolExt) / B3; Vbl3 = Last(VolExt) / B3;
-    Vcf3 = From(VolExt) / C3; Vcl3 = Last(VolExt) / C3;
-    Vff3 = From(VolExt) / F3; Vfl3 = Last(VolExt) / F3;
+    Vbf3 = From(VolExt) / B3;
+    Vbl3 = Last(VolExt) / B3;
+    Vcf3 = From(VolExt) / C3;
+    Vcl3 = Last(VolExt) / C3;
+    Vff3 = From(VolExt) / F3;
+    Vfl3 = Last(VolExt) / F3;
 
     extent VolExtentInBricks(Vbf3, Vbl3 - Vbf3 + 1);
     extent VolExtentInChunks(Vcf3, Vcl3 - Vcf3 + 1);
-    extent VolExtentInFiles (Vff3, Vfl3 - Vff3 + 1);
+    extent VolExtentInFiles(Vff3, Vfl3 - Vff3 + 1);
 
-    idx2_FileTraverse
-    (
-//      u64 FileAddr = FileTop.Address;
-//      idx2_Assert(FileAddr == GetLinearFile(Idx2, Iter, FileTop.FileFrom3));
-      idx2_ChunkTraverse
-      (
-//        u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Iter]) + ChunkTop.Address;
-//        idx2_Assert(ChunkAddr == GetLinearChunk(Idx2, Iter, ChunkTop.ChunkFrom3));
-        D.ChunkInFile = ChunkTop.ChunkInFile;
-        idx2_BrickTraverse
-        (
+    idx2_FileTraverse(
+      //      u64 FileAddr = FileTop.Address;
+      //      idx2_Assert(FileAddr == GetLinearFile(Idx2, Iter, FileTop.FileFrom3));
+      idx2_ChunkTraverse(
+        //        u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Iter]) + ChunkTop.Address;
+        //        idx2_Assert(ChunkAddr == GetLinearChunk(Idx2, Iter, ChunkTop.ChunkFrom3));
+        D.ChunkInFile = ChunkTop.ChunkInFile; idx2_BrickTraverse(
           D.BrickInChunk = Top.BrickInChunk;
-//          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Iter]) + Top.Address;
-//          idx2_Assert(BrickAddr == GetLinearBrick(Idx2, Iter, Top.BrickFrom3));
+          //          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Iter]) + Top.Address;
+          //          idx2_Assert(BrickAddr == GetLinearBrick(Idx2, Iter, Top.BrickFrom3));
           brick_volume BVol;
           Resize(&BVol.Vol, Idx2.BrickDimsExt3, dtype::float64, D.Alloc);
           // TODO: for progressive decompression, copy the data from BrickTable to BrickVol
@@ -40948,52 +44217,38 @@ Decode
           D.Brick[Iter] = GetLinearBrick(Idx2, Iter, Top.BrickFrom3);
           u64 BrickKey = GetBrickKey(Iter, D.Brick[Iter]);
           Insert(&D.BrickPool, BrickKey, BVol);
-          u8 Mask = Iter == P.DecodeLevel
-            ? P.DecodeMask
-            : (Iter < P.DecodeLevel ? 0x1 : 0xFF);
+          u8 Mask = Iter == P.DecodeLevel ? P.DecodeMask : (Iter < P.DecodeLevel ? 0x1 : 0xFF);
           DecodeBrick(Idx2, P, &D, Mask, Accuracy);
-          if (Iter == P.OutputLevel)
-          {
-            grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Iter)); // TODO: the 1 << Iter is only true for 1 transform pass per level
+          if (Iter == P.OutputLevel) {
+            grid BrickGrid(
+              Top.BrickFrom3 * B3,
+              Idx2.BrickDims3,
+              v3i(1 << Iter)); // TODO: the 1 << Iter is only true for 1 transform pass per level
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
-            auto OutputVol = P.OutMode == params::out_mode::WriteToFile
-              ? &OutVol.Vol
-              : &OutVolMem;
-            auto CopyFunc = OutputVol->Type == dtype::float32
-              ? (CopyGridGrid<f64, f32>)
-              : (CopyGridGrid<f64, f64>);
-            CopyFunc(
-              BrickGridLocal,
-              BVol.Vol,
-              Relative(OutBrickGrid, OutGrid),
-              OutputVol);
+            auto OutputVol = P.OutMode == params::out_mode::WriteToFile ? &OutVol.Vol : &OutVolMem;
+            auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
+                                                              : (CopyGridGrid<f64, f64>);
+            CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
             Dealloc(&BVol.Vol);
             Delete(&D.BrickPool, BrickKey); // TODO: also delete the parent bricks once we are done
-          }
-          , 64
-          , Idx2.BrickOrderChunks[Iter]
-          , ChunkTop.ChunkFrom3 * Idx2.BricksPerChunk3s[Iter]
-          , Idx2.BricksPerChunk3s[Iter]
-          , ExtentInBricks
-          , VolExtentInBricks
-        );
-        , 64
-        , Idx2.ChunkOrderFiles[Iter]
-        , FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Iter]
-        , Idx2.ChunksPerFile3s[Iter]
-        , ExtentInChunks
-        , VolExtentInChunks
-      );
-      , 64
-      , Idx2.FileOrders[Iter]
-      , v3i(0)
-      , Idx2.NFiles3s[Iter]
-      , ExtentInFiles
-      , VolExtentInFiles
-    );
+          },
+          64,
+          Idx2.BrickOrderChunks[Iter],
+          ChunkTop.ChunkFrom3 * Idx2.BricksPerChunk3s[Iter],
+          Idx2.BricksPerChunk3s[Iter],
+          ExtentInBricks,
+          VolExtentInBricks);
+        ,
+        64,
+        Idx2.ChunkOrderFiles[Iter],
+        FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Iter],
+        Idx2.ChunksPerFile3s[Iter],
+        ExtentInChunks,
+        VolExtentInChunks);
+      , 64, Idx2.FileOrders[Iter], v3i(0), Idx2.NFiles3s[Iter], ExtentInFiles, VolExtentInFiles);
   } // end level loop
-//  printf("count zeroes        = %lld\n", CountZeroes);
+    //  printf("count zeroes        = %lld\n", CountZeroes);
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
   printf("io time             = %f\n", Seconds(DecodeIOTime_));
   printf("data movement time  = %f\n", Seconds(DataMovementTime_));
@@ -41004,38 +44259,38 @@ Decode
 }
 
 /* go through all files in the input directory */
-//error<idx2_err_code>
-//CopyDataToBrick(const nasa_params& P, brick_volume* BVol) {
-//  dirent* Dp = nullptr;
-//  DIR* Dfd = nullptr;
-//  cstr Dir = P.InDir;
-//  if ((Dfd = opendir(Dir)) == nullptr)
-//    return idx2_Error(idx2_err_code::FileNotFound); // TODO: should be DirNotFound
-//  char FileName[256] = {};
-//  char NewName[256] = {};
-//  while ((Dp = readdir(Dfd)) != NULL) {
-//    stat StBuf;
-//    sprintf(FileName, "%s/%s", Dir, Dp->d_name) ;
-//    //if (stat(FileName, &StBuf) == -1)
-//      //continue;
-//    //if ((StBuf.st_mode & S_IFMT) == S_IFDIR) {
-//      //continue;
-//     // Skip directories
-//    //} else { // file, each file is a timestep
-//    //  if (P.Scheme == nasa_scheme::SeparateTime) {
-//        // TODO: copy from each time step separately into BVol.Vol
-//        // Looping through the time steps to create one sub-directory for each
-//    //  } else if (P.Scheme == nasa_scheme::GroupTime) {
-//        // TODO: copy from S time steps and 1 depth level into BVol.Vol
-//        // Looping through the depths to create one sub-directory for each
-//    //  } else if (P.Scheme == nasa_scheme::GroupTimeAndDepth) {
-//        // TODO: this may require 4D compression
-//    //  } else {
-//    //    return idx2_Error(idx2_err_code::UnsupportedScheme);
-//    //  }
-//    //}
-//  }
-//}
+// error<idx2_err_code>
+// CopyDataToBrick(const nasa_params& P, brick_volume* BVol) {
+//   dirent* Dp = nullptr;
+//   DIR* Dfd = nullptr;
+//   cstr Dir = P.InDir;
+//   if ((Dfd = opendir(Dir)) == nullptr)
+//     return idx2_Error(idx2_err_code::FileNotFound); // TODO: should be DirNotFound
+//   char FileName[256] = {};
+//   char NewName[256] = {};
+//   while ((Dp = readdir(Dfd)) != NULL) {
+//     stat StBuf;
+//     sprintf(FileName, "%s/%s", Dir, Dp->d_name) ;
+//     //if (stat(FileName, &StBuf) == -1)
+//       //continue;
+//     //if ((StBuf.st_mode & S_IFMT) == S_IFDIR) {
+//       //continue;
+//      // Skip directories
+//     //} else { // file, each file is a timestep
+//     //  if (P.Scheme == nasa_scheme::SeparateTime) {
+//         // TODO: copy from each time step separately into BVol.Vol
+//         // Looping through the time steps to create one sub-directory for each
+//     //  } else if (P.Scheme == nasa_scheme::GroupTime) {
+//         // TODO: copy from S time steps and 1 depth level into BVol.Vol
+//         // Looping through the depths to create one sub-directory for each
+//     //  } else if (P.Scheme == nasa_scheme::GroupTimeAndDepth) {
+//         // TODO: this may require 4D compression
+//     //  } else {
+//     //    return idx2_Error(idx2_err_code::UnsupportedScheme);
+//     //  }
+//     //}
+//   }
+// }
 
 // Face01:
 //   +-------+-------+
@@ -41066,23 +44321,20 @@ Decode
 // +-------> x
 
 static void
-DecompressChunk
-( /*---------------------------*/
-  bitstream* ChunkStream,
-  chunk_cache* ChunkCache,
-  u64 ChunkAddress,
-  int L
-) /*---------------------------*/
+DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddress, int L)
 {
-  (void)L; u64 Brk = ((ChunkAddress >> 18) & 0x3FFFFFFFFFFull); (void)Brk;
+  (void)L;
+  u64 Brk = ((ChunkAddress >> 18) & 0x3FFFFFFFFFFull);
+  (void)Brk;
   InitRead(ChunkStream, ChunkStream->Stream);
-  int NBricks = (int)ReadVarByte(ChunkStream); idx2_Assert(NBricks > 0);
+  int NBricks = (int)ReadVarByte(ChunkStream);
+  idx2_Assert(NBricks > 0);
 
   /* decompress and store the brick ids */
   u64 Brick = ReadVarByte(ChunkStream);
   Resize(&ChunkCache->Bricks, NBricks);
   ChunkCache->Bricks[0] = Brick;
-  idx2_For(int, I, 1, NBricks)
+  idx2_For (int, I, 1, NBricks)
   {
     Brick += ReadUnary(ChunkStream) + 1;
     ChunkCache->Bricks[I] = Brick;
@@ -41093,62 +44345,71 @@ DecompressChunk
   /* decompress and store the brick sizes */
   i32 BrickSize = 0;
   SeekToNextByte(ChunkStream);
-  idx2_ForEach(BrickSzIt, ChunkCache->BrickSzs)
+  idx2_ForEach (BrickSzIt, ChunkCache->BrickSzs)
     *BrickSzIt = BrickSize += (i32)ReadVarByte(ChunkStream);
   ChunkCache->ChunkStream = *ChunkStream;
 }
 
 // TODO: return error type
 error<idx2_err_code>
-ReadMetaFile
-(
-  idx2_file* Idx2,
-  cstr FileName
-)
+ReadMetaFile(idx2_file* Idx2, cstr FileName)
 {
   buffer Buf;
   idx2_CleanUp(DeallocBuf(&Buf));
   idx2_PropagateIfError(ReadFile(FileName, &Buf));
   SExprResult Result = ParseSExpr((cstr)Buf.Data, Size(Buf), nullptr);
-  if(Result.type == SE_SYNTAX_ERROR) {
+  if (Result.type == SE_SYNTAX_ERROR)
+  {
     fprintf(stderr, "Error(%d): %s.\n", Result.syntaxError.lineNumber, Result.syntaxError.message);
     return idx2_Error(idx2_err_code::SyntaxError);
-  } else {
+  }
+  else
+  {
     SExpr* Data = (SExpr*)malloc(sizeof(SExpr) * Result.count);
     idx2_CleanUp(free(Data));
-    array<SExpr*> Stack; Reserve(&Stack, Result.count);
+    array<SExpr*> Stack;
+    Reserve(&Stack, Result.count);
     idx2_CleanUp(Dealloc(&Stack));
     // This time we supply the pool
     SExprPool Pool = { Result.count, Data };
     Result = ParseSExpr((cstr)Buf.Data, Size(Buf), &Pool);
     // result.expr contains the successfully parsed SExpr
-//    printf("parse .idx2 file successfully\n");
+    //    printf("parse .idx2 file successfully\n");
     PushBack(&Stack, Result.expr);
     bool GotId = false;
     SExpr* LastExpr = nullptr;
-    while (Size(Stack) > 0) {
+    while (Size(Stack) > 0)
+    {
       SExpr* Expr = Back(Stack);
       PopBack(&Stack);
       if (Expr->next)
         PushBack(&Stack, Expr->next);
-      if (GotId) {
-        if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "version")) {
+      if (GotId)
+      {
+        if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "version"))
+        {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->Version[0] = Expr->i;
           idx2_Assert(Expr->next);
           Expr = Expr->next;
           idx2_Assert(Expr->type == SE_INT);
           Idx2->Version[1] = Expr->i;
-//          printf("Version = %d.%d\n", Idx2->Version[0], Idx2->Version[1]);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "name")) {
+          //          printf("Version = %d.%d\n", Idx2->Version[0], Idx2->Version[1]);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "name"))
+        {
           idx2_Assert(Expr->type == SE_STRING);
           snprintf(Idx2->Name, Expr->s.len + 1, "%s", (cstr)Buf.Data + Expr->s.start);
-//          printf("Name = %s\n", Idx2->Name);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "field")) {
+          //          printf("Name = %s\n", Idx2->Name);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "field"))
+        {
           idx2_Assert(Expr->type == SE_STRING);
           snprintf(Idx2->Field, Expr->s.len + 1, "%s", (cstr)Buf.Data + Expr->s.start);
-//          printf("Field = %s\n", Idx2->Field);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "dimensions")) {
+          //          printf("Field = %s\n", Idx2->Field);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "dimensions"))
+        {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->Dims3.X = Expr->i;
           idx2_Assert(Expr->next);
@@ -41159,23 +44420,32 @@ ReadMetaFile
           Expr = Expr->next;
           idx2_Assert(Expr->type == SE_INT);
           Idx2->Dims3.Z = Expr->i;
-//          printf("Dims = %d %d %d\n", idx2_PrV3i(Idx2->Dims3));
-        } if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "accuracy")) {
+          //          printf("Dims = %d %d %d\n", idx2_PrV3i(Idx2->Dims3));
+        }
+        if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "accuracy"))
+        {
           idx2_Assert(Expr->type == SE_FLOAT);
           Idx2->Accuracy = Expr->f;
-//          printf("Accuracy = %.17g\n", Idx2->Accuracy);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "data-type")) {
+          //          printf("Accuracy = %.17g\n", Idx2->Accuracy);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "data-type"))
+        {
           idx2_Assert(Expr->type == SE_STRING);
           Idx2->DType = StringTo<dtype>()(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
-//          printf("Data type = %.*s\n", ToString(Idx2->DType).Size, ToString(Idx2->DType).ConstPtr);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "min-max")) {
+          //          printf("Data type = %.*s\n", ToString(Idx2->DType).Size,
+          //          ToString(Idx2->DType).ConstPtr);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "min-max"))
+        {
           idx2_Assert(Expr->type == SE_FLOAT || Expr->type == SE_INT);
           Idx2->ValueRange.Min = Expr->i;
           idx2_Assert(Expr->next);
           Expr = Expr->next;
           idx2_Assert(Expr->type == SE_FLOAT || Expr->type == SE_INT);
           Idx2->ValueRange.Max = Expr->i;
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "brick-size")) {
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "brick-size"))
+        {
           v3i BrickDims3(0);
           idx2_Assert(Expr->type == SE_INT);
           BrickDims3.X = Expr->i;
@@ -41188,54 +44458,79 @@ ReadMetaFile
           idx2_Assert(Expr->type == SE_INT);
           BrickDims3.Z = Expr->i;
           SetBrickSize(Idx2, BrickDims3);
-//          printf("Brick size %d %d %d\n", idx2_PrV3i(Idx2->BrickDims3));
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-order")) {
+          //          printf("Brick size %d %d %d\n", idx2_PrV3i(Idx2->BrickDims3));
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-order"))
+        {
           idx2_Assert(Expr->type == SE_STRING);
-          Idx2->TformOrder = EncodeTransformOrder(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
+          Idx2->TformOrder =
+            EncodeTransformOrder(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
           char TransformOrder[128];
           DecodeTransformOrder(Idx2->TformOrder, TransformOrder);
-//          printf("Transform order = %s\n", TransformOrder);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "num-levels")) {
+          //          printf("Transform order = %s\n", TransformOrder);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "num-levels"))
+        {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->NLevels = i8(Expr->i);
-//          printf("Num levels = %d\n", Idx2->NLevels);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bricks-per-tile")) {
+          //          printf("Num levels = %d\n", Idx2->NLevels);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bricks-per-tile"))
+        {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->BricksPerChunkIn = Expr->i;
-//          printf("Bricks per chunk = %d\n", Idx2->BricksPerChunks[0]);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "tiles-per-file")) {
+          //          printf("Bricks per chunk = %d\n", Idx2->BricksPerChunks[0]);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "tiles-per-file"))
+        {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->ChunksPerFileIn = Expr->i;
-//          printf("Chunks per file = %d\n", Idx2->ChunksPerFiles[0]);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "files-per-directory")) {
+          //          printf("Chunks per file = %d\n", Idx2->ChunksPerFiles[0]);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "files-per-directory"))
+        {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->FilesPerDir = Expr->i;
-//          printf("Files per directory = %d\n", Idx2->FilesPerDir);
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-levels")) {
+          //          printf("Files per directory = %d\n", Idx2->FilesPerDir);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-levels"))
+        {
           idx2_Assert(Expr->type == SE_BOOL);
           Idx2->GroupLevels = Expr->i;
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-sub-levels")) {
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-sub-levels"))
+        {
           idx2_Assert(Expr->type == SE_BOOL);
           Idx2->GroupSubLevels = Expr->i;
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-bit-planes")) {
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-bit-planes"))
+        {
           idx2_Assert(Expr->type == SE_BOOL);
           Idx2->GroupBitPlanes = Expr->i;
-        } else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "quality-levels")) {
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "quality-levels"))
+        {
           int NumQualityLevels = Expr->i;
           Resize(&Idx2->QualityLevelsIn, NumQualityLevels);
-          idx2_For(int, I, 0, NumQualityLevels) {
+          idx2_For (int, I, 0, NumQualityLevels)
+          {
             Idx2->QualityLevelsIn[I] = Expr->i;
             Expr = Expr->next;
           }
         }
       }
-      if (Expr->type == SE_ID) {
+      if (Expr->type == SE_ID)
+      {
         LastExpr = Expr;
         GotId = true;
-      } else if (Expr->type == SE_LIST) {
+      }
+      else if (Expr->type == SE_LIST)
+      {
         PushBack(&Stack, Expr->head);
         GotId = false;
-      } else {
+      }
+      else
+      {
         GotId = false;
       }
     }
@@ -41243,28 +44538,34 @@ ReadMetaFile
   return idx2_Error(idx2_err_code::NoError);
 }
 
-idx2_T(t) void
-Dealloc(brick_table<t>* BrickTable) {
-  idx2_ForEach(BrickIt, BrickTable->Bricks) BrickTable->Alloc->Dealloc(BrickIt.Val->Samples);
+idx2_T(t) void Dealloc(brick_table<t>* BrickTable)
+{
+  idx2_ForEach (BrickIt, BrickTable->Bricks)
+    BrickTable->Alloc->Dealloc(BrickIt.Val->Samples);
   Dealloc(&BrickTable->Bricks);
-  idx2_ForEach(BlockSig, BrickTable->BlockSigs) Dealloc(BlockSig);
+  idx2_ForEach (BlockSig, BrickTable->BlockSigs)
+    Dealloc(BlockSig);
 }
 
-struct index_key {
+struct index_key
+{
   u64 LinearBrick;
   u32 BitStreamKey; // key consisting of bit plane, level, and sub-level
-  idx2_Inline bool operator==(const index_key& Other) const {
-    return LinearBrick == Other.LinearBrick &&  BitStreamKey == Other.BitStreamKey;
+  idx2_Inline bool operator==(const index_key& Other) const
+  {
+    return LinearBrick == Other.LinearBrick && BitStreamKey == Other.BitStreamKey;
   }
 };
 
-struct brick_index {
+struct brick_index
+{
   u64 LinearBrick = 0;
   u64 Offset = 0;
 };
 
 idx2_Inline u64
-Hash(const index_key& IdxKey) {
+Hash(const index_key& IdxKey)
+{
   return (IdxKey.LinearBrick + 1) * (1 + IdxKey.BitStreamKey);
 }
 
@@ -41310,18 +44611,14 @@ GetLinearFile(const idx2_file& Idx2, int Iter, v3i File3) {
 
 /* Upscale a single brick to a given resolution level */
 // TODO: upscale across levels
-template <typename t>
-static void
-UpscaleBrick
-( /*-----------------------------*/
-  const grid& Grid,
-  int TformOrder,
-  const brick<t>& Brick,
-  int Level,
-  const grid& OutGrid,
-  volume* OutBrickVol
-) /*-----------------------------*/
-{ // BODY
+template <typename t> static void
+UpscaleBrick(const grid& Grid,
+             int TformOrder,
+             const brick<t>& Brick,
+             int Level,
+             const grid& OutGrid,
+             volume* OutBrickVol)
+{
   idx2_Assert(Level >= Brick.Level);
   idx2_Assert(OutBrickVol->Type == dtype::float64);
   v3i Dims3 = Dims(Grid);
@@ -41330,20 +44627,20 @@ UpscaleBrick
     *OutBrickVol = 0;
   Copy(Relative(Grid, Grid), BrickVol, Relative(Grid, OutGrid), OutBrickVol);
   if (Level > Brick.Level)
-    InverseCdf53(Dims(*OutBrickVol), Dims(*OutBrickVol), Level - Brick.Level, TformOrder, OutBrickVol, true);
+  {
+    InverseCdf53(
+      Dims(*OutBrickVol), Dims(*OutBrickVol), Level - Brick.Level, TformOrder, OutBrickVol, true);
+  }
 }
 
 /* Flatten a brick table. the function allocates memory for its output. */
 // TODO: upscale across levels
-template <typename t>
-static void FlattenBrickTable
-( /*----------------------------------*/
-  const array<grid>& LevelGrids,
-  int TformOrder,
-  const brick_table<t>& BrickTable,
-  volume* VolOut
-) /*----------------------------------*/
-{ // BODY
+template <typename t> static void
+FlattenBrickTable(const array<grid>& LevelGrids,
+                  int TformOrder,
+                  const brick_table<t>& BrickTable,
+                  volume* VolOut)
+{
   idx2_Assert(Size(BrickTable.Bricks) > 0);
   /* determine the maximum level of all bricks in the table */
   int MaxLevel = 0;
@@ -41372,7 +44669,8 @@ static void FlattenBrickTable
   for (auto It = Begin(BrickTable.Bricks); It != ItEnd; ++It)
   {
     v3i P3 = DecodeMorton3(*(It.Key) >> 4);
-    UpscaleBrick(LevelGrids[It.Val->Level], TformOrder, *(It.Val), MaxLevel, LevelGrids[MaxLevel], &BrickVol);
+    UpscaleBrick(
+      LevelGrids[It.Val->Level], TformOrder, *(It.Val), MaxLevel, LevelGrids[MaxLevel], &BrickVol);
     Copy(extent(Dims3), BrickVol, extent(P3 * Dims3, Dims3), VolOut);
   }
 }
@@ -41394,7 +44692,8 @@ GetPartialResolution(const v3i& Dims3, u8 Mask, const array<subband>& Subbands) 
 /* ----------- VERSION 0: UNUSED ----------*/
 /* NOTE: in v0.0, we only support reading the data from beginning to end on each iteration */
 error<idx2_err_code>
-DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol) {
+DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol)
+{
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
@@ -41403,27 +44702,34 @@ DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
   idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
   /* first, read the block exponents */
-  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+  idx2_InclusiveFor (u32, Block, 0, LastBlock)
+  { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
-    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2.BlockDims3));
+    f64 BlockFloats[4 * 4 * 4] = {};
+    buffer_t BufFloats(BlockFloats, Prod(Idx2.BlockDims3));
     v3i D3 = Z3 * Idx2.BlockDims3;
     v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
-    if (CodedInNextIter) continue;
+    bool CodedInNextIter =
+      D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+    if (CodedInNextIter)
+      continue;
     ReadBuffer(Fp, &BufFloats);
     v3i S3;
-    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+    idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
+    { // sample loop
       idx2_Assert(D3 + S3 < SbDims3);
       BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[Row(BlockDims3, S3)];
-    } idx2_EndFor3 // end sample loop
+    }
+    idx2_EndFor3; // end sample loop
   }
   D->Offsets[D->Iter] = idx2_FTell(Fp);
   return idx2_Error(idx2_err_code::NoError);
 }
 
 error<idx2_err_code>
-DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol) {
+DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol)
+{
   u64 Brick = D->Brick[D->Iter];
   v3i SbDims3 = Dims(SbGrid);
   const i8 NBitPlanes = idx2_BitSizeOf(f64);
@@ -41432,30 +44738,39 @@ DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
   file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Iter, 0, 0);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
   idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
-  int Sz = 0; ReadPOD(Fp, &Sz);
+  int Sz = 0;
+  ReadPOD(Fp, &Sz);
   Rewind(&D->BlockStream);
   GrowToAccomodate(&D->BlockStream, Max(Sz, 8 * 1024 * 1024));
   ReadBuffer(Fp, &D->BlockStream.Stream, Sz);
   InitRead(&D->BlockStream, D->BlockStream.Stream);
   /* first, read the block exponents */
-  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+  idx2_InclusiveFor (u32, Block, 0, LastBlock)
+  { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2.BlockDims3;
     v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
-    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
-    i64 BlockInts[4 * 4 * 4] = {}; buffer_t BufInts(BlockInts, Prod(BlockDims3));
-    u64 BlockUInts[4 * 4 * 4] = {}; buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
-    bool CodedInNextIter = D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
-    if (CodedInNextIter) continue;
+    f64 BlockFloats[4 * 4 * 4] = {};
+    buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
+    i64 BlockInts[4 * 4 * 4] = {};
+    buffer_t BufInts(BlockInts, Prod(BlockDims3));
+    u64 BlockUInts[4 * 4 * 4] = {};
+    buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
+    bool CodedInNextIter =
+      D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+    if (CodedInNextIter)
+      continue;
     int NDims = NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
     const int Prec = idx2_BitSizeOf(f64) - 1 - NDims;
     i16 EMax = i16(Read(&D->BlockStream, traits<f64>::ExpBits) - traits<f64>::ExpBias);
     i8 N = 0;
-    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
+    idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, 0)
+    { // bit plane loop
       i16 RealBp = Bp + EMax;
-      if (NBitPlanes - 6 > RealBp - Exponent(Idx2.Accuracy) + 1) break;
+      if (NBitPlanes - 6 > RealBp - Exponent(Idx2.Accuracy) + 1)
+        break;
       Decode(BlockUInts, NVals, Bp, N, &D->BlockStream);
     }
     InverseShuffle(BlockUInts, BlockInts, NDims);
@@ -41463,16 +44778,19 @@ DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     Dequantize(EMax, Prec, BufInts, &BufFloats);
     v3i S3;
     int J = 0;
-    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+    idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
+    { // sample loop
       idx2_Assert(D3 + S3 < SbDims3);
       BVol->At<f64>(SbGrid, D3 + S3) = BlockFloats[J++];
-    } idx2_EndFor3 // end sample loop
+    }
+    idx2_EndFor3; // end sample loop
   }
   D->Offsets[D->Iter] = idx2_FTell(Fp);
+
   return idx2_Error(idx2_err_code::NoError);
 }
 
-}
+} // namespace idx2
 
 #include <algorithm>
 
@@ -41501,36 +44819,49 @@ static void
 Dealloc(encode_data* E);
 
 static void
-CompressBufZstd(const buffer& Input, bitstream* Output) {
-  if (Size(Input) == 0) return;
+CompressBufZstd(const buffer& Input, bitstream* Output)
+{
+  if (Size(Input) == 0)
+    return;
   size_t const MaxDstSize = ZSTD_compressBound(Size(Input));
   GrowToAccomodate(Output, MaxDstSize - Size(*Output));
-  size_t const CpresSize = ZSTD_compress(Output->Stream.Data, MaxDstSize, Input.Data, Size(Input), 1);
-  if (CpresSize <= 0) {
+  size_t const CpresSize =
+    ZSTD_compress(Output->Stream.Data, MaxDstSize, Input.Data, Size(Input), 1);
+  if (CpresSize <= 0)
+  {
     fprintf(stderr, "CompressBufZstd failed\n");
     exit(1);
   }
   Output->BitPtr = CpresSize + Output->Stream.Data;
-
 }
 
 error<idx2_err_code>
-Finalize(idx2_file* Idx2) {
+Finalize(idx2_file* Idx2)
+{
   if (!(IsPow2(Idx2->BrickDims3.X) && IsPow2(Idx2->BrickDims3.Y) && IsPow2(Idx2->BrickDims3.Z)))
-    return idx2_Error(idx2_err_code::BrickSizeNotPowerOfTwo, idx2_PrStrV3i "\n", idx2_PrV3i(Idx2->BrickDims3));
+    return idx2_Error(
+      idx2_err_code::BrickSizeNotPowerOfTwo, idx2_PrStrV3i "\n", idx2_PrV3i(Idx2->BrickDims3));
   if (!(Idx2->Dims3 >= Idx2->BrickDims3))
-    return idx2_Error(idx2_err_code::BrickSizeTooBig, " total dims: " idx2_PrStrV3i ", brick dims: " idx2_PrStrV3i "\n", idx2_PrV3i(Idx2->Dims3), idx2_PrV3i(Idx2->BrickDims3));
+    return idx2_Error(idx2_err_code::BrickSizeTooBig,
+                      " total dims: " idx2_PrStrV3i ", brick dims: " idx2_PrStrV3i "\n",
+                      idx2_PrV3i(Idx2->Dims3),
+                      idx2_PrV3i(Idx2->BrickDims3));
   if (!(Idx2->NLevels <= idx2_file::MaxLevels))
     return idx2_Error(idx2_err_code::TooManyLevels, "Max # of levels = %d\n", Idx2->MaxLevels);
 
   char TformOrder[8] = {};
   { /* compute the transform order (try to repeat XYZ++) */
     int J = 0;
-    idx2_For(int, D, 0, 3) { if (Idx2->BrickDims3[D] > 1) TformOrder[J++] = char('X' + D); }
+    idx2_For (int, D, 0, 3)
+    {
+      if (Idx2->BrickDims3[D] > 1)
+        TformOrder[J++] = char('X' + D);
+    }
     TformOrder[J++] = '+';
     TformOrder[J++] = '+';
     Idx2->TformOrder = EncodeTransformOrder(TformOrder);
-    Idx2->TformOrderFull.Len = DecodeTransformOrder(Idx2->TformOrder, Idx2->NTformPasses, Idx2->TformOrderFull.Data);
+    Idx2->TformOrderFull.Len =
+      DecodeTransformOrder(Idx2->TformOrder, Idx2->NTformPasses, Idx2->TformOrderFull.Data);
   }
 
   { /* build the subbands */
@@ -41543,7 +44874,8 @@ Finalize(idx2_file* Idx2) {
     Idx2->GroupBrick3 = Idx2->BrickDims3 / Dims(Idx2->SubbandsNonExt[0].Grid);
     v3i NBricks3 = (Idx2->Dims3 + Idx2->BrickDims3 - 1) / Idx2->BrickDims3;
     v3i NBricksIter3 = NBricks3;
-    idx2_For(int, I, 0, Idx2->NLevels) {
+    idx2_For (int, I, 0, Idx2->NLevels)
+    {
       Idx2->NBricks3s[I] = NBricksIter3;
       NBricksIter3 = (NBricksIter3 + Idx2->GroupBrick3 - 1) / Idx2->GroupBrick3;
     }
@@ -41551,32 +44883,43 @@ Finalize(idx2_file* Idx2) {
 
   { /* compute the brick order, by repeating the (per brick) transform order */
     Resize(&Idx2->BrickOrderStrs, Idx2->NLevels);
-    idx2_For(int, I, 0, Idx2->NLevels) {
+    idx2_For (int, I, 0, Idx2->NLevels)
+    {
       v3i N3 = Idx2->NBricks3s[I];
       v3i LogN3 = v3i(Log2Ceil(N3.X), Log2Ceil(N3.Y), Log2Ceil(N3.Z));
       int MinLogN3 = Min(LogN3.X, LogN3.Y, LogN3.Z);
-      v3i LeftOver3 = LogN3 - v3i(Idx2->BrickDims3.X > 1, Idx2->BrickDims3.Y > 1, Idx2->BrickDims3.Z > 1) * MinLogN3;
+      v3i LeftOver3 =
+        LogN3 -
+        v3i(Idx2->BrickDims3.X > 1, Idx2->BrickDims3.Y > 1, Idx2->BrickDims3.Z > 1) * MinLogN3;
       char BrickOrder[128];
       int J = 0;
-      idx2_For(int, D, 0, 3) {
-        if (Idx2->BrickDims3[D] == 1) {
+      idx2_For (int, D, 0, 3)
+      {
+        if (Idx2->BrickDims3[D] == 1)
+        {
           while (LeftOver3[D]-- > 0)
             BrickOrder[J++] = char('X' + D);
         }
       }
-      while (!(LeftOver3 <= 0)) {
-        idx2_For(int, D, 0, 3) {
+      while (!(LeftOver3 <= 0))
+      {
+        idx2_For (int, D, 0, 3)
+        {
           if (LeftOver3[D]-- > 0)
             BrickOrder[J++] = char('X' + D);
         }
       }
-      if (J > 0) BrickOrder[J++] = '+';
-      idx2_For(size_t, K, 0, sizeof(TformOrder))
+      if (J > 0)
+        BrickOrder[J++] = '+';
+      idx2_For (size_t, K, 0, sizeof(TformOrder))
         BrickOrder[J++] = TformOrder[K];
       Idx2->BrickOrders[I] = EncodeTransformOrder(BrickOrder);
-      Idx2->BrickOrderStrs[I].Len = DecodeTransformOrder(Idx2->BrickOrders[I], N3, Idx2->BrickOrderStrs[I].Data);
-      //idx2_Assert(Idx2->BrickOrderStrs[I].Len == Idx2->BrickOrderStrs[0].Len - I * Idx2->TformOrderFull.Len); // disabled since this is not always true
-      if (Idx2->BrickOrderStrs[I].Len < Idx2->TformOrderFull.Len) {
+      Idx2->BrickOrderStrs[I].Len =
+        DecodeTransformOrder(Idx2->BrickOrders[I], N3, Idx2->BrickOrderStrs[I].Data);
+      // idx2_Assert(Idx2->BrickOrderStrs[I].Len == Idx2->BrickOrderStrs[0].Len - I *
+      // Idx2->TformOrderFull.Len); // disabled since this is not always true
+      if (Idx2->BrickOrderStrs[I].Len < Idx2->TformOrderFull.Len)
+      {
         return idx2_Error(idx2_err_code::TooManyLevels);
       }
     }
@@ -41601,74 +44944,96 @@ Finalize(idx2_file* Idx2) {
       return idx2_Error(idx2_err_code::TooManyChunksPerFile);
     if (!IsPow2(Idx2->ChunksPerFiles[0]))
       return idx2_Error(idx2_err_code::ChunksPerFileNotPowerOf2);
-    idx2_For(int, I, 0, Idx2->NLevels) {
-      Idx2->BricksPerChunks[I] = 1 << Min((u8)Log2Ceil(Idx2->BricksPerChunks[0]), Idx2->BrickOrderStrs[I].Len);
+    idx2_For (int, I, 0, Idx2->NLevels)
+    {
+      Idx2->BricksPerChunks[I] =
+        1 << Min((u8)Log2Ceil(Idx2->BricksPerChunks[0]), Idx2->BrickOrderStrs[I].Len);
       stack_string<64> BrickOrderChunk;
       BrickOrderChunk.Len = Log2Ceil(Idx2->BricksPerChunks[I]);
       Idx2->BricksPerChunk3s[I] = v3i(1);
-      idx2_For(int, J, 0, BrickOrderChunk.Len) {
+      idx2_For (int, J, 0, BrickOrderChunk.Len)
+      {
         char C = Idx2->BrickOrderStrs[I][Idx2->BrickOrderStrs[I].Len - J - 1];
         Idx2->BricksPerChunk3s[I][C - 'X'] *= 2;
         BrickOrderChunk[BrickOrderChunk.Len - J - 1] = C;
       }
-      Idx2->BrickOrderChunks[I] = EncodeTransformOrder(stref(BrickOrderChunk.Data, BrickOrderChunk.Len));
+      Idx2->BrickOrderChunks[I] =
+        EncodeTransformOrder(stref(BrickOrderChunk.Data, BrickOrderChunk.Len));
       idx2_Assert(Idx2->BricksPerChunks[I] = Prod(Idx2->BricksPerChunk3s[I]));
-      Idx2->NChunks3s[I] = (Idx2->NBricks3s[I] + Idx2->BricksPerChunk3s[I] - 1) / Idx2->BricksPerChunk3s[I];
+      Idx2->NChunks3s[I] =
+        (Idx2->NBricks3s[I] + Idx2->BricksPerChunk3s[I] - 1) / Idx2->BricksPerChunk3s[I];
       /* compute ChunksPerFile3 and ChunkOrderFiles */
-      Idx2->ChunksPerFiles[I] = 1 << Min((u8)Log2Ceil(Idx2->ChunksPerFiles[0]), (u8)(Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len));
+      Idx2->ChunksPerFiles[I] = 1 << Min((u8)Log2Ceil(Idx2->ChunksPerFiles[0]),
+                                         (u8)(Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len));
       idx2_Assert(Idx2->BrickOrderStrs[I].Len >= BrickOrderChunk.Len);
       stack_string<64> ChunkOrderFile;
       ChunkOrderFile.Len = Log2Ceil(Idx2->ChunksPerFiles[I]);
       Idx2->ChunksPerFile3s[I] = v3i(1);
-      idx2_For(int, J, 0, ChunkOrderFile.Len) {
+      idx2_For (int, J, 0, ChunkOrderFile.Len)
+      {
         char C = Idx2->BrickOrderStrs[I][Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len - J - 1];
         Idx2->ChunksPerFile3s[I][C - 'X'] *= 2;
         ChunkOrderFile[ChunkOrderFile.Len - J - 1] = C;
       }
-      Idx2->ChunkOrderFiles[I] = EncodeTransformOrder(stref(ChunkOrderFile.Data, ChunkOrderFile.Len));
+      Idx2->ChunkOrderFiles[I] =
+        EncodeTransformOrder(stref(ChunkOrderFile.Data, ChunkOrderFile.Len));
       idx2_Assert(Idx2->ChunksPerFiles[I] == Prod(Idx2->ChunksPerFile3s[I]));
-      Idx2->NFiles3s[I] = (Idx2->NChunks3s[I] + Idx2->ChunksPerFile3s[I] - 1) / Idx2->ChunksPerFile3s[I];
+      Idx2->NFiles3s[I] =
+        (Idx2->NChunks3s[I] + Idx2->ChunksPerFile3s[I] - 1) / Idx2->ChunksPerFile3s[I];
       /* compute ChunkOrders */
       stack_string<64> ChunkOrder;
       Idx2->ChunksPerVol[I] = 1 << (Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len);
       idx2_Assert(Idx2->BrickOrderStrs[I].Len >= BrickOrderChunk.Len);
       ChunkOrder.Len = Log2Ceil(Idx2->ChunksPerVol[I]);
-      idx2_For(int, J, 0, ChunkOrder.Len) {
+      idx2_For (int, J, 0, ChunkOrder.Len)
+      {
         char C = Idx2->BrickOrderStrs[I][Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len - J - 1];
-        ChunkOrder[ChunkOrder.Len - J- 1] = C;
+        ChunkOrder[ChunkOrder.Len - J - 1] = C;
       }
       Idx2->ChunkOrders[I] = EncodeTransformOrder(stref(ChunkOrder.Data, ChunkOrder.Len));
       Resize(&Idx2->ChunkOrderStrs, Idx2->NLevels);
-      Idx2->ChunkOrderStrs[I].Len = DecodeTransformOrder(Idx2->ChunkOrders[I], Idx2->NChunks3s[I], Idx2->ChunkOrderStrs[I].Data);
+      Idx2->ChunkOrderStrs[I].Len = DecodeTransformOrder(
+        Idx2->ChunkOrders[I], Idx2->NChunks3s[I], Idx2->ChunkOrderStrs[I].Data);
       /* compute FileOrders */
       stack_string<64> FileOrder;
-      Idx2->FilesPerVol[I] = 1 << (Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len - ChunkOrderFile.Len);
-      // TODO: the following check may fail if the brick size is too close to the size of the volume, and we set NLevels too high
+      Idx2->FilesPerVol[I] =
+        1 << (Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len - ChunkOrderFile.Len);
+      // TODO: the following check may fail if the brick size is too close to the size of the
+      // volume, and we set NLevels too high
       idx2_Assert(Idx2->BrickOrderStrs[I].Len >= BrickOrderChunk.Len + ChunkOrderFile.Len);
       FileOrder.Len = Log2Ceil(Idx2->FilesPerVol[I]);
-      idx2_For(int, J, 0, FileOrder.Len) {
-        char C = Idx2->BrickOrderStrs[I][Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len - ChunkOrderFile.Len - J - 1];
-        FileOrder[FileOrder.Len - J- 1] = C;
+      idx2_For (int, J, 0, FileOrder.Len)
+      {
+        char C = Idx2->BrickOrderStrs[I][Idx2->BrickOrderStrs[I].Len - BrickOrderChunk.Len -
+                                         ChunkOrderFile.Len - J - 1];
+        FileOrder[FileOrder.Len - J - 1] = C;
       }
       Idx2->FileOrders[I] = EncodeTransformOrder(stref(FileOrder.Data, FileOrder.Len));
       Resize(&Idx2->FileOrderStrs, Idx2->NLevels);
-      Idx2->FileOrderStrs[I].Len = DecodeTransformOrder(Idx2->FileOrders[I], Idx2->NFiles3s[I], Idx2->FileOrderStrs[I].Data);
+      Idx2->FileOrderStrs[I].Len =
+        DecodeTransformOrder(Idx2->FileOrders[I], Idx2->NFiles3s[I], Idx2->FileOrderStrs[I].Data);
     }
   }
 
   { /* compute spatial depths */
-    if (!(Idx2->FilesPerDir <= idx2_file::MaxFilesPerDir)) return idx2_Error(idx2_err_code::TooManyFilesPerDir, "%d", Idx2->FilesPerDir);
-    idx2_For(int, I, 0, Idx2->NLevels) {
+    if (!(Idx2->FilesPerDir <= idx2_file::MaxFilesPerDir))
+      return idx2_Error(idx2_err_code::TooManyFilesPerDir, "%d", Idx2->FilesPerDir);
+    idx2_For (int, I, 0, Idx2->NLevels)
+    {
       Idx2->BricksPerFiles[I] = Idx2->BricksPerChunks[I] * Idx2->ChunksPerFiles[I];
       Idx2->FileDirDepths[I].Len = 0;
-      i8 DepthAccum = Idx2->FileDirDepths[I][Idx2->FileDirDepths[I].Len++] = Log2Ceil(Idx2->BricksPerFiles[I]);
-      i8 Len = Idx2->BrickOrderStrs[I].Len/* - Idx2->TformOrderFull.Len*/;
-      while (DepthAccum < Len) {
+      i8 DepthAccum = Idx2->FileDirDepths[I][Idx2->FileDirDepths[I].Len++] =
+        Log2Ceil(Idx2->BricksPerFiles[I]);
+      i8 Len = Idx2->BrickOrderStrs[I].Len /* - Idx2->TformOrderFull.Len*/;
+      while (DepthAccum < Len)
+      {
         i8 Inc = Min(i8(Len - DepthAccum), Log2Ceil(Idx2->FilesPerDir));
         DepthAccum += (Idx2->FileDirDepths[I][Idx2->FileDirDepths[I].Len++] = Inc);
       }
-      if (Idx2->FileDirDepths[I].Len > idx2_file::MaxSpatialDepth) return idx2_Error(idx2_err_code::TooManyFilesPerDir);
-      Reverse(Begin(Idx2->FileDirDepths[I]), Begin(Idx2->FileDirDepths[I]) + Idx2->FileDirDepths[I].Len);
+      if (Idx2->FileDirDepths[I].Len > idx2_file::MaxSpatialDepth)
+        return idx2_Error(idx2_err_code::TooManyFilesPerDir);
+      Reverse(Begin(Idx2->FileDirDepths[I]),
+              Begin(Idx2->FileDirDepths[I]) + Idx2->FileDirDepths[I].Len);
     }
   }
 
@@ -41676,7 +45041,8 @@ Finalize(idx2_file* Idx2) {
     Idx2->GroupBrick3 = Idx2->BrickDims3 / Dims(Idx2->SubbandsNonExt[0].Grid);
     v3i NBricks3 = (Idx2->Dims3 + Idx2->BrickDims3 - 1) / Idx2->BrickDims3;
     v3i NBricksIter3 = NBricks3;
-    idx2_For(int, I, 0, Idx2->NLevels) {
+    idx2_For (int, I, 0, Idx2->NLevels)
+    {
       Idx2->NBricks3s[I] = NBricksIter3;
       NBricksIter3 = (NBricksIter3 + Idx2->GroupBrick3 - 1) / Idx2->GroupBrick3;
     }
@@ -41691,7 +45057,8 @@ Finalize(idx2_file* Idx2) {
   { /* compute the actual number of bytes for each rdo level */
     i64 TotalUncompressedSize = Prod<i64>(Idx2->Dims3) * SizeOf(Idx2->DType);
     Reserve(&Idx2->RdoLevels, Size(Idx2->QualityLevelsIn));
-    idx2_ForEach(It, Idx2->QualityLevelsIn) {
+    idx2_ForEach (It, Idx2->QualityLevelsIn)
+    {
       PushBack(&Idx2->RdoLevels, TotalUncompressedSize / *It);
     }
   }
@@ -41701,7 +45068,8 @@ Finalize(idx2_file* Idx2) {
 
 // Write once per chunk
 static void
-WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 Iter, i8 Level) {
+WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 Iter, i8 Level)
+{
   /* brick exponents */
   Flush(&Sc->BrickEMaxesStream);
   BrickEMaxesStat.Add((f64)Size(Sc->BrickEMaxesStream));
@@ -41718,14 +45086,16 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
   WriteBuffer(Fp, ToBuffer(E->ChunkEMaxesStream));
   /* keep track of the chunk sizes */
   auto ChunkEMaxesMetaIt = Lookup(&E->ChunkEMaxesMeta, FileId.Id);
-  if (!ChunkEMaxesMetaIt) {
+  if (!ChunkEMaxesMetaIt)
+  {
     bitstream ChunkEMaxSzs;
     InitWrite(&ChunkEMaxSzs, 128);
     Insert(&ChunkEMaxesMetaIt, FileId.Id, ChunkEMaxSzs);
   }
   bitstream* ChunkEMaxSzs = ChunkEMaxesMetaIt.Val;
   GrowToAccomodate(ChunkEMaxSzs, 4);
-  if (Size(E->ChunkEMaxesStream) == 0) {
+  if (Size(E->ChunkEMaxesStream) == 0)
+  {
     int Stop = 0;
   }
   WriteVarByte(ChunkEMaxSzs, Size(E->ChunkEMaxesStream));
@@ -41738,13 +45108,16 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
 
 // TODO: check the error path
 error<idx2_err_code>
-FlushChunkExponents(const idx2_file& Idx2, encode_data* E) {
-  idx2_ForEach(ScIt, E->SubChannels) {
+FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
+{
+  idx2_ForEach (ScIt, E->SubChannels)
+  {
     i8 Iteration = IterationFromChannelKey(*ScIt.Key);
     i8 Level = LevelFromChannelKey(*ScIt.Key);
     WriteChunkExponents(Idx2, E, ScIt.Val, Iteration, Level);
   }
-  idx2_ForEach(CemIt, E->ChunkEMaxesMeta) {
+  idx2_ForEach (CemIt, E->ChunkEMaxesMeta)
+  {
     bitstream* ChunkEMaxSzs = CemIt.Val;
     file_id FileId = ConstructFilePathExponents(Idx2, *CemIt.Key);
     idx2_Assert(FileId.Id == *CemIt.Key);
@@ -41758,15 +45131,17 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E) {
   return idx2_Error(idx2_err_code::NoError);
 }
 
-struct rdo_precompute {
+struct rdo_precompute
+{
   u64 Address;
   int Start;
-  array<int> Hull; // convex hull
+  array<int> Hull;             // convex hull
   array<int> TruncationPoints; // bit planes
   idx2_Inline bool operator<(const rdo_precompute& Other) const { return Address < Other.Address; }
 };
 
-struct rdo_mini {
+struct rdo_mini
+{
   f64 Distortion;
   i64 Length;
   f64 Lambda;
@@ -41776,60 +45151,70 @@ struct rdo_mini {
 // TODO: change the word "Chunk" to "Tile" elsewhere where it makes sense
 // TODO: normalize the distortion by the number of samples a chunk has
 static void
-RateDistortionOpt(const idx2_file& Idx2, encode_data* E) {
-  if (Size(Idx2.RdoLevels) == 0) return;
+RateDistortionOpt(const idx2_file& Idx2, encode_data* E)
+{
+  if (Size(Idx2.RdoLevels) == 0)
+    return;
   constexpr u64 InfInt = 0x7FF0000000000000ull;
   const f64 Inf = *(f64*)(&InfInt);
 
-  auto & ChunkRDOs = E->ChunkRDOs;
+  auto& ChunkRDOs = E->ChunkRDOs;
   i16 MinBitPlane = traits<i16>::Max, MaxBitPlane = traits<i16>::Min;
-  idx2_ForEach(CIt, ChunkRDOs) {
+  idx2_ForEach (CIt, ChunkRDOs)
+  {
     i16 BitPlane = i16(CIt->Address & 0xFFF);
     MinBitPlane = Min(MinBitPlane, BitPlane);
     MaxBitPlane = Max(MaxBitPlane, BitPlane);
   }
-//  InsertionSort(Begin(ChunkRDOs), End(ChunkRDOs)); // TODO: this should be quicksort
+  //  InsertionSort(Begin(ChunkRDOs), End(ChunkRDOs)); // TODO: this should be quicksort
   std::sort(Begin(ChunkRDOs), End(ChunkRDOs));
-  array<rdo_precompute> RdoPrecomputes; Reserve(&RdoPrecomputes, 128); // each rdo_precompute corresponds to a tile
-  idx2_CleanUp(
-    idx2_ForEach(It, RdoPrecomputes) {
-      Dealloc(&It->Hull);
-      Dealloc(&It->TruncationPoints);
-    }
-    Dealloc(&RdoPrecomputes);
-  );
+  array<rdo_precompute> RdoPrecomputes;
+  Reserve(&RdoPrecomputes, 128); // each rdo_precompute corresponds to a tile
+  idx2_CleanUp(idx2_ForEach (It, RdoPrecomputes) {
+    Dealloc(&It->Hull);
+    Dealloc(&It->TruncationPoints);
+  } Dealloc(&RdoPrecomputes););
   int TileStart = -1, TileEnd = -1;
-  array<rdo_mini> RdoTile; idx2_CleanUp(Dealloc(&RdoTile)); // just for a single tile
-  while (true) { // loop through all chunks and detect the tile boundaries (Start, End)
+  array<rdo_mini> RdoTile;
+  idx2_CleanUp(Dealloc(&RdoTile)); // just for a single tile
+  while (true)
+  { // loop through all chunks and detect the tile boundaries (Start, End)
     TileStart = TileEnd + 1;
-    if (TileStart >= Size(ChunkRDOs)) break;
+    if (TileStart >= Size(ChunkRDOs))
+      break;
     TileEnd = TileStart + 1; // exclusive end
-    const auto & C = ChunkRDOs[TileStart];
-    while (TileEnd < Size(ChunkRDOs) && (ChunkRDOs[TileEnd].Address >> 12) == (C.Address >> 12)) {
+    const auto& C = ChunkRDOs[TileStart];
+    while (TileEnd < Size(ChunkRDOs) && (ChunkRDOs[TileEnd].Address >> 12) == (C.Address >> 12))
+    {
       ++TileEnd;
     }
     Clear(&RdoTile);
     Reserve(&RdoTile, TileEnd - TileStart + 1);
     i16 Bp = i16(ChunkRDOs[TileStart].Address & 0xFFF) + 1;
-    PushBack(&RdoTile, rdo_mini{pow(2.0, Bp), 0, Inf});
+    PushBack(&RdoTile, rdo_mini{ pow(2.0, Bp), 0, Inf });
     i64 PrevLength = 0;
-    idx2_For(int, Z, TileStart, TileEnd) {
+    idx2_For (int, Z, TileStart, TileEnd)
+    {
       u64 Addr = (ChunkRDOs[Z].Address >> 12) << 12;
       auto LIt = Lookup(&E->ChunkRDOLengths, Addr);
       idx2_Assert(LIt);
       i16 BitPlane = i16(ChunkRDOs[Z].Address & 0xFFF);
-      PushBack(&RdoTile, rdo_mini{pow(2.0, BitPlane), PrevLength += ChunkRDOs[Z].Length, 0.0});
+      PushBack(&RdoTile, rdo_mini{ pow(2.0, BitPlane), PrevLength += ChunkRDOs[Z].Length, 0.0 });
       ChunkRDOs[Z].Length = PrevLength + *LIt.Val;
     }
     array<int> Hull;
-    Reserve(&Hull, Size(RdoTile)); PushBack(&Hull, 0);
+    Reserve(&Hull, Size(RdoTile));
+    PushBack(&Hull, 0);
     /* precompute the convex hull and lambdas */
     int HLast = 0;
-    idx2_For(int, Z, 1, Size(RdoTile)) {
+    idx2_For (int, Z, 1, Size(RdoTile))
+    {
       f64 DeltaD = RdoTile[HLast].Distortion - RdoTile[Z].Distortion;
       f64 DeltaL = f64(RdoTile[Z].Length - RdoTile[HLast].Length);
-      if (DeltaD > 0) {
-        while (DeltaD >= DeltaL * RdoTile[HLast].Lambda) {
+      if (DeltaD > 0)
+      {
+        while (DeltaD >= DeltaL * RdoTile[HLast].Lambda)
+        {
           idx2_Assert(Size(Hull) > 0);
           PopBack(&Hull);
           HLast = Back(Hull);
@@ -41842,57 +45227,78 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E) {
       }
     } // end Z loop
     idx2_Assert(TileEnd - TileStart + 1 == Size(RdoTile));
-    idx2_For(int, Z, 1, Size(RdoTile)) {
+    idx2_For (int, Z, 1, Size(RdoTile))
+    {
       ChunkRDOs[Z + TileStart - 1].Lambda = RdoTile[Z].Lambda;
     }
     u64 Address = ChunkRDOs[TileStart].Address;
-    PushBack(&RdoPrecomputes, rdo_precompute{Address, TileStart, Hull, array<int>()});
+    PushBack(&RdoPrecomputes, rdo_precompute{ Address, TileStart, Hull, array<int>() });
   }
 
   /* search for a suitable global lambda */
-  idx2_For(int, R, 0, Size(Idx2.RdoLevels)) { // for all quality levels
+  idx2_For (int, R, 0, Size(Idx2.RdoLevels))
+  { // for all quality levels
     printf("optimizing for rdo level %d\n", R);
     f64 LowLambda = -2, HighLambda = -1, Lambda = 1;
     int Count = 0;
-    do { // search for the best Lambda (TruncationPoints stores the output)
-      if (LowLambda > 0 && HighLambda > 0) {
+    do
+    { // search for the best Lambda (TruncationPoints stores the output)
+      if (LowLambda > 0 && HighLambda > 0)
+      {
         ++Count;
-        if (Count >= 20) { Lambda = HighLambda; break; }
+        if (Count >= 20)
+        {
+          Lambda = HighLambda;
+          break;
+        }
         Lambda = 0.5 * LowLambda + 0.5 * HighLambda;
-      } else if (Lambda == 0) {
+      }
+      else if (Lambda == 0)
+      {
         Lambda = HighLambda;
         break;
       }
       i64 TotalLength = 0;
-      idx2_ForEach(TIt, RdoPrecomputes) { // for each tile
+      idx2_ForEach (TIt, RdoPrecomputes)
+      { // for each tile
         int J = 0;
-        while (J + 1 < Size(TIt->Hull)) {
+        while (J + 1 < Size(TIt->Hull))
+        {
           int Z = TIt->Hull[J + 1] + TIt->Start - 1;
           idx2_Assert(Z >= TIt->Start);
-          if (ChunkRDOs[Z].Lambda > Lambda) { ++J; } else break;
+          if (ChunkRDOs[Z].Lambda > Lambda)
+            ++J;
+          else
+            break;
         }
         Resize(&TIt->TruncationPoints, Size(Idx2.RdoLevels));
         TIt->TruncationPoints[R] = J;
         TotalLength += J == 0 ? 0 : ChunkRDOs[TIt->Hull[J] + TIt->Start - 1].Length;
       }
-      if (TotalLength > Idx2.RdoLevels[R]) { // we overshot, need to increase lambda
+      if (TotalLength > Idx2.RdoLevels[R])
+      { // we overshot, need to increase lambda
         LowLambda = Lambda;
-        if (HighLambda < 0) { Lambda *= 2; }
-      } else { // we did not overshoot, need to decrease Lambda
-        HighLambda = Lambda;
-        if (LowLambda < 0) { Lambda *= 0.5; }
+        if (HighLambda < 0)
+          Lambda *= 2;
       }
-      //idx2_Assert(LowLambda <= HighLambda);
+      else
+      { // we did not overshoot, need to decrease Lambda
+        HighLambda = Lambda;
+        if (LowLambda < 0)
+          Lambda *= 0.5;
+      }
+      // idx2_Assert(LowLambda <= HighLambda);
     } while (true);
   }
 
   /* write the truncation points to files */
-//  InsertionSort(Begin(RdoPrecomputes), End(RdoPrecomputes)); // TODO: quicksort
+  //  InsertionSort(Begin(RdoPrecomputes), End(RdoPrecomputes)); // TODO: quicksort
   std::sort(Begin(RdoPrecomputes), End(RdoPrecomputes));
   i64 Pos = 0;
   idx2_RAII(array<i16>, Buffer, Reserve(&Buffer, 128));
-  idx2_RAII(bitstream, BitStream,);
-  idx2_For(i8, Iter, 0, Idx2.NLevels) {
+  idx2_RAII(bitstream, BitStream, );
+  idx2_For (i8, Iter, 0, Idx2.NLevels)
+  {
     extent Ext(Idx2.Dims3);
     v3i BrickDims3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Iter);
     v3i BrickFirst3 = From(Ext) / BrickDims3;
@@ -41900,7 +45306,7 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E) {
     extent ExtentInBricks(BrickFirst3, BrickLast3 - BrickFirst3 + 1);
     v3i ChunkDims3 = Idx2.BricksPerChunk3s[Iter] * BrickDims3;
     v3i ChunkFirst3 = From(Ext) / ChunkDims3;
-    v3i ChunkLast3 = Last(Ext) /  ChunkDims3;
+    v3i ChunkLast3 = Last(Ext) / ChunkDims3;
     extent ExtentInChunks(ChunkFirst3, ChunkLast3 - ChunkFirst3 + 1);
     v3i FileDims3 = ChunkDims3 * Idx2.ChunksPerFile3s[Iter];
     v3i FileFirst3 = From(Ext) / FileDims3;
@@ -41908,7 +45314,7 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E) {
     extent ExtentInFiles(FileFirst3, FileLast3 - FileFirst3 + 1);
     extent VolExt(Idx2.Dims3);
     v3i VolBrickFirst3 = From(VolExt) / BrickDims3;
-    v3i VolBrickLast3 = Last(VolExt)  / BrickDims3;
+    v3i VolBrickLast3 = Last(VolExt) / BrickDims3;
     extent VolExtentInBricks(VolBrickFirst3, VolBrickLast3 - VolBrickFirst3 + 1);
     v3i VolChunkFirst3 = From(VolExt) / ChunkDims3;
     v3i VolChunkLast3 = Last(VolExt) / ChunkDims3;
@@ -41919,76 +45325,71 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E) {
     idx2_FileTraverse(
       u64 FileAddr = FileTop.Address;
       // int ChunkInFile = 0;
-      u64 FirstBrickAddr = ((FileAddr * Idx2.ChunksPerFiles[Iter]) + 0) * Idx2.BricksPerChunks[Iter] + 0;
+      u64 FirstBrickAddr =
+        ((FileAddr * Idx2.ChunksPerFiles[Iter]) + 0) * Idx2.BricksPerChunks[Iter] + 0;
       file_id FileId = ConstructFilePathRdos(Idx2, FirstBrickAddr, Iter);
       int NumChunks = 0;
       idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
       idx2_ChunkTraverse(
-        ++NumChunks;
-        u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Iter]) + ChunkTop.Address;
+        ++NumChunks; u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Iter]) + ChunkTop.Address;
         // ChunkInFile = ChunkTop.ChunkInFile;
-        idx2_For(i8, Level, 0, Size(Idx2.Subbands)) {
+        idx2_For (i8, Level, 0, Size(Idx2.Subbands)) {
           const auto& Rdo = RdoPrecomputes[Pos];
           i8 RdoIter = (Rdo.Address >> 60) & 0xF;
           u64 RdoAddress = (Rdo.Address >> 18) & 0x3FFFFFFFFFFull;
           i8 RdoLevel = (Rdo.Address >> 12) & 0x3F;
-          if (RdoIter == Iter && RdoLevel == Level && RdoAddress == ChunkAddr) {
+          if (RdoIter == Iter && RdoLevel == Level && RdoAddress == ChunkAddr)
+          {
             ++Pos;
-            idx2_For(int, R, 0, Size(Idx2.RdoLevels)) { // for each quality level
+            idx2_For (int, R, 0, Size(Idx2.RdoLevels))
+            { // for each quality level
               int J = Rdo.TruncationPoints[R];
-              if (J == 0) { PushBack(&Buffer, traits<i16>::Max); continue; }
+              if (J == 0)
+              {
+                PushBack(&Buffer, traits<i16>::Max);
+                continue;
+              }
               int Z = Rdo.Hull[J] + Rdo.Start - 1;
               u64 Address = ChunkRDOs[Z].Address;
               idx2_Assert((Rdo.Address >> 12) == (Address >> 12));
               i16 BitPlane = i16(Address & 0xFFF);
               PushBack(&Buffer, BitPlane);
             }
-          } else { // somehow the tile is not there (tile produces no chunk i.e. it compresses to 0 bits)
-            idx2_For(int, R, 0, Size(Idx2.RdoLevels)) { // for each quality level
+          }
+          else
+          { // somehow the tile is not there (tile produces no chunk i.e. it compresses to 0 bits)
+            idx2_For (int, R, 0, Size(Idx2.RdoLevels))
+            { // for each quality level
               PushBack(&Buffer, traits<i16>::Max);
             }
           }
         } // end level loop
-        , 64
-        , Idx2.ChunkOrderFiles[Iter]
-        , FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Iter]
-        , Idx2.ChunksPerFile3s[Iter]
-        , ExtentInChunks
-        , VolExtentInChunks
-      ); // end chunk (tile) traverse
+        ,
+        64,
+        Idx2.ChunkOrderFiles[Iter],
+        FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Iter],
+        Idx2.ChunksPerFile3s[Iter],
+        ExtentInChunks,
+        VolExtentInChunks); // end chunk (tile) traverse
       buffer Buf(Buffer.Buffer.Data, Size(Buffer) * sizeof(i16));
       CompressBufZstd(Buf, &BitStream);
-      WriteBuffer(Fp, buffer{BitStream.Stream.Data, Size(BitStream)});
+      WriteBuffer(Fp, buffer{ BitStream.Stream.Data, Size(BitStream) });
       WritePOD(Fp, NumChunks);
       fclose(Fp);
       Clear(&Buffer);
       Rewind(&BitStream);
-      , 64
-      , Idx2.FileOrders[Iter]
-      , v3i(0)
-      , Idx2.NFiles3s[Iter]
-      , ExtentInFiles
-      , VolExtentInFiles
-    );
+      , 64, Idx2.FileOrders[Iter], v3i(0), Idx2.NFiles3s[Iter], ExtentInFiles, VolExtentInFiles);
   } // end level loop
   idx2_Assert(Pos == Size(RdoPrecomputes));
 }
 
 // TODO: return error
 static void
-WriteChunk
-( /*---------------------------*/
-  const idx2_file& Idx2,
-  encode_data* E,
-  channel* C,
-  i8 Iter,
-  i8 Level,
-  i16 BitPlane
-) /*---------------------------*/
+WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Iter, i8 Level, i16 BitPlane)
 {
   BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
-  BrickSzsStat.Add((f64)Size(C->BrickSzsStream)); // brick sizes
-  BrickStreamStat.Add((f64)Size(C->BrickStream)); // brick data
+  BrickSzsStat.Add((f64)Size(C->BrickSzsStream));       // brick sizes
+  BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
   i64 ChunkSize = Size(C->BrickDeltasStream) + Size(C->BrickSzsStream) + Size(C->BrickStream) + 64;
   Rewind(&E->ChunkStream);
   GrowToAccomodate(&E->ChunkStream, ChunkSize);
@@ -42010,7 +45411,8 @@ WriteChunk
   WriteBuffer(Fp, ToBuffer(E->ChunkStream));
   /* keep track of the chunk addresses and sizes */
   auto ChunkMetaIt = Lookup(&E->ChunkMeta, FileId.Id);
-  if (!ChunkMetaIt) {
+  if (!ChunkMetaIt)
+  {
     chunk_meta_info Cm;
     InitWrite(&Cm.Sizes, 128);
     Insert(&ChunkMetaIt, FileId.Id, Cm);
@@ -42021,42 +45423,40 @@ WriteChunk
   WriteVarByte(&ChunkMeta->Sizes, Size(E->ChunkStream));
   u64 ChunkAddress = GetChunkAddress(Idx2, C->LastBrick, Iter, Level, BitPlane);
   PushBack(&ChunkMeta->Addrs, ChunkAddress);
-//  printf("chunk %x level %d bit plane %d offset %llu size %d\n", ChunkAddress, Level, BitPlane, Where, (i64)Size(Channel->ChunkStream));
-  PushBack(&E->ChunkRDOs, rdo_chunk{ChunkAddress, Size(E->ChunkStream), 0.0});
+  //  printf("chunk %x level %d bit plane %d offset %llu size %d\n", ChunkAddress, Level, BitPlane,
+  //  Where, (i64)Size(Channel->ChunkStream));
+  PushBack(&E->ChunkRDOs, rdo_chunk{ ChunkAddress, Size(E->ChunkStream), 0.0 });
   Rewind(&E->ChunkStream);
 }
 
 // TODO: return an error code
 static void
-EncodeSubband
-( /*-----------------------*/
-  idx2_file* Idx2,
-  encode_data* E,
-  const grid& SbGrid,
-  volume* BrickVol
-) /*-----------------------*/
+EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol)
 {
   u64 Brick = E->Brick[E->Iter];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
-  Clear(&E->BlockSigs); Reserve(&E->BlockSigs, NBitPlanes);
-  Clear(&E->EMaxes); Reserve(&E->EMaxes, Prod(NBlocks3));
+  Clear(&E->BlockSigs);
+  Reserve(&E->BlockSigs, NBitPlanes);
+  Clear(&E->EMaxes);
+  Reserve(&E->EMaxes, Prod(NBlocks3));
 
   /* query the right sub channel for the block exponents */
   u16 SubChanKey = GetSubChannelKey(E->Iter, E->Level);
   auto ScIt = Lookup(&E->SubChannels, SubChanKey);
   if (!ScIt)
   {
-    sub_channel SubChan; Init(&SubChan);
+    sub_channel SubChan;
+    Init(&SubChan);
     Insert(&ScIt, SubChanKey, SubChan);
   }
   idx2_Assert(ScIt);
   sub_channel* Sc = ScIt.Val;
 
   /* pass 1: compress the blocks */
-  idx2_InclusiveFor(u32, Block, 0, LastBlock)
+  idx2_InclusiveFor (u32, Block, 0, LastBlock)
   { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
@@ -42068,37 +45468,45 @@ EncodeSubband
     f64 BlockFloats[4 * 4 * 4];
     buffer_t BufFloats(BlockFloats, NVals);
     buffer_t BufInts((i64*)BlockFloats, NVals);
-    u64 BlockUInts [4 * 4 * 4];
-    buffer_t BufUInts (BlockUInts , NVals);
-    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
-    if (CodedInNextIter) continue;
+    u64 BlockUInts[4 * 4 * 4];
+    buffer_t BufUInts(BlockUInts, NVals);
+    bool CodedInNextIter =
+      E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
+    if (CodedInNextIter)
+      continue;
     /* copy the samples to the local buffer */
     v3i S3;
     int J = 0;
     v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
-    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1))
+    idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
     { // sample loop
       idx2_Assert(D3 + S3 < SbDims3);
       BlockFloats[J++] = BrickVol->At<f64>(From3, Strd3, D3 + S3);
-    } idx2_EndFor3 // end sample loop
+    }
+    idx2_EndFor3; // end sample loop
     /* zfp transform and shuffle */
-    const i16 EMax = SizeOf(Idx2->DType) > 4 ? (i16)QuantizeF64(Prec, BufFloats, &BufInts) : (i16)QuantizeF32(Prec, BufFloats, &BufInts);
+    const i16 EMax = SizeOf(Idx2->DType) > 4 ? (i16)QuantizeF64(Prec, BufFloats, &BufInts)
+                                             : (i16)QuantizeF32(Prec, BufFloats, &BufInts);
     PushBack(&E->EMaxes, EMax);
     ForwardZfp((i64*)BlockFloats, NDims);
     ForwardShuffle((i64*)BlockFloats, BlockUInts, NDims);
     /* zfp encode */
     i8 N = 0; // number of significant coefficients in the block so far
-    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType) + (24 + NDims)), NBitPlanes); // TODO: why 24 (this is only based on empirical experiments with float32, for other types it might be different)?
-    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
+    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType) + (24 + NDims)),
+                         NBitPlanes); // TODO: why 24 (this is only based on empirical experiments
+                                      // with float32, for other types it might be different)?
+    idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
-      bool TooHighPrecision = NBitPlanes  - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
-      if (TooHighPrecision) break;
+      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
+      if (TooHighPrecision)
+        break;
       u32 ChannelKey = GetChannelKey(RealBp, E->Iter, E->Level);
       auto ChannelIt = Lookup(&E->Channels, ChannelKey);
       if (!ChannelIt)
       {
-        channel Channel; Init(&Channel);
+        channel Channel;
+        Init(&Channel);
         Insert(&ChannelIt, ChannelKey, Channel);
       }
       idx2_Assert(ChannelIt);
@@ -42117,24 +45525,27 @@ EncodeSubband
         }
       }
       /* write chunk if this brick is after the last chunk */
-      bool FirstSigBlock = I == Size(E->BlockSigs); // first block that becomes significant on this bit plane
+      bool FirstSigBlock =
+        I == Size(E->BlockSigs); // first block that becomes significant on this bit plane
       bool BrickNotEmpty = Size(C->BrickStream) > 0;
-      bool NewChunk = Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunks[E->Iter]; // TODO: multiplier?
+      bool NewChunk =
+        Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunks[E->Iter]; // TODO: multiplier?
       if (FirstSigBlock)
       {
         if (NewChunk)
         {
-          if (BrickNotEmpty) WriteChunk(*Idx2, E, C, E->Iter, E->Level, RealBp);
+          if (BrickNotEmpty)
+            WriteChunk(*Idx2, E, C, E->Iter, E->Level, RealBp);
           C->NBricks = 0;
           C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunks[E->Iter]);
         }
-        PushBack(&E->BlockSigs, block_sig{Block, RealBp});
+        PushBack(&E->BlockSigs, block_sig{ Block, RealBp });
       }
       /* encode the block */
       GrowIfTooFull(&C->BlockStream);
       Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
     } // end bit plane loop
-  } // end zfp block loop
+  }   // end zfp block loop
 
   /* write the last chunk exponents if this is the first brick of the new chunk */
   bool NewChunk = Brick >= (Sc->LastChunk + 1) * Idx2->BricksPerChunks[E->Iter];
@@ -42145,49 +45556,47 @@ EncodeSubband
   }
   /* write the min emax */
   GrowToAccomodate(&Sc->BlockEMaxesStream, 2 * Size(E->EMaxes));
-  idx2_For(int, I, 0, Size(E->EMaxes))
+  idx2_For (int, I, 0, Size(E->EMaxes))
   {
-    i16 S = E->EMaxes[I]
-      + (SizeOf(Idx2->DType) > 4 ? traits<f64>::ExpBias : traits<f32>::ExpBias);
-    Write(&Sc->BlockEMaxesStream
-      , S
-      , SizeOf(Idx2->DType) > 4 ? 16 : traits<f32>::ExpBits);
+    i16 S = E->EMaxes[I] + (SizeOf(Idx2->DType) > 4 ? traits<f64>::ExpBias : traits<f32>::ExpBias);
+    Write(&Sc->BlockEMaxesStream, S, SizeOf(Idx2->DType) > 4 ? 16 : traits<f32>::ExpBits);
   }
   /* write brick emax size */
-  i64 BrickEMaxesSz = Size(Sc -> BlockEMaxesStream);
+  i64 BrickEMaxesSz = Size(Sc->BlockEMaxesStream);
   GrowToAccomodate(&Sc->BrickEMaxesStream, BrickEMaxesSz);
   WriteStream(&Sc->BrickEMaxesStream, &Sc->BlockEMaxesStream);
   BlockEMaxStat.Add((f64)Size(Sc->BlockEMaxesStream));
   Rewind(&Sc->BlockEMaxesStream);
-  Sc->LastBrick = Brick ;
+  Sc->LastBrick = Brick;
 
   /* pass 2: encode the brick meta info */
-  idx2_InclusiveFor(u32, Block, 0, LastBlock)
+  idx2_InclusiveFor (u32, Block, 0, LastBlock)
   {
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2->BlockDims3;
     v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter = E->Level == 0
-      && E->Iter + 1 < Idx2->NLevels
-      && BlockDims3 == Idx2->BlockDims3;
-    if (CodedInNextIter) continue;
+    bool CodedInNextIter =
+      E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
+    if (CodedInNextIter)
+      continue;
     /* done at most once per brick */
-    idx2_For(int, I, 0, Size(E->BlockSigs))
+    idx2_For (int, I, 0, Size(E->BlockSigs))
     { // bit plane loop
       i16 RealBp = E->BlockSigs[I].BitPlane;
-      if (Block != E->BlockSigs[I].Block) continue;
+      if (Block != E->BlockSigs[I].Block)
+        continue;
       u32 ChannelKey = GetChannelKey(RealBp, E->Iter, E->Level);
       auto ChannelIt = Lookup(&E->Channels, ChannelKey);
       idx2_Assert(ChannelIt);
       channel* C = ChannelIt.Val;
       /* write brick delta */
-      idx2_Case (C->NBricks == 0)
-      {// start of a chunk
+      if (C->NBricks == 0)
+      { // start of a chunk
         GrowToAccomodate(&C->BrickDeltasStream, 8);
         WriteVarByte(&C->BrickDeltasStream, Brick);
       }
-      idx2_Else
+      else
       {
         GrowToAccomodate(&C->BrickDeltasStream, (Brick - C->LastBrick - 1 + 8) / 8);
         WriteUnary(&C->BrickDeltasStream, u32(Brick - C->LastBrick - 1));
@@ -42204,24 +45613,19 @@ EncodeSubband
       ++C->NBricks;
       C->LastBrick = Brick;
     } // end bit plane loop
-  } // end zfp block loop
+  }   // end zfp block loop
 }
 
 static void
-EncodeBrick
-( /*-------------------------------*/
-  idx2_file* Idx2,
-  const params& P,
-  encode_data* E,
-  bool IncIter = false
-) /*-------------------------------*/
+EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = false)
 {
   idx2_Assert(Idx2->NLevels <= idx2_file::MaxLevels);
 
   i8 Iter = E->Iter += IncIter;
 
   u64 Brick = E->Brick[Iter];
-  printf("level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]), Brick);
+  printf(
+    "level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]), Brick);
   auto BIt = Lookup(&E->BrickPool, GetBrickKey(Iter, Brick));
   idx2_Assert(BIt);
   volume& BVol = BIt.Val->Vol;
@@ -42231,20 +45635,20 @@ EncodeBrick
   ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TformOrder, &BVol);
 
   /* do wavelet transform */
-  idx2_Case (!P.WaveletOnly)
+  if (!P.WaveletOnly)
   {
     if (Iter + 1 < Idx2->NLevels)
       ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
     else
       ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, true);
   }
-  idx2_Else
+  else
   {
     ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
   }
 
   /* recursively encode the brick, one subband at a time */
-  idx2_For(i8, Sb, 0, Size(Idx2->Subbands))
+  idx2_For (i8, Sb, 0, Size(Idx2->Subbands))
   { // subband loop
     const subband& S = Idx2->Subbands[Sb];
     v3i SbDimsNonExt3 = idx2_NonExtDims(Dims(S.Grid));
@@ -42263,14 +45667,16 @@ EncodeBrick
         Resize(&PBrickVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E->Alloc);
         Fill(idx2_Range(f64, PBrickVol.Vol), 0.0);
         v3i From3 = (Brick3 / Idx2->GroupBrick3) * Idx2->GroupBrick3;
-        v3i NChildren3 = Dims(Crop(extent(From3, Idx2->GroupBrick3), extent(Idx2->NBricks3s[Iter])));
+        v3i NChildren3 =
+          Dims(Crop(extent(From3, Idx2->GroupBrick3), extent(Idx2->NBricks3s[Iter])));
         PBrickVol.NChildrenMax = (i8)Prod(NChildren3);
         PBrickVol.ExtentLocal = extent(NChildren3 * SbDimsNonExt3);
         Insert(&PbIt, PKey, PBrickVol);
       }
       /* copy data to the parent brick and (optionally) encode it */
       v3i LocalBrickPos3 = Brick3 % Idx2->GroupBrick3;
-      grid SbGridNonExt = S.Grid; SetDims(&SbGridNonExt, SbDimsNonExt3);
+      grid SbGridNonExt = S.Grid;
+      SetDims(&SbGridNonExt, SbDimsNonExt3);
       extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
       CopyGridExtent<f64, f64>(SbGridNonExt, BVol, ToGrid, &PbIt.Val->Vol);
       //      Copy(SbGridNonExt, BVol, ToGrid, &PbIt.Val->Vol);
@@ -42287,47 +45693,45 @@ EncodeBrick
   E->Iter -= IncIter;
 }
 
-//static void
-//EncodeBrickNASAWithMask
+// static void
+// EncodeBrickNASAWithMask
 //( /*----------------------------*/
-//  idx2_file*    Idx2           ,
-//  const params& P              ,
-//  encode_data*  E              ,
-//  bool          IncIter = false
+//   idx2_file*    Idx2           ,
+//   const params& P              ,
+//   encode_data*  E              ,
+//   bool          IncIter = false
 //) /*----------------------------*/
 //{
-//  idx2_Assert(Idx2->NLevels <= idx2_file::MaxLevels);
+//   idx2_Assert(Idx2->NLevels <= idx2_file::MaxLevels);
 //
-//  i8 Iter = E->Iter += IncIter;
-//  bool Valid = true;
-//  if (Iter == 0 && P.NasaMask.Buffer)
-//    Valid = P.NasaMask.At<int8>(v3i(E->Bricks3[Iter].X, E->Bricks3[Iter].Y, 0));
+//   i8 Iter = E->Iter += IncIter;
+//   bool Valid = true;
+//   if (Iter == 0 && P.NasaMask.Buffer)
+//     Valid = P.NasaMask.At<int8>(v3i(E->Bricks3[Iter].X, E->Bricks3[Iter].Y, 0));
 //
-//  u64 Brick = E->Brick[Iter];
-//  printf("level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]), Brick);
-//  auto BIt = Lookup(&E->BrickPool, GetBrickKey(Iter, Brick));
-//  idx2_Assert(BIt);
-//  volume& BVol = BIt.Val->Vol;
-//  idx2_Assert(BVol.Buffer);
+//   u64 Brick = E->Brick[Iter];
+//   printf("level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]),
+//   Brick); auto BIt = Lookup(&E->BrickPool, GetBrickKey(Iter, Brick)); idx2_Assert(BIt); volume&
+//   BVol = BIt.Val->Vol; idx2_Assert(BVol.Buffer);
 //
-//  if (Valid) { /* extrapolate the brick to, say 65^3 */
-//    // TODO: we do not need to pre-extrapolate
-//    ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TformOrder, &BVol);
-//  }
+//   if (Valid) { /* extrapolate the brick to, say 65^3 */
+//     // TODO: we do not need to pre-extrapolate
+//     ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TformOrder, &BVol);
+//   }
 //
-//  if (Valid) { /* do wavelet transform */
-//    if (!P.WaveletOnly) {
-//      if (Iter + 1 < Idx2->NLevels)
-//        ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
-//      else
-//        ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, true);
-//    } else {
-//      ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
-//    }
-//  }
+//   if (Valid) { /* do wavelet transform */
+//     if (!P.WaveletOnly) {
+//       if (Iter + 1 < Idx2->NLevels)
+//         ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
+//       else
+//         ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, true);
+//     } else {
+//       ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
+//     }
+//   }
 //
-//  if (Valid) { /* compute the min-max tree if needed */
-//    if (P.ComputeMinMax) {
+//   if (Valid) { /* compute the min-max tree if needed */
+//     if (P.ComputeMinMax) {
 ////      v3i NBlocks3 = (BrickDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
 ////      //u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
 ////      idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
@@ -42364,8 +45768,8 @@ EncodeBrick
 //        Resize(&PBrickVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E->Alloc);
 //        Fill(idx2_Range(f64, PBrickVol.Vol), 0.0);
 //        v3i From3 = (Brick3 / Idx2->GroupBrick3) * Idx2->GroupBrick3;
-//        v3i NChildren3 = Dims(Crop(extent(From3, Idx2->GroupBrick3), extent(Idx2->NBricks3s[Iter])));
-//        PBrickVol.NChildrenMax = (i8)Prod(NChildren3);
+//        v3i NChildren3 = Dims(Crop(extent(From3, Idx2->GroupBrick3),
+//        extent(Idx2->NBricks3s[Iter]))); PBrickVol.NChildrenMax = (i8)Prod(NChildren3);
 //        PBrickVol.ExtentLocal = extent(NChildren3 * SbDimsNonExt3);
 //        Insert(&PbIt, PKey, PBrickVol);
 //      }
@@ -42382,21 +45786,25 @@ EncodeBrick
 //    if (Idx2->Version == v2i(1, 0))
 //      EncodeSubband(Idx2, E, S.Grid, &BVol);
 //  } // end subband loop
-//EXIT:
+// EXIT:
 //  Dealloc(&BVol);
 //  Delete(&E->BrickPool, GetBrickKey(Iter, Brick));
 //  E->Iter -= IncIter;
 //}
 
 // TODO: return true error code
-struct channel_ptr {
+struct channel_ptr
+{
   i8 Iteration = 0;
   i8 Level = 0;
   i16 BitPlane = 0;
   channel* ChunkPtr = nullptr;
-  idx2_Inline bool operator<(const channel_ptr& Other) const {
-    if (Iteration == Other.Iteration) {
-      if (BitPlane == Other.BitPlane) return Level < Other.Level;
+  idx2_Inline bool operator<(const channel_ptr& Other) const
+  {
+    if (Iteration == Other.Iteration)
+    {
+      if (BitPlane == Other.BitPlane)
+        return Level < Other.Level;
       return BitPlane > Other.BitPlane;
     }
     return Iteration < Other.Iteration;
@@ -42405,19 +45813,17 @@ struct channel_ptr {
 
 // TODO: check the error path
 static error<idx2_err_code>
-FlushChunks
-(
-  const idx2_file& Idx2,
-  encode_data* E
-)
+FlushChunks(const idx2_file& Idx2, encode_data* E)
 {
   Reserve(&E->SortedChannels, Size(E->Channels));
   Clear(&E->SortedChannels);
-  idx2_ForEach(Ch, E->Channels) {
-    PushBack(&E->SortedChannels, t2<u32, channel*>{*Ch.Key, Ch.Val});
+  idx2_ForEach (Ch, E->Channels)
+  {
+    PushBack(&E->SortedChannels, t2<u32, channel*>{ *Ch.Key, Ch.Val });
   }
   InsertionSort(Begin(E->SortedChannels), End(E->SortedChannels));
-  idx2_ForEach(Ch, E->SortedChannels) {
+  idx2_ForEach (Ch, E->SortedChannels)
+  {
     i8 Iter = IterationFromChannelKey(Ch->First);
     i8 Level = LevelFromChannelKey(Ch->First);
     i16 BitPlane = BitPlaneFromChannelKey(Ch->First);
@@ -42425,10 +45831,12 @@ FlushChunks
   }
 
   /* write the chunk meta */
-  idx2_ForEach(CmIt, E->ChunkMeta) {
+  idx2_ForEach (CmIt, E->ChunkMeta)
+  {
     chunk_meta_info* Cm = CmIt.Val;
     file_id FileId = ConstructFilePath(Idx2, *CmIt.Key);
-    if (FileId.Id != *CmIt.Key) {
+    if (FileId.Id != *CmIt.Key)
+    {
       FileId = ConstructFilePath(Idx2, *CmIt.Key);
     }
     idx2_Assert(FileId.Id == *CmIt.Key);
@@ -42455,76 +45863,67 @@ f64 TotalTime_ = 0;
 By default, copy brick data from a volume to a local brick buffer.
 Can be extended polymorphically to provide other ways of copying.
 */
-brick_copier::brick_copier
-(
-  const volume* InputVolume
-)
+brick_copier::brick_copier(const volume* InputVolume)
 {
   Volume = InputVolume;
 }
 
 v2d
-brick_copier::Copy(
-  const extent& ExtentGlobal,
-  const extent& ExtentLocal,
-  brick_volume* Brick)
+brick_copier::Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_volume* Brick)
 {
   v2d MinMax;
-  idx2_Case_1 (Volume->Type == dtype::float32)
+  if (Volume->Type == dtype::float32)
     MinMax = (CopyExtentExtentMinMax<f32, f64>(ExtentGlobal, *Volume, ExtentLocal, &Brick->Vol));
-  idx2_Case_2 (Volume->Type == dtype::float64)
+  else if (Volume->Type == dtype::float64)
     MinMax = (CopyExtentExtentMinMax<f64, f64>(ExtentGlobal, *Volume, ExtentLocal, &Brick->Vol));
 
   return MinMax;
 }
 
 error<idx2_err_code>
-Encode(
-  idx2_file* Idx2,
-  const params& P,
-  brick_copier& Copier)
+Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
 {
   const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
   BrickAlloc_ = free_list_allocator(BrickBytes);
   idx2_RAII(encode_data, E, Init(&E));
-  idx2_BrickTraverse
-  (
-    timer Timer; StartTimer(&Timer);
-//    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
-//    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
-    // BVol = local brick storage (we will copy brick data from the input to this)
-    brick_volume BVol;
-    Resize(&BVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E.Alloc);
-    Fill(idx2_Range(f64, BVol.Vol), 0.0);
-    extent BrickExtent(Top.BrickFrom3 * Idx2->BrickDims3, Idx2->BrickDims3);
-    // BrickExtentCrop = the true extent of the brick (boundary bricks are cropped)
-    extent BrickExtentCrop = Crop(BrickExtent, extent(Idx2->Dims3));
-    BVol.ExtentLocal = Relative(BrickExtentCrop, BrickExtent);
-    v2d MinMax = Copier.Copy(BrickExtentCrop, BVol.ExtentLocal, &BVol);
-    Idx2->ValueRange.Min = Min(Idx2->ValueRange.Min, MinMax.Min);
-    Idx2->ValueRange.Max = Max(Idx2->ValueRange.Max, MinMax.Max);
-//    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
-    E.Iter = 0;
-    E.Bricks3[E.Iter] = Top.BrickFrom3;
-    E.Brick[E.Iter] = GetLinearBrick(*Idx2, E.Iter, E.Bricks3[E.Iter]);
-    idx2_Assert(E.Brick[E.Iter] == Top.Address);
-    u64 BrickKey = GetBrickKey(E.Iter, E.Brick[E.Iter]);
-    Insert(&E.BrickPool, BrickKey, BVol);
-    EncodeBrick(Idx2, P, &E);
-    TotalTime_ += Seconds(ElapsedTime(&Timer));
-    , 128
-    , Idx2->BrickOrders[E.Iter]
-    , v3i(0)
-    , Idx2->NBricks3s[E.Iter]
-    , extent(Idx2->NBricks3s[E.Iter])
-    , extent(Idx2->NBricks3s[E.Iter])
-  );
+  idx2_BrickTraverse(timer Timer; StartTimer(&Timer);
+                     //    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
+                     //    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
+                     // BVol = local brick storage (we will copy brick data from the input to this)
+                     brick_volume BVol;
+                     Resize(&BVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E.Alloc);
+                     Fill(idx2_Range(f64, BVol.Vol), 0.0);
+                     extent BrickExtent(Top.BrickFrom3 * Idx2->BrickDims3, Idx2->BrickDims3);
+                     // BrickExtentCrop = the true extent of the brick (boundary bricks are cropped)
+                     extent BrickExtentCrop = Crop(BrickExtent, extent(Idx2->Dims3));
+                     BVol.ExtentLocal = Relative(BrickExtentCrop, BrickExtent);
+                     v2d MinMax = Copier.Copy(BrickExtentCrop, BVol.ExtentLocal, &BVol);
+                     Idx2->ValueRange.Min = Min(Idx2->ValueRange.Min, MinMax.Min);
+                     Idx2->ValueRange.Max = Max(Idx2->ValueRange.Max, MinMax.Max);
+                     //    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
+                     E.Iter = 0;
+                     E.Bricks3[E.Iter] = Top.BrickFrom3;
+                     E.Brick[E.Iter] = GetLinearBrick(*Idx2, E.Iter, E.Bricks3[E.Iter]);
+                     idx2_Assert(E.Brick[E.Iter] == Top.Address);
+                     u64 BrickKey = GetBrickKey(E.Iter, E.Brick[E.Iter]);
+                     Insert(&E.BrickPool, BrickKey, BVol);
+                     EncodeBrick(Idx2, P, &E);
+                     TotalTime_ += Seconds(ElapsedTime(&Timer));
+                     ,
+                     128,
+                     Idx2->BrickOrders[E.Iter],
+                     v3i(0),
+                     Idx2->NBricks3s[E.Iter],
+                     extent(Idx2->NBricks3s[E.Iter]),
+                     extent(Idx2->NBricks3s[E.Iter]));
 
   /* dump the bit streams to files */
-  timer Timer; StartTimer(&Timer);
+  timer Timer;
+  StartTimer(&Timer);
   idx2_PropagateIfError(FlushChunks(*Idx2, &E));
   idx2_PropagateIfError(FlushChunkExponents(*Idx2, &E));
-  timer RdoTimer; StartTimer(&RdoTimer);
+  timer RdoTimer;
+  StartTimer(&RdoTimer);
   RateDistortionOpt(*Idx2, &E);
   TotalTime_ += Seconds(ElapsedTime(&Timer));
   printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
@@ -42533,30 +45932,61 @@ Encode(
   printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
   printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
   printf("num chunks              = %" PRIi64 "\n", ChunkStreamStat.Count());
-  printf("brick deltas      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickDeltasStat.Sum(), BrickDeltasStat.Avg(), BrickDeltasStat.StdDev());
-  printf("brick sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickSzsStat.Sum(), BrickSzsStat.Avg(), BrickSzsStat.StdDev());
-  printf("brick stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickStreamStat.Sum(), BrickStreamStat.Avg(), BrickStreamStat.StdDev());
-  printf("block stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BlockStat.Sum(), BlockStat.Avg(), BlockStat.StdDev());
-  printf("chunk sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkSzsStat.Sum(), ChunkSzsStat.Avg(), ChunkSzsStat.StdDev());
-  printf("chunk addrs       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkAddrsStat.Sum(), ChunkAddrsStat.Avg(), ChunkAddrsStat.StdDev());
-  printf("cpres chunk addrs total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", CpresChunkAddrsStat.Sum(), CpresChunkAddrsStat.Avg(), CpresChunkAddrsStat.StdDev());
-  printf("chunk stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkStreamStat.Sum(), ChunkStreamStat.Avg(), ChunkStreamStat.StdDev());
-  printf("brick exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickEMaxesStat.Sum(), BrickEMaxesStat.Avg(), BrickEMaxesStat.StdDev());
-  printf("block exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BlockEMaxStat.Sum(), BlockEMaxStat.Avg(), BlockEMaxStat.StdDev());
-  printf("chunk exp sizes   total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkEMaxSzsStat.Sum(), ChunkEMaxSzsStat.Avg(), ChunkEMaxSzsStat.StdDev());
-  printf("chunk exps stream total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkEMaxesStat.Sum(), ChunkEMaxesStat.Avg(), ChunkEMaxesStat.StdDev());
+  printf("brick deltas      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickDeltasStat.Sum(),
+         BrickDeltasStat.Avg(),
+         BrickDeltasStat.StdDev());
+  printf("brick sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickSzsStat.Sum(),
+         BrickSzsStat.Avg(),
+         BrickSzsStat.StdDev());
+  printf("brick stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickStreamStat.Sum(),
+         BrickStreamStat.Avg(),
+         BrickStreamStat.StdDev());
+  printf("block stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BlockStat.Sum(),
+         BlockStat.Avg(),
+         BlockStat.StdDev());
+  printf("chunk sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkSzsStat.Sum(),
+         ChunkSzsStat.Avg(),
+         ChunkSzsStat.StdDev());
+  printf("chunk addrs       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkAddrsStat.Sum(),
+         ChunkAddrsStat.Avg(),
+         ChunkAddrsStat.StdDev());
+  printf("cpres chunk addrs total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         CpresChunkAddrsStat.Sum(),
+         CpresChunkAddrsStat.Avg(),
+         CpresChunkAddrsStat.StdDev());
+  printf("chunk stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkStreamStat.Sum(),
+         ChunkStreamStat.Avg(),
+         ChunkStreamStat.StdDev());
+  printf("brick exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickEMaxesStat.Sum(),
+         BrickEMaxesStat.Avg(),
+         BrickEMaxesStat.StdDev());
+  printf("block exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BlockEMaxStat.Sum(),
+         BlockEMaxStat.Avg(),
+         BlockEMaxStat.StdDev());
+  printf("chunk exp sizes   total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkEMaxSzsStat.Sum(),
+         ChunkEMaxSzsStat.Avg(),
+         ChunkEMaxSzsStat.StdDev());
+  printf("chunk exps stream total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkEMaxesStat.Sum(),
+         ChunkEMaxesStat.Avg(),
+         ChunkEMaxesStat.StdDev());
   printf("total time              = %f seconds\n", TotalTime_);
-//  _ASSERTE( _CrtCheckMemory( ) );
+  //  _ASSERTE( _CrtCheckMemory( ) );
   return idx2_Error(idx2_err_code::NoError);
 }
 
 error<idx2_err_code>
-EncodeBrick
-(
-  idx2_file* Idx2,
-  const params& P,
-  const v3i& BrickPos3
-)
+EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3)
 {
   // TODO: First, we copy the brick to a buffer backed by memory-mapped file
   // TODO: Then, if this brick
@@ -42570,7 +46000,8 @@ EncodeBrick
 /* Write the metadata file (idx) */
 // TODO: return error type
 void
-WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName) {
+WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
+{
   FILE* Fp = fopen(FileName, "w");
   fprintf(Fp, "(\n"); // begin (
   fprintf(Fp, "  (common\n");
@@ -42597,25 +46028,30 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName) {
   fprintf(Fp, "    (group-levels %s)\n", Idx2.GroupLevels ? "true" : "false");
   fprintf(Fp, "    (group-sub-levels %s)\n", Idx2.GroupSubLevels ? "true" : "false");
   fprintf(Fp, "    (group-bit-planes %s)\n", Idx2.GroupBitPlanes ? "true" : "false");
-  if (Size(Idx2.QualityLevelsIn) > 0) {
+  if (Size(Idx2.QualityLevelsIn) > 0)
+  {
     fprintf(Fp, "    (quality-levels %d", (int)Size(Idx2.QualityLevelsIn));
-    idx2_ForEach(QIt, Idx2.QualityLevelsIn) { fprintf(Fp, " %d", *QIt); }
+    idx2_ForEach (QIt, Idx2.QualityLevelsIn)
+    {
+      fprintf(Fp, " %d", *QIt);
+    }
     fprintf(Fp, ")\n");
   }
   fprintf(Fp, "  )\n"); // end format)
-  fprintf(Fp, ")\n"); // end )
+  fprintf(Fp, ")\n");   // end )
   fclose(Fp);
 }
 
 error<idx2_err_code>
-EncodeWithMinMax(idx2_file* Idx2, const params& P, const volume& Vol) {
+EncodeWithMinMax(idx2_file* Idx2, const params& P, const volume& Vol)
+{
   const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
   BrickAlloc_ = free_list_allocator(BrickBytes);
   idx2_RAII(encode_data, E, Init(&E));
   idx2_BrickTraverse(
     timer Timer; StartTimer(&Timer);
-//    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
-//    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
+    //    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
+    //    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
     brick_volume BVol;
     Resize(&BVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E.Alloc);
     Fill(idx2_Range(f64, BVol.Vol), 0.0);
@@ -42623,13 +46059,13 @@ EncodeWithMinMax(idx2_file* Idx2, const params& P, const volume& Vol) {
     extent BrickExtentCrop = Crop(BrickExtent, extent(Idx2->Dims3));
     BVol.ExtentLocal = Relative(BrickExtentCrop, BrickExtent);
     v2d MinMax;
-    if (Vol.Type == dtype::float32)
-      MinMax = (CopyExtentExtentMinMax<f32, f64>(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol));
-    else if (Vol.Type == dtype::float64)
-      MinMax = (CopyExtentExtentMinMax<f64, f64>(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol));
+    if (Vol.Type == dtype::float32) MinMax =
+      (CopyExtentExtentMinMax<f32, f64>(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol));
+    else if (Vol.Type == dtype::float64) MinMax =
+      (CopyExtentExtentMinMax<f64, f64>(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol));
     Idx2->ValueRange.Min = Min(Idx2->ValueRange.Min, MinMax.Min);
     Idx2->ValueRange.Max = Max(Idx2->ValueRange.Max, MinMax.Max);
-//    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
+    //    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
     E.Iter = 0;
     E.Bricks3[E.Iter] = Top.BrickFrom3;
     E.Brick[E.Iter] = GetLinearBrick(*Idx2, E.Iter, E.Bricks3[E.Iter]);
@@ -42638,19 +46074,21 @@ EncodeWithMinMax(idx2_file* Idx2, const params& P, const volume& Vol) {
     Insert(&E.BrickPool, BrickKey, BVol);
     EncodeBrick(Idx2, P, &E);
     TotalTime_ += Seconds(ElapsedTime(&Timer));
-    , 128
-    , Idx2->BrickOrders[E.Iter]
-    , v3i(0)
-    , Idx2->NBricks3s[E.Iter]
-    , extent(Idx2->NBricks3s[E.Iter])
-    , extent(Idx2->NBricks3s[E.Iter])
-  );
+    ,
+    128,
+    Idx2->BrickOrders[E.Iter],
+    v3i(0),
+    Idx2->NBricks3s[E.Iter],
+    extent(Idx2->NBricks3s[E.Iter]),
+    extent(Idx2->NBricks3s[E.Iter]));
 
   /* dump the bit streams to files */
-  timer Timer; StartTimer(&Timer);
+  timer Timer;
+  StartTimer(&Timer);
   idx2_PropagateIfError(FlushChunks(*Idx2, &E));
   idx2_PropagateIfError(FlushChunkExponents(*Idx2, &E));
-  timer RdoTimer; StartTimer(&RdoTimer);
+  timer RdoTimer;
+  StartTimer(&RdoTimer);
   RateDistortionOpt(*Idx2, &E);
   TotalTime_ += Seconds(ElapsedTime(&Timer));
   printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
@@ -42659,25 +46097,62 @@ EncodeWithMinMax(idx2_file* Idx2, const params& P, const volume& Vol) {
   printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
   printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
   printf("num chunks              = %" PRIi64 "\n", ChunkStreamStat.Count());
-  printf("brick deltas      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickDeltasStat.Sum(), BrickDeltasStat.Avg(), BrickDeltasStat.StdDev());
-  printf("brick sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickSzsStat.Sum(), BrickSzsStat.Avg(), BrickSzsStat.StdDev());
-  printf("brick stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickStreamStat.Sum(), BrickStreamStat.Avg(), BrickStreamStat.StdDev());
-  printf("block stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BlockStat.Sum(), BlockStat.Avg(), BlockStat.StdDev());
-  printf("chunk sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkSzsStat.Sum(), ChunkSzsStat.Avg(), ChunkSzsStat.StdDev());
-  printf("chunk addrs       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkAddrsStat.Sum(), ChunkAddrsStat.Avg(), ChunkAddrsStat.StdDev());
-  printf("cpres chunk addrs total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", CpresChunkAddrsStat.Sum(), CpresChunkAddrsStat.Avg(), CpresChunkAddrsStat.StdDev());
-  printf("chunk stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkStreamStat.Sum(), ChunkStreamStat.Avg(), ChunkStreamStat.StdDev());
-  printf("brick exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BrickEMaxesStat.Sum(), BrickEMaxesStat.Avg(), BrickEMaxesStat.StdDev());
-  printf("block exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", BlockEMaxStat.Sum(), BlockEMaxStat.Avg(), BlockEMaxStat.StdDev());
-  printf("chunk exp sizes   total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkEMaxSzsStat.Sum(), ChunkEMaxSzsStat.Avg(), ChunkEMaxSzsStat.StdDev());
-  printf("chunk exps stream total = %12.0f avg = %12.1f stddev = %12.1f bytes\n", ChunkEMaxesStat.Sum(), ChunkEMaxesStat.Avg(), ChunkEMaxesStat.StdDev());
+  printf("brick deltas      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickDeltasStat.Sum(),
+         BrickDeltasStat.Avg(),
+         BrickDeltasStat.StdDev());
+  printf("brick sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickSzsStat.Sum(),
+         BrickSzsStat.Avg(),
+         BrickSzsStat.StdDev());
+  printf("brick stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickStreamStat.Sum(),
+         BrickStreamStat.Avg(),
+         BrickStreamStat.StdDev());
+  printf("block stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BlockStat.Sum(),
+         BlockStat.Avg(),
+         BlockStat.StdDev());
+  printf("chunk sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkSzsStat.Sum(),
+         ChunkSzsStat.Avg(),
+         ChunkSzsStat.StdDev());
+  printf("chunk addrs       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkAddrsStat.Sum(),
+         ChunkAddrsStat.Avg(),
+         ChunkAddrsStat.StdDev());
+  printf("cpres chunk addrs total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         CpresChunkAddrsStat.Sum(),
+         CpresChunkAddrsStat.Avg(),
+         CpresChunkAddrsStat.StdDev());
+  printf("chunk stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkStreamStat.Sum(),
+         ChunkStreamStat.Avg(),
+         ChunkStreamStat.StdDev());
+  printf("brick exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BrickEMaxesStat.Sum(),
+         BrickEMaxesStat.Avg(),
+         BrickEMaxesStat.StdDev());
+  printf("block exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         BlockEMaxStat.Sum(),
+         BlockEMaxStat.Avg(),
+         BlockEMaxStat.StdDev());
+  printf("chunk exp sizes   total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkEMaxSzsStat.Sum(),
+         ChunkEMaxSzsStat.Avg(),
+         ChunkEMaxSzsStat.StdDev());
+  printf("chunk exps stream total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
+         ChunkEMaxesStat.Sum(),
+         ChunkEMaxesStat.Avg(),
+         ChunkEMaxesStat.StdDev());
   printf("total time              = %f seconds\n", TotalTime_);
-//  _ASSERTE( _CrtCheckMemory( ) );
+  //  _ASSERTE( _CrtCheckMemory( ) );
   return idx2_Error(idx2_err_code::NoError);
 }
 
 static void
-Init(encode_data* E, allocator* Alloc) {
+Init(encode_data* E, allocator* Alloc)
+{
   Init(&E->BrickPool, 9);
   Init(&E->Channels, 10);
   Init(&E->SubChannels, 5);
@@ -42692,15 +46167,20 @@ Init(encode_data* E, allocator* Alloc) {
 }
 
 static void
-Dealloc(encode_data* E) {
+Dealloc(encode_data* E)
+{
   E->Alloc->DeallocAll();
   Dealloc(&E->BrickPool);
-  idx2_ForEach(ChannelIt, E->Channels) Dealloc(ChannelIt.Val);
+  idx2_ForEach (ChannelIt, E->Channels)
+    Dealloc(ChannelIt.Val);
   Dealloc(&E->Channels);
-  idx2_ForEach(SubChannelIt, E->SubChannels) Dealloc(SubChannelIt.Val);
+  idx2_ForEach (SubChannelIt, E->SubChannels)
+    Dealloc(SubChannelIt.Val);
   Dealloc(&E->SubChannels);
-  idx2_ForEach(ChunkMetaIt, E->ChunkMeta) Dealloc(ChunkMetaIt.Val);
-  idx2_ForEach(ChunkEMaxesMetaIt, E->ChunkEMaxesMeta) Dealloc(ChunkEMaxesMetaIt.Val);
+  idx2_ForEach (ChunkMetaIt, E->ChunkMeta)
+    Dealloc(ChunkMetaIt.Val);
+  idx2_ForEach (ChunkEMaxesMetaIt, E->ChunkEMaxesMeta)
+    Dealloc(ChunkEMaxesMetaIt.Val);
   Dealloc(&E->ChunkMeta);
   Dealloc(&E->CpresEMaxes);
   Dealloc(&E->CpresChunkAddrs);
@@ -42719,98 +46199,101 @@ Dealloc(encode_data* E) {
 - only do wavelet transform (no compression)
 - write each iteration to one file
 - only support linear decoding of each file */
-//void
-//EncodeSubbandV0_0(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
-//  u64 Brick = E->Brick[E->Iter];
-//  v3i SbDims3 = Dims(SbGrid);
-//  v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
-//  u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-//  file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
-//  idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
-//  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
-//    v3i Z3(DecodeMorton3(Block));
-//    idx2_NextMorton(Block, Z3, NBlocks3);
-//    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2->BlockDims3));
-//    v3i D3 = Z3 * Idx2->BlockDims3;
-//    v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-//    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
-//    if (CodedInNextIter) continue;
-//    /* copy the samples to the local buffer */
-//    v3i S3;
-//    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-//      idx2_Assert(D3 + S3 < SbDims3);
-//      BlockFloats[Row(BlockDims3, S3)] = BrickVol->At<f64>(SbGrid, D3 + S3);
-//    } idx2_EndFor3 // end sample loop
-//      WriteBuffer(Fp, BufFloats);
-//  }
-//}
+// void
+// EncodeSubbandV0_0(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
+//   u64 Brick = E->Brick[E->Iter];
+//   v3i SbDims3 = Dims(SbGrid);
+//   v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
+//   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
+//   file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
+//   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
+//   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+//     v3i Z3(DecodeMorton3(Block));
+//     idx2_NextMorton(Block, Z3, NBlocks3);
+//     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2->BlockDims3));
+//     v3i D3 = Z3 * Idx2->BlockDims3;
+//     v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
+//     bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 ==
+//     Idx2->BlockDims3; if (CodedInNextIter) continue;
+//     /* copy the samples to the local buffer */
+//     v3i S3;
+//     idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+//       idx2_Assert(D3 + S3 < SbDims3);
+//       BlockFloats[Row(BlockDims3, S3)] = BrickVol->At<f64>(SbGrid, D3 + S3);
+//     } idx2_EndFor3 // end sample loop
+//       WriteBuffer(Fp, BufFloats);
+//   }
+// }
 
 /* V0_1:
 - do wavelet transform and compression
 - write each iteration to one file
 - only support linear decoding of each file */
-//void
-//EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
-//  u64 Brick = E->Brick[E->Iter];
-//  v3i SbDims3 = Dims(SbGrid);
-//  const i8 NBitPlanes = idx2_BitSizeOf(f64);
-//  v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
-//  u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-//  file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
-//  idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
-//  Rewind(&E->BlockStream);
-//  GrowToAccomodate(&E->BlockStream, 8 * 1024 * 1024); // 8MB
-//  InitWrite(&E->BlockStream, E->BlockStream.Stream);
-//  idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
-//    v3i Z3(DecodeMorton3(Block));
-//    idx2_NextMorton(Block, Z3, NBlocks3);
-//    v3i D3 = Z3 * Idx2->BlockDims3;
-//    v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-//    f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
-//    i64 BlockInts[4 * 4 * 4] = {}; buffer_t BufInts(BlockInts, Prod(BlockDims3));
-//    u64 BlockUInts[4 * 4 * 4] = {}; buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
-//    bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
-//    if (CodedInNextIter) continue;
-//    /* copy the samples to the local buffer */
-//    v3i S3;
-//    int J = 0;
-//    idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-//      idx2_Assert(D3 + S3 < SbDims3);
-//      BlockFloats[J++] = BrickVol->At<f64>(SbGrid, D3 + S3);
-//    } idx2_EndFor3 // end sample loop
-//      i8 NDims = (i8)NumDims(BlockDims3);
-//    const int NVals = 1 << (2 * NDims);
-//    const i8 Prec = idx2_BitSizeOf(f64) - 1 - NDims;
-//    // TODO: deal with Float32
-//    const i16 EMax = (i16)Quantize(Prec, BufFloats, &BufInts);
-//    ForwardZfp(BlockInts, NDims);
-//    ForwardShuffle(BlockInts, BlockUInts, NDims);
-//    i8 N = 0; // number of significant coefficients in the block so far
-//    Write(&E->BlockStream, EMax + traits<f64>::ExpBias, traits<f64>::ExpBits);
-//    idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
-//      i16 RealBp = Bp + EMax;
-//      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
-//      if (TooHighPrecision) break;
-//      GrowIfTooFull(&E->BlockStream);
-//      Encode(BlockUInts, NVals, Bp, N, &E->BlockStream);
-//    }
-//  }
-//  Flush(&E->BlockStream);
-//  WritePOD(Fp, (int)Size(E->BlockStream));
-//  WriteBuffer(Fp, ToBuffer(E->BlockStream));
-//}
+// void
+// EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
+//   u64 Brick = E->Brick[E->Iter];
+//   v3i SbDims3 = Dims(SbGrid);
+//   const i8 NBitPlanes = idx2_BitSizeOf(f64);
+//   v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
+//   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
+//   file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
+//   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
+//   Rewind(&E->BlockStream);
+//   GrowToAccomodate(&E->BlockStream, 8 * 1024 * 1024); // 8MB
+//   InitWrite(&E->BlockStream, E->BlockStream.Stream);
+//   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
+//     v3i Z3(DecodeMorton3(Block));
+//     idx2_NextMorton(Block, Z3, NBlocks3);
+//     v3i D3 = Z3 * Idx2->BlockDims3;
+//     v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
+//     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
+//     i64 BlockInts[4 * 4 * 4] = {}; buffer_t BufInts(BlockInts, Prod(BlockDims3));
+//     u64 BlockUInts[4 * 4 * 4] = {}; buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
+//     bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 ==
+//     Idx2->BlockDims3; if (CodedInNextIter) continue;
+//     /* copy the samples to the local buffer */
+//     v3i S3;
+//     int J = 0;
+//     idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
+//       idx2_Assert(D3 + S3 < SbDims3);
+//       BlockFloats[J++] = BrickVol->At<f64>(SbGrid, D3 + S3);
+//     } idx2_EndFor3 // end sample loop
+//       i8 NDims = (i8)NumDims(BlockDims3);
+//     const int NVals = 1 << (2 * NDims);
+//     const i8 Prec = idx2_BitSizeOf(f64) - 1 - NDims;
+//     // TODO: deal with Float32
+//     const i16 EMax = (i16)Quantize(Prec, BufFloats, &BufInts);
+//     ForwardZfp(BlockInts, NDims);
+//     ForwardShuffle(BlockInts, BlockUInts, NDims);
+//     i8 N = 0; // number of significant coefficients in the block so far
+//     Write(&E->BlockStream, EMax + traits<f64>::ExpBias, traits<f64>::ExpBits);
+//     idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
+//       i16 RealBp = Bp + EMax;
+//       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
+//       if (TooHighPrecision) break;
+//       GrowIfTooFull(&E->BlockStream);
+//       Encode(BlockUInts, NVals, Bp, N, &E->BlockStream);
+//     }
+//   }
+//   Flush(&E->BlockStream);
+//   WritePOD(Fp, (int)Size(E->BlockStream));
+//   WriteBuffer(Fp, ToBuffer(E->BlockStream));
+// }
 
-}
+} // namespace idx2
 
 /* Functions that implement file/chunk/brick lookup logic */
 
-namespace idx2 {
+namespace idx2
+{
 
 u64
-GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3) {
+GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3)
+{
   u64 LinearBrick = 0;
   int Size = Idx2.BrickOrderStrs[Iter].Len;
-  for (int I = Size - 1; I >= 0; --I) {
+  for (int I = Size - 1; I >= 0; --I)
+  {
     int D = Idx2.BrickOrderStrs[Iter][I] - 'X';
     LinearBrick |= (Brick3[D] & u64(1)) << (Size - I - 1);
     Brick3[D] >>= 1;
@@ -42819,16 +46302,19 @@ GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3) {
 }
 
 file_id
-ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level) {
-  #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
-  #define idx2_PrintBrick\
-    for (int Depth = 0; Depth + 1 < Idx2.FileDirDepths[Level].Len; ++Depth) {\
-      int BitLen = idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len + Idx2.FileDirDepths[Level][Depth];\
-      idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));\
-      Brick <<= Idx2.FileDirDepths[Level][Depth];\
-      Shift += Idx2.FileDirDepths[Level][Depth];\
-    }
-  #define idx2_PrintExtension idx2_Print(&Pr, ".rdo");
+ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level)
+{
+#define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
+#define idx2_PrintBrick                                                                            \
+  for (int Depth = 0; Depth + 1 < Idx2.FileDirDepths[Level].Len; ++Depth)                          \
+  {                                                                                                \
+    int BitLen =                                                                                   \
+      idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len + Idx2.FileDirDepths[Level][Depth];     \
+    idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));                                   \
+    Brick <<= Idx2.FileDirDepths[Level][Depth];                                                    \
+    Shift += Idx2.FileDirDepths[Level][Depth];                                                     \
+  }
+#define idx2_PrintExtension idx2_Print(&Pr, ".rdo");
   u64 BrickBackup = Brick;
   int Shift = 0;
   thread_local static char FilePath[256];
@@ -42838,59 +46324,68 @@ ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level) {
   idx2_PrintBrick;
   idx2_PrintExtension;
   u64 FileId = GetFileAddressRdo(Idx2.BricksPerFiles[Level], BrickBackup, Level);
-  return file_id{stref{FilePath, Pr.Size}, FileId};
-  #undef idx2_PrintLevel
-  #undef idx2_PrintBrick
-  #undef idx2_PrintExtension
+  return file_id{ stref{ FilePath, Pr.Size }, FileId };
+#undef idx2_PrintLevel
+#undef idx2_PrintBrick
+#undef idx2_PrintExtension
 }
 
 // TODO: write a struct to help with bit packing / unpacking so we don't have to manually edit these
 // TODO: make the following inline
 
 file_id
-ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane) {
-  #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
-  #define idx2_PrintBrick\
-    for (int Depth = 0; Depth + 1 < Idx2.FileDirDepths[Level].Len; ++Depth) {\
-      int BitLen = idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len + Idx2.FileDirDepths[Level][Depth];\
-      idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));\
-      Brick <<= Idx2.FileDirDepths[Level][Depth];\
-      Shift += Idx2.FileDirDepths[Level][Depth];\
-    }
-  #define idx2_PrintSubLevel idx2_Print(&Pr, "/S%02x", SubLevel);
-  #define idx2_PrintBitPlane idx2_Print(&Pr, "/P%04hx", BitPlane);
-  #define idx2_PrintExtension idx2_Print(&Pr, ".bin");
+ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
+{
+#define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
+#define idx2_PrintBrick                                                                            \
+  for (int Depth = 0; Depth + 1 < Idx2.FileDirDepths[Level].Len; ++Depth)                          \
+  {                                                                                                \
+    int BitLen =                                                                                   \
+      idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len + Idx2.FileDirDepths[Level][Depth];     \
+    idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));                                   \
+    Brick <<= Idx2.FileDirDepths[Level][Depth];                                                    \
+    Shift += Idx2.FileDirDepths[Level][Depth];                                                     \
+  }
+#define idx2_PrintSubLevel idx2_Print(&Pr, "/S%02x", SubLevel);
+#define idx2_PrintBitPlane idx2_Print(&Pr, "/P%04hx", BitPlane);
+#define idx2_PrintExtension idx2_Print(&Pr, ".bin");
   u64 BrickBackup = Brick;
   int Shift = 0;
   thread_local static char FilePath[256];
   printer Pr(FilePath, sizeof(FilePath));
   idx2_Print(&Pr, "%s/%s/%s/BrickData/", Idx2.Dir, Idx2.Name, Idx2.Field);
-  if (!Idx2.GroupBitPlanes) { idx2_PrintBitPlane; }
-  if (!Idx2.GroupLevels) { idx2_PrintLevel; }
-  if (!Idx2.GroupSubLevels) { idx2_PrintSubLevel; }
+  if (!Idx2.GroupBitPlanes)
+    idx2_PrintBitPlane;
+  if (!Idx2.GroupLevels)
+    idx2_PrintLevel;
+  if (!Idx2.GroupSubLevels)
+    idx2_PrintSubLevel;
   idx2_PrintBrick;
   idx2_PrintExtension;
   u64 FileId = GetFileAddress(Idx2, BrickBackup, Level, SubLevel, BitPlane);
-  return file_id{stref{FilePath, Pr.Size}, FileId};
-  #undef idx2_PrintLevel
-  #undef idx2_PrintBrick
-  #undef idx2_PrintSubLevel
-  #undef idx2_PrintBitPlane
-  #undef idx2_PrintExtension
+  return file_id{ stref{ FilePath, Pr.Size }, FileId };
+#undef idx2_PrintLevel
+#undef idx2_PrintBrick
+#undef idx2_PrintSubLevel
+#undef idx2_PrintBitPlane
+#undef idx2_PrintExtension
 }
 
 file_id
-ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel) {
-  #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
-  #define idx2_PrintBrick\
-    for (int Depth = 0; Depth + 1 < Idx2.FileDirDepths[Level].Len; ++Depth) {\
-      int BitLen = idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len + Idx2.FileDirDepths[Level][Depth];\
-      idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));\
-      Brick <<= Idx2.FileDirDepths[Level][Depth];\
-      Shift += Idx2.FileDirDepths[Level][Depth];\
-    }
-  #define idx2_PrintSubLevel idx2_Print(&Pr, "/S%02x", SubLevel);
-  #define idx2_PrintExtension idx2_Print(&Pr, ".bex");
+ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel)
+{
+#define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
+#define idx2_PrintBrick                                                                            \
+  for (int Depth = 0; Depth + 1 < Idx2.FileDirDepths[Level].Len; ++Depth)                          \
+  {                                                                                                \
+    int BitLen =                                                                                   \
+      idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len + Idx2.FileDirDepths[Level][Depth];     \
+    idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));                                   \
+    Brick <<= Idx2.FileDirDepths[Level][Depth];                                                    \
+    Shift += Idx2.FileDirDepths[Level][Depth];                                                     \
+  }
+#define idx2_PrintSubLevel idx2_Print(&Pr, "/S%02x", SubLevel);
+#define idx2_PrintExtension idx2_Print(&Pr, ".bex");
   u64 BrickBackup = Brick;
   int Shift = 0;
   thread_local static char FilePath[256];
@@ -42901,74 +46396,87 @@ ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLev
   idx2_PrintBrick;
   idx2_PrintExtension;
   u64 FileId = GetFileAddressExp(Idx2.BricksPerFiles[Level], BrickBackup, Level, SubLevel);
-  return file_id{stref{FilePath, Pr.Size}, FileId};
-  #undef idx2_PrintLevel
-  #undef idx2_PrintSubLevel
-  #undef idx2_PrintBrick
-  #undef idx2_PrintExtension
+  return file_id{ stref{ FilePath, Pr.Size }, FileId };
+#undef idx2_PrintLevel
+#undef idx2_PrintSubLevel
+#undef idx2_PrintBrick
+#undef idx2_PrintExtension
 }
 
-//file_id
-//ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level) {
-//  #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
-//  #define idx2_PrintBrick\
+// file_id
+// ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level) {
+//   #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
+//   #d  ef    ine idx2_PrintBrick\
 //    for (int Depth = 0; Depth + 1 < Idx2.FileDirDepths[Level].Len; ++Depth) {\
-//      int BitLen = idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len + Idx2.FileDirDepths[Level][Depth];\
+//      int BitLen = idx2_BitSizeOf(u64) - Idx2.BrickOrderStrs[Level].Len +
+//       Idx2.FileDirDepths[Level][Depth];\
 //      idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));\
 //      Brick <<= Idx2.FileDirDepths[Level][Depth];\
 //      Shift += Idx2.FileDirDepths[Level][Depth];\
 //    }
-//  #define idx2_PrintExtension idx2_Print(&Pr, ".rdo");
-//  u64 BrickBackup = Brick;
-//  int Shift = 0;
-//  thread_local static char FilePath[256];
-//  printer Pr(FilePath, sizeof(FilePath));
-//  idx2_Print(&Pr, "%s/%s/%s/TruncationPoints/", Idx2.Dir, Idx2.Name, Idx2.Field);
-//  idx2_PrintLevel;
-//  idx2_PrintBrick;
-//  idx2_PrintExtension;
-//  u64 FileId = GetFileAddressRdo(Idx2.BricksPerFiles[Level], BrickBackup, Level);
-//  return file_id{stref{FilePath, Pr.Size}, FileId};
-//  #undef idx2_PrintLevel
-//  #undef idx2_PrintBrick
-//  #undef idx2_PrintExtension
-//}
+//   #define idx2_PrintExtension idx2_Print(&Pr, ".rdo");
+//   u64 BrickBackup = Brick;
+//   int Shift = 0;
+//   thread_local static char FilePath[256];
+//   printer Pr(FilePath, sizeof(FilePath));
+//   idx2_Print(&Pr, "%s/%s/%s/TruncationPoints/", Idx2.Dir, Idx2.Name, Idx2.Field);
+//   idx2_PrintLevel;
+//   idx2_PrintBrick;
+//   idx2_PrintExtension;
+//   u64 FileId = GetFileAddressRdo(Idx2.BricksPerFiles[Level], BrickBackup, Level);
+//   return file_id{stref{FilePath, Pr.Size}, FileId};
+//   #undef idx2_PrintLevel
+//   #undef idx2_PrintBrick
+//   #undef idx2_PrintExtension
+// }
 
-}
+} // namespace idx2
 
 // TODO: make some functions inline
 
-namespace idx2 {
+namespace idx2
+{
 
 // Base-128 varint
 // Encode Vals in groups of 64 bits each, with 4-bit control
 void
-Write(simple8b* S8b, u32 Val) {
+Write(simple8b* S8b, u32 Val)
+{
   i8 MaxBitsIdx = S8b->MaxBitsIdx;
   i8 NewMaxBits = Val > 0 ? Log2Ceil(Val + 1) : 0;
   while (simple8b::BitsPerInt[MaxBitsIdx] < NewMaxBits)
     ++MaxBitsIdx;
   bool Overflow = Size(S8b->SavedVals) >= simple8b::IntsCoded[MaxBitsIdx];
-  if (Overflow) { // overflow
+  if (Overflow)
+  { // overflow
     FlushVals(S8b);
     Write(S8b, Val);
-  } else { // not overflow
+  }
+  else
+  { // not overflow
     S8b->MaxBitsIdx = MaxBitsIdx;
     PushBack(&(S8b->SavedVals), Val);
   }
 }
 
 void
-FlushVals(simple8b* S8b) {
-  if (S8b->MaxBitsIdx == 0 && Size(S8b->SavedVals) >= simple8b::IntsCoded[0]) { // flush 240 zeros
+FlushVals(simple8b* S8b)
+{
+  if (S8b->MaxBitsIdx == 0 && Size(S8b->SavedVals) >= simple8b::IntsCoded[0])
+  { // flush 240 zeros
     idx2_Assert(Size(S8b->SavedVals) == simple8b::IntsCoded[0]);
     Write(&(S8b->Stream), 0, 4);
     PopFront(&(S8b->SavedVals), Size(S8b->SavedVals));
-  } else if (S8b->MaxBitsIdx == 0 && Size(S8b->SavedVals) >= simple8b::IntsCoded[1]) { // flush 120 zeros
+  }
+  else if (S8b->MaxBitsIdx == 0 && Size(S8b->SavedVals) >= simple8b::IntsCoded[1])
+  { // flush 120 zeros
     Write(&(S8b->Stream), 1, 4);
     PopFront(&(S8b->SavedVals), simple8b::IntsCoded[1]);
-  } else { // flush all saved vals
-    while (Size(S8b->SavedVals) > 0) {
+  }
+  else
+  { // flush all saved vals
+    while (Size(S8b->SavedVals) > 0)
+    {
       i8 MaxBitsIdx = 0;
       while (Size(S8b->SavedVals) < simple8b::IntsCoded[MaxBitsIdx])
         ++MaxBitsIdx;
@@ -42982,64 +46490,80 @@ FlushVals(simple8b* S8b) {
 }
 
 void
-FlushStream(simple8b* S8b) {
+FlushStream(simple8b* S8b)
+{
   Flush(&(S8b->Stream));
 }
 
 /* Read the next number from the stream */
 u32
-Read(simple8b* S8b) {
-  if (S8b->NSavedVals == 0) { // just starting a new sequence
+Read(simple8b* S8b)
+{
+  if (S8b->NSavedVals == 0)
+  { // just starting a new sequence
     S8b->MaxBitsIdx = (i8)Read(&(S8b->Stream), 4);
     S8b->NSavedVals = simple8b::IntsCoded[S8b->MaxBitsIdx];
     idx2_Assert(S8b->NSavedVals > 0);
     --S8b->NSavedVals;
-    return (S8b->MaxBitsIdx < 2) ? 0 : (u32)Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
-  } else { // continue extracting values from the current sequence
+    return (S8b->MaxBitsIdx < 2) ? 0
+                                 : (u32)Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
+  }
+  else
+  { // continue extracting values from the current sequence
     --S8b->NSavedVals;
-    return (S8b->MaxBitsIdx < 2) ? 0 : (u32)Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
+    return (S8b->MaxBitsIdx < 2) ? 0
+                                 : (u32)Read(&(S8b->Stream), simple8b::BitsPerInt[S8b->MaxBitsIdx]);
   }
 }
 
 // TODO: should we empty the SavedVals here?
 void
-Rewind(simple8b* S8b) {
+Rewind(simple8b* S8b)
+{
   Rewind(&(S8b->Stream));
   S8b->NSavedVals = S8b->MaxBitsIdx = 0;
   Clear(&(S8b->SavedVals));
 }
 
 int
-BitCount(const simple8b& S8b) {
-  if (S8b.MaxBitsIdx == 0 && Size(S8b.SavedVals) >= simple8b::IntsCoded[0]) { // 240 zeros
+BitCount(const simple8b& S8b)
+{
+  if (S8b.MaxBitsIdx == 0 && Size(S8b.SavedVals) >= simple8b::IntsCoded[0])
+  { // 240 zeros
     idx2_Assert(Size(S8b.SavedVals) == simple8b::IntsCoded[0]);
     return (int)BitSize(S8b.Stream) + 4;
-  } else if (S8b.MaxBitsIdx == 0 && Size(S8b.SavedVals) >= simple8b::IntsCoded[1]) { // 120 zeros
+  }
+  else if (S8b.MaxBitsIdx == 0 && Size(S8b.SavedVals) >= simple8b::IntsCoded[1])
+  { // 120 zeros
     return (int)BitSize(S8b.Stream) + 4;
   }
-	int Result = (int)BitSize(S8b.Stream);
-	i8 S = (i8)Size(S8b.SavedVals);
-	while (S > 0) {
-		i8 MaxBitsIdx = 0;
-		while (S < simple8b::IntsCoded[MaxBitsIdx])
-		++MaxBitsIdx;
-		Result += 4 + simple8b::IntsCoded[MaxBitsIdx] * simple8b::BitsPerInt[MaxBitsIdx];
-		S -= simple8b::IntsCoded[MaxBitsIdx];
-	}
-	return Result;
+  int Result = (int)BitSize(S8b.Stream);
+  i8 S = (i8)Size(S8b.SavedVals);
+  while (S > 0)
+  {
+    i8 MaxBitsIdx = 0;
+    while (S < simple8b::IntsCoded[MaxBitsIdx])
+      ++MaxBitsIdx;
+    Result += 4 + simple8b::IntsCoded[MaxBitsIdx] * simple8b::BitsPerInt[MaxBitsIdx];
+    S -= simple8b::IntsCoded[MaxBitsIdx];
+  }
+  return Result;
 }
 
 int
-ByteCount(const simple8b& S8b) {
+ByteCount(const simple8b& S8b)
+{
   return (int)RoundUp(BitCount(S8b), 8) / 8;
 }
 
 // TODO: we can read faster by checking for the trailing zeros
 
 u32
-ReadUnaryWithBoundaryCheck(bitstream* Bs) {
+ReadUnaryWithBoundaryCheck(bitstream* Bs)
+{
   u32 V = 0;
-  while (true) {
+  while (true)
+  {
     if (BitSize(*Bs) >= Size(Bs->Stream) * 8)
       return (u32)-1;
     if (!Read(Bs))
@@ -43054,10 +46578,14 @@ ReadUnaryWithBoundaryCheck(bitstream* Bs) {
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
-void Unmap(mmap_volume* Vol) {
-  if (Vol->MMap.Buf) {
+void
+Unmap(mmap_volume* Vol)
+{
+  if (Vol->MMap.Buf)
+  {
     if (Vol->MMap.Mode == map_mode::Write)
       FlushFile(&Vol->MMap);
     SyncFile(&Vol->MMap);
@@ -43071,14 +46599,18 @@ void Unmap(mmap_volume* Vol) {
 // TODO: maybe add a mode where if the file size disagree with the inputs, then do
 // not load the file
 error<>
-ReadVolume(cstr FileName, const v3i& Dims3, dtype Type, volume* Volume) {
+ReadVolume(cstr FileName, const v3i& Dims3, dtype Type, volume* Volume)
+{
   error Ok;
-  if (Size(Volume->Buffer) <= Prod(Dims3) * SizeOf(Type)) {
+  if (Size(Volume->Buffer) <= Prod(Dims3) * SizeOf(Type))
+  {
     Ok = ReadFile(FileName, &Volume->Buffer);
     if (Ok.Code != err_code::NoError)
       return Ok;
     *Volume = volume(Volume->Buffer, Dims3, Type);
-  } else { // volume's buffer is larger than the input
+  }
+  else
+  { // volume's buffer is larger than the input
     idx2_Assert(Dims3 <= Dims(*Volume));
     idx2_Assert(Volume->Type != dtype::__Invalid__);
     volume Temp(Dims3, Volume->Type);
@@ -43096,11 +46628,15 @@ ReadVolume(cstr FileName, const v3i& Dims3, dtype Type, volume* Volume) {
 }
 
 error<mmap_err_code>
-MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mode Mode) {
+MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mode Mode)
+{
   idx2_ReturnIfError(OpenFile(&Vol->MMap, FileName, Mode));
-  if (Mode == map_mode::Write) {
+  if (Mode == map_mode::Write)
+  {
     idx2_ReturnIfError(MapFile(&Vol->MMap, Prod<u64>(Dims3) * SizeOf(DType)));
-  } else {
+  }
+  else
+  {
     idx2_ReturnIfError(MapFile(&Vol->MMap));
   }
   Vol->Vol = volume(Vol->MMap.Buf, Dims3, DType);
@@ -43108,40 +46644,44 @@ MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mo
 }
 
 error<>
-WriteVolume(FILE* Fp, const volume& Vol, const grid& Grid) {
-  #define Body(type)\
-  auto EndIt = End<type>(Grid, Vol);\
-  for (auto It = Begin<type>(Grid, Vol); It != EndIt; ++It) {\
-    if (fwrite(&(*It), sizeof(*It), 1, Fp) != 1)\
-      return idx2_Error(err_code::FileWriteFailed);\
+WriteVolume(FILE* Fp, const volume& Vol, const grid& Grid)
+{
+#define Body(type)                                                                                 \
+  auto EndIt = End<type>(Grid, Vol);                                                               \
+  for (auto It = Begin<type>(Grid, Vol); It != EndIt; ++It)                                        \
+  {                                                                                                \
+    if (fwrite(&(*It), sizeof(*It), 1, Fp) != 1)                                                   \
+      return idx2_Error(err_code::FileWriteFailed);                                                \
   }
-  idx2_DispatchOnType(Vol.Type)
-  return idx2_Error(err_code::NoError);
-  #undef Body
+  idx2_DispatchOnType(Vol.Type) return idx2_Error(err_code::NoError);
+#undef Body
 }
 
 error<>
-WriteVolume(cstr FileName, const volume& Vol) {
+WriteVolume(cstr FileName, const volume& Vol)
+{
   return WriteBuffer(FileName, Vol.Buffer);
 }
 
 error<>
-WriteVolume(cstr FileName, const volume& Vol, const extent& Ext) {
+WriteVolume(cstr FileName, const volume& Vol, const extent& Ext)
+{
   FILE* Fp = fopen(FileName, "wb");
   idx2_CleanUp(fclose(Fp));
-  #define Body(type)\
-  auto EndIt = End<type>(Ext, Vol);\
-  for (auto It = Begin<type>(Ext, Vol); It != EndIt; ++It) {\
-    if (fwrite(&(*It), sizeof(*It), 1, Fp) != 1)\
-      return idx2_Error(err_code::FileWriteFailed);\
+#define Body(type)                                                                                 \
+  auto EndIt = End<type>(Ext, Vol);                                                                \
+  for (auto It = Begin<type>(Ext, Vol); It != EndIt; ++It)                                         \
+  {                                                                                                \
+    if (fwrite(&(*It), sizeof(*It), 1, Fp) != 1)                                                   \
+      return idx2_Error(err_code::FileWriteFailed);                                                \
   }
-  idx2_DispatchOnType(Vol.Type)
-  return idx2_Error(err_code::NoError);
-  #undef Body
+  idx2_DispatchOnType(Vol.Type) return idx2_Error(err_code::NoError);
+#undef Body
 }
 
 void
-Resize(volume* Vol, const v3i& Dims3, allocator* Alloc) {
+Resize(volume* Vol, const v3i& Dims3, allocator* Alloc)
+{
   idx2_Assert(Vol->Type != dtype::__Invalid__);
   i64 NewSize = Prod<u64>(Dims3) * SizeOf(Vol->Type);
   if (Size(Vol->Buffer) < NewSize)
@@ -43150,7 +46690,8 @@ Resize(volume* Vol, const v3i& Dims3, allocator* Alloc) {
 }
 
 void
-Resize(volume* Vol, const v3i& Dims3, dtype Type, allocator* Alloc) {
+Resize(volume* Vol, const v3i& Dims3, dtype Type, allocator* Alloc)
+{
   auto OldType = Vol->Type;
   Vol->Type = Type;
   Resize(Vol, Dims3, Alloc);
@@ -43159,24 +46700,28 @@ Resize(volume* Vol, const v3i& Dims3, dtype Type, allocator* Alloc) {
 }
 
 void
-Dealloc(volume* Vol) {
+Dealloc(volume* Vol)
+{
   idx2_Assert(Vol);
   DeallocBuf(&Vol->Buffer);
 }
 
 void
-Clone(const volume& Src, volume* Dst, allocator* Alloc) {
+Clone(const volume& Src, volume* Dst, allocator* Alloc)
+{
   Clone(Src.Buffer, &Dst->Buffer, Alloc);
   Dst->Dims = Src.Dims;
   Dst->Type = Src.Type;
 }
 
 grid_split
-Split(const grid& Grid, dimension D, int N) {
+Split(const grid& Grid, dimension D, int N)
+{
   v3i Dims3 = Dims(Grid);
   idx2_Assert(N <= Dims3[D] && N >= 0);
   grid_split GridSplit{ Grid, Grid };
-  v3i Mask3 = Dims3; Mask3[D] = N;
+  v3i Mask3 = Dims3;
+  Mask3[D] = N;
   SetDims(&GridSplit.First, Mask3);
   Mask3[D] = Dims3[D] - N;
   SetDims(&GridSplit.Second, Mask3);
@@ -43187,13 +46732,15 @@ Split(const grid& Grid, dimension D, int N) {
 }
 
 grid_split
-SplitAlternate(const grid& Grid, dimension D) {
+SplitAlternate(const grid& Grid, dimension D)
+{
   v3i Dims3 = Dims(Grid);
   v3i Strd3 = Strd(Grid);
   v3i From3 = From(Grid);
   From3[D] += Strd3[D];
   grid_split GridSplit{ Grid, Grid };
-  v3i Mask3 = Dims3; Mask3[D] = (Dims3[D] + 1) >> 1;
+  v3i Mask3 = Dims3;
+  Mask3[D] = (Dims3[D] + 1) >> 1;
   SetDims(&GridSplit.First, Mask3);
   v3i NewStrd3 = Strd3;
   NewStrd3[D] <<= 1;
@@ -43206,7 +46753,8 @@ SplitAlternate(const grid& Grid, dimension D) {
 }
 
 extent
-BoundingBox(const extent& Ext1, const extent& Ext2) {
+BoundingBox(const extent& Ext1, const extent& Ext2)
+{
   v3i From3 = Min(From(Ext1), From(Ext2));
   v3i To3 = Max(To(Ext1), To(Ext2));
   return extent(From3, To3 - From3);
@@ -43227,19 +46775,23 @@ BoundingBox(const extent& Ext1, const extent& Ext2) {
 //#include <condition_variable>
 //#include <mutex>
 
-namespace idx2 {
+namespace idx2
+{
 
-//static i64 Counter;
-//static std::mutex Mutex;
-//static std::mutex MemMutex;
-//static std::condition_variable Cond;
+// static i64 Counter;
+// static std::mutex Mutex;
+// static std::mutex MemMutex;
+// static std::condition_variable Cond;
 
 // NOTE: when called with a different parameter, the old instance will be
 // invalidated
-static inline free_list_allocator& FreeListAllocator(i64 Bytes) {
+static inline free_list_allocator&
+FreeListAllocator(i64 Bytes)
+{
   static i64 LastBytes = Bytes;
   static free_list_allocator Instance(Bytes, &Mallocator());
-  if (LastBytes != Bytes) {
+  if (LastBytes != Bytes)
+  {
     LastBytes = Bytes;
     Instance.DeallocAll();
     Instance = free_list_allocator(Bytes, &Mallocator());
@@ -43253,16 +46805,20 @@ nlevels is the number of times the wavelet transform is done (it is the number o
 The first two elements are the scaling norms and wavelet norms, the last two are the lengths of the
 scaling and wavelet functions. */
 wav_basis_norms
-GetCdf53Norms(int NLevels) {
+GetCdf53Norms(int NLevels)
+{
   array<f64> ScalNorms, WaveNorms;
   array<f64> ScalWeights = { 0.5, 1.0, 0.5 };
-  array<f64> ScalFunc; Clone(ScalWeights, &ScalFunc);
+  array<f64> ScalFunc;
+  Clone(ScalWeights, &ScalFunc);
   array<f64> WaveWeights = { -0.125, -0.25, 0.75, -0.25, -0.125 };
-  array<f64> WaveFunc; Clone(WaveWeights, &WaveFunc);
+  array<f64> WaveFunc;
+  Clone(WaveWeights, &WaveFunc);
 
   Resize(&WaveNorms, NLevels + 1);
   Resize(&ScalNorms, NLevels + 1);
-  for (int L = 0; L < NLevels + 1; ++L) {
+  for (int L = 0; L < NLevels + 1; ++L)
+  {
     ScalNorms[L] = Norm(Begin(ScalFunc), End(ScalFunc));
     WaveNorms[L] = Norm(Begin(WaveFunc), End(WaveFunc));
     Upsample(WaveWeights, &WaveWeights);
@@ -43284,13 +46840,15 @@ GetCdf53Norms(int NLevels) {
 }
 
 void
-Dealloc(wav_basis_norms* WbN) {
+Dealloc(wav_basis_norms* WbN)
+{
   Dealloc(&WbN->ScalNorms);
   Dealloc(&WbN->WaveNorms);
 }
 
 void
-ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NPasses, u64 TformOrder) {
+ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NPasses, u64 TformOrder)
+{
   int Pass = 0;
   u64 PrevOrder = TformOrder;
   v3i D3 = Dims3;
@@ -43298,27 +46856,31 @@ ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NPasses, u6
   v3i S3(1);
   grid G(Dims3);
   int StackSize = 0;
-  while (Pass < NPasses) {
-   idx2_Assert(TformOrder != 0);
-   int D = TformOrder & 0x3;
-   TformOrder >>= 2;
-   if (D == 3) { // next level
-     if (TformOrder == 3)  // next one is the last |
-       TformOrder = PrevOrder;
-     else
-       PrevOrder = TformOrder;
-     SetStrd(&G, S3);
-     SetDims(&G, D3);
-     R3 = D3;
-     ++Pass;
-   } else {
-     Td->StackGrids[StackSize] = G;
-     Td->StackAxes[StackSize++] = D;
-     R3[D] = D3[D] + IsEven(D3[D]);
-     SetDims(&G, R3);
-     D3[D] = (R3[D] + 1) >> 1;
-     S3[D] <<= 1;
-   }
+  while (Pass < NPasses)
+  {
+    idx2_Assert(TformOrder != 0);
+    int D = TformOrder & 0x3;
+    TformOrder >>= 2;
+    if (D == 3)
+    {                      // next level
+      if (TformOrder == 3) // next one is the last |
+        TformOrder = PrevOrder;
+      else
+        PrevOrder = TformOrder;
+      SetStrd(&G, S3);
+      SetDims(&G, D3);
+      R3 = D3;
+      ++Pass;
+    }
+    else
+    {
+      Td->StackGrids[StackSize] = G;
+      Td->StackAxes[StackSize++] = D;
+      R3[D] = D3[D] + IsEven(D3[D]);
+      SetDims(&G, R3);
+      D3[D] = (R3[D] + 1) >> 1;
+      S3[D] <<= 1;
+    }
   }
   Td->TformOrder = TformOrder;
   Td->StackSize = StackSize;
@@ -43328,266 +46890,269 @@ ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NPasses, u6
 
 // TODO: this won't work for a general (sub)volume
 void
-ForwardCdf53Old(volume* Vol, int NLevels) {
-#define Body(type)\
-  v3i Dims3 = Dims(*Vol);\
-  type* FPtr = (type*)(Vol->Buffer.Data);\
-  for (int I = 0; I < NLevels; ++I) {\
-    FLiftCdf53OldX(FPtr, Dims3, v3i(I));\
-    FLiftCdf53OldY(FPtr, Dims3, v3i(I));\
-    FLiftCdf53OldZ(FPtr, Dims3, v3i(I));\
+ForwardCdf53Old(volume* Vol, int NLevels)
+{
+#define Body(type)                                                                                 \
+  v3i Dims3 = Dims(*Vol);                                                                          \
+  type* FPtr = (type*)(Vol->Buffer.Data);                                                          \
+  for (int I = 0; I < NLevels; ++I)                                                                \
+  {                                                                                                \
+    FLiftCdf53OldX(FPtr, Dims3, v3i(I));                                                           \
+    FLiftCdf53OldY(FPtr, Dims3, v3i(I));                                                           \
+    FLiftCdf53OldZ(FPtr, Dims3, v3i(I));                                                           \
   }
 
   idx2_DispatchOnType(Vol->Type)
 #undef Body
 }
 
-struct tile_buf {
-  i8 NDeps = 0; // number of dependent tiles
-  i8 MDeps = 0; // maximum number of dependencies
+struct tile_buf
+{
+  i8 NDeps = 0;    // number of dependent tiles
+  i8 MDeps = 0;    // maximum number of dependencies
   volume Vol = {}; // storing tile data
 };
 // they key is the row major index of the tile
-//using tile_map = robin_hood::unordered_map<i64, tile_buf>;
-//using tile_map = std::map<i64, tile_buf>;
+// using tile_map = robin_hood::unordered_map<i64, tile_buf>;
+// using tile_map = std::map<i64, tile_buf>;
 
 //#define idx2_Cdf53TileDebug
 
-//void
-//ForwardCdf53Tile2D(
-//  const v3i& TDims3, // dimensions of a tile (e.g. 32 x 32 x 32)
-//  int Lvl, // level of the current tile
-//  const v3i& Pos3, // index of the tile in each dimension (within a subband)
-//  const array<v3i>& Dims3s, // dimensions of the big array on each level
-//  array<array<tile_map>>* Vols // level -> subband -> tiles
+// void
+// ForwardCdf53Tile2D(
+//   const v3i& TDims3, // dimensions of a tile (e.g. 32 x 32 x 32)
+//   int Lvl, // level of the current tile
+//   const v3i& Pos3, // index of the tile in each dimension (within a subband)
+//   const array<v3i>& Dims3s, // dimensions of the big array on each level
+//   array<array<tile_map>>* Vols // level -> subband -> tiles
 //#if defined(idx2_Cdf53TileDebug)
-//  , volume* BigVol // we will copy the coefficients here to debug
-//  , const array<extent>& BigSbands // subbands of the big volume
+//   , volume* BigVol // we will copy the coefficients here to debug
+//   , const array<extent>& BigSbands // subbands of the big volume
 //#endif
 //)
 //{
-//  idx2_Assert(IsEven(TDims3.X) && IsEven(TDims3.Y));
-//  int NLevels = Size(*Vols) - 1;
-//  idx2_Assert(Size(Dims3s) == NLevels + 1);
-//  idx2_Assert(Lvl <= NLevels);
-//  const int NSbands = 4; // number of subbands in 2D
-//  /* transform the current tile */
-//  v3i NTiles3 = (Dims3s[Lvl] + TDims3 - 1) / TDims3;
-//  idx2_Assert(Pos3 < NTiles3);
-//  v3i M(Min(TDims3, v3i(Dims3s[Lvl] - Pos3 * TDims3))); // dims of the current tile
-//  volume Vol;
-//  {
-//    std::unique_lock<std::mutex> Lock(MemMutex);
-//    Vol = (*Vols)[Lvl][0][Row(NTiles3, Pos3)].Vol;
-//  }
-//  idx2_Assert(Vol.Buffer);
-//  int LvlNxt = Lvl + 1;
-//  if (LvlNxt <= NLevels) {
-//    M = M + IsEven(M);
-//    if (M.X > 1) {
-//      if (Pos3.X + 1 < NTiles3.X) // not last tile in X
-//        FLiftCdf53X<f64>(grid(M), M, lift_option::PartialUpdateLast, &Vol);
-//      else // last tile in X
-//        FLiftCdf53X<f64>(grid(M), M, lift_option::Normal, &Vol);
-//    }
-//    if (M.Y > 1) {
-//      if (Pos3.Y + 1 < NTiles3.Y) // not last tile
-//        FLiftCdf53Y<f64>(grid(M), M, lift_option::PartialUpdateLast, &Vol);
-//      else // last tile in Y
-//        FLiftCdf53Y<f64>(grid(M), M, lift_option::Normal, &Vol);
-//    }
-//  }
-//  /* end the recursion if this is the last level */
-//  if (LvlNxt > NLevels) { // last level, no need to add to the next level
+//   idx2_Assert(IsEven(TDims3.X) && IsEven(TDims3.Y));
+//   int NLevels = Size(*Vols) - 1;
+//   idx2_Assert(Size(Dims3s) == NLevels + 1);
+//   idx2_Assert(Lvl <= NLevels);
+//   const int NSbands = 4; // number of subbands in 2D
+//   /* transform the current tile */
+//   v3i NTiles3 = (Dims3s[Lvl] + TDims3 - 1) / TDims3;
+//   idx2_Assert(Pos3 < NTiles3);
+//   v3i M(Min(TDims3, v3i(Dims3s[Lvl] - Pos3 * TDims3))); // dims of the current tile
+//   volume Vol;
+//   {
+//     std::unique_lock<std::mutex> Lock(MemMutex);
+//     Vol = (*Vols)[Lvl][0][Row(NTiles3, Pos3)].Vol;
+//   }
+//   idx2_Assert(Vol.Buffer);
+//   int LvlNxt = Lvl + 1;
+//   if (LvlNxt <= NLevels) {
+//     M = M + IsEven(M);
+//     if (M.X > 1) {
+//       if (Pos3.X + 1 < NTiles3.X) // not last tile in X
+//         FLiftCdf53X<f64>(grid(M), M, lift_option::PartialUpdateLast, &Vol);
+//       else // last tile in X
+//         FLiftCdf53X<f64>(grid(M), M, lift_option::Normal, &Vol);
+//     }
+//     if (M.Y > 1) {
+//       if (Pos3.Y + 1 < NTiles3.Y) // not last tile
+//         FLiftCdf53Y<f64>(grid(M), M, lift_option::PartialUpdateLast, &Vol);
+//       else // last tile in Y
+//         FLiftCdf53Y<f64>(grid(M), M, lift_option::Normal, &Vol);
+//     }
+//   }
+//   /* end the recursion if this is the last level */
+//   if (LvlNxt > NLevels) { // last level, no need to add to the next level
 //#if defined(idx2_Cdf53TileDebug)
-//    v3i CopyM = Min(M, TDims3);
-//    if (CopyM > v3i(0))
-//      Copy(extent(CopyM), Vol, extent(Pos3 * TDims3, CopyM), BigVol);
+//     v3i CopyM = Min(M, TDims3);
+//     if (CopyM > v3i(0))
+//       Copy(extent(CopyM), Vol, extent(Pos3 * TDims3, CopyM), BigVol);
 //#endif
-//    {
-//      std::unique_lock<std::mutex> Lock(MemMutex);
-//      DeallocBuf(&Vol.Buffer);
-//      (*Vols)[Lvl][0].erase(Row(NTiles3, Pos3));
-//    }
-//    return;
-//  }
-//  v3i TDims3Ext = TDims3 + v3i(1, 1, 0);
-//  stack_linear_allocator<NSbands * sizeof(grid)> Alloc;
-//  array<grid> Sbands(&Alloc); BuildSubbands(TDims3Ext, 1, &Sbands);
-//  /* spread the samples to the parent subbands */
-//  v3i Dims3Next = Dims3s[LvlNxt];
-//  v3i NTiles3Nxt = (Dims3Next + TDims3 - 1) / TDims3;
-//  for (int Sb = 0; Sb < NSbands; ++Sb) { // through subbands
-//    v3i D01 = Pos3 - (Pos3 / 2) * 2; // either 0 or 1 in each dimension
-//    v3i D11 = D01 * 2 - 1; // map [0, 1] to [-1, 1]
-//    grid SrcG = Sbands[Sb];
-//    extent DstG(v3i(0), Dims(SrcG));
-//    v2i L = SubbandToLevel(2, Sb).XY;
-//    v2i Nb(0); // neighbor
-//    for (int Iy = 0; Iy < 2; Nb.Y += D11.Y, ++Iy) {
-//      if (Nb.Y == 1 && L.Y == 1)
-//        continue;
-//      grid SrcGY = SrcG;
-//      extent DstGY = DstG;
-//      if (Nb.Y != 0) { // contributing to top/bottom parents, take 1 slab only
-//        if (Nb.Y == -1) // contributing to the top parent tile, so shift down full
-//          DstGY = Translate(DstGY, dimension::Y, TDims3.Y);
-//        SrcGY = Slab(SrcGY, dimension::Y, -Nb.Y);
-//        DstGY = Slab(DstGY, dimension::Y,  1);
-//      } else if (D01.Y == 1) { // second child, shift down half
-//        DstGY = Translate(DstGY, dimension::Y, TDims3.Y / 2);
-//      }
-//      Nb.X = 0;
-//      for (int Ix = 0; Ix < 2; Nb.X += D11.X, ++Ix) {
-//        v3i Pos3Nxt = Pos3 / 2 + v3i(Nb, 0);
-//        if (Nb.X == 1 && L.X == 1)
-//          continue;
-//        grid SrcGX = SrcGY;
-//        extent DstGX = DstGY;
-//        if (Nb.X != 0) { // contributing to left/right parents, take 1 slab only
-//          if (Nb.X == -1) // contributing to left parent, shift right full
-//            DstGX = Translate(DstGX, dimension::X, TDims3.X);
-//          SrcGX = Slab(SrcGX, dimension::X, -Nb.X);
-//          DstGX = Slab(DstGX, dimension::X,  1);
-//        } else if (D01.X == 1) { // second child, shift right half
-//          DstGX = Translate(DstGX, dimension::X, TDims3.X / 2);
-//        }
-//        /* locate the finer tile */
-//        if (!(Pos3Nxt >= v3i(0) && Pos3Nxt < NTiles3Nxt))
-//          continue; // tile outside the domain
-//        tile_buf* TileNxt = nullptr;
-//        volume* VolNxt = nullptr;
-//        {
-//          std::unique_lock<std::mutex> Lock(MemMutex);
-//          TileNxt = &(*Vols)[LvlNxt][Sb][Row(NTiles3Nxt, Pos3Nxt)];
-//          VolNxt = &TileNxt->Vol;
-//          /* add contribution to the finer tile, allocating its memory if needed */
-//          if (TileNxt->MDeps == 0) {
-//            idx2_Assert(TileNxt->NDeps == 0);
-//            idx2_Assert(!VolNxt->Buffer);
-//            buffer Buf; CallocBuf(&Buf, sizeof(f64) * Prod(TDims3Ext));
-//            *VolNxt = volume(Buf, TDims3Ext, dtype::float64);
-//            /* compute the number of dependencies for the finer tile if necessary */
-//            v3i MDeps3(4, 4, 1); // by default each tile depends on 16 finer tiles
-//            for (int I = 0; I < 2; ++I) {
-//              MDeps3[I] -= (Pos3Nxt[I] == 0) || (L[I] == 1);
-//              MDeps3[I] -= Pos3Nxt[I] == NTiles3Nxt[I] - 1;
-//              MDeps3[I] -= Dims3Next[I] - Pos3Nxt[I] * TDims3[I] <= TDims3[I] / 2;
-//            }
-//            TileNxt->MDeps = Prod(MDeps3);
-//          }
-//          // TODO: the following line does not have to be in the same lock
-//          Add(SrcGX, Vol, DstGX, VolNxt);
-//          ++TileNxt->NDeps;
-//        }
-//        /* if the finer tile receives from all its dependencies, recurse */
-//        if (TileNxt->MDeps == TileNxt->NDeps) {
-//          if (Sb == 0) { // recurse
+//     {
+//       std::unique_lock<std::mutex> Lock(MemMutex);
+//       DeallocBuf(&Vol.Buffer);
+//       (*Vols)[Lvl][0].erase(Row(NTiles3, Pos3));
+//     }
+//     return;
+//   }
+//   v3i TDims3Ext = TDims3 + v3i(1, 1, 0);
+//   stack_linear_allocator<NSbands * sizeof(grid)> Alloc;
+//   array<grid> Sbands(&Alloc); BuildSubbands(TDims3Ext, 1, &Sbands);
+//   /* spread the samples to the parent subbands */
+//   v3i Dims3Next = Dims3s[LvlNxt];
+//   v3i NTiles3Nxt = (Dims3Next + TDims3 - 1) / TDims3;
+//   for (int Sb = 0; Sb < NSbands; ++Sb) { // through subbands
+//     v3i D01 = Pos3 - (Pos3 / 2) * 2; // either 0 or 1 in each dimension
+//     v3i D11 = D01 * 2 - 1; // map [0, 1] to [-1, 1]
+//     grid SrcG = Sbands[Sb];
+//     extent DstG(v3i(0), Dims(SrcG));
+//     v2i L = SubbandToLevel(2, Sb).XY;
+//     v2i Nb(0); // neighbor
+//     for (int Iy = 0; Iy < 2; Nb.Y += D11.Y, ++Iy) {
+//       if (Nb.Y == 1 && L.Y == 1)
+//         continue;
+//       grid SrcGY = SrcG;
+//       extent DstGY = DstG;
+//       if (Nb.Y != 0) { // contributing to top/bottom parents, take 1 slab only
+//         if (Nb.Y == -1) // contributing to the top parent tile, so shift down full
+//           DstGY = Translate(DstGY, dimension::Y, TDims3.Y);
+//         SrcGY = Slab(SrcGY, dimension::Y, -Nb.Y);
+//         DstGY = Slab(DstGY, dimension::Y,  1);
+//       } else if (D01.Y == 1) { // second child, shift down half
+//         DstGY = Translate(DstGY, dimension::Y, TDims3.Y / 2);
+//       }
+//       Nb.X = 0;
+//       for (int Ix = 0; Ix < 2; Nb.X += D11.X, ++Ix) {
+//         v3i Pos3Nxt = Pos3 / 2 + v3i(Nb, 0);
+//         if (Nb.X == 1 && L.X == 1)
+//           continue;
+//         grid SrcGX = SrcGY;
+//         extent DstGX = DstGY;
+//         if (Nb.X != 0) { // contributing to left/right parents, take 1 slab only
+//           if (Nb.X == -1) // contributing to left parent, shift right full
+//             DstGX = Translate(DstGX, dimension::X, TDims3.X);
+//           SrcGX = Slab(SrcGX, dimension::X, -Nb.X);
+//           DstGX = Slab(DstGX, dimension::X,  1);
+//         } else if (D01.X == 1) { // second child, shift right half
+//           DstGX = Translate(DstGX, dimension::X, TDims3.X / 2);
+//         }
+//         /* locate the finer tile */
+//         if (!(Pos3Nxt >= v3i(0) && Pos3Nxt < NTiles3Nxt))
+//           continue; // tile outside the domain
+//         tile_buf* TileNxt = nullptr;
+//         volume* VolNxt = nullptr;
+//         {
+//           std::unique_lock<std::mutex> Lock(MemMutex);
+//           TileNxt = &(*Vols)[LvlNxt][Sb][Row(NTiles3Nxt, Pos3Nxt)];
+//           VolNxt = &TileNxt->Vol;
+//           /* add contribution to the finer tile, allocating its memory if needed */
+//           if (TileNxt->MDeps == 0) {
+//             idx2_Assert(TileNxt->NDeps == 0);
+//             idx2_Assert(!VolNxt->Buffer);
+//             buffer Buf; CallocBuf(&Buf, sizeof(f64) * Prod(TDims3Ext));
+//             *VolNxt = volume(Buf, TDims3Ext, dtype::float64);
+//             /* compute the number of dependencies for the finer tile if necessary */
+//             v3i MDeps3(4, 4, 1); // by default each tile depends on 16 finer tiles
+//             for (int I = 0; I < 2; ++I) {
+//               MDeps3[I] -= (Pos3Nxt[I] == 0) || (L[I] == 1);
+//               MDeps3[I] -= Pos3Nxt[I] == NTiles3Nxt[I] - 1;
+//               MDeps3[I] -= Dims3Next[I] - Pos3Nxt[I] * TDims3[I] <= TDims3[I] / 2;
+//             }
+//             TileNxt->MDeps = Prod(MDeps3);
+//           }
+//           // TODO: the following line does not have to be in the same lock
+//           Add(SrcGX, Vol, DstGX, VolNxt);
+//           ++TileNxt->NDeps;
+//         }
+//         /* if the finer tile receives from all its dependencies, recurse */
+//         if (TileNxt->MDeps == TileNxt->NDeps) {
+//           if (Sb == 0) { // recurse
 //#if defined(idx2_Cdf53TileDebug)
-//            // TODO: spawn a task here
-//            ForwardCdf53Tile2D(TDims3, LvlNxt, Pos3Nxt, Dims3s, Vols, BigVol, BigSbands);
+//             // TODO: spawn a task here
+//             ForwardCdf53Tile2D(TDims3, LvlNxt, Pos3Nxt, Dims3s, Vols, BigVol, BigSbands);
 //#else
-//            ForwardCdf53Tile(TDims3, LvlNxt, Pos3Nxt, Dims3s, Vols);
+//             ForwardCdf53Tile(TDims3, LvlNxt, Pos3Nxt, Dims3s, Vols);
 //#endif
-//          } else { // copy data to the big buffer, for testing
+//           } else { // copy data to the big buffer, for testing
 //#if defined(idx2_Cdf53TileDebug)
-//            int BigSb = (NLevels - LvlNxt) * 3 + Sb;
-//            v3i F3 = From(BigSbands[BigSb]);
-//            F3 = F3 + Pos3Nxt * TDims3;
-//            // NOTE: for subbands other than 0, F3 can be outside of the big volume
-//            idx2_Assert(VolNxt->Buffer);
-//            v3i CopyDims3 = Min(From(BigSbands[BigSb]) + Dims(BigSbands[BigSb]) - F3, TDims3);
-//            if (CopyDims3 > v3i(0)) {
-//              idx2_Assert(F3 + CopyDims3 <= Dims(*BigVol));
-//              Copy(extent(CopyDims3), *VolNxt, extent(F3, CopyDims3), BigVol);
-//            }
+//             int BigSb = (NLevels - LvlNxt) * 3 + Sb;
+//             v3i F3 = From(BigSbands[BigSb]);
+//             F3 = F3 + Pos3Nxt * TDims3;
+//             // NOTE: for subbands other than 0, F3 can be outside of the big volume
+//             idx2_Assert(VolNxt->Buffer);
+//             v3i CopyDims3 = Min(From(BigSbands[BigSb]) + Dims(BigSbands[BigSb]) - F3, TDims3);
+//             if (CopyDims3 > v3i(0)) {
+//               idx2_Assert(F3 + CopyDims3 <= Dims(*BigVol));
+//               Copy(extent(CopyDims3), *VolNxt, extent(F3, CopyDims3), BigVol);
+//             }
 //#endif
-//            {
-//              std::unique_lock<std::mutex> Lock(MemMutex);
-//              DeallocBuf(&VolNxt->Buffer);
-//              (*Vols)[LvlNxt][Sb].erase(Row(NTiles3Nxt, Pos3Nxt));
-//            }
-//          }
-//        }
-//      } // end X loop
-//    } // end Y loop
-//  } // end subband loop
-//  {
-//    std::unique_lock<std::mutex> Lock(MemMutex);
-//    DeallocBuf(&Vol.Buffer);
-//    (*Vols)[Lvl][0].erase(Row(NTiles3, Pos3));
-//  }
-//}
+//             {
+//               std::unique_lock<std::mutex> Lock(MemMutex);
+//               DeallocBuf(&VolNxt->Buffer);
+//               (*Vols)[LvlNxt][Sb].erase(Row(NTiles3Nxt, Pos3Nxt));
+//             }
+//           }
+//         }
+//       } // end X loop
+//     } // end Y loop
+//   } // end subband loop
+//   {
+//     std::unique_lock<std::mutex> Lock(MemMutex);
+//     DeallocBuf(&Vol.Buffer);
+//     (*Vols)[Lvl][0].erase(Row(NTiles3, Pos3));
+//   }
+// }
 
-//void
-//ForwardCdf53Tile2D(int NLvls, const v3i& TDims3, const volume& Vol
+// void
+// ForwardCdf53Tile2D(int NLvls, const v3i& TDims3, const volume& Vol
 //#if defined(idx2_Cdf53TileDebug)
-//  , volume* OutVol
+//   , volume* OutVol
 //#endif
 //) {
-//  /* calculate the power-of-two dimensions encompassing the volume */
-//  v3i M = Dims(Vol);
-//  v3i N(v2i::One, 1);
-//  while (N.X < M.X || N.Y < M.Y)
-//    N = N * 2;
-//  N.Z = 1;
-//  /* loop through the tiles in Z (morton) order */
-//  array<v3i> Dims3s; Init(&Dims3s, NLvls + 1);
-//  idx2_CleanUp(0, Dealloc(&Dims3s); )
-//  for (int I = 0; I < Size(Dims3s); ++I) {
-//    M = M + IsEven(M);
-//    Dims3s[I] = M;
-//    M = (M + 1) / 2;
-//  }
-//  array<array<tile_map>> Vols; Init(&Vols, NLvls + 1);
-//  idx2_CleanUp(1,
-//    for (int I = 0; I < Size(Vols); ++I) {
-//      for (int J = 0; J < Size(Vols[I]); ++J)
-//        Vols[I][J].~tile_map();
-//      Dealloc(&Vols[I]);
-//    }
-//    Dealloc(&Vols);
-//  );
-//  for (int I = 0; I < Size(Vols); ++I) {
-//    Vols[I] = array<tile_map>();
-//    Init(&Vols[I], 4);
-//    for (int J = 0; J < Size(Vols[I]); ++J)
-//      new (&Vols[I][J]) tile_map;
-//  }
-//  M = Dims(Vol);
-//  v3i NTiles3 = (M + IsEven(M) + TDims3 - 1) / TDims3;
-//  v3i NTilesBig3 = (N + TDims3 - 1) / TDims3;
-//  v3i TDims3Ext = TDims3 + v3i(1, 1, 0);
-//  array<extent> BigSbands; BuildSubbands(M, NLvls, &BigSbands);
-//  idx2_CleanUp(2, Dealloc(&BigSbands))
-//  for (u32 I = 0; I < Prod<u32>(NTilesBig3); ++I) {
-//    // TODO: count the number of tiles processed and break if we are done
-//    u32 X = DecodeMorton2X(I), Y = DecodeMorton2Y(I);
-//    v3i Pos3(X, Y, 0);
-//    if (!(Pos3 * TDims3 < M)) // tile outside the domain
-//      continue;
-//    i64 Idx = Row(NTiles3, Pos3);
-//    buffer Buf; CallocBuf(&Buf, Prod(TDims3Ext) * sizeof(f64));
-//    volume& TileVol = Vols[0][0][Idx].Vol;
-//    TileVol = volume(Buf, TDims3Ext, dtype::float64);
-//    extent E(Pos3 * TDims3, TDims3Ext);
-//    v3i From3 = From(E);
-//    v3i Dims3 = Min(Dims(E), M - From3);
-//    SetDims(&E, Dims3);
-//    if (!(From3 < M)) // tile outside domain
-//      continue;
-//    Copy(E, Vol, extent(v3i(0), Dims(E)), &TileVol);
-//    ForwardCdf53Tile2D(TDims3, 0, Pos3, Dims3s, &Vols
+//   /* calculate the power-of-two dimensions encompassing the volume */
+//   v3i M = Dims(Vol);
+//   v3i N(v2i::One, 1);
+//   while (N.X < M.X || N.Y < M.Y)
+//     N = N * 2;
+//   N.Z = 1;
+//   /* loop through the tiles in Z (morton) order */
+//   array<v3i> Dims3s; Init(&Dims3s, NLvls + 1);
+//   idx2_CleanUp(0, Dealloc(&Dims3s); )
+//   for (int I = 0; I < Size(Dims3s); ++I) {
+//     M = M + IsEven(M);
+//     Dims3s[I] = M;
+//     M = (M + 1) / 2;
+//   }
+//   array<array<tile_map>> Vols; Init(&Vols, NLvls + 1);
+//   idx2_CleanUp(1,
+//     for (int I = 0; I < Size(Vols); ++I) {
+//       for (int J = 0; J < Size(Vols[I]); ++J)
+//         Vols[I][J].~tile_map();
+//       Dealloc(&Vols[I]);
+//     }
+//     Dealloc(&Vols);
+//   );
+//   for (int I = 0; I < Size(Vols); ++I) {
+//     Vols[I] = array<tile_map>();
+//     Init(&Vols[I], 4);
+//     for (int J = 0; J < Size(Vols[I]); ++J)
+//       new (&Vols[I][J]) tile_map;
+//   }
+//   M = Dims(Vol);
+//   v3i NTiles3 = (M + IsEven(M) + TDims3 - 1) / TDims3;
+//   v3i NTilesBig3 = (N + TDims3 - 1) / TDims3;
+//   v3i TDims3Ext = TDims3 + v3i(1, 1, 0);
+//   array<extent> BigSbands; BuildSubbands(M, NLvls, &BigSbands);
+//   idx2_CleanUp(2, Dealloc(&BigSbands))
+//   for (u32 I = 0; I < Prod<u32>(NTilesBig3); ++I) {
+//     // TODO: count the number of tiles processed and break if we are done
+//     u32 X = DecodeMorton2X(I), Y = DecodeMorton2Y(I);
+//     v3i Pos3(X, Y, 0);
+//     if (!(Pos3 * TDims3 < M)) // tile outside the domain
+//       continue;
+//     i64 Idx = Row(NTiles3, Pos3);
+//     buffer Buf; CallocBuf(&Buf, Prod(TDims3Ext) * sizeof(f64));
+//     volume& TileVol = Vols[0][0][Idx].Vol;
+//     TileVol = volume(Buf, TDims3Ext, dtype::float64);
+//     extent E(Pos3 * TDims3, TDims3Ext);
+//     v3i From3 = From(E);
+//     v3i Dims3 = Min(Dims(E), M - From3);
+//     SetDims(&E, Dims3);
+//     if (!(From3 < M)) // tile outside domain
+//       continue;
+//     Copy(E, Vol, extent(v3i(0), Dims(E)), &TileVol);
+//     ForwardCdf53Tile2D(TDims3, 0, Pos3, Dims3s, &Vols
 //#if defined(idx2_Cdf53TileDebug)
-//      , OutVol, BigSbands
+//       , OutVol, BigSbands
 //#endif
-//    );
-//  }
-//}
+//     );
+//   }
+// }
 
 // TODO: replace f64 with a template parameter
-//void
-//ForwardCdf53Tile(
+// void
+// ForwardCdf53Tile(
 //  const v3i& TDims3, // dimensions of a tile (e.g. 32 x 32 x 32)
 //  int Lvl, // level of the current tile
 //  const v3i& Pos3, // index of the tile in each dimension (within a subband)
@@ -43778,8 +47343,8 @@ struct tile_buf {
 //}
 
 // TODO: replace f64 with a generic type
-//void
-//ForwardCdf53Tile(int NLvls, const v3i& TDims3, const volume& Vol
+// void
+// ForwardCdf53Tile(int NLvls, const v3i& TDims3, const volume& Vol
 //#if defined(idx2_Cdf53TileDebug)
 //  , volume* OutVol
 //#endif
@@ -43864,7 +47429,8 @@ Extrapolate a volume to (2^N+1) x (2^N+1) x (2^N+1).
 Dims3 are the dimensions of the volume, not Dims(*Vol), which has to be (2^X+1) x (2^Y+1) x (2^Z+1).
 */
 void
-ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol) {
+ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol)
+{
   v3i N3 = Dims(*Vol);
   v3i M3(N3.X == 1 ? 1 : N3.X - 1, N3.Y == 1 ? 1 : N3.Y - 1, N3.Z == 1 ? 1 : N3.Z - 1);
   // printf("M3 = " idx2_PrStrV3i "\n", idx2_PrV3i(M3));
@@ -43875,41 +47441,64 @@ ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol) {
 }
 
 void
-ForwardCdf53(const v3i& M3, const transform_details& Td, volume* Vol) {
-  idx2_For(int, I, 0, Td.StackSize) {
+ForwardCdf53(const v3i& M3, const transform_details& Td, volume* Vol)
+{
+  idx2_For (int, I, 0, Td.StackSize)
+  {
     int D = Td.StackAxes[I];
-    #define Body(type)\
-    switch (D) {\
-      case 0: FLiftCdf53X<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 1: FLiftCdf53Y<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 2: FLiftCdf53Z<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      default: idx2_Assert(false); break;\
-    };
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      FLiftCdf53X<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      FLiftCdf53Y<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      FLiftCdf53Z<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
     idx2_DispatchOnType(Vol->Type);
-    #undef Body
+#undef Body
   }
 }
 
 void
-InverseCdf53(const v3i& M3, const transform_details& Td, volume* Vol) {
+InverseCdf53(const v3i& M3, const transform_details& Td, volume* Vol)
+{
   int I = Td.StackSize;
-  while (I-- > 0) {
+  while (I-- > 0)
+  {
     int D = Td.StackAxes[I];
-    #define Body(type)\
-    switch (D) {\
-      case 0: ILiftCdf53X<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 1: ILiftCdf53Y<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 2: ILiftCdf53Z<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      default: idx2_Assert(false); break;\
-    };
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      ILiftCdf53X<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      ILiftCdf53Y<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      ILiftCdf53Z<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
     idx2_DispatchOnType(Vol->Type);
-    #undef Body
+#undef Body
   }
 }
 
 /* Extrapolate a volume to arbitrary (2^X+1) x (2^Y+1) x (2^Z+1) */
 void
-ExtrapolateCdf53(const transform_details& Td, volume* Vol) {
+ExtrapolateCdf53(const transform_details& Td, volume* Vol)
+{
   v3i N3 = Dims(*Vol);
   v3i M3(N3.X == 1 ? 1 : N3.X - 1, N3.Y == 1 ? 1 : N3.Y - 1, N3.Z == 1 ? 1 : N3.Z - 1);
   idx2_Assert(IsPow2(M3.X) && IsPow2(M3.Y) && IsPow2(M3.Z));
@@ -43918,11 +47507,18 @@ ExtrapolateCdf53(const transform_details& Td, volume* Vol) {
 }
 
 /* With extrapolation (if needed). Support custom transform order. */
-// TODO: as currently implemented, the behavior of this is different from the BuildSubbands() routine
-// when given a transform order such as XXY++ (BuildSubbands will restrict the second X to the coarse
-// subband produced by the first X, while this function will not).
+// TODO: as currently implemented, the behavior of this is different from the BuildSubbands()
+// routine when given a transform order such as XXY++ (BuildSubbands will restrict the second X to
+// the coarse subband produced by the first X, while this function will not).
 void
-ForwardCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOrder, volume* Vol, bool Normalize) {
+ForwardCdf53(const v3i& Dims3,
+             const v3i& M3,
+             int Iter,
+             int NLevels,
+             u64 TformOrder,
+             volume* Vol,
+             bool Normalize)
+{
   idx2_Assert(Dims3 <= Dims(*Vol));
   int Level = 0;
   u64 PrevOrder = TformOrder;
@@ -43930,12 +47526,14 @@ ForwardCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
   v3i R3 = D3;
   v3i S3(1);
   grid G(Dims3);
-  while (Level < NLevels) {
+  while (Level < NLevels)
+  {
     idx2_Assert(TformOrder != 0);
     int D = TformOrder & 0x3;
     TformOrder >>= 2;
-    if (D == 3) { // next level
-      if (TformOrder == 3)  // next one is the last |
+    if (D == 3)
+    {                      // next level
+      if (TformOrder == 3) // next one is the last |
         TformOrder = PrevOrder;
       else
         PrevOrder = TformOrder;
@@ -43943,16 +47541,30 @@ ForwardCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
       SetDims(&G, D3);
       R3 = D3;
       ++Level;
-    } else {
-      #define Body(type)\
-      switch (D) {\
-        case 0: idx2_Assert(Dims3.X > 1); FLiftCdf53X<type>(G, M3, lift_option::Normal, Vol); break;\
-        case 1: idx2_Assert(Dims3.Y > 1); FLiftCdf53Y<type>(G, M3, lift_option::Normal, Vol); break;\
-        case 2: idx2_Assert(Dims3.Z > 1); FLiftCdf53Z<type>(G, M3, lift_option::Normal, Vol); break;\
-        default: idx2_Assert(false); break;\
-      };
+    }
+    else
+    {
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      idx2_Assert(Dims3.X > 1);                                                                    \
+      FLiftCdf53X<type>(G, M3, lift_option::Normal, Vol);                                          \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      idx2_Assert(Dims3.Y > 1);                                                                    \
+      FLiftCdf53Y<type>(G, M3, lift_option::Normal, Vol);                                          \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      idx2_Assert(Dims3.Z > 1);                                                                    \
+      FLiftCdf53Z<type>(G, M3, lift_option::Normal, Vol);                                          \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
       idx2_DispatchOnType(Vol->Type);
-      #undef Body
+#undef Body
       R3[D] = D3[D] + IsEven(D3[D]);
       SetDims(&G, R3);
       D3[D] = (R3[D] + 1) >> 1;
@@ -43961,92 +47573,168 @@ ForwardCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
   }
 
   /* Optionally normalize */
-  if (NLevels > 0 && Normalize) {
+  if (NLevels > 0 && Normalize)
+  {
     idx2_Assert(IsFloatingPoint(Vol->Type));
     idx2_RAII(array<subband>, Subbands, BuildSubbands(Dims3, NLevels, TformOrder, &Subbands));
     auto BasisNorms = GetCdf53NormsFast<16>();
-    for (int I = 0; I < Size(Subbands); ++I) {
+    for (int I = 0; I < Size(Subbands); ++I)
+    {
       subband& S = Subbands[I];
-      f64 Wx = Dims3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
-      f64 Wy = Dims3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
-      f64 Idx2 = Dims3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
+      f64 Wx = Dims3.X == 1
+                 ? 1
+                 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
+      f64 Wy = Dims3.Y == 1
+                 ? 1
+                 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
+      f64 Idx2 = Dims3.Z == 1
+                   ? 1
+                   : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1]
+                                        : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
       f64 W = Wx * Wy * Idx2;
-      #define Body(type)\
-      auto ItEnd = End<type>(S.Grid, *Vol);\
-      for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
+#define Body(type)                                                                                 \
+  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
+  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
+    *It = type(*It * W);
       idx2_DispatchOnType(Vol->Type);
-      #undef Body
+#undef Body
     }
   }
 }
 
 void
-ForwardCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const transform_details& Td, volume* Vol, bool LastIter) {
-  idx2_For(int, I, 0, Td.StackSize) {
+ForwardCdf53(const v3i& M3,
+             int Iter,
+             const array<subband>& Subbands,
+             const transform_details& Td,
+             volume* Vol,
+             bool LastIter)
+{
+  idx2_For (int, I, 0, Td.StackSize)
+  {
     int D = Td.StackAxes[I];
-    #define Body(type)\
-    switch (D) {\
-      case 0: FLiftCdf53X<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 1: FLiftCdf53Y<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 2: FLiftCdf53Z<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      default: idx2_Assert(false); break;\
-    };
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      FLiftCdf53X<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      FLiftCdf53Y<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      FLiftCdf53Z<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
     idx2_DispatchOnType(Vol->Type);
-    #undef Body
+#undef Body
   }
 
   /* Optionally normalize */
   idx2_Assert(IsFloatingPoint(Vol->Type));
-  for (int I = 0; I < Size(Subbands); ++I) {
-    if (I == 0 && !LastIter) continue; // do not normalize subband 0
+  for (int I = 0; I < Size(Subbands); ++I)
+  {
+    if (I == 0 && !LastIter)
+      continue; // do not normalize subband 0
     subband& S = Subbands[I];
-    f64 Wx = M3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
-    f64 Wy = M3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
-    f64 Idx2 = M3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
+    f64 Wx = M3.X == 1
+               ? 1
+               : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1]
+                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
+    f64 Wy = M3.Y == 1
+               ? 1
+               : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1]
+                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
+    f64 Idx2 = M3.Z == 1 ? 1
+                         : (S.LowHigh3.Z == 0
+                              ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1]
+                              : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
     f64 W = Wx * Wy * Idx2;
-    #define Body(type)\
-    auto ItEnd = End<type>(S.Grid, *Vol);\
-    for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
+#define Body(type)                                                                                 \
+  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
+  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
+    *It = type(*It * W);
     idx2_DispatchOnType(Vol->Type);
-    #undef Body
+#undef Body
   }
 }
+
 void
-InverseCdf53(const v3i& M3, int Iter, const array<subband>& Subbands, const transform_details& Td, volume* Vol, bool LastIter) {
+InverseCdf53(const v3i& M3,
+             int Iter,
+             const array<subband>& Subbands,
+             const transform_details& Td,
+             volume* Vol,
+             bool LastIter)
+{
   /* inverse normalize if required */
   idx2_Assert(IsFloatingPoint(Vol->Type));
-  for (int I = 0; I < Size(Subbands); ++I) {
-    if (I == 0 && !LastIter) continue; // do not normalize subband 0
+  for (int I = 0; I < Size(Subbands); ++I)
+  {
+    if (I == 0 && !LastIter)
+      continue; // do not normalize subband 0
     subband& S = Subbands[I];
-    f64 Wx = M3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
-    f64 Wy = M3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
-    f64 Idx2 = M3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1] : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
+    f64 Wx = M3.X == 1
+               ? 1
+               : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1]
+                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
+    f64 Wy = M3.Y == 1
+               ? 1
+               : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1]
+                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
+    f64 Idx2 = M3.Z == 1 ? 1
+                         : (S.LowHigh3.Z == 0
+                              ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1]
+                              : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
     f64 W = 1.0 / (Wx * Wy * Idx2);
-    #define Body(type)\
-    auto ItEnd = End<type>(S.Grid, *Vol);\
-    for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
+#define Body(type)                                                                                 \
+  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
+  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
+    *It = type(*It * W);
     idx2_DispatchOnType(Vol->Type);
-    #undef Body
+#undef Body
   }
 
   /* perform the inverse transform */
   int I = Td.StackSize;
-  while (I-- > 0) {
+  while (I-- > 0)
+  {
     int D = Td.StackAxes[I];
-    #define Body(type)\
-    switch (D) {\
-      case 0: ILiftCdf53X<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 1: ILiftCdf53Y<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      case 2: ILiftCdf53Z<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol); break;\
-      default: idx2_Assert(false); break;\
-    };
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      ILiftCdf53X<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      ILiftCdf53Y<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      ILiftCdf53Z<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
     idx2_DispatchOnType(Vol->Type);
-    #undef Body
+#undef Body
   }
 }
 
 void
-InverseCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOrder, volume* Vol, bool Normalize) {
+InverseCdf53(const v3i& Dims3,
+             const v3i& M3,
+             int Iter,
+             int NLevels,
+             u64 TformOrder,
+             volume* Vol,
+             bool Normalize)
+{
   idx2_Assert(Dims3 <= Dims(*Vol));
   /* "simulate" the forward transform */
   stack_array<grid, 32> StackGrids;
@@ -44058,122 +47746,156 @@ InverseCdf53(const v3i& Dims3, const v3i& M3, int Iter, int NLevels, u64 TformOr
   v3i S3(1);
   grid G(Dims3);
   int Iteration = 0;
-  while (Level < NLevels) {
-   idx2_Assert(TformOrder != 0);
-   int D = TformOrder & 0x3;
-   TformOrder >>= 2;
-   if (D == 3) { // next level
-     if (TformOrder == 3)  // next one is the last |
-       TformOrder = PrevOrder;
-     else
-       PrevOrder = TformOrder;
-     SetStrd(&G, S3);
-     SetDims(&G, D3);
-     R3 = D3;
-     ++Level;
-   } else {
-     StackGrids[Iteration] = G;
-     StackAxes[Iteration++] = D;
-     R3[D] = D3[D] + IsEven(D3[D]);
-     SetDims(&G, R3);
-     D3[D] = (R3[D] + 1) >> 1;
-     S3[D] <<= 1;
-   }
+  while (Level < NLevels)
+  {
+    idx2_Assert(TformOrder != 0);
+    int D = TformOrder & 0x3;
+    TformOrder >>= 2;
+    if (D == 3)
+    {                      // next level
+      if (TformOrder == 3) // next one is the last |
+        TformOrder = PrevOrder;
+      else
+        PrevOrder = TformOrder;
+      SetStrd(&G, S3);
+      SetDims(&G, D3);
+      R3 = D3;
+      ++Level;
+    }
+    else
+    {
+      StackGrids[Iteration] = G;
+      StackAxes[Iteration++] = D;
+      R3[D] = D3[D] + IsEven(D3[D]);
+      SetDims(&G, R3);
+      D3[D] = (R3[D] + 1) >> 1;
+      S3[D] <<= 1;
+    }
   }
 
   /* inverse normalize if required */
-  if (NLevels > 0 && Normalize) {
+  if (NLevels > 0 && Normalize)
+  {
     idx2_Assert(IsFloatingPoint(Vol->Type));
     idx2_RAII(array<subband>, Subbands, BuildSubbands(Dims3, NLevels, TformOrder, &Subbands));
     auto BasisNorms = GetCdf53NormsFast<16>();
-    for (int I = 0; I < Size(Subbands); ++I) {
+    for (int I = 0; I < Size(Subbands); ++I)
+    {
       subband& S = Subbands[I];
-      f64 Wx = Dims3.X == 1 ? 1 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
-      f64 Wy = Dims3.Y == 1 ? 1 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
-      f64 Idx2 = Dims3.Z == 1 ? 1 : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1] : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
+      f64 Wx = Dims3.X == 1
+                 ? 1
+                 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
+      f64 Wy = Dims3.Y == 1
+                 ? 1
+                 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
+      f64 Idx2 = Dims3.Z == 1
+                   ? 1
+                   : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1]
+                                        : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
       f64 W = 1.0 / (Wx * Wy * Idx2);
-      #define Body(type)\
-      auto ItEnd = End<type>(S.Grid, *Vol);\
-      for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It) *It = type(*It * W);
+#define Body(type)                                                                                 \
+  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
+  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
+    *It = type(*It * W);
       idx2_DispatchOnType(Vol->Type);
-      #undef Body
+#undef Body
     }
   }
 
   /* perform the inverse transform */
-  while (Iteration-- > 0) {
+  while (Iteration-- > 0)
+  {
     int D = StackAxes[Iteration];
-    #define Body(type)\
-    switch (D) {\
-      case 0: ILiftCdf53X<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol); break;\
-      case 1: ILiftCdf53Y<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol); break;\
-      case 2: ILiftCdf53Z<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol); break;\
-      default: idx2_Assert(false); break;\
-    };
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      ILiftCdf53X<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol);                       \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      ILiftCdf53Y<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol);                       \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      ILiftCdf53Z<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol);                       \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
     idx2_DispatchOnType(Vol->Type);
-    #undef Body
+#undef Body
   }
 }
 
 void
-ForwardCdf53(const extent& Ext, int NLevels, volume* Vol) {
-  #define Body(type)\
-  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i(1);\
-  array<grid> Grids;\
-  for (int I = 0; I < NLevels; ++I) {\
-    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
-    Dims3.X += IsEven(Dims3.X); /* extrapolate */\
-    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
-    Dims3.Y += IsEven(Dims3.Y); /* extrapolate */\
-    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
-    Dims3.Z += IsEven(Dims3.Z); /* extrapolate */\
-    Strd3 = Strd3 * 2;\
-    Dims3 = (Dims3 + 1) / 2;\
-  }\
-  for (int I = 0, J = 0; I < NLevels; ++I) {\
-    FLiftCdf53X<type>(Grids[J++], M, lift_option::Normal, Vol);\
-    FLiftCdf53Y<type>(Grids[J++], M, lift_option::Normal, Vol);\
-    FLiftCdf53Z<type>(Grids[J++], M, lift_option::Normal, Vol);\
+ForwardCdf53(const extent& Ext, int NLevels, volume* Vol)
+{
+#define Body(type)                                                                                 \
+  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i(1);                                            \
+  array<grid> Grids;                                                                               \
+  for (int I = 0; I < NLevels; ++I)                                                                \
+  {                                                                                                \
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));                                                  \
+    Dims3.X += IsEven(Dims3.X); /* extrapolate */                                                  \
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));                                                  \
+    Dims3.Y += IsEven(Dims3.Y); /* extrapolate */                                                  \
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));                                                  \
+    Dims3.Z += IsEven(Dims3.Z); /* extrapolate */                                                  \
+    Strd3 = Strd3 * 2;                                                                             \
+    Dims3 = (Dims3 + 1) / 2;                                                                       \
+  }                                                                                                \
+  for (int I = 0, J = 0; I < NLevels; ++I)                                                         \
+  {                                                                                                \
+    FLiftCdf53X<type>(Grids[J++], M, lift_option::Normal, Vol);                                    \
+    FLiftCdf53Y<type>(Grids[J++], M, lift_option::Normal, Vol);                                    \
+    FLiftCdf53Z<type>(Grids[J++], M, lift_option::Normal, Vol);                                    \
   }
   idx2_DispatchOnType(Vol->Type)
-  #undef Body
+#undef Body
 }
 
 void
-InverseCdf53(const extent& Ext, int NLevels, volume* Vol) {
-  #define Body(type)\
-  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i(1);\
-  array<grid> Grids;\
-  for (int I = 0; I < NLevels; ++I) {\
-    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
-    Dims3.X += IsEven(Dims3.X); /* extrapolate */\
-    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
-    Dims3.Y += IsEven(Dims3.Y); /* extrapolate */\
-    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));\
-    Dims3.Z += IsEven(Dims3.Z); /* extrapolate */\
-    Strd3 = Strd3 * 2;\
-    Dims3 = (Dims3 + 1) / 2;\
-  }\
-  for (int I = NLevels - 1, J = (int)Size(Grids) - 1; I >= 0; --I) {\
-    ILiftCdf53Z<type>(Grids[J--], M, lift_option::Normal, Vol);\
-    ILiftCdf53Y<type>(Grids[J--], M, lift_option::Normal, Vol);\
-    ILiftCdf53X<type>(Grids[J--], M, lift_option::Normal, Vol);\
+InverseCdf53(const extent& Ext, int NLevels, volume* Vol)
+{
+#define Body(type)                                                                                 \
+  v3i Dims3 = Dims(Ext), M = Dims(Ext), Strd3 = v3i(1);                                            \
+  array<grid> Grids;                                                                               \
+  for (int I = 0; I < NLevels; ++I)                                                                \
+  {                                                                                                \
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));                                                  \
+    Dims3.X += IsEven(Dims3.X); /* extrapolate */                                                  \
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));                                                  \
+    Dims3.Y += IsEven(Dims3.Y); /* extrapolate */                                                  \
+    PushBack(&Grids, grid(v3i(0), Dims3, Strd3));                                                  \
+    Dims3.Z += IsEven(Dims3.Z); /* extrapolate */                                                  \
+    Strd3 = Strd3 * 2;                                                                             \
+    Dims3 = (Dims3 + 1) / 2;                                                                       \
+  }                                                                                                \
+  for (int I = NLevels - 1, J = (int)Size(Grids) - 1; I >= 0; --I)                                 \
+  {                                                                                                \
+    ILiftCdf53Z<type>(Grids[J--], M, lift_option::Normal, Vol);                                    \
+    ILiftCdf53Y<type>(Grids[J--], M, lift_option::Normal, Vol);                                    \
+    ILiftCdf53X<type>(Grids[J--], M, lift_option::Normal, Vol);                                    \
   }
 
   idx2_DispatchOnType(Vol->Type)
-  #undef Body
+#undef Body
 }
 
 // TODO: this won't work for a general (sub)volume
 void
-InverseCdf53Old(volume* Vol, int NLevels) {
-#define Body(type)\
-  v3i Dims3 = Dims(*Vol);\
-  type* FPtr = (type*)(Vol->Buffer.Data);\
-  for (int I = NLevels - 1; I >= 0; --I) {\
-    ILiftCdf53OldZ(FPtr, Dims3, v3i(I));\
-    ILiftCdf53OldY(FPtr, Dims3, v3i(I));\
-    ILiftCdf53OldX(FPtr, Dims3, v3i(I));\
+InverseCdf53Old(volume* Vol, int NLevels)
+{
+#define Body(type)                                                                                 \
+  v3i Dims3 = Dims(*Vol);                                                                          \
+  type* FPtr = (type*)(Vol->Buffer.Data);                                                          \
+  for (int I = NLevels - 1; I >= 0; --I)                                                           \
+  {                                                                                                \
+    ILiftCdf53OldZ(FPtr, Dims3, v3i(I));                                                           \
+    ILiftCdf53OldY(FPtr, Dims3, v3i(I));                                                           \
+    ILiftCdf53OldX(FPtr, Dims3, v3i(I));                                                           \
   }
 
   idx2_DispatchOnType(Vol->Type)
@@ -44205,17 +47927,20 @@ ForwardCdf53Ext(const extent& Ext, volume* Vol) {
 
 // TODO: test this code
 void
-AggregateSubbands(const array<grid>& Subbands, array<grid>* AggSubbands) {
+AggregateSubbands(const array<grid>& Subbands, array<grid>* AggSubbands)
+{
   idx2_Assert(Size(Subbands) > 0);
   Clear(AggSubbands);
   PushBack(AggSubbands, Subbands[0]);
-  for (int I = 1; I < Size(Subbands); ++I) {
+  for (int I = 1; I < Size(Subbands); ++I)
+  {
     const grid& AggS = (*AggSubbands)[I - 1];
     const grid& S = Subbands[I];
     v3i AggFrom3 = From(AggS), AggDims3 = Dims(AggS), AggStrd3 = Strd(AggS);
     v3i From3 = From(S), Dims3 = Dims(S);
     v3i NewAggFrom3 = AggFrom3, NewAggStrd3 = AggStrd3, NewAggDims3 = AggDims3;
-    for (int D = 0; D < 3; ++D) {
+    for (int D = 0; D < 3; ++D)
+    {
       bool B = (From3[D] - AggFrom3[D]) % AggStrd3[D] != 0;
       NewAggStrd3[D] /= 1 << (int)B;
       NewAggDims3[D] += Dims3[D] * B;
@@ -44237,10 +47962,11 @@ ValVol        = volume of values */
 // TODO: write a function to return the size of the new block with additional wavelet coefficients
 // TODO: write a function to copy the existing wavelet coefficients to the new grid
 // TODO: complete this function (which should only contain code to do inverse wavelet transform)
-//grid WavGrid(SbFrom3 + WavBlockFrom3 * SbStrd3, WavBlockDims3, SbStrd3);
+// grid WavGrid(SbFrom3 + WavBlockFrom3 * SbStrd3, WavBlockDims3, SbStrd3);
 // TODO: what is a good starting value for ValGrid?
 wav_grids
-ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, const v3i& ValStrd) {
+ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, const v3i& ValStrd)
+{
   // TODO: can we figure out the subband through the input grid?
   // TODO: can we figure out the NDims from the WavGrid?
   /* find the support of the value block */
@@ -44258,7 +47984,8 @@ ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, co
   WavFrst3 = Max(Frst3, WavFrst3);
   v3i WavLast3 = Min(Last3, Last(WavGrid));
   wav_grids Output;
-  if (WavLast3 >= WavFrst3) {
+  if (WavLast3 >= WavFrst3)
+  {
     v3i NewStrd3 = WavStrd3 / (1 << Lvl3);
     if (!(ValStrd == 0))
       NewStrd3 = Min(NewStrd3, ValStrd);
@@ -44274,7 +48001,9 @@ ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, co
     v3i WrkDims3 = Dims(WrkFrst3, WrkLast3, NewStrd3);
     WrkDims3 = WrkDims3 + IsEven(WrkDims3);
     Output.WrkGrid = grid(WrkFrst3, WrkDims3, NewStrd3);
-  } else {
+  }
+  else
+  {
     Output.WavGrid = grid::Invalid();
     Output.ValGrid = grid::Invalid();
     Output.WrkGrid = grid::Invalid();
@@ -44284,7 +48013,7 @@ ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, co
 
 // copy the existing values
 // TODO: visualize to test this function
-//void CopyWavs(
+// void CopyWavs(
 //  const grid& WavGrid, const volume& WavVol, const grid& WrkGrid, volume* WrkVol)
 //{
 //
@@ -44312,31 +48041,30 @@ InverseCdf53Ext(const extent& Ext, volume* Vol) {
 }
 */
 
-stack_array<u8, 8>
-SubbandOrders[4] = {
+stack_array<u8, 8> SubbandOrders[4] = {
   { 127, 127, 127, 127, 127, 127, 127, 127 }, // not used
-  { 0, 1, 127, 127, 127, 127, 127, 127 }, // for 1D
-  { 0, 1, 2, 3, 127, 127, 127, 127 }, // for 2D
-  { 0, 1, 2, 4, 3, 5, 6, 7 } // for 3D
+  { 0, 1, 127, 127, 127, 127, 127, 127 },     // for 1D
+  { 0, 1, 2, 3, 127, 127, 127, 127 },         // for 2D
+  { 0, 1, 2, 4, 3, 5, 6, 7 }                  // for 3D
 };
 
 /* Here we assume the wavelet transform is done in X, then Y, then Z */
 void
-BuildSubbands(const v3i& N, int NLevels, array<extent>* Subbands) {
+BuildSubbands(const v3i& N, int NLevels, array<extent>* Subbands)
+{
   int NDims = NumDims(N);
   stack_array<u8, 8>& Order = SubbandOrders[NDims];
   Clear(Subbands);
   Reserve(Subbands, ((1 << NDims) - 1) * NLevels + 1);
   v3i M = N;
-  for (int I = 0; I < NLevels; ++I) {
+  for (int I = 0; I < NLevels; ++I)
+  {
     v3i P((M.X + 1) >> 1, (M.Y + 1) >> 1, (M.Z + 1) >> 1);
-    for (int J = (1 << NDims) - 1; J > 0; --J) {
-      u8 Z = BitSet(Order[J], Max(NDims - 3, 0)),
-         Y = BitSet(Order[J], Max(NDims - 2, 0)),
+    for (int J = (1 << NDims) - 1; J > 0; --J)
+    {
+      u8 Z = BitSet(Order[J], Max(NDims - 3, 0)), Y = BitSet(Order[J], Max(NDims - 2, 0)),
          X = BitSet(Order[J], Max(NDims - 1, 0));
-      v3i Sm((X == 0) ? P.X : M.X - P.X,
-             (Y == 0) ? P.Y : M.Y - P.Y,
-             (Z == 0) ? P.Z : M.Z - P.Z);
+      v3i Sm((X == 0) ? P.X : M.X - P.X, (Y == 0) ? P.Y : M.Y - P.Y, (Z == 0) ? P.Z : M.Z - P.Z);
       if (NDims == 3 && Sm.X != 0 && Sm.Y != 0 && Sm.Z != 0) // child exists
         PushBack(Subbands, extent(v3i(X, Y, Z) * P, Sm));
       else if (NDims == 2 && Sm.X != 0 && Sm.Y != 0)
@@ -44352,19 +48080,21 @@ BuildSubbands(const v3i& N, int NLevels, array<extent>* Subbands) {
 
 /* This version assumes the coefficients were not moved */
 void
-BuildSubbands(const v3i& N, int NLevels, array<grid>* Subbands) {
+BuildSubbands(const v3i& N, int NLevels, array<grid>* Subbands)
+{
   int NDims = NumDims(N);
   stack_array<u8, 8>& Order = SubbandOrders[NDims];
   Clear(Subbands);
   Reserve(Subbands, ((1 << NDims) - 1) * NLevels + 1);
-  v3i M = N; // dimensions of all the subbands at the current level
+  v3i M = N;      // dimensions of all the subbands at the current level
   v3i S(1, 1, 1); // strides
-  for (int I = 0; I < NLevels; ++I) {
+  for (int I = 0; I < NLevels; ++I)
+  {
     S = S * 2;
     v3i P((M.X + 1) >> 1, (M.Y + 1) >> 1, (M.Z + 1) >> 1); // next dimensions
-    for (int J = (1 << NDims) - 1; J > 0; --J) { // for each subband
-      u8 Z = BitSet(Order[J], Max(NDims - 3, 0)),
-         Y = BitSet(Order[J], Max(NDims - 2, 0)),
+    for (int J = (1 << NDims) - 1; J > 0; --J)
+    { // for each subband
+      u8 Z = BitSet(Order[J], Max(NDims - 3, 0)), Y = BitSet(Order[J], Max(NDims - 2, 0)),
          X = BitSet(Order[J], Max(NDims - 1, 0));
       v3i Sm((X == 0) ? P.X : M.X - P.X, // dimensions of the current subband
              (Y == 0) ? P.Y : M.Y - P.Y,
@@ -44383,10 +48113,12 @@ BuildSubbands(const v3i& N, int NLevels, array<grid>* Subbands) {
 }
 
 u64
-EncodeTransformOrder(const stref& TransformOrder) {
+EncodeTransformOrder(const stref& TransformOrder)
+{
   u64 Result = 0;
   int Len = Size(TransformOrder);
-  for (int I = Len - 1; I >= 0; --I) {
+  for (int I = Len - 1; I >= 0; --I)
+  {
     char C = TransformOrder[I];
     idx2_Assert(C == 'X' || C == 'Y' || C == 'Z' || C == '+');
     int T = C == '+' ? 3 : C - 'X';
@@ -44396,9 +48128,11 @@ EncodeTransformOrder(const stref& TransformOrder) {
 }
 
 void
-DecodeTransformOrder(u64 Input, str Output) {
+DecodeTransformOrder(u64 Input, str Output)
+{
   int Len = 0;
-  while (Input != 0) {
+  while (Input != 0)
+  {
     int T = Input & 0x3;
     Output[Len++] = T == 3 ? '+' : char('X' + T);
     Input >>= 2;
@@ -44407,19 +48141,24 @@ DecodeTransformOrder(u64 Input, str Output) {
 }
 
 i8
-DecodeTransformOrder(u64 Input, v3i N3, str Output) {
+DecodeTransformOrder(u64 Input, v3i N3, str Output)
+{
   N3 = v3i((int)NextPow2(N3.X), (int)NextPow2(N3.Y), (int)NextPow2(N3.Z));
   i8 Len = 0;
   u64 SavedInput = Input;
-  while (Prod<u64>(N3) > 1) {
+  while (Prod<u64>(N3) > 1)
+  {
     int T = Input & 0x3;
     Input >>= 2;
-    if (T == 3) {
+    if (T == 3)
+    {
       if (Input == 3)
         Input = SavedInput;
       else
         SavedInput = Input;
-    } else {
+    }
+    else
+    {
       Output[Len++] = char('X' + T);
       N3[T] >>= 1;
     }
@@ -44429,19 +48168,24 @@ DecodeTransformOrder(u64 Input, v3i N3, str Output) {
 }
 
 i8
-DecodeTransformOrder(u64 Input, int Passes, str Output) {
+DecodeTransformOrder(u64 Input, int Passes, str Output)
+{
   i8 Len = 0;
   u64 SavedInput = Input;
   v3i Passes3(Passes);
-  while (true) {
+  while (true)
+  {
     int T = Input & 0x3;
     Input >>= 2;
-    if (T == 3) {
+    if (T == 3)
+    {
       if (Input == 3)
         Input = SavedInput;
       else
         SavedInput = Input;
-    } else {
+    }
+    else
+    {
       --Passes3[T];
       if (Passes3[T] < 0)
         break;
@@ -44452,17 +48196,17 @@ DecodeTransformOrder(u64 Input, int Passes, str Output) {
   return Len;
 }
 
-//void
-//DecodeTransformOrder(u64 TransformOrder, str Output) {
-//  u64 Inverse = 0;
-//  for (int I = Len - 1; I >= 0; --I) {
-//    char C = TransformOrder[I];
-//    idx2_Assert(C == 'X' || C == 'Y' || C == 'Z' || C == '|');
-//    int T = C == '|' ? 3 : C - 'X';
-//    Result = (Result << 2) + T;
-//  }
-//  return Result;
-//}
+// void
+// DecodeTransformOrder(u64 TransformOrder, str Output) {
+//   u64 Inverse = 0;
+//   for (int I = Len - 1; I >= 0; --I) {
+//     char C = TransformOrder[I];
+//     idx2_Assert(C == 'X' || C == 'Y' || C == 'Z' || C == '|');
+//     int T = C == '|' ? 3 : C - 'X';
+//     Result = (Result << 2) + T;
+//   }
+//   return Result;
+// }
 
 /*
 In string form, a TransformOrder is made from 4 characters: X,Y,Z, and +
@@ -44473,41 +48217,54 @@ levels, the last order gets applied.
 In integral form, TransformOrder = T encodes the axis order of the transform in base-4 integers.
 T % 4 = D in [0, 3] where 0 = X, 1 = Y, 2 = Z, 3 = +*/
 void
-BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands) {
+BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands)
+{
   Clear(Subbands);
   Reserve(Subbands, ((1 << NumDims(N3)) - 1) * NLevels + 1);
   circular_queue<subband, 256> Queue;
-  PushBack(&Queue, subband{grid(N3), grid(N3), v3<i8>(0), v3<i8>(0), v3<i8>(0), i8(0)});
+  PushBack(&Queue, subband{ grid(N3), grid(N3), v3<i8>(0), v3<i8>(0), v3<i8>(0), i8(0) });
   i8 Level = 0;
   u64 PrevOrder = TransformOrder;
   v3<i8> MaxLevel3(0);
   stack_array<grid, 32> Grids;
-  while (Level < NLevels) {
+  while (Level < NLevels)
+  {
     idx2_Assert(TransformOrder != 0);
     int D = TransformOrder & 0x3;
     TransformOrder >>= 2;
-    if (D == 3) { // next level
-      if (TransformOrder == 3)  // next one is the last +
+    if (D == 3)
+    {                          // next level
+      if (TransformOrder == 3) // next one is the last +
         TransformOrder = PrevOrder;
       else
         PrevOrder = TransformOrder;
       i16 Sz = Size(Queue);
-      for (i16 I = Sz - 1; I >= 1; --I) {
+      for (i16 I = Sz - 1; I >= 1; --I)
+      {
         PushBack(Subbands, Queue[I]);
         PopBack(&Queue);
       }
       ++Level;
       Grids[Level] = Queue[0].Grid;
-    } else {
+    }
+    else
+    {
       ++MaxLevel3[D];
       i16 Sz = Size(Queue);
-      for (i16 I = 0; I < Sz; ++I) {
+      for (i16 I = 0; I < Sz; ++I)
+      {
         const grid& G = Queue[0].Grid;
         grid_split Gs = SplitAlternate(G, dimension(D));
-        v3<i8> NextLevel3 = Queue[0].Level3; ++NextLevel3[D];
-        v3<i8> NextLowHigh3 = Queue[0].LowHigh3; idx2_Assert(NextLowHigh3[D] == 0); NextLowHigh3[D] = 1;
-        PushBack(&Queue, subband{Gs.First, Gs.First, NextLevel3, NextLevel3, Queue[0].LowHigh3, Level});
-        PushBack(&Queue, subband{Gs.Second, Gs.Second, Queue[0].Level3, Queue[0].Level3, NextLowHigh3, Level});
+        v3<i8> NextLevel3 = Queue[0].Level3;
+        ++NextLevel3[D];
+        v3<i8> NextLowHigh3 = Queue[0].LowHigh3;
+        idx2_Assert(NextLowHigh3[D] == 0);
+        NextLowHigh3[D] = 1;
+        PushBack(&Queue,
+                 subband{ Gs.First, Gs.First, NextLevel3, NextLevel3, Queue[0].LowHigh3, Level });
+        PushBack(
+          &Queue,
+          subband{ Gs.Second, Gs.Second, Queue[0].Level3, Queue[0].Level3, NextLowHigh3, Level });
         PopFront(&Queue);
       }
     }
@@ -44516,7 +48273,8 @@ BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Su
     PushBack(Subbands, Queue[0]);
   Reverse(Begin(Grids), Begin(Grids) + Level + 1);
   i64 Sz = Size(*Subbands);
-  for (i64 I = 0; I < Sz; ++I) {
+  for (i64 I = 0; I < Sz; ++I)
+  {
     subband& Sband = (*Subbands)[I];
     Sband.Level3 = MaxLevel3 - Sband.Level3Rev;
     Sband.Level = i8(NLevels - Sband.Level - 1);
@@ -44528,7 +48286,8 @@ BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Su
 // TODO: this function behaves like the ForwardCdf53 function with regards to transform orders such
 // as XXY++ (see the comments for that ForwardCdf53).
 void
-BuildLevelGrids(const v3i& N3, int NLevels, u64 TransformOrder, array<grid>* LevelGrids) {
+BuildLevelGrids(const v3i& N3, int NLevels, u64 TransformOrder, array<grid>* LevelGrids)
+{
   Clear(LevelGrids);
   int Level = 0;
   u64 PrevOrder = TransformOrder;
@@ -44537,12 +48296,14 @@ BuildLevelGrids(const v3i& N3, int NLevels, u64 TransformOrder, array<grid>* Lev
   v3i S3(1);
   grid G(N3);
   PushBack(LevelGrids, G);
-  while (Level < NLevels) {
+  while (Level < NLevels)
+  {
     idx2_Assert(TransformOrder != 0);
     int D = TransformOrder & 0x3;
     TransformOrder >>= 2;
-    if (D == 3) { // next level
-      if (TransformOrder == 3)  // next one is the last +
+    if (D == 3)
+    {                          // next level
+      if (TransformOrder == 3) // next one is the last +
         TransformOrder = PrevOrder;
       else
         PrevOrder = TransformOrder;
@@ -44551,7 +48312,9 @@ BuildLevelGrids(const v3i& N3, int NLevels, u64 TransformOrder, array<grid>* Lev
       R3 = D3;
       PushBack(LevelGrids, G);
       ++Level;
-    } else {
+    }
+    else
+    {
       R3[D] = D3[D] + IsEven(D3[D]);
       SetDims(&G, R3);
       D3[D] = (R3[D] + 1) >> 1;
@@ -44562,40 +48325,45 @@ BuildLevelGrids(const v3i& N3, int NLevels, u64 TransformOrder, array<grid>* Lev
   Reverse(Begin(*LevelGrids), End(*LevelGrids));
 }
 
-grid MergeSubbandGrids(const grid& Sb1, const grid& Sb2) {
+grid
+MergeSubbandGrids(const grid& Sb1, const grid& Sb2)
+{
   v3i Off3 = Abs(From(Sb2) - From(Sb1));
   v3i Strd3 = Min(Strd(Sb1), Strd(Sb2)) * Equals(Off3, v3i(0)) + Off3;
-  v3i Dims3 = Dims(Sb1) + NotEquals(From(Sb1), From(Sb2)) * Dims(Sb2); // TODO: works in case of subbands but not in general
+  v3i Dims3 = Dims(Sb1) + NotEquals(From(Sb1), From(Sb2)) *
+                            Dims(Sb2); // TODO: works in case of subbands but not in general
   v3i From3 = Min(From(Sb2), From(Sb1));
   return grid(From3, Dims3, Strd3);
 }
 
 // TODO: generalize this to arbitrary transform order
 int
-LevelToSubband(const v3i& Lvl3) {
+LevelToSubband(const v3i& Lvl3)
+{
   if (Lvl3.X + Lvl3.Y + Lvl3.Z == 0)
     return 0;
   int Lvl = Max(Max(Lvl3.X, Lvl3.Y), Lvl3.Z);
   return 7 * (Lvl - 1) +
-    SubbandOrders[3][4 * (Lvl3.X == Lvl) + 2 * (Lvl3.Y == Lvl) + 1 * (Lvl3.Z == Lvl)];
+         SubbandOrders[3][4 * (Lvl3.X == Lvl) + 2 * (Lvl3.Y == Lvl) + 1 * (Lvl3.Z == Lvl)];
 }
 
-//void
-//FormSubbands(int NLevels, const volume& SVol, volume* DVol) {
-//  idx2_Assert(SVol.Dims == DVol->Dims);
-//  idx2_Assert(SVol.Type == DVol->Type);
-//  v3i Dims3 = Dims(SVol);
-//  array<extent> Subbands;
-//  array<grid> SubbandsInPlace;
-//  BuildSubbands(Dims3, NLevels, &Subbands);
-//  BuildSubbands(Dims3, NLevels, &SubbandsInPlace);
-//  for (int I = 0; I < Size(Subbands); ++I)
-//    Copy(SubbandsInPlace[I], SVol, Subbands[I], DVol);
-//}
+// void
+// FormSubbands(int NLevels, const volume& SVol, volume* DVol) {
+//   idx2_Assert(SVol.Dims == DVol->Dims);
+//   idx2_Assert(SVol.Type == DVol->Type);
+//   v3i Dims3 = Dims(SVol);
+//   array<extent> Subbands;
+//   array<grid> SubbandsInPlace;
+//   BuildSubbands(Dims3, NLevels, &Subbands);
+//   BuildSubbands(Dims3, NLevels, &SubbandsInPlace);
+//   for (int I = 0; I < Size(Subbands); ++I)
+//     Copy(SubbandsInPlace[I], SVol, Subbands[I], DVol);
+// }
 
 // TODO: generalize this to arbitrary transform order
 v3i
-SubbandToLevel(int NDims, int Sb, bool Norm) {
+SubbandToLevel(int NDims, int Sb, bool Norm)
+{
   if (Sb == 0)
     return v3i(0);
   /* handle level 0 which has only 1 subband (other levels have 7 subbands) */
@@ -44613,10 +48381,12 @@ SubbandToLevel(int NDims, int Sb, bool Norm) {
 }
 
 v3i
-ExpandDomain(const v3i& N, int NLevels) {
+ExpandDomain(const v3i& N, int NLevels)
+{
   v3i Count(0, 0, 0);
   v3i M = N;
-  for (int I = 0; I < NLevels; ++I) {
+  for (int I = 0; I < NLevels; ++I)
+  {
     v3i Add(IsEven(M.X), IsEven(M.Y), IsEven(M.Z));
     Count = Count + Add;
     M = (M + Add + 1) / 2;
@@ -44626,7 +48396,8 @@ ExpandDomain(const v3i& N, int NLevels) {
 
 // TODO: generalize this to arbitrary transform order
 extent
-WavFootprint(int NDims, int Sb, const grid& WavGrid) {
+WavFootprint(int NDims, int Sb, const grid& WavGrid)
+{
   // TODO: 2D?
   v3i Lvl3 = SubbandToLevel(NDims, Sb, true);
   v3i From3 = From(WavGrid);
@@ -44642,8 +48413,9 @@ WavFootprint(int NDims, int Sb, const grid& WavGrid) {
 }
 
 // TODO: generalize this to arbitrary transform order
-idx2_T(t) void
-Extrapolate3D(v3i D3, volume* Vol) {
+template <typename t> void
+Extrapolate3D(v3i D3, volume* Vol)
+{
   if constexpr (is_same_type<t, f32>::Value)
     idx2_Assert(Vol->Type == dtype::float32);
   if constexpr (is_same_type<t, f64>::Value)
@@ -44657,7 +48429,8 @@ Extrapolate3D(v3i D3, volume* Vol) {
   v3i S3(1); // Strides
   int NLevels = LogFloor(2, N3.X - 1);
   stack_array<v3i, 10> Dims3Stack;
-  for (int L = 0; L < NLevels; ++L) {
+  for (int L = 0; L < NLevels; ++L)
+  {
     FLiftCdf53X<t>(grid(v3i(0), v3i(D3.X, D3.Y, D3.Z), S3), N3 - 1, lift_option::Normal, Vol);
     FLiftCdf53Y<t>(grid(v3i(0), v3i(R3.X, D3.Y, D3.Z), S3), N3 - 1, lift_option::Normal, Vol);
     FLiftCdf53Z<t>(grid(v3i(0), v3i(R3.X, R3.Y, D3.Z), S3), N3 - 1, lift_option::Normal, Vol);
@@ -44668,7 +48441,8 @@ Extrapolate3D(v3i D3, volume* Vol) {
     N3 = (N3 + 1) / 2;
   }
   /* extrapolate by inverse transform */
-  for (int I = NLevels - 1; I >= 0; --I) {
+  for (int I = NLevels - 1; I >= 0; --I)
+  {
     S3 = S3 / 2;
     ILiftCdf53Z<t>(grid(v3i(0), Dims3Stack[I], S3), N3 - 1, lift_option::Normal, Vol);
     ILiftCdf53Y<t>(grid(v3i(0), Dims3Stack[I], S3), N3 - 1, lift_option::Normal, Vol);
@@ -44677,14 +48451,15 @@ Extrapolate3D(v3i D3, volume* Vol) {
 }
 
 // TODO: this should just
-idx2_T(t) void
-Extrapolate2D(v3i D3, volume* Vol) {
+template <typename t> void
+Extrapolate2D(v3i D3, volume* Vol)
+{
   if constexpr (is_same_type<t, f32>::Value)
     idx2_Assert(Vol->Type == dtype::float32);
   if constexpr (is_same_type<t, f64>::Value)
     idx2_Assert(Vol->Type == dtype::float64);
   v3i N3 = Dims(*Vol);
-  idx2_Assert(N3.XY  > 1);
+  idx2_Assert(N3.XY > 1);
   idx2_Assert(D3 <= N3);
   idx2_Assert(N3.X == N3.Y && N3.Z == 1);
   idx2_Assert(IsPow2(N3.X - 1));
@@ -44692,9 +48467,12 @@ Extrapolate2D(v3i D3, volume* Vol) {
   v3i S3(1); // Strides
   int NLevels = LogFloor(2, N3.X - 1);
   stack_array<v3i, 10> Dims3Stack;
-  for (int L = 0; L < NLevels; ++L) {
-    FLiftCdf53X<t>(grid(v3i(0), v3i(D3.X, D3.Y, 1), S3), N3 - v3i(1, 1, 0), lift_option::Normal, Vol);
-    FLiftCdf53Y<t>(grid(v3i(0), v3i(R3.X, D3.Y, 1), S3), N3 - v3i(1, 1, 0), lift_option::Normal, Vol);
+  for (int L = 0; L < NLevels; ++L)
+  {
+    FLiftCdf53X<t>(
+      grid(v3i(0), v3i(D3.X, D3.Y, 1), S3), N3 - v3i(1, 1, 0), lift_option::Normal, Vol);
+    FLiftCdf53Y<t>(
+      grid(v3i(0), v3i(R3.X, D3.Y, 1), S3), N3 - v3i(1, 1, 0), lift_option::Normal, Vol);
     Dims3Stack[L] = N3 - v3i(1, 1, 0); // TODO: or N3?
     D3 = (R3 + 1) / 2;
     R3 = D3 + IsEven(D3);
@@ -44702,73 +48480,92 @@ Extrapolate2D(v3i D3, volume* Vol) {
     N3 = (N3 + 1) / 2;
   }
   /* extrapolate by inverse transform */
-  for (int I = NLevels - 1; I >= 0; --I) {
-    S3 = S3 / 2; S3.Z = 1;
+  for (int I = NLevels - 1; I >= 0; --I)
+  {
+    S3 = S3 / 2;
+    S3.Z = 1;
     ILiftCdf53Y<t>(grid(v3i(0), Dims3Stack[I], S3), N3 - 1, lift_option::Normal, Vol);
     ILiftCdf53X<t>(grid(v3i(0), Dims3Stack[I], S3), N3 - 1, lift_option::Normal, Vol);
   }
 }
 
 void
-Extrapolate(v3i D3, volume* Vol) {
+Extrapolate(v3i D3, volume* Vol)
+{
   v3i N3 = Dims(*Vol);
-  if (NumDims(N3) == 2) {
-#define Body(type)\
-    Extrapolate2D<type>(D3, Vol);
+  if (NumDims(N3) == 2)
+  {
+#define Body(type) Extrapolate2D<type>(D3, Vol);
     idx2_DispatchOnType(Vol->Type)
 #undef Body
-  } else if (NumDims(D3) == 3) {
-#define Body(type)\
-    Extrapolate3D<type>(D3, Vol);
+  }
+  else if (NumDims(D3) == 3)
+  {
+#define Body(type) Extrapolate3D<type>(D3, Vol);
     idx2_DispatchOnType(Vol->Type)
 #undef Body
-  } else {
+  }
+  else
+  {
     idx2_Assert(false);
   }
 }
 
 } // namespace idx2
 
-namespace idx2 {
+namespace idx2
+{
 
 const v3i ZDims(4, 4, 4);
 
 /* Only return true if the block is fully encoded */
 bool
-Encode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs) {
+Encode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs)
+{
   idx2_Assert(N <= 64);
   u64 X = 0;
   for (int I = M; I < 64; ++I)
     X += u64((Block[I] >> B) & 1u) << (I - M);
   i8 P = (i8)Min(i64(N - M), S - BitSize(*Bs));
-  if (P > 0) {
+  if (P > 0)
+  {
     WriteLong(Bs, X, P);
     X >>= P; // P == 64 is fine since in that case we don't need X any more
   }
   u64 Lb = 1;
-  if (In) goto INNER_LOOP;
+  if (In)
+    goto INNER_LOOP;
   // TODO: we may be able to speed this up by getting rid of the shift of X
   // or the call bit BitSize()
-  for (; BitSize(*Bs) < S && N < 64;) {
-    if (1 == (Lb = Write(Bs, !!X))) {
-INNER_LOOP:
-      for (; BitSize(*Bs) < S && N < 64 - 1;) {
-        if (Write(Bs, X & 1u)) {
+  for (; BitSize(*Bs) < S && N < 64;)
+  {
+    if (1 == (Lb = Write(Bs, !!X)))
+    {
+    INNER_LOOP:
+      for (; BitSize(*Bs) < S && N < 64 - 1;)
+      {
+        if (Write(Bs, X & 1u))
+        {
           break;
-        } else {
+        }
+        else
+        {
           X >>= 1;
           ++N;
           ++P;
         }
       }
-      if (BitSize(*Bs) >= S) {
+      if (BitSize(*Bs) >= S)
+      {
         In = true;
         break;
       }
       X >>= 1;
       ++N;
       ++P;
-    } else {
+    }
+    else
+    {
       break;
     }
   }
@@ -44779,29 +48576,40 @@ INNER_LOOP:
 
 /* Only return true if the block is fully decoded */
 bool
-Decode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs) {
+Decode(u64* Block, int B, i64 S, i8& N, i8& M, bool& In, bitstream* Bs)
+{
   i8 P = (i8)Min(i64(N - M), S - BitSize(*Bs));
   u64 X = P > 0 ? ReadLong(Bs, P) : 0;
   u64 Lb = 1;
-  if (In) goto INNER_LOOP;
-  for (; BitSize(*Bs) < S && N < 64;) {
-    if (1 == (Lb = Read(Bs))) {
-INNER_LOOP:
-      for (; BitSize(*Bs) < S && N < 64 - 1;) {
-        if (Read(Bs)) {
+  if (In)
+    goto INNER_LOOP;
+  for (; BitSize(*Bs) < S && N < 64;)
+  {
+    if (1 == (Lb = Read(Bs)))
+    {
+    INNER_LOOP:
+      for (; BitSize(*Bs) < S && N < 64 - 1;)
+      {
+        if (Read(Bs))
+        {
           break;
-        } else {
+        }
+        else
+        {
           ++N;
           ++P;
         }
       }
-      if (BitSize(*Bs) >= S) {
+      if (BitSize(*Bs) >= S)
+      {
         In = true;
         break;
       }
       X += 1ull << (P++);
       ++N;
-    } else {
+    }
+    else
+    {
       break;
     }
   }
@@ -44809,41 +48617,50 @@ INNER_LOOP:
   for (int I = M; X; ++I, X >>= 1)
     Block[I] += (u64)(X & 1u) << B;
   M += P;
-  return ((N == 64 && M == N)|| Lb == 0);
+  return ((N == 64 && M == N) || Lb == 0);
 }
 
 bool
-Encode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
+Encode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs)
+{
   idx2_Assert(N <= 64);
   u64 X = 0;
   for (int I = M; I < 64; ++I)
     X += u64((Block[I] >> B) & 1u) << (I - M);
   i8 P = (i8)Min(i64(N - M), S - BitSize(*Bs));
-  if (P > 0) {
+  if (P > 0)
+  {
     WriteLong(Bs, X, P);
     X >>= P; // P == 64 is fine since in that case we don't need X any more
   }
   u64 Lb = 1;
   // TODO: we may be able to speed this up by getting rid of the shift of X
   // or the call bit BitSize()
-  for (; BitSize(*Bs) < S && N < 64;) {
-    if (1 == (Lb = Write(Bs, !!X))) { // group is significant
-      for (; BitSize(*Bs) < S && N < 64 - 1;) {
-        if (Write(Bs, X & 1u)) { // found a significant coeff, break and retest
+  for (; BitSize(*Bs) < S && N < 64;)
+  {
+    if (1 == (Lb = Write(Bs, !!X)))
+    { // group is significant
+      for (; BitSize(*Bs) < S && N < 64 - 1;)
+      {
+        if (Write(Bs, X & 1u))
+        { // found a significant coeff, break and retest
           break;
-        } else { // have not found a significant coeff, continue until we find one
+        }
+        else
+        { // have not found a significant coeff, continue until we find one
           X >>= 1;
           ++N;
           ++P;
         }
       }
-      if (BitSize(*Bs) >= S) {
+      if (BitSize(*Bs) >= S)
         break;
-      }
       X >>= 1;
       ++N;
       ++P;
-    } else {
+    }
+    else
+    {
       break;
     }
   }
@@ -44854,26 +48671,36 @@ Encode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
 
 /* Only return true if the block is fully decoded */
 bool
-Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
+Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs)
+{
   i8 P = (i8)Min(i64(N - M), S - BitSize(*Bs));
   u64 X = P > 0 ? ReadLong(Bs, P) : 0;
   u64 Lb = 1;
-  for (; BitSize(*Bs) < S && N < 64;) {
-    if (1 == (Lb = Read(Bs))) {
-      for (; BitSize(*Bs) < S && N < 64 - 1;) {
-        if (Read(Bs)) {
+  for (; BitSize(*Bs) < S && N < 64;)
+  {
+    if (1 == (Lb = Read(Bs)))
+    {
+      for (; BitSize(*Bs) < S && N < 64 - 1;)
+      {
+        if (Read(Bs))
+        {
           break;
-        } else {
+        }
+        else
+        {
           ++N;
           ++P;
         }
       }
-      if (BitSize(*Bs) >= S) {
+      if (BitSize(*Bs) >= S)
+      {
         break;
       }
       X += 1ull << (P++);
       ++N;
-    } else {
+    }
+    else
+    {
       break;
     }
   }
@@ -44881,14 +48708,15 @@ Decode(u64* Block, int B, i64 S, i8& N, i8& M, bitstream* Bs) {
   for (int I = M; X; ++I, X >>= 1)
     Block[I] += (u64)(X & 1u) << B;
   M += P;
-  return ((N == 64 && M == N)|| Lb == 0);
+  return ((N == 64 && M == N) || Lb == 0);
 }
 
 } // namespace idx2
 
 #include <stdio.h>
 
-namespace idx2 {
+namespace idx2
+{
 
 error<idx2_err_code>
 Init(idx2_file* Idx2, const params& P)
@@ -44920,13 +48748,7 @@ Destroy(idx2_file* Idx2)
   return idx2_Error(idx2_err_code::NoError);
 }
 
-void
-Hello()
-{
-  printf("hello\n");
-}
-
-}
+} // namespace idx2
 
 #endif // idx2_Implementation
 

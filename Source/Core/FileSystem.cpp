@@ -1,103 +1,90 @@
-#include <string.h>
-#include "Assert.h"
-#include "Algorithm.h"
 #include "FileSystem.h"
+#include "Algorithm.h"
+#include "Assert.h"
 #include "Format.h"
+#include <string.h>
+
 
 #if defined(_WIN32)
-  #include "dirent_win.h"
-  #include <direct.h>
-  #include <io.h>
-  #include <Windows.h>
-  #include <sys/types.h>
-  #include <sys/stat.h>
-  #define GetCurrentDir _getcwd
-  #define MkDir(Dir) _mkdir(Dir)
-  #define Access(Dir) _access(Dir, 0)
-  #define Stat(Path, S) _stat64(Path, S)
-  #define stat _stat64
+#include "dirent_win.h"
+#include <Windows.h>
+#include <direct.h>
+#include <io.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#define GetCurrentDir _getcwd
+#define MkDir(Dir) _mkdir(Dir)
+#define Access(Dir) _access(Dir, 0)
+#define Stat(Path, S) _stat64(Path, S)
+#define stat _stat64
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
-  #include <dirent.h>
-  #include <sys/stat.h>
-  #include <unistd.h>
-  #define GetCurrentDir getcwd
-  #define MkDir(Dir) mkdir(Dir, 0733)
-  #define Access(Dir) access(Dir, F_OK)
-  #define Stat(Path, S) stat(Path, S)
-  //#define stat struct stat
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#define MkDir(Dir) mkdir(Dir, 0733)
+#define Access(Dir) access(Dir, F_OK)
+#define Stat(Path, S) stat(Path, S)
+//#define stat struct stat
 #endif
+
 
 namespace idx2
 {
 
-/* Default constructor
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
 path::path() = default;
 
 
-/* Init a path from a string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 path::path(const stref& Str)
 {
   Init(this, Str);
 }
 
 
-/* Init a path from a string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-void Init(path* Path, const stref& Str)
+void
+Init(path* Path, const stref& Str)
 {
   Path->Parts[0] = Str;
   Path->NParts = 1;
 }
 
 
-/* Append a component to a path
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-void Append(path* Path, const stref& Part)
+void
+Append(path* Path, const stref& Part)
 {
   idx2_Assert(Path->NParts < Path->NPartsMax, "too many path parts");
   Path->Parts[Path->NParts++] = Part;
 }
 
 
-/* Get the file name (exclude the path) from a path string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-stref GetFileName(const stref& Path)
+stref
+GetFileName(const stref& Path)
 {
   idx2_Assert(!Contains(Path, '\\'));
   cstr LastSlash = FindLast(RevBegin(Path), RevEnd(Path), '/');
   if (LastSlash != RevEnd(Path))
-    return SubString
-    (
-      Path,
-      int(LastSlash - Begin(Path) + 1),
-      Path.Size - int(LastSlash - Begin(Path))
-    );
+    return SubString(
+      Path, int(LastSlash - Begin(Path) + 1), Path.Size - int(LastSlash - Begin(Path)));
 
   return Path;
 }
 
 
-/* Get the path name (exclude the file name) from a path string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-stref GetDirName(const stref& Path)
+stref
+GetDirName(const stref& Path)
 {
   idx2_Assert(!Contains(Path, '\\'));
   cstr LastSlash = FindLast(RevBegin(Path), RevEnd(Path), '/');
   if (LastSlash != RevEnd(Path))
-    return SubString
-    (
-      Path, 0, int(LastSlash - Begin(Path))
-    );
+    return SubString(Path, 0, int(LastSlash - Begin(Path)));
 
   return Path;
 }
 
 
-/* Convert a path to a string
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-cstr ToString(const path& Path)
+cstr
+ToString(const path& Path)
 {
   printer Pr(ScratchBuf, sizeof(ScratchBuf));
   for (int I = 0; I < Path.NParts; ++I)
@@ -110,34 +97,32 @@ cstr ToString(const path& Path)
 }
 
 
-/* Return true if the given path is relative
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-bool IsRelative(const stref& Path)
+bool
+IsRelative(const stref& Path)
 {
   stref& PathR = const_cast<stref&>(Path);
-  if (PathR.Size > 0 && PathR[0] == '/')  // e.g. /usr/local
+  if (PathR.Size > 0 && PathR[0] == '/') // e.g. /usr/local
     return false;
-  if (PathR.Size > 2 && PathR[1] == ':' && PathR[2] == '/')  // e.g. C:/Users
+  if (PathR.Size > 2 && PathR[1] == ':' && PathR[2] == '/') // e.g. C:/Users
     return false;
 
   return true;
 }
 
 
-/* Given a path, create a full hierarchy of directories
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-bool CreateFullDir(const stref& Path)
+bool
+CreateFullDir(const stref& Path)
 {
   cstr PathCopy = ToString(Path);
   int Error = 0;
   str P = (str)PathCopy;
 
   for // loop through the components (between two '/')
-  (/*-----------------------------------------------*/
+  (
     P = (str)strchr(PathCopy, '/');
     P;
     P = (str)strchr(P + 1, '/')
-  )/*-----------------------------------------------*/
+  )
   {
     *P = '\0';
     Error = MkDir(PathCopy);
@@ -150,9 +135,8 @@ bool CreateFullDir(const stref& Path)
 }
 
 
-/* Return true if a path exists
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-bool DirExists(const stref& Path)
+bool
+DirExists(const stref& Path)
 {
   cstr PathCopy = ToString(Path);
 
@@ -160,19 +144,15 @@ bool DirExists(const stref& Path)
 }
 
 
-/* Remove a path with all files recursively from disk
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-void RemoveDir(cstr Path)
+void
+RemoveDir(cstr Path)
 {
   struct dirent* Entry = nullptr;
   DIR* Dir = nullptr;
   Dir = opendir(Path);
-  char AbsPath[257] = {0};
+  char AbsPath[257] = { 0 };
 
-  while // loop through items under Dir
-  (/*--------------------------------*/
-    Entry = readdir(Dir)
-  )/*--------------------------------*/
+  while (Entry = readdir(Dir))
   {
     if (*(Entry->d_name) == '.')
       continue;
@@ -196,25 +176,21 @@ void RemoveDir(cstr Path)
 }
 
 
-/* Get the extension from a path
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-stref GetExtension(const stref& Path)
+stref
+GetExtension(const stref& Path)
 {
   cstr LastDot = FindLast(RevBegin(Path), RevEnd(Path), '.');
-  if (LastDot == RevEnd(Path)) return stref();
+  if (LastDot == RevEnd(Path))
+    return stref();
 
-  return SubString(Path, int(LastDot+1-Begin(Path)), int(End(Path)-1-LastDot));
+  return SubString(Path, int(LastDot + 1 - Begin(Path)), int(End(Path) - 1 - LastDot));
 }
 
 
-/* Get the size of a file in bytes (-1 if there is error)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-i64 GetFileSize(const stref& Path)
+i64
+GetFileSize(const stref& Path)
 {
-  idx2_RAII(char, C = Path.Ptr[Path.Size],
-    Path.Ptr[Path.Size] = '\0',
-    Path.Ptr[Path.Size] = C
-  );
+  idx2_RAII(char, C = Path.Ptr[Path.Size], Path.Ptr[Path.Size] = '\0', Path.Ptr[Path.Size] = C);
   struct ::stat S;
   if (0 != ::Stat(Path.Ptr, &S))
     return -1;
@@ -225,9 +201,9 @@ i64 GetFileSize(const stref& Path)
 
 } // namespace idx2
 
+
 #undef GetCurrentDir
 #undef MkDir
 #undef Access
 #undef stat
 #undef Stat
-

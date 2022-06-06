@@ -1,13 +1,16 @@
-#include <string.h>
-#include "Assert.h"
 #include "Memory.h"
+#include "Assert.h"
+#include <string.h>
 
 // TODO: some of these functions can be made inline
 
-namespace idx2 {
+namespace idx2
+{
+
 
 i64
-MemCopy(const buffer& Src, buffer* Dst) {
+MemCopy(const buffer& Src, buffer* Dst)
+{
   idx2_Assert(Dst->Data, "Copy to null");
   idx2_Assert(Src.Data || Src.Bytes == 0, "Copy from null");
   idx2_Assert(Dst->Bytes >= Src.Bytes, "Copy to a smaller buffer");
@@ -15,8 +18,10 @@ MemCopy(const buffer& Src, buffer* Dst) {
   return Src.Bytes;
 }
 
+
 i64
-MemCopy(const buffer& Src, buffer* Dst, u64 Bytes) {
+MemCopy(const buffer& Src, buffer* Dst, u64 Bytes)
+{
   idx2_Assert(Dst->Data, "Copy to null");
   idx2_Assert(Src.Data || Src.Bytes == 0, "Copy from null");
   idx2_Assert(Dst->Bytes >= Src.Bytes, "Copy to a smaller buffer");
@@ -24,34 +29,47 @@ MemCopy(const buffer& Src, buffer* Dst, u64 Bytes) {
   return Bytes;
 }
 
+
 buffer
-operator+(const buffer& Buf, i64 Bytes) {
-  return buffer{Buf.Data + Bytes, Buf.Bytes - Bytes};
+operator+(const buffer& Buf, i64 Bytes)
+{
+  return buffer{ Buf.Data + Bytes, Buf.Bytes - Bytes };
 }
 
+
 void
-ZeroBuf(buffer* Buf) {
+ZeroBuf(buffer* Buf)
+{
   idx2_Assert(Buf->Data);
   memset(Buf->Data, 0, size_t(Buf->Bytes));
 }
 
-idx2_T(t) void
-ZeroBufT(buffer_t<t>* Buf) {
+
+template <typename t> void
+ZeroBufT(buffer_t<t>* Buf)
+{
   idx2_Assert(Buf->Data);
   memset(Buf->Data, 0, Buf->Size * sizeof(t));
 }
 
+
 void
-AllocBuf(buffer* Buf, i64 Bytes, allocator* Alloc) {
+AllocBuf(buffer* Buf, i64 Bytes, allocator* Alloc)
+{
   Alloc->Alloc(Buf, Bytes);
 }
 
+
 void
-CallocBuf(buffer* Buf, i64 Bytes, allocator* Alloc) {
+CallocBuf(buffer* Buf, i64 Bytes, allocator* Alloc)
+{
   idx2_Assert(!Buf->Data || Buf->Bytes == 0, "Buffer not freed before allocating new memory");
-  if (Alloc == &Mallocator()) {
+  if (Alloc == &Mallocator())
+  {
     Buf->Data = (byte*)calloc(size_t(Bytes), 1);
-  }  else {
+  }
+  else
+  {
     AllocBuf(Buf, Bytes, Alloc);
     ZeroBuf(Buf);
   }
@@ -60,14 +78,18 @@ CallocBuf(buffer* Buf, i64 Bytes, allocator* Alloc) {
   Buf->Alloc = Alloc;
 }
 
+
 void
-DeallocBuf(buffer* Buf) {
+DeallocBuf(buffer* Buf)
+{
   idx2_Assert(Buf->Alloc);
   Buf->Alloc->Dealloc(Buf);
 }
 
+
 bool
-mallocator::Alloc(buffer* Buf, i64 Bytes) {
+mallocator::Alloc(buffer* Buf, i64 Bytes)
+{
   idx2_Assert(!Buf->Data || Buf->Bytes == 0, "Buffer not freed before allocating new memory");
   Buf->Data = (byte*)malloc(size_t(Bytes));
   idx2_AbortIf(!(Buf->Data), "Out of memory: cannot allocate %" PRIx64 " bytes\n", Bytes);
@@ -76,26 +98,37 @@ mallocator::Alloc(buffer* Buf, i64 Bytes) {
   return true;
 }
 
+
 void
-mallocator::Dealloc(buffer* Buf) {
+mallocator::Dealloc(buffer* Buf)
+{
   free(Buf->Data);
   Buf->Data = nullptr;
   Buf->Bytes = 0;
   Buf->Alloc = nullptr;
 }
 
+
 void
-mallocator::DeallocAll() { /* empty */ }
+mallocator::DeallocAll()
+{ /* empty */
+}
 
-linear_allocator::
-linear_allocator() = default;
 
-linear_allocator::
-linear_allocator(const buffer& Buf) : Block(Buf) {}
+linear_allocator::linear_allocator() = default;
 
-bool linear_allocator::
-Alloc(buffer* Buf, i64 Bytes) {
-  if (CurrentBytes + Bytes <= Block.Bytes) {
+
+linear_allocator::linear_allocator(const buffer& Buf)
+  : Block(Buf)
+{
+}
+
+
+bool
+linear_allocator::Alloc(buffer* Buf, i64 Bytes)
+{
+  if (CurrentBytes + Bytes <= Block.Bytes)
+  {
     Buf->Data = Block.Data + CurrentBytes;
     Buf->Bytes = Bytes;
     Buf->Alloc = this;
@@ -105,9 +138,12 @@ Alloc(buffer* Buf, i64 Bytes) {
   return false;
 }
 
-void linear_allocator::
-Dealloc(buffer* Buf) {
-  if (Buf->Data + Buf->Bytes == Block.Data + CurrentBytes) {
+
+void
+linear_allocator::Dealloc(buffer* Buf)
+{
+  if (Buf->Data + Buf->Bytes == Block.Data + CurrentBytes)
+  {
     Buf->Data = nullptr;
     Buf->Bytes = 0;
     Buf->Alloc = nullptr;
@@ -115,33 +151,44 @@ Dealloc(buffer* Buf) {
   }
 }
 
-void linear_allocator::
-DeallocAll() {
+
+void
+linear_allocator::DeallocAll()
+{
   CurrentBytes = 0;
 }
 
-bool linear_allocator::
-Own(const buffer& Buf) const {
+
+bool
+linear_allocator::Own(const buffer& Buf) const
+{
   return Block.Data <= Buf.Data && Buf.Data < Block.Data + CurrentBytes;
 }
 
-free_list_allocator::
-free_list_allocator() = default;
 
-free_list_allocator::
-free_list_allocator(i64 MinBytesIn, i64 MaxBytesIn, allocator* ParentIn)
+free_list_allocator::free_list_allocator() = default;
+
+
+free_list_allocator::free_list_allocator(i64 MinBytesIn, i64 MaxBytesIn, allocator* ParentIn)
   : MinBytes(MinBytesIn)
   , MaxBytes(MaxBytesIn)
-  , Parent(ParentIn) {}
+  , Parent(ParentIn)
+{
+}
 
-free_list_allocator::
-free_list_allocator(i64 Bytes, allocator* ParentIn)
-  : free_list_allocator(Bytes, Bytes, ParentIn) {}
 
-bool free_list_allocator::
-Alloc(buffer* Buf, i64 Bytes) {
+free_list_allocator::free_list_allocator(i64 Bytes, allocator* ParentIn)
+  : free_list_allocator(Bytes, Bytes, ParentIn)
+{
+}
+
+
+bool
+free_list_allocator::Alloc(buffer* Buf, i64 Bytes)
+{
   idx2_Assert(Parent);
-  if (MinBytes <= Bytes && Bytes <= MaxBytes && Head) {
+  if (MinBytes <= Bytes && Bytes <= MaxBytes && Head)
+  {
     Buf->Data = (byte*)Head;
     Buf->Bytes = Bytes;
     Buf->Alloc = this;
@@ -154,25 +201,33 @@ Alloc(buffer* Buf, i64 Bytes) {
   return Result;
 }
 
-void free_list_allocator::
-Dealloc(buffer* Buf) {
+
+void
+free_list_allocator::Dealloc(buffer* Buf)
+{
   idx2_Assert(Parent);
-  if (MinBytes <= Buf->Bytes && Buf->Bytes <= MaxBytes) {
+  if (MinBytes <= Buf->Bytes && Buf->Bytes <= MaxBytes)
+  {
     Buf->Bytes = 0;
     Buf->Alloc = this;
     node* P = (node*)(Buf->Data);
     P->Next = Head;
     Head = P;
-  } else {
+  }
+  else
+  {
     Parent->Dealloc(Buf);
   }
 }
 
+
 // NOTE: the client may want to call Parent->DeallocateAll() as well
-void free_list_allocator::
-DeallocAll() {
+void
+free_list_allocator::DeallocAll()
+{
   idx2_Assert(Parent);
-  while (Head) {
+  while (Head)
+  {
     node* Next = Head->Next;
     buffer Buf((byte*)Head, MaxBytes, Parent);
     Parent->Dealloc(&Buf);
@@ -180,35 +235,45 @@ DeallocAll() {
   }
 }
 
-fallback_allocator::
-fallback_allocator() = default;
 
-fallback_allocator::
-fallback_allocator(owning_allocator* PrimaryIn, allocator* SecondaryIn)
+fallback_allocator::fallback_allocator() = default;
+
+
+fallback_allocator::fallback_allocator(owning_allocator* PrimaryIn, allocator* SecondaryIn)
   : Primary(PrimaryIn)
-  , Secondary(SecondaryIn) {}
+  , Secondary(SecondaryIn)
+{
+}
 
-bool fallback_allocator::
-Alloc(buffer* Buf, i64 Size) {
+
+bool
+fallback_allocator::Alloc(buffer* Buf, i64 Size)
+{
   bool Success = Primary->Alloc(Buf, Size);
   return Success ? Success : Secondary->Alloc(Buf, Size);
 }
 
-void fallback_allocator::
-Dealloc(buffer* Buf) {
+
+void
+fallback_allocator::Dealloc(buffer* Buf)
+{
   if (Primary->Own(*Buf))
     return Primary->Dealloc(Buf);
   Secondary->Dealloc(Buf);
 }
 
-void fallback_allocator::
-DeallocAll() {
+
+void
+fallback_allocator::DeallocAll()
+{
   Primary->DeallocAll();
   Secondary->DeallocAll();
 }
 
+
 void
-Clone(const buffer& Src, buffer* Dst, allocator* Alloc) {
+Clone(const buffer& Src, buffer* Dst, allocator* Alloc)
+{
   if (Dst->Data && Dst->Bytes != Src.Bytes)
     DeallocBuf(Dst);
   if (!Dst->Data && Dst->Bytes == 0)
@@ -216,5 +281,5 @@ Clone(const buffer& Src, buffer* Dst, allocator* Alloc) {
   MemCopy(Src, Dst);
 }
 
-} // namespace idx2
 
+} // namespace idx2
