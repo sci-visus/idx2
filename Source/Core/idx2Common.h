@@ -199,7 +199,7 @@ extern free_list_allocator BrickAlloc_;
 /* ---------------------- FUNCTIONS ----------------------*/
 
 grid
-GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands);
+GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands, const v3i& Dims3);
 
 void
 Dealloc(params* P);

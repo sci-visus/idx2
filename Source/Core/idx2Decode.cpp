@@ -753,7 +753,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
   u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128;
-  grid OutGrid = GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands);
+  grid OutGrid = GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands, P.Meta.Dims3);
   printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
   volume OutVolMem;

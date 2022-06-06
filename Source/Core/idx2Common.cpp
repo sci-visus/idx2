@@ -169,8 +169,9 @@ Dealloc(idx2_file* Idx2)
 }
 
 
+// TODO: what if the input extent is too big (bigger than dims)?
 grid
-GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands)
+GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands, const v3i& Dims3)
 {
   v3i Strd3(1); // start with stride (1, 1, 1)
   idx2_For (int, D, 0, 3)
@@ -190,12 +191,24 @@ GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands)
     if (Div[D] == 0)
       Strd3[D] <<= 1;
 
-  v3i First3 = From(Ext), Last3 = Last(Ext);
+  v3i First3 = From(Ext);
+  v3i Last3 = Last(Ext);
+  //v3i First3 = From(Ext) - (Strd3 - 1);
+  //v3i Last3 = Last(Ext) + (Strd3 - 1);
+  //extent ExtCropped = Crop(extent(First3, Last3 - First3 + 1), extent(Dims3));
+  //First3 = From(ExtCropped);
+  //Last3 = Last(ExtCropped);
   First3 = ((First3 + Strd3 - 1) / Strd3) * Strd3;
   Last3 = (Last3 / Strd3) * Strd3;
-  v3i Dims3 = (Last3 - First3) / Strd3 + 1;
+  //if (First3.X > Last3.X)
+  //  Swap(&First3.X, &Last3.X);
+  //if (First3.Y > Last3.Y)
+  //  Swap(&First3.Y, &Last3.Y);
+  //if (First3.Z > Last3.Z)
+  //  Swap(&First3.Z, &Last3.Z);
+  //v3i Dims3 = (Last3 - First3) / Strd3 + 1;
 
-  return grid(First3, Dims3, Strd3);
+  return grid(First3, (Last3 - First3) / Strd3 + 1, Strd3);
 }
 
 

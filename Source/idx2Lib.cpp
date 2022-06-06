@@ -20,7 +20,7 @@ idx2::grid
 GetOutputGrid(const idx2_file& Idx2, const params& P)
 {
   u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128; // TODO: check this
-  return GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands);
+  return GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands, P.Meta.Dims3);
 }
 
 
