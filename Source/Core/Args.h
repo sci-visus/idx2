@@ -4,6 +4,7 @@
 
 #include "Array.h"
 #include "Common.h"
+#include "Enum.h"
 
 
 namespace idx2
