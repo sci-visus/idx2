@@ -428,6 +428,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8
   }
   if (!FileExpCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound);
+
   file_exp_cache* FileExpCache = FileExpCacheIt.Val;
   idx2_Assert(D->ChunkInFile < Size(FileExpCache->ChunkExpSzs));
 
