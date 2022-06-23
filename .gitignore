@@ -1,4 +1,5 @@
 .ccls-cache
+.idea
 .vscode
 .vs
 *.o
@@ -9,5 +10,6 @@
 *.raw
 bin
 build
+cmake-build-debug
 CMakeFiles
 Source/Python/nanobind
