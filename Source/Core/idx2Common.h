@@ -86,8 +86,6 @@ struct params
   v3i DownsamplingFactor3; // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
   f64 DecodeAccuracy = 0;
   int DecodePrecision = 0;
-  int OutputLevel = 0;
-  u8 DecodeMask = 0xFF;
   int QualityLevel = -1;
   cstr OutDir = ".";      // TODO: change this to local storage
   cstr InDir = ".";       // TODO: change this to local storage
@@ -104,7 +102,6 @@ struct params
   bool GroupBitPlanes = true;
   bool GroupSubLevels = true;
   array<int> RdoLevels;
-  int DecodeLevel = 0;
   bool WaveletOnly = false;
   bool ComputeMinMax = false;
   // either LLC_LatLon or LLC_Cap can be provided, not both

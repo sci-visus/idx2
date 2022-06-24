@@ -39,9 +39,10 @@ DecodeExtent3f32(const std::string& InputFile,
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
   Init(&Idx2, P);               // TODO: throw exception
 
-  P.OutputLevel = Level;
-  P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
-  P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
+  // TODO: fix these
+  //P.OutputLevel = Level;
+  //P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
+  //P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
   P.DecodeAccuracy = Accuracy;
   v3i From3(get<0>(Extent), get<1>(Extent), get<2>(Extent));
   v3i To3(get<3>(Extent), get<4>(Extent), get<5>(Extent));
@@ -80,9 +81,10 @@ Decode3f32(const std::string& InputFile,
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
   Init(&Idx2, P);               // TODO: throw exception
 
-  P.OutputLevel = Level;
-  P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
-  P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
+  // TODO: fix these
+  //P.OutputLevel = Level;
+  //P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
+  //P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
   P.DecodeAccuracy = Accuracy;
   P.DecodeExtent = extent(Idx2.Dims3); // get the whole volume
   // P.DecodeExtent = extent(v3i(10, 20, 30), v3i(100, 140, 160)); // get a portion of the whole
@@ -120,9 +122,10 @@ Decode3f64(const std::string& InputFile,
   if (!InitOk)
     printf("ERROR: %s\n", ToString(InitOk));
 
-  P.OutputLevel = Level;
-  P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
-  P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
+  // TODO: fix these
+  //P.OutputLevel = Level;
+  //P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
+  //P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
   P.DecodeAccuracy = Accuracy;
   P.DecodeExtent = extent(Idx2.Dims3); // get the whole volume
   // P.DecodeExtent = extent(v3i(10, 20, 30), v3i(100, 140, 160)); // get a portion of the whole
@@ -159,9 +162,10 @@ Decode2f32(const std::string& InputFile,
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
   Init(&Idx2, P);               // TODO: throw exception
 
-  P.OutputLevel = Level;
-  P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
-  P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
+  // TODO: fix these
+  //P.OutputLevel = Level;
+  //P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
+  //P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
   P.DecodeAccuracy = Accuracy;
   P.DecodeExtent = extent(Idx2.Dims3); // get the whole volume
   // P.DecodeExtent = extent(v3i(10, 20, 30), v3i(100, 140, 160)); // get a portion of the whole
@@ -197,9 +201,10 @@ Decode2f64(const std::string& InputFile,
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
   Init(&Idx2, P);               // TODO: throw exception
 
-  P.OutputLevel = Level;
-  P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
-  P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
+  // TODO: fix these
+  //P.OutputLevel = Level;
+  //P.DecodeLevel = P.OutputLevel;  // most of the time we want this to be the same as OutputLevel
+  //P.DecodeMask = (1 << SubLevel); // controls the exact sub-level to extract (by default is 128)
   P.DecodeAccuracy = Accuracy;
   P.DecodeExtent = extent(Idx2.Dims3); // get the whole volume
   // P.DecodeExtent = extent(v3i(10, 20, 30), v3i(100, 140, 160)); // get a portion of the whole

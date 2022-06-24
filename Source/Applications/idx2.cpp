@@ -26,13 +26,6 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
               "Example: --first 919 655 719\n");
   P->DecodeExtent = extent(First3, Last3 - First3 + 1);
 
-  // Parse the output level (--level)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--level", &P->OutputLevel),
-              "Provide --level (0 means full resolution)\n"
-              "The decoder will not decode levels less than this (finer resolution levels)\n"
-              "Example: --level 0\n");
-  P->DecodeLevel = P->OutputLevel;
-
   // Parse the downsampling factor
   idx2_ExitIf(!OptVal(Argc, Argv, "--downsampling", &P->DownsamplingFactor3), "Provide --downsampling (0 0 0 means full resolution, 1 1 2 means half X, half Y, quarter Z)\n");
 
@@ -49,7 +42,6 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
 
   /* Parse the optional quality and decode levels */
   OptVal(Argc, Argv, "--quality_level", &P->QualityLevel);
-  OptVal(Argc, Argv, "--decode_level", &P->DecodeLevel);
 }
 
 
