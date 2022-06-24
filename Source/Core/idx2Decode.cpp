@@ -673,17 +673,16 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64
   volume& BVol = BrickIt.Val->Vol;
 
   /* construct a list of subbands to decode */
-  // TODO: test this logic
   idx2_Assert(Size(Idx2.Subbands) <= 8);
   u8 DecodeSbMask = Mask; // TODO: need change if we support more than one transform pass per brick
-  idx2_For (u8, Sb, 0, 8)
-  {
-    if (!BitSet(Mask, Sb))
-      continue;
-    idx2_For (u8, S, 0, 8)
-      if ((Sb | S) <= Sb)
-        DecodeSbMask = SetBit(DecodeSbMask, S);
-  } // end subband loop
+  //idx2_For (u8, Sb, 0, 8)
+  //{
+  //  if (!BitSet(Mask, Sb))
+  //    continue;
+  //  idx2_For (u8, S, 0, 8)
+  //    if ((Sb | S) <= Sb)
+  //      DecodeSbMask = SetBit(DecodeSbMask, S);
+  //} // end subband loop
 
   /* recursively decode the brick, one subband at a time */
   idx2_Assert(Size(Idx2.Subbands) == 8);
@@ -831,7 +830,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
       idx2_ChunkTraverse(
         //        u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Iter]) + ChunkTop.Address;
         //        idx2_Assert(ChunkAddr == GetLinearChunk(Idx2, Iter, ChunkTop.ChunkFrom3));
-        D.ChunkInFile = ChunkTop.ChunkInFile; idx2_BrickTraverse(
+        D.ChunkInFile = ChunkTop.ChunkInFile;
+        idx2_BrickTraverse(
           D.BrickInChunk = Top.BrickInChunk;
           //          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Iter]) + Top.Address;
           //          idx2_Assert(BrickAddr == GetLinearBrick(Idx2, Iter, Top.BrickFrom3));

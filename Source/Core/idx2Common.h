@@ -142,6 +142,7 @@ struct idx2_file
   v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
   static constexpr int NTformPasses = 1;
   u64 TformOrder = 0;
+  stack_array<v3i, MaxLevels> Dims3PerLevel; // the full dimensions per level
   stack_array<v3i, MaxLevels> NBricks3s; // number of bricks per iteration
   stack_array<v3i, MaxLevels> NChunks3s;
   stack_array<v3i, MaxLevels> NFiles3s;
