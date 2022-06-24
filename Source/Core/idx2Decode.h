@@ -21,30 +21,6 @@ struct decode_params
 };
 
 
-struct decode_all
-{
-  const idx2_file* Idx2 = nullptr;
-  extent Ext;
-  f64 Accuracy = 0;
-  int Iter = 0;
-  u8 Mask = 0xFF;
-  int QualityLevel = -1;
-  void Init(const idx2_file& Idx2);
-  void SetExtent(const extent& Ext);
-  void SetMask(u8 Mask);
-  void SetIteration(int Iteration);
-  void SetAccuracy(f64 Accuracy);
-  void SetQuality(int Quality);
-  f64 GetAccuracy() const;
-  int GetIteration() const;
-  extent GetExtent() const;
-  u8 GetMask() const;
-  int GetQuality() const;
-  //  decode_params GetDecodeParams(int Iteration, const v3i &Brick3) const override;
-  void Destroy();
-};
-
-
 template <typename t> struct brick
 {
   t* Samples = nullptr; // TODO: data should stay compressed

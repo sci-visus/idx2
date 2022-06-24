@@ -190,6 +190,22 @@ Finalize(idx2_file* Idx2)
     Idx2->BrickDimsExt3 = idx2_ExtDims(Idx2->BrickDims3);
     BuildSubbands(Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->Subbands);
     BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->SubbandsNonExt);
+    // Compute the dimensions at the start
+    Idx2->Dims3PerLevel[0] = Idx2->Dims3;
+    idx2_For (int, I, 0, Idx2->NLevels)
+    {
+      auto Order = Idx2->TformOrder;
+      if (I > 0)
+        Idx2->Dims3PerLevel[I] = Idx2->Dims3PerLevel[I - 1];
+      while (true)
+      {
+        int D = Order & 0x3;
+        Order >>= 2;
+        if (D == 3)
+          break;
+        Idx2->Dims3PerLevel[I][D] >>= 1;
+      }
+    }
   }
 
   { /* compute number of bricks per level */
@@ -245,6 +261,7 @@ Finalize(idx2_file* Idx2)
         return idx2_Error(idx2_err_code::TooManyLevels);
       }
     }
+
     /* disabled since this check is not always true
     idx2_For(int, I, 1, Idx2->NLevels) {
       i8 Len = Idx2->BrickOrderStrs[I].Len - Idx2->TformOrderFull.Len;

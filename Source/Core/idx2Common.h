@@ -83,6 +83,7 @@ struct params
   int FilesPerDir = 4096;
   /* decode exclusive */
   extent DecodeExtent;
+  v3i DownsamplingFactor3; // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
   f64 DecodeAccuracy = 0;
   int DecodePrecision = 0;
   int OutputLevel = 0;
@@ -139,6 +140,7 @@ struct idx2_file
   v3i BrickDims3 = v3i(32);
   v3i BrickDimsExt3 = v3i(33);
   v3i BlockDims3 = v3i(4);
+  v3i DecodeDims3 = Dims3; // the dimensions of the decoded array
   v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
   static constexpr int NTformPasses = 1;
   u64 TformOrder = 0;
