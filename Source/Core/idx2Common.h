@@ -136,15 +136,15 @@ struct idx2_file
   char Name[32] = {};
   char Field[32] = {};
   v3i Dims3 = v3i(256);
+  v3i DownsamplingFactor3 = v3i(0);
   dtype DType = dtype::__Invalid__;
   v3i BrickDims3 = v3i(32);
   v3i BrickDimsExt3 = v3i(33);
   v3i BlockDims3 = v3i(4);
-  v3i DecodeDims3 = Dims3; // the dimensions of the decoded array
   v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
   static constexpr int NTformPasses = 1;
   u64 TformOrder = 0;
-  stack_array<v3i, MaxLevels> Dims3PerLevel; // the full dimensions per level
+  stack_array<u8, MaxLevels> DecodeSubbandMasks; // one subband mask per level
   stack_array<v3i, MaxLevels> NBricks3s; // number of bricks per iteration
   stack_array<v3i, MaxLevels> NChunks3s;
   stack_array<v3i, MaxLevels> NFiles3s;
@@ -201,8 +201,9 @@ extern free_list_allocator BrickAlloc_;
 
 /* ---------------------- FUNCTIONS ----------------------*/
 
+/* Compute the output grid (from, dims, strides) */
 grid
-GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands, const v3i& Dims3);
+GetGrid(const idx2_file& Idx2, const extent& Ext);
 
 void
 Dealloc(params* P);
@@ -260,6 +261,9 @@ SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
 
 void
 SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels);
+
+void
+SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);
 
 error<idx2_err_code>
 Finalize(idx2_file* Idx2);

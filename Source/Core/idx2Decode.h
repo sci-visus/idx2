@@ -94,8 +94,8 @@ struct decode_data
   allocator* Alloc = nullptr;
   file_cache_table FcTable;
   hash_table<u64, brick_volume> BrickPool;
-  i8 Iter = 0;
-  i8 Level = 0;
+  i8 Level  = 0; // current level being decoded
+  i8 Subband = 0; // current subband being decoded
   stack_array<u64, idx2_file::MaxLevels> Brick;
   stack_array<v3i, idx2_file::MaxLevels> Bricks3;
   i32 ChunkInFile = 0;

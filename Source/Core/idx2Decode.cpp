@@ -34,7 +34,7 @@ ReadFileExponents(decode_data* D,
                   const file_id& FileId);
 
 static expected<const chunk_exp_cache*, idx2_err_code>
-ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level);
+ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband);
 
 static error<idx2_err_code>
 ReadFileRdos(const idx2_file& Idx2,
@@ -331,9 +331,9 @@ ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, con
 /* Given a brick address, read the exponent chunk associated with the brick and cache it */
 // TODO: remove the last two params (already stored in D)
 static expected<const chunk_exp_cache*, idx2_err_code>
-ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level)
+ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband)
 {
-  file_id FileId = ConstructFilePathExponents(Idx2, Brick, Iter, Level);
+  file_id FileId = ConstructFilePathExponents(Idx2, Brick, Level, Subband);
   auto FileExpCacheIt = Lookup(&D->FcTable.FileExpCaches, FileId.Id);
   if (!FileExpCacheIt)
   {
@@ -428,7 +428,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
 static error<idx2_err_code>
 DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& SbGrid, volume* BVol)
 {
-  u64 Brick = D->Brick[D->Iter];
+  u64 Brick = D->Brick[D->Level];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
   /* read the rdo information if present */
@@ -436,22 +436,22 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
   if (Size(Idx2.RdoLevels) > 0 && D->QualityLevel >= 0)
   {
     //    printf("reading rdo\n");
-    auto ReadChunkRdoResult = ReadChunkRdos(Idx2, D, Brick, D->Iter);
+    auto ReadChunkRdoResult = ReadChunkRdos(Idx2, D, Brick, D->Level);
     if (!ReadChunkRdoResult)
       return Error(ReadChunkRdoResult);
     const chunk_rdo_cache* ChunkRdoCache = Value(ReadChunkRdoResult);
     int Ql = Min(D->QualityLevel, (int)Size(Idx2.RdoLevels) - 1);
-    MinBitPlane = ChunkRdoCache->TruncationPoints[D->Level * Size(Idx2.RdoLevels) + Ql];
+    MinBitPlane = ChunkRdoCache->TruncationPoints[D->Subband * Size(Idx2.RdoLevels) + Ql];
   }
 
   if (MinBitPlane == traits<i16>::Max)
     return idx2_Error(idx2_err_code::NoError);
   int BlockCount = Prod(NBlocks3);
-  if (D->Level == 0 && D->Iter + 1 < Idx2.NLevels)
+  if (D->Subband == 0 && D->Level + 1 < Idx2.NLevels)
     BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
 
   /* first, read the block exponents */
-  auto ReadChunkExpResult = ReadChunkExponents(Idx2, D, Brick, D->Iter, D->Level);
+  auto ReadChunkExpResult = ReadChunkExponents(Idx2, D, Brick, D->Level, D->Subband);
   if (!ReadChunkExpResult)
     return Error(ReadChunkExpResult);
 
@@ -479,7 +479,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     u64 BlockUInts[4 * 4 * 4] = {};
     buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
     bool CodedInNextIter =
-      D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+      D->Subband == 0 && D->Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter)
       continue; // CodedInNextIter just means that this block belongs to the LLL subband?
     // we read the exponent for the block
@@ -501,7 +501,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
-        auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Iter, D->Level, RealBp);
+        auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Level, D->Subband, RealBp);
         if (!ReadChunkResult)
         {
           idx2_Assert(false);
@@ -570,8 +570,8 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
 static void
 DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64 Accuracy)
 {
-  i8 Iter = D->Iter;
-  u64 Brick = D->Brick[Iter];
+  i8 Level = D->Level;
+  u64 Brick = D->Brick[Level];
   //  if ((Brick >> Idx2.BricksPerChunks[Iter]) != D->LastTile) {
   //    idx2_ForEach(It, D->RequestedChunks) {
   //      auto& FileCache = D->FcTable.FileCaches[It->Second];
@@ -583,13 +583,12 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64
   //    D->LastTile = Brick >> Idx2.BricksPerChunks[Iter];
   //  }
   //  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
-  auto BrickIt = Lookup(&D->BrickPool, GetBrickKey(Iter, Brick));
+  auto BrickIt = Lookup(&D->BrickPool, GetBrickKey(Level, Brick));
   idx2_Assert(BrickIt);
   volume& BVol = BrickIt.Val->Vol;
 
   /* construct a list of subbands to decode */
   idx2_Assert(Size(Idx2.Subbands) <= 8);
-  u8 DecodeSbMask = Mask; // TODO: need change if we support more than one transform pass per brick
   //idx2_For (u8, Sb, 0, 8)
   //{
   //  if (!BitSet(Mask, Sb))
@@ -600,21 +599,20 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64
   //} // end subband loop
 
   /* recursively decode the brick, one subband at a time */
-  idx2_Assert(Size(Idx2.Subbands) == 8);
   idx2_For (i8, Sb, 0, (i8)Size(Idx2.Subbands))
   {
-    if (!BitSet(DecodeSbMask, Sb))
+    if (!BitSet(Idx2.DecodeSubbandMasks[Level], Sb))
       continue;
     const subband& S = Idx2.Subbands[Sb];
     v3i SbDimsNonExt3 = idx2_NonExtDims(Dims(S.Grid));
-    i8 NextIter = Iter + 1;
-    if (Sb == 0 && NextIter < Idx2.NLevels)
+    i8 NextLevel = Level + 1;
+    if (Sb == 0 && NextLevel < Idx2.NLevels)
     { // need to decode the parent brick first
       /* find and decode the parent */
-      v3i Brick3 = D->Bricks3[D->Iter];
-      v3i PBrick3 = (D->Bricks3[NextIter] = Brick3 / Idx2.GroupBrick3);
-      u64 PBrick = (D->Brick[NextIter] = GetLinearBrick(Idx2, NextIter, PBrick3));
-      u64 PKey = GetBrickKey(NextIter, PBrick);
+      v3i Brick3 = D->Bricks3[D->Level];
+      v3i PBrick3 = (D->Bricks3[NextLevel] = Brick3 / Idx2.GroupBrick3);
+      u64 PBrick = (D->Brick[NextLevel] = GetLinearBrick(Idx2, NextLevel, PBrick3));
+      u64 PKey = GetBrickKey(NextLevel, PBrick);
       auto PbIt = Lookup(&D->BrickPool, PKey);
       idx2_Assert(PbIt);
       // TODO: problem: here we will need access to D->LinearChunkInFile/D->LinearBrickInChunk for
@@ -624,7 +622,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64
       if (PbIt.Val->NChildren == 0)
       {
         v3i From3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
-        v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3s[Iter])));
+        v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3s[Level])));
         PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
       }
       ++PbIt.Val->NChildren;
@@ -639,11 +637,9 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64
         Delete(&D->BrickPool, PKey);
       }
     }
-    D->Level = Sb;
-    if (Sb == 0 || Iter >= D->EffIter)
+    D->Subband = Sb;
+    if (Sb == 0 || Level >= D->EffIter)
     { // NOTE: the check for Sb == 0 prevents the output volume from having blocking artifacts
-      // if      (Idx2.Version == v2i(0, 0)) DecodeSubbandV0_0(Idx2, D, S.Grid, &BVol);
-      // else if (Idx2.Version == v2i(0, 1)) DecodeSubbandV0_1(Idx2, D, S.Grid, &BVol);
       if (Idx2.Version == v2i(1, 0))
         DecodeSubband(Idx2, D, Accuracy, S.Grid, &BVol);
     }
@@ -651,11 +647,10 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64
   // TODO: inverse transform only to the necessary level
   if (!P.WaveletOnly)
   {
-    //    printf("inverting\n");
-    if (Iter + 1 < Idx2.NLevels)
-      InverseCdf53(Idx2.BrickDimsExt3, D->Iter, Idx2.Subbands, Idx2.Td, &BVol, false);
+    if (Level + 1 < Idx2.NLevels)
+      InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, false);
     else
-      InverseCdf53(Idx2.BrickDimsExt3, D->Iter, Idx2.Subbands, Idx2.Td, &BVol, true);
+      InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, true);
   }
 }
 
@@ -667,8 +662,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   timer DecodeTimer;
   StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
-  u8 OutMask = P.DecodeLevel == P.OutputLevel ? P.DecodeMask : 128;
-  grid OutGrid = GetGrid(P.DecodeExtent, P.OutputLevel, OutMask, Idx2.Subbands, P.Meta.Dims3);
+  grid OutGrid = GetGrid(Idx2, P.DecodeExtent);
   printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
   volume OutVolMem;
@@ -754,7 +748,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           Resize(&BVol.Vol, Idx2.BrickDimsExt3, dtype::float64, D.Alloc);
           // TODO: for progressive decompression, copy the data from BrickTable to BrickVol
           Fill(idx2_Range(f64, BVol.Vol), 0.0);
-          D.Iter = Iter;
+          D.Level = Iter;
           D.Bricks3[Iter] = Top.BrickFrom3;
           D.Brick[Iter] = GetLinearBrick(Idx2, Iter, Top.BrickFrom3);
           u64 BrickKey = GetBrickKey(Iter, D.Brick[Iter]);
@@ -1250,13 +1244,13 @@ GetPartialResolution(const v3i& Dims3, u8 Mask, const array<subband>& Subbands) 
 error<idx2_err_code>
 DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol)
 {
-  u64 Brick = D->Brick[D->Iter];
+  u64 Brick = D->Brick[D->Level];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Iter, 0, 0);
+  file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Level, 0, 0);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-  idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
+  idx2_FSeek(Fp, D->Offsets[D->Level], SEEK_SET);
   /* first, read the block exponents */
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
   { // zfp block loop
@@ -1267,7 +1261,7 @@ DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     v3i D3 = Z3 * Idx2.BlockDims3;
     v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
     bool CodedInNextIter =
-      D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+      D->Subband == 0 && D->Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter)
       continue;
     ReadBuffer(Fp, &BufFloats);
@@ -1279,7 +1273,7 @@ DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     }
     idx2_EndFor3; // end sample loop
   }
-  D->Offsets[D->Iter] = idx2_FTell(Fp);
+  D->Offsets[D->Level] = idx2_FTell(Fp);
   return idx2_Error(idx2_err_code::NoError);
 }
 
@@ -1287,14 +1281,14 @@ DecodeSubbandV0_0(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
 error<idx2_err_code>
 DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, volume* BVol)
 {
-  u64 Brick = D->Brick[D->Iter];
+  u64 Brick = D->Brick[D->Level];
   v3i SbDims3 = Dims(SbGrid);
   const i8 NBitPlanes = idx2_BitSizeOf(f64);
   v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Iter, 0, 0);
+  file_id FileId = ConstructFilePathV0_0(Idx2, Brick, D->Level, 0, 0);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-  idx2_FSeek(Fp, D->Offsets[D->Iter], SEEK_SET);
+  idx2_FSeek(Fp, D->Offsets[D->Level], SEEK_SET);
   int Sz = 0;
   ReadPOD(Fp, &Sz);
   Rewind(&D->BlockStream);
@@ -1315,7 +1309,7 @@ DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     u64 BlockUInts[4 * 4 * 4] = {};
     buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
     bool CodedInNextIter =
-      D->Level == 0 && D->Iter + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+      D->Subband == 0 && D->Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter)
       continue;
     int NDims = NumDims(BlockDims3);
@@ -1342,7 +1336,7 @@ DecodeSubbandV0_1(const idx2_file& Idx2, decode_data* D, const grid& SbGrid, vol
     }
     idx2_EndFor3; // end sample loop
   }
-  D->Offsets[D->Iter] = idx2_FTell(Fp);
+  D->Offsets[D->Level] = idx2_FTell(Fp);
 
   return idx2_Error(idx2_err_code::NoError);
 }

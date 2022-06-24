@@ -157,6 +157,13 @@ SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels)
 }
 
 
+void
+SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
+{
+  Idx2->DownsamplingFactor3 = DownsamplingFactor3;
+}
+
+
 error<idx2_err_code>
 Finalize(idx2_file* Idx2)
 {
@@ -190,20 +197,24 @@ Finalize(idx2_file* Idx2)
     Idx2->BrickDimsExt3 = idx2_ExtDims(Idx2->BrickDims3);
     BuildSubbands(Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->Subbands);
     BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->SubbandsNonExt);
-    // Compute the dimensions at the start
-    Idx2->Dims3PerLevel[0] = Idx2->Dims3;
+
+    // Compute the decode subband mask based on DownsamplingFactor3
+    v3i Df3 = Idx2->DownsamplingFactor3;
     idx2_For (int, I, 0, Idx2->NLevels)
     {
       auto Order = Idx2->TformOrder;
-      if (I > 0)
-        Idx2->Dims3PerLevel[I] = Idx2->Dims3PerLevel[I - 1];
-      while (true)
+      u8 Mask = 0xFF;
+      idx2_For (int, Sb, 0, Size(Idx2->Subbands))
       {
-        int D = Order & 0x3;
-        Order >>= 2;
-        if (D == 3)
-          break;
-        Idx2->Dims3PerLevel[I][D] >>= 1;
+        bool HighX = Idx2->Subbands[Sb].LowHigh3.X > 0 && Df3.X > 0;
+        bool HighY = Idx2->Subbands[Sb].LowHigh3.Y > 0 && Df3.Y > 0;
+        bool HighZ = Idx2->Subbands[Sb].LowHigh3.Z > 0 && Df3.Z > 0;
+        if (HighX || HighY || HighZ)
+          Mask = UnsetBit(Mask, Sb);
+        Idx2->DecodeSubbandMasks[I] = Mask;
+        if (Df3.X > 0) --Df3.X;
+        if (Df3.Y > 0) --Df3.Y;
+        if (Df3.Z > 0) --Df3.Z;
       }
     }
   }
@@ -420,26 +431,13 @@ Dealloc(idx2_file* Idx2)
 
 
 // TODO: what if the input extent is too big (bigger than dims)?
+// TODO: need to handle the case where the extent falls between the stride
 grid
-GetGrid(const extent& Ext, int Iter, u8 Mask, const array<subband>& Subbands, const v3i& Dims3)
+GetGrid(const idx2_file& Idx2, const extent& Ext)
 {
   v3i Strd3(1); // start with stride (1, 1, 1)
   idx2_For (int, D, 0, 3)
-    Strd3[D] <<= Iter; // TODO: only work with 1 transform pass per level
-  v3i Div(0);
-
-  idx2_For (u8, Sb, 0, 8)
-  {
-    if (!BitSet(Mask, Sb))
-      continue;
-    v3i Lh3 = Subbands[Sb].LowHigh3;
-    idx2_For (int, D, 0, 3)
-      Div[D] = Max(Div[D], Lh3[D]);
-  }
-
-  idx2_For (int, D, 0, 3)
-    if (Div[D] == 0)
-      Strd3[D] <<= 1;
+    Strd3[D] <<= Idx2.DownsamplingFactor3[D];
 
   v3i First3 = From(Ext);
   v3i Last3 = Last(Ext);

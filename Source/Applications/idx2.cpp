@@ -33,33 +33,8 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
               "Example: --level 0\n");
   P->DecodeLevel = P->OutputLevel;
 
-  // Parse the mask for sub level (--mask)
-  u8 Mask = 0;
-  idx2_ExitIf(!OptVal(Argc, Argv, "--mask", &Mask),
-              "Provide --mask (8-bit mask, 128 (0x80) means full resolution)\n"
-              "For example, if the volume is 256 x 256 x 256 and there are 2 levels\n"
-              "Level 0, mask 128 = 256 x 256 x 256\n"
-              "Level 0, mask 64  = 256 x 256 x 128\n"
-              "Level 0, mask 32  = 256 x 128 x 256\n"
-              "Level 0, mask 16  = 128 x 256 x 256\n"
-              "Level 0, mask 8   = 256 x 128 x 128\n"
-              "Level 0, mask 4   = 128 x 256 x 128\n"
-              "Level 0, mask 2   = 128 x 128 x 256\n"
-              "Level 0, mask 1   = 128 x 128 x 128\n"
-              "Level 1, mask 128 = 128 x 128 x 128\n"
-              "and so on, until..."
-              "Level 1, mask 1   =  64 x  64 x  64\n"
-              "Example: --mask 128\n");
-  // swap bit 3 and 4 of the decode mask
-  P->DecodeMask = Mask;
-  if (BitSet(Mask, 3))
-    P->DecodeMask = SetBit(Mask, 4);
-  else
-    P->DecodeMask = UnsetBit(Mask, 4);
-  if (BitSet(Mask, 4))
-    P->DecodeMask = SetBit(P->DecodeMask, 3);
-  else
-    P->DecodeMask = UnsetBit(P->DecodeMask, 3);
+  // Parse the downsampling factor
+  idx2_ExitIf(!OptVal(Argc, Argv, "--downsampling", &P->DownsamplingFactor3), "Provide --downsampling (0 0 0 means full resolution, 1 1 2 means half X, half Y, quarter Z)\n");
 
   // Parse the decode accuracy (--accuracy)
   idx2_ExitIf(!OptVal(Argc, Argv, "--accuracy", &P->DecodeAccuracy),
@@ -264,6 +239,7 @@ SetParams(idx2_file* Idx2, const params& P)
   SetBricksPerChunk(Idx2, P.BricksPerChunk);
   SetChunksPerFile(Idx2, P.ChunksPerFile);
   SetNumIterations(Idx2, (i8)P.NLevels);
+  SetDownsamplingFactor(Idx2, P.DownsamplingFactor3);
   SetAccuracy(Idx2, P.Accuracy);
   SetFilesPerDirectory(Idx2, P.FilesPerDir);
   SetDir(Idx2, P.OutDir);
