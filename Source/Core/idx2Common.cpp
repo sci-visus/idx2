@@ -202,21 +202,32 @@ Finalize(idx2_file* Idx2)
     v3i Df3 = Idx2->DownsamplingFactor3;
     idx2_For (int, I, 0, Idx2->NLevels)
     {
-      auto Order = Idx2->TformOrder;
+      if (Df3.X > 0 && Df3.Y > 0 && Df3.Z > 0)
+      {
+        --Df3.X;
+        --Df3.Y;
+        --Df3.Z;
+        if (Df3.X > 0 && Df3.Y > 0 && Df3.Z > 0)
+          Idx2->DecodeSubbandMasks[I] = 0;
+        else
+          Idx2->DecodeSubbandMasks[I] = 1; // decode only subband (0, 0, 0)
+        continue;
+      }
       u8 Mask = 0xFF;
       idx2_For (int, Sb, 0, Size(Idx2->Subbands))
       {
-        bool HighX = Idx2->Subbands[Sb].LowHigh3.X > 0 && Df3.X > 0;
-        bool HighY = Idx2->Subbands[Sb].LowHigh3.Y > 0 && Df3.Y > 0;
-        bool HighZ = Idx2->Subbands[Sb].LowHigh3.Z > 0 && Df3.Z > 0;
-        if (HighX || HighY || HighZ)
+        const v3i& Lh3 = Idx2->Subbands[Sb].LowHigh3;
+        if (Df3.X >= Lh3.X && Df3.Y >= Lh3.Y && Df3.Z >= Lh3.Z)
           Mask = UnsetBit(Mask, Sb);
-        Idx2->DecodeSubbandMasks[I] = Mask;
-        if (Df3.X > 0) --Df3.X;
-        if (Df3.Y > 0) --Df3.Y;
-        if (Df3.Z > 0) --Df3.Z;
+        if (Lh3 == v3i(0)) // always decode subband 0
+          Mask = SetBit(Mask, Sb);
       }
+      Idx2->DecodeSubbandMasks[I] = Mask;
+      if (Df3.X > 0) --Df3.X;
+      if (Df3.Y > 0) --Df3.Y;
+      if (Df3.Z > 0) --Df3.Z;
     }
+    // TODO: maybe decode the first (0, 0, 0) subband?
   }
 
   { /* compute number of bricks per level */

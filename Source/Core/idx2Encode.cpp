@@ -86,10 +86,6 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
   }
   bitstream* ChunkEMaxSzs = ChunkEMaxesMetaIt.Val;
   GrowToAccomodate(ChunkEMaxSzs, 4);
-  if (Size(E->ChunkEMaxesStream) == 0)
-  {
-    int Stop = 0;
-  }
   WriteVarByte(ChunkEMaxSzs, Size(E->ChunkEMaxesStream));
 
   u64 ChunkAddress = GetChunkAddress(Idx2, Sc->LastBrick, Iter, Level, 0);

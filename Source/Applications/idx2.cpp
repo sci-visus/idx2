@@ -231,7 +231,6 @@ SetParams(idx2_file* Idx2, const params& P)
   SetBricksPerChunk(Idx2, P.BricksPerChunk);
   SetChunksPerFile(Idx2, P.ChunksPerFile);
   SetNumIterations(Idx2, (i8)P.NLevels);
-  SetDownsamplingFactor(Idx2, P.DownsamplingFactor3);
   SetAccuracy(Idx2, P.Accuracy);
   SetFilesPerDirectory(Idx2, P.FilesPerDir);
   SetDir(Idx2, P.OutDir);
@@ -357,6 +356,7 @@ main(int Argc, cstr* Argv)
   else if (P.Action == action::Decode)
   {
     SetDir(&Idx2, P.InDir);
+    SetDownsamplingFactor(&Idx2, P.DownsamplingFactor3);
     idx2_ExitIfError(ReadMetaFile(&Idx2, idx2_PrintScratch("%s", P.InputFile)));
     idx2_ExitIfError(Finalize(&Idx2));
     Decode(Idx2, P);

@@ -753,7 +753,9 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           u64 BrickKey = GetBrickKey(Level, D.Brick[Level]);
           Insert(&D.BrickPool, BrickKey, BVol);
           DecodeBrick(Idx2, P, &D, Accuracy);
-          if (Level == 0 || Idx2.DecodeSubbandMasks[Level - 1] == 0) {
+          // Copy the samples out to the output buffer (or file)
+          if (Level == 0 || Idx2.DecodeSubbandMasks[Level - 1] == 0)
+          {
             grid BrickGrid(
               Top.BrickFrom3 * B3,
               Idx2.BrickDims3,
