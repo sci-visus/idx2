@@ -1,19 +1,17 @@
 cmake_minimum_required(VERSION 3.8)
 project(idx2Core CXX)
 
-set(IDX2_CORE_SOURCE_FILES
+set(IDX2_CORE_HEADER_FILES
   Algorithm.h
-  Args.cpp
   Args.h
   Array.h
-  Assert.cpp
   Assert.h
   BitOps.h
   BitStream.h
   CircularQueue.h
   Codecs.h
   Common.h
-  DataSet.cpp
+  Core.h
   DataSet.h
   DataTypes.h
   DebugBreak.h
@@ -21,57 +19,65 @@ set(IDX2_CORE_SOURCE_FILES
   Error.h
   ErrorCodes.h
   Expected.h
-  FileUtilities.h
-  FileSystem.cpp
   FileSystem.h
-  Format.cpp
+  FileUtilities.h
   Format.h
   Function.h
   HashSet.h
   HashTable.h
   idx2Common.h
-  idx2Common.cpp
   idx2Decode.h
-  idx2Decode.cpp
-  idx2Encode.h  
-  idx2Encode.cpp
+  idx2Encode.h
   idx2Lookup.h
-  idx2Lookup.cpp
-  InputOutput.cpp
   InputOutput.h
   LinkedList.h
-  Logger.cpp
   Logger.h
   Macros.h
   Math.h
-  Memory.cpp
   Memory.h
-  MemoryMap.cpp
   MemoryMap.h
   Mutex.h
   Random.h
   ScopeGuard.h
-  StackTrace.cpp
   StackTrace.h
   Statistics.h
-  String.cpp
   String.h
   Test.h
   Timer.h
-  Utilities.cpp
   Utilities.h
-  VarInt.cpp
   VarInt.h
-  Volume.cpp
   Volume.h
-  Wavelet.cpp
   Wavelet.h
-  Zfp.cpp
   Zfp.h
 )
 
-add_library(idx2Core ${IDX2_CORE_SOURCE_FILES})
-set_target_properties(idx2Core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set(IDX2_CORE_SOURCE_FILES
+  Args.cpp  
+  Assert.cpp  
+  DataSet.cpp
+  FileSystem.cpp  
+  Format.cpp
+  idx2Common.cpp  
+  idx2Decode.cpp    
+  idx2Encode.cpp  
+  idx2Lookup.cpp
+  InputOutput.cpp    
+  Logger.cpp  
+  Memory.cpp  
+  MemoryMap.cpp
+  StackTrace.cpp
+  String.cpp  
+  Utilities.cpp  
+  VarInt.cpp  
+  Volume.cpp  
+  Wavelet.cpp  
+  Zfp.cpp  
+)
+
+add_library(idx2Core ${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_SOURCE_FILES})
+set_target_properties(idx2Core PROPERTIES 
+  POSITION_INDEPENDENT_CODE ON
+  PUBLIC_HEADER "${IDX2_CORE_HEADER_FILES}")
 target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 
@@ -84,8 +90,9 @@ elseif (UNIX)
 endif()
 
 install(TARGETS idx2Core
-	EXPORT idx2Core-config
-  ARCHIVE DESTINATION lib/idx2/Core
-  PUBLIC_HEADER DESTINATION include/idx2/Core)
+	EXPORT idx2CoreConfig
+	LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  PUBLIC_HEADER DESTINATION include/Core)
 
-install(EXPORT idx2Core-config DESTINATION lib/idx2/Core)
+install(EXPORT idx2CoreConfig DESTINATION lib/cmake/idx2)

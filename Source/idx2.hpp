@@ -1,6 +1,6 @@
 // WARNING: idx2.hpp is auto-generated. Do not modify it manually.
 // The command to generate idx2.hpp is
-// quom idx2Lib.hpp idx2.hpp
+// quom idx2Gen.hpp idx2.hpp
 // To use the library, just do the following
 // #define idx2_Implementation
 // #include <idx2.hpp>
@@ -48667,7 +48667,6 @@ Destroy(idx2_file* Idx2)
 } // namespace idx2
 
 #endif // idx2_Implementation
-
 
 
 

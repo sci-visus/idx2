@@ -5,18 +5,18 @@ idx2 is the next version of the idx file format, which is handled by [OpenVisus]
 Currently there is an executable (named `idx2`) for 2-way conversion between raw binary and the idx2 format, and a header-only library (`idx2.hpp`) for working with the format at a lower level.
 
 # Compilation
-Dependencies:
+`idx2` can be built using CMake. The dependencies are:
 
-- nanobind (do `git submodule update --recursive --init` to pull it from GitHub)
 - CMake (>= 3.8)
-- Python 3
 - A C++ compiler supporting C++17
+- (Optional) nanobind (do `git submodule update --recursive --init` to pull it from GitHub)
+- (Optional) Python 3
 
-With the dependencies in place, you can build with CMake.
+The optional dependencies are only needed if `BUILD_IDX2PY` is set to `ON` in CMake.
 
-# Using `idx2` to convert from raw to idx2
+# Using `idx2App` to convert from raw to idx2
 ```
-idx2 --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_levels 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .
+idx2App --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_levels 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .
 ```
 
 For convenience, the metadata is automatically parsed if the input raw file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.raw` format, where `Name` and `Field` can be anything, `DimX`, `DimY`, `DimZ` are the field's dimensions (any of which can be 1), and `Type` is either `Float32` or `Float64` (currently idx2 only supports **floating-point** scalar fields).
@@ -25,15 +25,15 @@ Most of the time, the only options that should be customized are `--input` (the 
 
 # Using `idx2` to convert from idx2 to raw
 ```
-idx2 --decode --input MIRANDA/VISCOSITY.idx2 --in_dir . --first 0 0 0 --last 383 383 255 --level 1 --mask 128 --accuracy 0.001
+idx2App --decode --input MIRANDA/VISCOSITY.idx2 --in_dir . --first 0 0 0 --last 383 383 255 --level 1 --mask 128 --accuracy 0.001
 ```
 
 Use `--first` and `--last` (inclusive) to specify the region of interest (which can be the whole field), `--level` and `--mask` (which should be `128` most of the time) to specify the desired resolution level (`0` is the finest level), and `--accuracy` to specify the desired absolute error tolerance. If `--mask` is not provided, a detailed instruction on how it is used will be printed. The output will be written to a `.raw` file in the directory specified by `--in_dir`.
 
 # Reading data from idx2 to memory
 
-## Using `idx2Lib`
-With CMake, you can build an `idx2Lib` library and link it against your project. Then, just `#include <idx2Lib.h>` to use it.
+## Using `idx2`
+With CMake, you can build an `idx2` library and link it against your project. Then, just `#include <idx2.h>` to use it.
 
 ## Using the header-only library `idx2.hpp`
 Alternatively, you may want to just include a single header file for convenience. The `idx2.hpp` header file can be included anywhere, but you need to `#define idx2_Implementation` in *exactly one* of your cpp files before including it.

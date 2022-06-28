@@ -14,10 +14,6 @@ set_target_properties(idx2 PROPERTIES
 
 target_link_libraries(idx2 PUBLIC idx2Core)
 
-target_include_directories(idx2 PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/Core>
-    $<INSTALL_INTERFACE:include>)
-
 add_subdirectory(Applications)
 
 if(BUILD_IDX2PY)
@@ -25,8 +21,13 @@ if(BUILD_IDX2PY)
 endif()
 
 install(TARGETS idx2
-	EXPORT idx2-config
-  ARCHIVE DESTINATION lib/idx2
-  PUBLIC_HEADER DESTINATION include/idx2)
+  EXPORT idx2Targets
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  PUBLIC_HEADER DESTINATION include)
 
-install(EXPORT idx2-config DESTINATION lib/idx2)
+install(EXPORT idx2Targets
+  FILE idx2Targets.cmake
+  DESTINATION lib/cmake/idx2)
+  
+install(FILES idx2Config.cmake DESTINATION lib/cmake/idx2)
