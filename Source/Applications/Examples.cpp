@@ -14,7 +14,7 @@ Decode1()
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
   idx2_PropagateIfError(Init(&Idx2, P));
 
-  P.DownsamplingFactor3 = v3i(1, 1, 1); // Downsample x by 2^1, y by 2^1, z by 2^1
+  P.DownsamplingFactor3 = idx2::v3i(1, 1, 1); // Downsample x by 2^1, y by 2^1, z by 2^1
   P.DecodeAccuracy = 0.001;
   P.DecodeExtent = idx2::extent(Idx2.Dims3); // get the whole volume
   // P.DecodeExtent = idx2::extent(idx2::v3i(10, 20, 30), idx2::v3i(100, 140, 160)); // get a portion of the volume
