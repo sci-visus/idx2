@@ -243,82 +243,6 @@ SetParams(idx2_file* Idx2, const params& P)
 }
 
 
-struct llc_brick_copier : public brick_copier
-{
-  params* P = nullptr;
-  FILE* Fp = nullptr;
-  int CurrentFile = -1;
-
-  llc_brick_copier() = delete;
-  llc_brick_copier(params* P)
-    : P(P)
-  {
-    idx2_Assert(P->LLC >= 0);
-  }
-
-  virtual v2d Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_volume* Brick);
-
-  virtual ~llc_brick_copier()
-  {
-    if (Fp)
-      fclose(Fp);
-  }
-};
-
-
-v2d
-llc_brick_copier::Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_volume* Brick)
-{
-  v3<i64> T3 = P->Strides3; // strides
-  i64 Offset = P->Offset;
-  i64 NSamplesInFile = P->NSamplesInFile;
-
-  v2d MinMax = v2d(traits<f64>::Max, traits<f64>::Min);
-
-  if (ExtentGlobal)
-  {
-    v3i SFrom3 = From(ExtentGlobal);
-    v3i STo3 = To(ExtentGlobal);
-    v3i DFrom3 = From(ExtentLocal);
-    v3i DTo3 = To(ExtentLocal);
-    v3i DstDims3 = Dims(Brick->Vol);
-    v3i S3, D3;
-    static i64 iter = 0;
-    idx2_BeginFor3Lockstep(S3, SFrom3, STo3, v3i(1), D3, DFrom3, DTo3, v3i(1))
-    {
-      ++iter;
-      i64 I = Offset + i64(S3.Z * T3.Z) + i64(S3.Y * T3.Y) + i64(S3.X * T3.X);
-      i64 J = Row(D3, DstDims3);
-      i64 F = I / NSamplesInFile; // file id
-      i64 O = I % NSamplesInFile; // offset in file (in number of samples)
-      if (F != CurrentFile)
-      {
-        if (Fp)
-          fclose(Fp);
-        Fp = fopen(P->InputFiles[F].Arr, "rb");
-        idx2_Assert(Fp);
-        CurrentFile = F;
-        // printf("Opening file %s\n", P->InputFiles[F].Arr);
-      }
-      // TODO: branch based on the dtype
-      f64* idx2_Restrict DstPtr = (f64*)Brick->Vol.Buffer.Data;
-      idx2_FSeek(Fp, O * sizeof(f32), SEEK_SET);
-      f32 Val = 0;
-      ReadPOD<f32>(Fp, &Val);
-      u32 Val2 = idx2_ByteSwap4(*reinterpret_cast<u32*>(&Val));
-      DstPtr[J] = *reinterpret_cast<f32*>(&Val2);
-      MinMax.Min = Min(MinMax.Min, DstPtr[J]);
-      MinMax.Max = Max(MinMax.Max, DstPtr[J]);
-    }
-    idx2_EndFor3
-  }
-
-  // printf("minmax %f %f\n", MinMax.Min, MinMax.Max);
-
-  return MinMax;
-}
-
-
 /* Main function (entry point of the idx2 command) */
 int
 main(int Argc, cstr* Argv)
@@ -341,8 +265,7 @@ main(int Argc, cstr* Argv)
     idx2_ExitIfError(SetParams(&Idx2, P));
     if (Size(P.InputFiles) > 0)
     { // the input contains multiple files
-      llc_brick_copier Copier(&P);
-      idx2_ExitIfError(Encode(&Idx2, P, Copier));
+      idx2_ExitIf(true, "File list input not supported at the moment\n");
     }
     else if (Size(P.InputFiles) == 0)
     { // a single raw volume is provided

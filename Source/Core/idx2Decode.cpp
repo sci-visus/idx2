@@ -794,68 +794,6 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   printf("total bytes read    = %" PRIi64 "\n", BytesRdos_ + BytesExps_ + BytesData_);
 }
 
-/* go through all files in the input directory */
-// error<idx2_err_code>
-// CopyDataToBrick(const nasa_params& P, brick_volume* BVol) {
-//   dirent* Dp = nullptr;
-//   DIR* Dfd = nullptr;
-//   cstr Dir = P.InDir;
-//   if ((Dfd = opendir(Dir)) == nullptr)
-//     return idx2_Error(idx2_err_code::FileNotFound); // TODO: should be DirNotFound
-//   char FileName[256] = {};
-//   char NewName[256] = {};
-//   while ((Dp = readdir(Dfd)) != NULL) {
-//     stat StBuf;
-//     sprintf(FileName, "%s/%s", Dir, Dp->d_name) ;
-//     //if (stat(FileName, &StBuf) == -1)
-//       //continue;
-//     //if ((StBuf.st_mode & S_IFMT) == S_IFDIR) {
-//       //continue;
-//      // Skip directories
-//     //} else { // file, each file is a timestep
-//     //  if (P.Scheme == nasa_scheme::SeparateTime) {
-//         // TODO: copy from each time step separately into BVol.Vol
-//         // Looping through the time steps to create one sub-directory for each
-//     //  } else if (P.Scheme == nasa_scheme::GroupTime) {
-//         // TODO: copy from S time steps and 1 depth level into BVol.Vol
-//         // Looping through the depths to create one sub-directory for each
-//     //  } else if (P.Scheme == nasa_scheme::GroupTimeAndDepth) {
-//         // TODO: this may require 4D compression
-//     //  } else {
-//     //    return idx2_Error(idx2_err_code::UnsupportedScheme);
-//     //  }
-//     //}
-//   }
-// }
-
-// Face01:
-//   +-------+-------+
-//   |       |       |
-//   |   2   |   5   |
-//   +-------+-------+
-//   |       |       |
-//   |   1   |   4   |
-// y +-------+-------+
-// ^ |       |       |
-// | |   0   |   3   |
-// | +-------+-------+
-// +-------> x
-// Face2:
-// y +-------+
-// ^ |       |
-// | |   6   |
-// | +-------+
-// +-------> x
-// Face34:
-//   +-------+-------+-------+
-//   |       |       |       |
-//   |   7   |   8   |   9   |
-// y +-------+-------+-------+
-// ^ |       |       |       |
-// | |   10  |   11  |  12   |
-// | +-------+-------+-------+
-// +-------> x
-
 
 static void
 DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddress, int L)
