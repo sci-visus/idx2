@@ -441,31 +441,18 @@ Dealloc(idx2_file* Idx2)
 }
 
 
-// TODO: what if the input extent is too big (bigger than dims)?
-// TODO: need to handle the case where the extent falls between the stride
 grid
 GetGrid(const idx2_file& Idx2, const extent& Ext)
 {
+  auto CroppedExt = Crop(Ext, extent(Idx2.Dims3));
   v3i Strd3(1); // start with stride (1, 1, 1)
   idx2_For (int, D, 0, 3)
     Strd3[D] <<= Idx2.DownsamplingFactor3[D];
 
-  v3i First3 = From(Ext);
-  v3i Last3 = Last(Ext);
-  //v3i First3 = From(Ext) - (Strd3 - 1);
-  //v3i Last3 = Last(Ext) + (Strd3 - 1);
-  //extent ExtCropped = Crop(extent(First3, Last3 - First3 + 1), extent(Dims3));
-  //First3 = From(ExtCropped);
-  //Last3 = Last(ExtCropped);
-  First3 = ((First3 + Strd3 - 1) / Strd3) * Strd3;
-  Last3 = (Last3 / Strd3) * Strd3;
-  //if (First3.X > Last3.X)
-  //  Swap(&First3.X, &Last3.X);
-  //if (First3.Y > Last3.Y)
-  //  Swap(&First3.Y, &Last3.Y);
-  //if (First3.Z > Last3.Z)
-  //  Swap(&First3.Z, &Last3.Z);
-  //v3i Dims3 = (Last3 - First3) / Strd3 + 1;
+  v3i First3 = From(CroppedExt);
+  v3i Last3 = Last(CroppedExt);
+  Last3 = ((Last3 + Strd3 - 1) / Strd3) * Strd3; // move last to the right
+  First3 = (First3 / Strd3) * Strd3; // move first to the left
 
   return grid(First3, (Last3 - First3) / Strd3 + 1, Strd3);
 }
