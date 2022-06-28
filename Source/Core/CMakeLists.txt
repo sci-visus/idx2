@@ -88,4 +88,4 @@ install(TARGETS idx2Core
   ARCHIVE DESTINATION lib/idx2/Core
   PUBLIC_HEADER DESTINATION include/idx2/Core)
 
-install(EXPORT idx2Core-config DESTINATION lib/idx2)
+install(EXPORT idx2Core-config DESTINATION lib/idx2/Core)

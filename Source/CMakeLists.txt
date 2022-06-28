@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(idx2 CXX)
 
+option(BUILD_IDX2PY "Build the Python interface for idx2" OFF)
+
 add_subdirectory(Core)
 set(IDX2_LIB_SOURCE_FILES idx2.h idx2.cpp)
 
@@ -17,7 +19,10 @@ target_include_directories(idx2 PUBLIC
     $<INSTALL_INTERFACE:include>)
 
 add_subdirectory(Applications)
-add_subdirectory(Python)
+
+if(BUILD_IDX2PY)
+  add_subdirectory(Python)
+endif()
 
 install(TARGETS idx2
 	EXPORT idx2-config
