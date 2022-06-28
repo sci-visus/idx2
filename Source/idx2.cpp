@@ -1,4 +1,4 @@
-#include "idx2Lib.h"
+#include "idx2.h"
 #include <stdio.h>
 
 

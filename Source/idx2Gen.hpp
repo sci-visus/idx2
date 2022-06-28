@@ -1,6 +1,6 @@
 // WARNING: idx2.hpp is auto-generated. Do not modify it manually.
 // The command to generate idx2.hpp is
-// quom idx2Lib.hpp idx2.hpp
+// quom idx2Gen.hpp idx2.hpp
 // To use the library, just do the following
 // #define idx2_Implementation
 // #include <idx2.hpp>
@@ -12,10 +12,10 @@
 #pragma once
 
 #include "Core/Core.h"
-#include "idx2Lib.h"
+#include "idx2.h"
 
 #ifdef idx2_Implementation
 #include "Core/Core.cpp"
-#include "idx2Lib.cpp"
+#include "idx2.cpp"
 
 #endif // idx2_Implementation

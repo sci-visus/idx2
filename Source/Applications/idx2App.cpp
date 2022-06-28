@@ -4,7 +4,7 @@
 
 //#define idx2_Implementation
 //#include "../idx2.hpp"
-#include "../idx2Lib.h"
+#include "../idx2.h"
 
 
 using namespace idx2;

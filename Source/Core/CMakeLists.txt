@@ -74,6 +74,7 @@ add_library(idx2Core ${IDX2_CORE_SOURCE_FILES})
 set_target_properties(idx2Core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
+
 if (MSVC)
   target_compile_definitions(idx2Core PUBLIC -D_CRT_SECURE_NO_WARNINGS)
   target_compile_options(idx2Core PUBLIC /Zc:preprocessor /Zc:__cplusplus /wd5105)
@@ -81,3 +82,10 @@ if (MSVC)
 elseif (UNIX)
   target_compile_options(idx2Core PUBLIC -Wno-format-zero-length)
 endif()
+
+install(TARGETS idx2Core
+	EXPORT idx2Core-config
+  ARCHIVE DESTINATION lib/idx2/Core
+  PUBLIC_HEADER DESTINATION include/idx2/Core)
+
+install(EXPORT idx2Core-config DESTINATION lib/idx2)

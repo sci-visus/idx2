@@ -4,8 +4,8 @@ project(idx2Applications CXX)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-add_executable(idx2 idx2.cpp)
-target_link_libraries(idx2 idx2Lib Threads::Threads)
+add_executable(idx2App idx2App.cpp)
+target_link_libraries(idx2App idx2 Threads::Threads)
 
-add_executable(examples Examples.cpp)
-target_link_libraries(examples idx2Lib Threads::Threads)
+add_executable(idx2Samples idx2Samples.cpp)
+target_link_libraries(idx2Samples idx2 Threads::Threads)
