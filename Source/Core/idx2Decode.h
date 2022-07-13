@@ -111,6 +111,12 @@ struct decode_data
   int QualityLevel = -1;
   int EffIter = 0;
   u64 LastTile = 0;
+
+  u64 BytesRdos_ = 0;
+  u64 DecodeIOTime_ = 0;
+  u64 BytesExps_ = 0;
+  u64 BytesData_ = 0;
+  u64 DataMovementTime_ = 0;
 };
 
 

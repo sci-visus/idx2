@@ -441,6 +441,7 @@ Dealloc(idx2_file* Idx2)
 }
 
 
+// TODO: handle the case where the query extent is larger than the domain itself
 grid
 GetGrid(const idx2_file& Idx2, const extent& Ext)
 {
