@@ -245,7 +245,7 @@ SizeBrickPool(const decode_data& D)
 
 // TODO: return an error code?
 void
-Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf = nullptr);
+Decode(const idx2_file& Idx2, params& P, buffer* OutBuf = nullptr);
 
 
 } // namespace idx2

@@ -199,9 +199,9 @@ Decode2f64(const std::string& InputFile,
 
 NB_MODULE(idx2Py, M)
 {
-  M.def("DecodeExtent3f32", DecodeExtent3f32);
-  M.def("Decode3f32", Decode3f32);
-  M.def("Decode2f32", Decode2f32);
-  M.def("Decode3f64", Decode3f64);
-  M.def("Decode2f64", Decode2f64);
+  M.def("DecodeExtent3f32", DecodeExtent3f32, nb::call_guard<nb::gil_scoped_release>());
+  M.def("Decode3f32", Decode3f32, nb::call_guard<nb::gil_scoped_release>());
+  M.def("Decode2f32", Decode2f32, nb::call_guard<nb::gil_scoped_release>());
+  M.def("Decode3f64", Decode3f64, nb::call_guard<nb::gil_scoped_release>());
+  M.def("Decode2f64", Decode2f64, nb::call_guard<nb::gil_scoped_release>());
 }

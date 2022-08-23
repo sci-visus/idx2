@@ -650,7 +650,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
 
 /* TODO: dealloc chunks after we are done with them */
 void
-Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
+Decode(const idx2_file& Idx2, params& P, buffer* OutBuf)
 {
   timer DecodeTimer;
   StartTimer(&DecodeTimer);

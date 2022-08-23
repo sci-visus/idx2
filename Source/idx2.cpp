@@ -25,7 +25,7 @@ GetOutputGrid(const idx2_file& Idx2, const params& P)
 
 
 error<idx2_err_code>
-Decode(idx2_file* Idx2, const params& P, buffer* OutBuf)
+Decode(idx2_file* Idx2, params& P, buffer* OutBuf)
 {
   Decode(*Idx2, P, OutBuf);
   return idx2_Error(idx2_err_code::NoError);
