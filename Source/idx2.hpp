@@ -9306,7 +9306,7 @@ void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);
 
 error<idx2_err_code>
-Finalize(idx2_file* Idx2);
+Finalize(idx2_file* Idx2, const params& P);
 
 void
 Dealloc(idx2_file* Idx2);
@@ -42977,7 +42977,7 @@ SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 }
 
 error<idx2_err_code>
-Finalize(idx2_file* Idx2)
+Finalize(idx2_file* Idx2, const params& P)
 {
   if (!(IsPow2(Idx2->BrickDims3.X) && IsPow2(Idx2->BrickDims3.Y) && IsPow2(Idx2->BrickDims3.Z)))
     return idx2_Error(
@@ -43011,7 +43011,7 @@ Finalize(idx2_file* Idx2)
     BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->SubbandsNonExt);
 
     // Compute the decode subband mask based on DownsamplingFactor3
-    v3i Df3 = Idx2->DownsamplingFactor3;
+    v3i Df3 = P.DownsamplingFactor3;
     idx2_For (int, I, 0, Idx2->NLevels)
     {
       if (Df3.X > 0 && Df3.Y > 0 && Df3.Z > 0)
@@ -44327,6 +44327,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   timer DecodeTimer;
   StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
+  if (Dims(P.DecodeExtent).X == 0)
+    P.DecodeExtent = extent(Idx2.Dims3);
   grid OutGrid = GetGrid(Idx2, P.DecodeExtent);
   printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
@@ -48628,8 +48630,9 @@ error<idx2_err_code>
 Init(idx2_file* Idx2, const params& P)
 {
   SetDir(Idx2, P.InDir);
+  SetDownsamplingFactor(Idx2, P.DownsamplingFactor3);
   idx2_PropagateIfError(ReadMetaFile(Idx2, idx2_PrintScratch("%s", P.InputFile)));
-  idx2_PropagateIfError(Finalize(Idx2));
+  idx2_PropagateIfError(Finalize(Idx2, P));
   return idx2_Error(idx2_err_code::NoError);
 }
 

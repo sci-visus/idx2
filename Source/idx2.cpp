@@ -10,8 +10,9 @@ error<idx2_err_code>
 Init(idx2_file* Idx2, const params& P)
 {
   SetDir(Idx2, P.InDir);
+  SetDownsamplingFactor(Idx2, P.DownsamplingFactor3);
   idx2_PropagateIfError(ReadMetaFile(Idx2, idx2_PrintScratch("%s", P.InputFile)));
-  idx2_PropagateIfError(Finalize(Idx2));
+  idx2_PropagateIfError(Finalize(Idx2, P));
   return idx2_Error(idx2_err_code::NoError);
 }
 

@@ -165,7 +165,7 @@ SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 
 
 error<idx2_err_code>
-Finalize(idx2_file* Idx2)
+Finalize(idx2_file* Idx2, const params& P)
 {
   if (!(IsPow2(Idx2->BrickDims3.X) && IsPow2(Idx2->BrickDims3.Y) && IsPow2(Idx2->BrickDims3.Z)))
     return idx2_Error(
@@ -199,7 +199,7 @@ Finalize(idx2_file* Idx2)
     BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->SubbandsNonExt);
 
     // Compute the decode subband mask based on DownsamplingFactor3
-    v3i Df3 = Idx2->DownsamplingFactor3;
+    v3i Df3 = P.DownsamplingFactor3;
     idx2_For (int, I, 0, Idx2->NLevels)
     {
       if (Df3.X > 0 && Df3.Y > 0 && Df3.Z > 0)

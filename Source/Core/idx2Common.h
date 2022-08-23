@@ -263,7 +263,7 @@ void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);
 
 error<idx2_err_code>
-Finalize(idx2_file* Idx2);
+Finalize(idx2_file* Idx2, const params& P);
 
 void
 Dealloc(idx2_file* Idx2);

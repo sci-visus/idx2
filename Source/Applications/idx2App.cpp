@@ -239,7 +239,7 @@ SetParams(idx2_file* Idx2, const params& P)
   SetGroupSubLevels(Idx2, P.GroupSubLevels);
   SetQualityLevels(Idx2, P.RdoLevels);
 
-  return Finalize(Idx2);
+  return Finalize(Idx2, P);
 }
 
 
@@ -281,7 +281,7 @@ main(int Argc, cstr* Argv)
     SetDir(&Idx2, P.InDir);
     SetDownsamplingFactor(&Idx2, P.DownsamplingFactor3);
     idx2_ExitIfError(ReadMetaFile(&Idx2, idx2_PrintScratch("%s", P.InputFile)));
-    idx2_ExitIfError(Finalize(&Idx2));
+    idx2_ExitIfError(Finalize(&Idx2, P));
     Decode(Idx2, P);
   }
 
