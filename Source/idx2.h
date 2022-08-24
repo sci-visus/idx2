@@ -12,7 +12,7 @@ Initialize IDX2 with given parameters.
 Call this function first.
 */
 error<idx2_err_code>
-Init(idx2_file* Idx2, const params& P);
+Init(idx2_file* Idx2, params& P);
 
 
 struct brick_copier;
