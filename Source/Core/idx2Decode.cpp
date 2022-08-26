@@ -134,8 +134,10 @@ Dealloc(file_cache_table* FileCacheTable)
   Dealloc(&FileCacheTable->FileCaches);
   idx2_ForEach (FileExpCacheIt, FileCacheTable->FileExpCaches)
     Dealloc(FileExpCacheIt.Val);
+  Dealloc(&FileCacheTable->FileExpCaches);
   idx2_ForEach (FileRdoCacheIt, FileCacheTable->FileRdoCaches)
     Dealloc(FileRdoCacheIt.Val);
+  Dealloc(&FileCacheTable->FileRdoCaches);
 }
 
 
