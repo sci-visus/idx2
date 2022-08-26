@@ -13,7 +13,7 @@ Init(idx2_file* Idx2, params& P)
   SetDownsamplingFactor(Idx2, P.DownsamplingFactor3);
   idx2_PropagateIfError(ReadMetaFile(Idx2, idx2_PrintScratch("%s", P.InputFile)));
   idx2_PropagateIfError(Finalize(Idx2, P));
-  if (Dims(P.DecodeExtent).X == 0)
+  if (Dims(P.DecodeExtent) == v3i(0)) // TODO: this could conflate with the user wanting to decode a single sample (very unlikely though)
     P.DecodeExtent = extent(Idx2->Dims3);
   return idx2_Error(idx2_err_code::NoError);
 }
