@@ -8,13 +8,15 @@ idx2::error<idx2::idx2_err_code>
 Decode1()
 {
   idx2::params P;
-  P.InputFile = "MIRANDA/VISCOSITY.idx2"; // name of data set and field
-  P.InDir = ".";                          // the directory containing the InputFile
+  P.InputFile = "D:/Datasets/nasa/llc_2160_32/llc2160/u-face-2-depth-88-time-0-32.idx2";
+  P.InDir = "D:/Datasets/nasa/llc_2160_32";
+  //P.InputFile = "MIRANDA/VISCOSITY.idx2"; // name of data set and field
+  //P.InDir = ".";                          // the directory containing the InputFile
   idx2::idx2_file Idx2;
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
-  P.DownsamplingFactor3 = idx2::v3i(1, 1, 1); // Downsample x by 2^1, y by 2^1, z by 2^1
-  P.DecodeAccuracy = 0.001;
-  // P.DecodeExtent = idx2::extent(idx2::v3i(10, 20, 30), idx2::v3i(100, 140, 160)); // uncomment if getting only a portion of the volume
+  P.DownsamplingFactor3 = idx2::v3i(2, 2, 0); // Downsample x by 2^1, y by 2^1, z by 2^1
+  P.DecodeAccuracy = 0.01;
+  P.DecodeExtent = idx2::extent(idx2::v3i(1400, 0, 0), idx2::v3i(1, 6480, 1)); // uncomment if getting only a portion of the volume
 
   idx2_PropagateIfError(Init(&Idx2, P));
 

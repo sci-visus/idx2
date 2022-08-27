@@ -244,7 +244,7 @@ SizeBrickPool(const decode_data& D)
 
 
 // TODO: return an error code?
-void
+error<idx2_err_code>
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf = nullptr);
 
 

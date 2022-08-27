@@ -37,6 +37,8 @@ DecodeExtent3f32(const std::string& InputFile,
   if (!InitOk)
     printf("ERROR: %s\n", ToString(InitOk));
 
+  printf("decode extent = " idx2_PrStrExt "\n", idx2_PrExt(P.DecodeExtent));
+
   grid OutGrid = idx2::GetOutputGrid(Idx2, P);
 
   buffer OutBuf; // buffer to store the output
@@ -45,7 +47,8 @@ DecodeExtent3f32(const std::string& InputFile,
 
   v3i D3 = Dims(OutGrid);
   size_t Shape[3] = { (size_t)D3.Z, (size_t)D3.Y, (size_t)D3.X };
-  return nb::tensor<nb::numpy, float, nb::shape<nb::any, nb::any, nb::any>>(OutBuf.Data, 3, Shape);
+  nb::capsule Owner(OutBuf.Data, [](void* Data) noexcept { free(Data); });
+  return nb::tensor<nb::numpy, float, nb::shape<nb::any, nb::any, nb::any>>(OutBuf.Data, 3, Shape, Owner);
 }
 
 
@@ -81,7 +84,8 @@ Decode3f32(const std::string& InputFile,
 
   v3i D3 = Dims(OutGrid);
   size_t Shape[3] = { (size_t)D3.Z, (size_t)D3.Y, (size_t)D3.X };
-  return nb::tensor<nb::numpy, float, nb::shape<nb::any, nb::any, nb::any>>(OutBuf.Data, 3, Shape);
+  nb::capsule Owner(OutBuf.Data, [](void* Data) noexcept { free(Data); });
+  return nb::tensor<nb::numpy, float, nb::shape<nb::any, nb::any, nb::any>>(OutBuf.Data, 3, Shape, Owner);
 }
 
 
@@ -119,7 +123,8 @@ Decode3f64(const std::string& InputFile,
 
   v3i D3 = Dims(OutGrid);
   size_t Shape[3] = { (size_t)D3.Z, (size_t)D3.Y, (size_t)D3.X };
-  return nb::tensor<nb::numpy, double, nb::shape<nb::any, nb::any, nb::any>>(OutBuf.Data, 3, Shape);
+  nb::capsule Owner(OutBuf.Data, [](void* Data) noexcept { free(Data); });
+  return nb::tensor<nb::numpy, double, nb::shape<nb::any, nb::any, nb::any>>(OutBuf.Data, 3, Shape, Owner);
 }
 
 
@@ -156,7 +161,8 @@ Decode2f32(const std::string& InputFile,
 
   v3i D3 = Dims(OutGrid);
   size_t Shape[2] = { (size_t)D3.Y, (size_t)D3.X };
-  return nb::tensor<nb::numpy, float, nb::shape<nb::any, nb::any>>(OutBuf.Data, 2, Shape);
+  nb::capsule Owner(OutBuf.Data, [](void* Data) noexcept { free(Data); });
+  return nb::tensor<nb::numpy, float, nb::shape<nb::any, nb::any>>(OutBuf.Data, 2, Shape, Owner);
 }
 
 
@@ -193,17 +199,13 @@ Decode2f64(const std::string& InputFile,
 
   v3i D3 = Dims(OutGrid);
   size_t Shape[2] = { (size_t)D3.Y, (size_t)D3.X };
-  return nb::tensor<nb::numpy, double, nb::shape<nb::any, nb::any>>(OutBuf.Data, 2, Shape);
+  nb::capsule Owner(OutBuf.Data, [](void* Data) noexcept { free(Data); });
+  return nb::tensor<nb::numpy, double, nb::shape<nb::any, nb::any>>(OutBuf.Data, 2, Shape, Owner);
 }
 
 
 NB_MODULE(idx2Py, M)
 {
-  //M.def("DecodeExtent3f32", DecodeExtent3f32);
-  //M.def("Decode3f32", Decode3f32);
-  //M.def("Decode2f32", Decode2f32);
-  //M.def("Decode3f64", Decode3f64);
-  //M.def("Decode2f64", Decode2f64);
   M.def("DecodeExtent3f32", DecodeExtent3f32, nb::call_guard<nb::gil_scoped_release>());
   M.def("Decode3f32", Decode3f32, nb::call_guard<nb::gil_scoped_release>());
   M.def("Decode2f32", Decode2f32, nb::call_guard<nb::gil_scoped_release>());
