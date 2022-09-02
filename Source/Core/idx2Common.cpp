@@ -204,23 +204,18 @@ Finalize(idx2_file* Idx2, const params& P)
     {
       if (Df3.X > 0 && Df3.Y > 0 && Df3.Z > 0)
       {
+        Idx2->DecodeSubbandMasks[I] = 0;
         --Df3.X;
         --Df3.Y;
         --Df3.Z;
-        if (Df3.X > 0 && Df3.Y > 0 && Df3.Z > 0)
-          Idx2->DecodeSubbandMasks[I] = 0;
-        else
-          Idx2->DecodeSubbandMasks[I] = 1; // decode only subband (0, 0, 0)
         continue;
       }
       u8 Mask = 0xFF;
       idx2_For (int, Sb, 0, Size(Idx2->Subbands))
       {
         const v3i& Lh3 = Idx2->Subbands[Sb].LowHigh3;
-        if (Df3.X >= Lh3.X && Df3.Y >= Lh3.Y && Df3.Z >= Lh3.Z)
+        if ((Lh3.X == 1 && Df3.X > 0) || (Lh3.Y == 1 && Df3.Y > 0) || (Lh3.Z == 1 && Df3.Z > 0))
           Mask = UnsetBit(Mask, Sb);
-        if (Lh3 == v3i(0)) // always decode subband 0
-          Mask = SetBit(Mask, Sb);
       }
       Idx2->DecodeSubbandMasks[I] = Mask;
       if (Df3.X > 0) --Df3.X;
