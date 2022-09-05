@@ -1,4 +1,4 @@
-#include <idx2.h>
+#include "../idx2.h"
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
