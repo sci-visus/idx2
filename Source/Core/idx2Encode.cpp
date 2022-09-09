@@ -619,8 +619,8 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
   i8 Iter = E->Iter += IncIter;
 
   u64 Brick = E->Brick[Iter];
-  printf(
-    "level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]), Brick);
+  //printf(
+  //  "level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]), Brick);
   auto BIt = Lookup(&E->BrickPool, GetBrickKey(Iter, Brick));
   idx2_Assert(BIt);
   volume& BVol = BIt.Val->Vol;

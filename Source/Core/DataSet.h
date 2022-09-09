@@ -21,8 +21,8 @@ data type = float32
 struct metadata
 {
   // char File[256] = "";
-  char Name[32] = "";
-  char Field[32] = "";
+  char Name[64] = "";
+  char Field[64] = "";
   v3i Dims3 = v3i(0);
   dtype DType = dtype(dtype::__Invalid__);
   inline thread_local static char String[384];
