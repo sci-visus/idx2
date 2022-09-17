@@ -661,7 +661,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
   grid OutGrid = GetGrid(Idx2, P.DecodeExtent);
-  printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
+  //printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
   volume OutVolMem;
   idx2_CleanUp(if (P.OutMode == params::out_mode::WriteToFile) { Unmap(&OutVol); });
@@ -784,13 +784,13 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
       , 64, Idx2.FileOrders[Level], v3i(0), Idx2.NFiles3s[Level], ExtentInFiles, VolExtentInFiles);
   } // end level loop
     //  printf("count zeroes        = %lld\n", CountZeroes);
-  printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
-  printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
-  printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));
-  printf("rdo   bytes read    = %" PRIi64 "\n", D.BytesRdos_);
-  printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_);
-  printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
-  printf("total bytes read    = %" PRIi64 "\n", D.BytesRdos_ + D.BytesExps_ + D.BytesData_);
+  //printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
+  //printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
+  //printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));
+  //printf("rdo   bytes read    = %" PRIi64 "\n", D.BytesRdos_);
+  //printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_);
+  //printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
+  //printf("total bytes read    = %" PRIi64 "\n", D.BytesRdos_ + D.BytesExps_ + D.BytesData_);
 
   return idx2_Error(err_code::NoError);
 }
