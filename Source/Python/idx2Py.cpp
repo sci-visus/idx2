@@ -37,7 +37,7 @@ DecodeExtent3f32(const std::string& InputFile,
   if (!InitOk)
     printf("ERROR: %s\n", ToString(InitOk));
 
-  printf("decode extent = " idx2_PrStrExt "\n", idx2_PrExt(P.DecodeExtent));
+  //printf("decode extent = " idx2_PrStrExt "\n", idx2_PrExt(P.DecodeExtent));
 
   grid OutGrid = idx2::GetOutputGrid(Idx2, P);
 
