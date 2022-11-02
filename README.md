@@ -2,7 +2,7 @@
 idx2 is a compressed file format for scientific data represented as 2D or 3D regular grids of data samples. idx2 supports adaptive, coarse-scale data retrieval in both resolution and precision.
 idx2 is the next version of the idx file format, which is handled by [OpenVisus](https://github.com/sci-visus/OpenVisus) (alternatively, a less extensive but lightweight idx reader and writer is [hana](https://github.com/hoangthaiduong/hana)). Compared to idx, idx2 features better compression (leveraging [zfp](https://github.com/LLNL/zfp)) and the capability to retrieve coarse-precision data.
 
-Currently there is an executable (named `idx2`) for 2-way conversion between raw binary and the idx2 format, and a header-only library (`idx2.hpp`) for working with the format at a lower level.
+Currently there is an executable (named `idx2App`) for 2-way conversion between raw binary and the idx2 format, and a header-only library (`idx2.hpp`) for working with the format at a lower level.
 
 # Compilation
 `idx2` can be built using CMake. The dependencies are:
@@ -25,10 +25,10 @@ Most of the time, the only options that should be customized are `--input` (the 
 
 # Using `idx2` to convert from idx2 to raw
 ```
-idx2App --decode --input MIRANDA/VISCOSITY.idx2 --in_dir . --first 0 0 0 --last 383 383 255 --level 1 --mask 128 --accuracy 0.001
+idx2App --decode --input MIRANDA/VISCOSITY.idx2 --in_dir . --first 0 0 0 --last 383 383 255 --downsampling 1 1 1 --accuracy 0.001
 ```
 
-Use `--first` and `--last` (inclusive) to specify the region of interest (which can be the whole field), `--level` and `--mask` (which should be `128` most of the time) to specify the desired resolution level (`0` is the finest level), and `--accuracy` to specify the desired absolute error tolerance. If `--mask` is not provided, a detailed instruction on how it is used will be printed. The output will be written to a `.raw` file in the directory specified by `--in_dir`.
+Use `--first` and `--last` (inclusive) to specify the region of interest (which can be the whole field), `--downsampling` specifies the desired downsampling passes along each axis (each pass halves the number of samples along an axis), and `--accuracy` to specify the desired absolute error tolerance. The output will be written to a "raw" file in the directory specified by `--in_dir`.
 
 # Reading data from idx2 to memory
 
