@@ -208,6 +208,8 @@ Finalize(idx2_file* Idx2, const params& P)
         --Df3.X;
         --Df3.Y;
         --Df3.Z;
+        if (Df3.X == 0 && Df3.Y == 0 && Df3.Z == 0)
+          Idx2->DecodeSubbandMasks[I] = 1;
         continue;
       }
       u8 Mask = 0xFF;

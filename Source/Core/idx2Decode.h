@@ -116,6 +116,7 @@ struct decode_data
   u64 DecodeIOTime_ = 0;
   u64 BytesExps_ = 0;
   u64 BytesData_ = 0;
+  u64 BytesDecoded_ = 0;
   u64 DataMovementTime_ = 0;
 };
 

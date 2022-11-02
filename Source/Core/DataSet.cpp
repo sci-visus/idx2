@@ -23,7 +23,7 @@ ToRawFileName(const metadata& Meta)
   idx2_Print(&Pr, "%s-", Meta.Field);
   idx2_Print(&Pr, "[%d-%d-%d]-", Meta.Dims3.X, Meta.Dims3.Y, Meta.Dims3.Z);
   stref TypeStr = ToString(Meta.DType);
-  idx2_Print(&Pr, "%.*s.raw", TypeStr.Size, TypeStr.Ptr);
+  idx2_Print(&Pr, "%.*s", TypeStr.Size, TypeStr.Ptr);
 
   return Meta.String;
 }

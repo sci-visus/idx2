@@ -261,7 +261,7 @@ main(int Argc, cstr* Argv)
 
   if (P.Action == action::Encode)
   {
-    //      RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
+    RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
     idx2_ExitIfError(SetParams(&Idx2, P));
     if (Size(P.InputFiles) > 0)
     { // the input contains multiple files

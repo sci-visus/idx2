@@ -359,6 +359,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     Resize(&D->CompressedChunkExps, ChunkExpSize);
     ReadBuffer(Fp, &D->CompressedChunkExps, ChunkExpSize);
     DecompressBufZstd(buffer{ D->CompressedChunkExps.Data, ChunkExpSize }, &ChunkExpStream);
+    D->BytesDecoded_ += ChunkExpSize;
     D->BytesExps_ += ChunkExpSize;
     D->DecodeIOTime_ += ElapsedTime(&IOTimer);
     InitRead(&ChunkExpStream, ChunkExpStream.Stream);
@@ -523,6 +524,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       /* zfp decode */
       ++NBps;
       //      timer Timer; StartTimer(&Timer);
+      auto SizeBegin = BitSize(*Stream);
       if (NBitPlanesDecoded <= 8)
         Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
       else
@@ -531,7 +533,10 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
                    N,
                    Stream); // delay the transpose of bits to later
                             //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+      auto SizeEnd = BitSize(*Stream);
+      D->BytesDecoded_ += SizeEnd - SizeBegin;
     }                       // end bit plane loop
+
     if (NBitPlanesDecoded > 8)
     {
       //      timer Timer; StartTimer(&Timer);
@@ -675,7 +680,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     Met.DType = Idx2.DType;
     //  printf("zfp decode time = %f\n", DecodeTime_);
     cstr OutFile = P.OutFile ? idx2_PrintScratch("%s/%s", P.OutDir, P.OutFile)
-                             : idx2_PrintScratch("%s/%s", P.OutDir, ToRawFileName(Met));
+                             : idx2_PrintScratch("%s/%s-accuracy-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeAccuracy);
     //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);
@@ -784,13 +789,14 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
       , 64, Idx2.FileOrders[Level], v3i(0), Idx2.NFiles3s[Level], ExtentInFiles, VolExtentInFiles);
   } // end level loop
     //  printf("count zeroes        = %lld\n", CountZeroes);
-  //printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
-  //printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
-  //printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));
-  //printf("rdo   bytes read    = %" PRIi64 "\n", D.BytesRdos_);
-  //printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_);
-  //printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
-  //printf("total bytes read    = %" PRIi64 "\n", D.BytesRdos_ + D.BytesExps_ + D.BytesData_);
+  printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
+  printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
+  printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));
+  printf("rdo   bytes read    = %" PRIi64 "\n", D.BytesRdos_);
+  printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_);
+  printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
+  printf("total bytes read    = %" PRIi64 "\n", D.BytesRdos_ + D.BytesExps_ + D.BytesData_);
+  printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_ / 8);
 
   return idx2_Error(err_code::NoError);
 }
