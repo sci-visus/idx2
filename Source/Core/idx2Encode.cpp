@@ -486,9 +486,7 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
     ForwardShuffle((i64*)BlockFloats, BlockUInts, NDims);
     /* zfp encode */
     i8 N = 0; // number of significant coefficients in the block so far
-    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType) + (24 + NDims)),
-                         NBitPlanes); // TODO: why 24 (this is only based on empirical experiments
-                                      // with float32, for other types it might be different)?
+    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType)), NBitPlanes);
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;

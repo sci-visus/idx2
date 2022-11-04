@@ -484,7 +484,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
                  ? (i16)Read(&BrickExpsStream, 16) - traits<f64>::ExpBias
                  : (i16)Read(&BrickExpsStream, traits<f32>::ExpBits) - traits<f32>::ExpBias;
     i8 N = 0;
-    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType) + (24 + NDims)), NBitPlanes);
+    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType)), NBitPlanes);
     int NBitPlanesDecoded = Exponent(Accuracy) - 6 - EMax + 1;
     i8 NBps = 0;
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
