@@ -525,19 +525,13 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       ++NBps;
       //      timer Timer; StartTimer(&Timer);
       auto SizeBegin = BitSize(*Stream);
-      bool BlockIsLosslesslyEncoded = (Read(Stream) == 0);
-      if (!BlockIsLosslesslyEncoded)
-      {
-        if (NBitPlanesDecoded <= 8)
-          Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
-        else // delay the transpose of bits to later
-          DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
-        //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
-      }
+      if (NBitPlanesDecoded <= 8)
+        Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
+      else // delay the transpose of bits to later
+        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
+      //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
       auto SizeEnd = BitSize(*Stream);
       D->BytesDecoded_ += SizeEnd - SizeBegin;
-      if (BlockIsLosslesslyEncoded)
-        break;
     } // end bit plane loop
 
     if (NBitPlanesDecoded > 8)
