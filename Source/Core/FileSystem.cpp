@@ -147,6 +147,9 @@ DirExists(const stref& Path)
 void
 RemoveDir(cstr Path)
 {
+  if (!DirExists(Path))
+    return;
+
   struct dirent* Entry = nullptr;
   DIR* Dir = nullptr;
   Dir = opendir(Path);

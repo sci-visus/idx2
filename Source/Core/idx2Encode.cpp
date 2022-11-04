@@ -537,27 +537,8 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
         PushBack(&E->BlockSigs, block_sig{ Block, RealBp });
       }
       /* encode the block */
-      // first, check if the brick is fully encoded
-      bool BlockIsLosslesslyEncoded = true;
-      for (int I = 0; I < sizeof(BlockUInts)/sizeof(u64); ++I)
-      {
-        if ((BlockUInts[I] << (NBitPlanes - 1 - Bp)) != 0)
-        {
-          BlockIsLosslesslyEncoded = false;
-          break;
-        }
-      }
       GrowIfTooFull(&C->BlockStream);
-      if (!BlockIsLosslesslyEncoded)
-      {
-        Write(&C->BlockStream, 1);
-        Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
-      }
-      else
-      {
-        Write(&C->BlockStream, 0);
-        break;
-      }
+      Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
     } // end bit plane loop
   }   // end zfp block loop
 
