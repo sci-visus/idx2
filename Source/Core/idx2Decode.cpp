@@ -410,7 +410,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
     DecompressChunk(&ChunkStream,
                     ChunkCache,
                     ChunkAddress,
-                    Log2Ceil(Idx2.BricksPerChunks[Iter])); // TODO: check for error
+                    Log2Ceil(Idx2.BricksPerChunk[Iter])); // TODO: check for error
     //    PushBack(&D->RequestedChunks, t2<u64, u64>{ChunkAddress, FileId.Id});
   }
 
@@ -623,7 +623,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
       if (PbIt.Val->NChildren == 0)
       {
         v3i From3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
-        v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3s[Level])));
+        v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3[Level])));
         PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
       }
       ++PbIt.Val->NChildren;
@@ -774,19 +774,19 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             Delete(&D.BrickPool, BrickKey); // TODO: also delete the parent bricks once we are done
           },
           64,
-          Idx2.BrickOrderChunks[Level],
+          Idx2.BricksOrderInChunk[Level],
           ChunkTop.ChunkFrom3 * Idx2.BricksPerChunk3s[Level],
           Idx2.BricksPerChunk3s[Level],
           ExtentInBricks,
           VolExtentInBricks);
         ,
         64,
-        Idx2.ChunkOrderFiles[Level],
+        Idx2.ChunksOrderInFile[Level],
         FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Level],
         Idx2.ChunksPerFile3s[Level],
         ExtentInChunks,
         VolExtentInChunks);
-      , 64, Idx2.FileOrders[Level], v3i(0), Idx2.NFiles3s[Level], ExtentInFiles, VolExtentInFiles);
+      , 64, Idx2.FilesOrder[Level], v3i(0), Idx2.NFiles3[Level], ExtentInFiles, VolExtentInFiles);
   } // end level loop
     //  printf("count zeroes        = %lld\n", CountZeroes);
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));

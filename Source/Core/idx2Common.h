@@ -142,33 +142,33 @@ struct idx2_file
   static constexpr int NTformPasses = 1;
   u64 TformOrder = 0;
   stack_array<u8, MaxLevels> DecodeSubbandMasks; // one subband mask per level
-  stack_array<v3i, MaxLevels> NBricks3s; // number of bricks per iteration
-  stack_array<v3i, MaxLevels> NChunks3s;
-  stack_array<v3i, MaxLevels> NFiles3s;
-  array<stack_string<128>> BrickOrderStrs;
-  array<stack_string<128>> ChunkOrderStrs;
-  array<stack_string<128>> FileOrderStrs;
-  stack_string<16> TformOrderFull;
-  stack_array<stack_array<i8, MaxSpatialDepth>, MaxLevels> FileDirDepths;
-  stack_array<u64, MaxLevels> BrickOrders;
-  stack_array<u64, MaxLevels> BrickOrderChunks;
-  stack_array<u64, MaxLevels> ChunkOrderFiles;
-  stack_array<u64, MaxLevels> ChunkOrders;
-  stack_array<u64, MaxLevels> FileOrders;
+  stack_array<v3i, MaxLevels> NBricks3; // number of bricks per level
+  stack_array<v3i, MaxLevels> NChunks3;
+  stack_array<v3i, MaxLevels> NFiles3;
+  array<stack_string<128>> BricksOrderStr;
+  array<stack_string<128>> ChunksOrderStr;
+  array<stack_string<128>> FilesOrderStr;
+  stack_string<16> TransformOrderFull;
+  stack_array<stack_array<i8, MaxSpatialDepth>, MaxLevels> FilesDirsDepth; // how many spatial "bits" are consumed by each file/directory level
+  stack_array<u64, MaxLevels> BricksOrder; // encode the order of bricks on each level, useful for brick traversal
+  stack_array<u64, MaxLevels> BricksOrderInChunk;
+  stack_array<u64, MaxLevels> ChunksOrderInFile;
+  stack_array<u64, MaxLevels> ChunksOrder;
+  stack_array<u64, MaxLevels> FilesOrder;
   f64 Accuracy = 0;
   i8 NLevels = 1;
   int FilesPerDir = 4096; // maximum number of files (or sub-directories) per directory
   int BricksPerChunkIn = 512;
   int ChunksPerFileIn = 4096;
-  stack_array<int, MaxLevels> BricksPerChunks = { { 512 } };
-  stack_array<int, MaxLevels> ChunksPerFiles = { { 4096 } };
-  stack_array<int, MaxLevels> BricksPerFiles = { { 512 * 4096 } };
+  stack_array<int, MaxLevels> BricksPerChunk = { { 512 } };
+  stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
+  stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
   stack_array<int, MaxLevels> FilesPerVol = { { 4096 } };         // power of two
   stack_array<int, MaxLevels> ChunksPerVol = { { 4096 * 4096 } }; // power of two
   v2i Version = v2i(1, 0);
   array<subband> Subbands;       // based on BrickDimsExt3
   array<subband> SubbandsNonExt; // based on BrickDims3
-  v3i GroupBrick3; // how many bricks in the current iteration form a brick in the next iteration
+  v3i GroupBrick3; // how many bricks in the current level form a brick in the next level
   stack_array<v3i, MaxLevels> BricksPerChunk3s = { { v3i(8) } };
   stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
   transform_details Td;           // used for normal transform
@@ -291,7 +291,7 @@ ConstructFilePathV0_0(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 B
   idx2_Print(&Pr, "%s/%s/", Idx2.Name, Idx2.Field);
   idx2_PrintIteration;
   idx2_PrintExtension;
-  u64 FileId = GetFileAddressV0_0(Idx2.BricksPerFiles[Iter], Brick, Iter, Level, BitPlane);
+  u64 FileId = GetFileAddressV0_0(Idx2.BricksPerFile[Iter], Brick, Iter, Level, BitPlane);
   return file_id{ stref{ FilePath, Pr.Size }, FileId };
 #undef idx2_PrintIteration
 #undef idx2_PrintExtension

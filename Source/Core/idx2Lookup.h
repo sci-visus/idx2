@@ -213,7 +213,7 @@ idx2_Inline u64
 GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
 {
   return (Idx2.GroupLevels ? 0 : u64(Iter) << 60) +                  // 4 bits
-         u64((Brick >> Log2Ceil(Idx2.BricksPerFiles[Iter])) << 18) + // 42 bits
+         u64((Brick >> Log2Ceil(Idx2.BricksPerFile[Iter])) << 18) + // 42 bits
          (Idx2.GroupSubLevels ? 0 : u64(Level) << 12) +              // 6 bits
          (Idx2.GroupBitPlanes ? 0 : u64(BitPlane) & 0xFFF);          // 12 bits
 }
@@ -233,7 +233,7 @@ ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
   i16 BitPlane = i16(BrickAddress & 0xFFF);
   i8 Level = (BrickAddress >> 12) & 0x3F;
   i8 Iter = (BrickAddress >> 60) & 0xF;
-  u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFiles[Iter]);
+  u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[Iter]);
   return ConstructFilePath(Idx2, Brick, Iter, Level, BitPlane);
 }
 
@@ -247,7 +247,7 @@ ConstructFilePathExponents(const idx2_file& Idx2, u64 BrickAddress)
 {
   i8 Level = (BrickAddress >> 12) & 0x3F;
   i8 Iter = (BrickAddress >> 60) & 0xF;
-  u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFiles[Iter]);
+  u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[Iter]);
   return ConstructFilePathExponents(Idx2, Brick, Iter, Level);
 }
 
@@ -256,7 +256,7 @@ idx2_Inline u64
 GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
 {
   return (u64(Iter) << 60) +                                          // 4 bits
-         u64((Brick >> Log2Ceil(Idx2.BricksPerChunks[Iter])) << 18) + // 42 bits
+         u64((Brick >> Log2Ceil(Idx2.BricksPerChunk[Iter])) << 18) + // 42 bits
          (u64(Level << 12)) +                                         // 6 bits
          (u64(BitPlane) & 0xFFF);                                     // 12 bits
 }

@@ -318,12 +318,12 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E)
       u64 FileAddr = FileTop.Address;
       // int ChunkInFile = 0;
       u64 FirstBrickAddr =
-        ((FileAddr * Idx2.ChunksPerFiles[Iter]) + 0) * Idx2.BricksPerChunks[Iter] + 0;
+        ((FileAddr * Idx2.ChunksPerFile[Iter]) + 0) * Idx2.BricksPerChunk[Iter] + 0;
       file_id FileId = ConstructFilePathRdos(Idx2, FirstBrickAddr, Iter);
       int NumChunks = 0;
       idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
       idx2_ChunkTraverse(
-        ++NumChunks; u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Iter]) + ChunkTop.Address;
+        ++NumChunks; u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFile[Iter]) + ChunkTop.Address;
         // ChunkInFile = ChunkTop.ChunkInFile;
         idx2_For (i8, Level, 0, Size(Idx2.Subbands)) {
           const auto& Rdo = RdoPrecomputes[Pos];
@@ -358,7 +358,7 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E)
         } // end level loop
         ,
         64,
-        Idx2.ChunkOrderFiles[Iter],
+        Idx2.ChunksOrderInFile[Iter],
         FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Iter],
         Idx2.ChunksPerFile3s[Iter],
         ExtentInChunks,
@@ -370,7 +370,7 @@ RateDistortionOpt(const idx2_file& Idx2, encode_data* E)
       fclose(Fp);
       Clear(&Buffer);
       Rewind(&BitStream);
-      , 64, Idx2.FileOrders[Iter], v3i(0), Idx2.NFiles3s[Iter], ExtentInFiles, VolExtentInFiles);
+      , 64, Idx2.FilesOrder[Iter], v3i(0), Idx2.NFiles3[Iter], ExtentInFiles, VolExtentInFiles);
   } // end level loop
   idx2_Assert(Pos == Size(RdoPrecomputes));
 }
@@ -521,7 +521,7 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
         I == Size(E->BlockSigs); // first block that becomes significant on this bit plane
       bool BrickNotEmpty = Size(C->BrickStream) > 0;
       bool NewChunk =
-        Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunks[E->Iter]; // TODO: multiplier?
+        Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunk[E->Iter]; // TODO: multiplier?
       if (FirstSigBlock)
       {
         if (NewChunk)
@@ -529,7 +529,7 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
           if (BrickNotEmpty)
             WriteChunk(*Idx2, E, C, E->Iter, E->Level, RealBp);
           C->NBricks = 0;
-          C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunks[E->Iter]);
+          C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Iter]);
         }
         PushBack(&E->BlockSigs, block_sig{ Block, RealBp });
       }
@@ -540,11 +540,11 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
   }   // end zfp block loop
 
   /* write the last chunk exponents if this is the first brick of the new chunk */
-  bool NewChunk = Brick >= (Sc->LastChunk + 1) * Idx2->BricksPerChunks[E->Iter];
+  bool NewChunk = Brick >= (Sc->LastChunk + 1) * Idx2->BricksPerChunk[E->Iter];
   if (NewChunk)
   {
     WriteChunkExponents(*Idx2, E, Sc, E->Iter, E->Level);
-    Sc->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunks[E->Iter]);
+    Sc->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Iter]);
   }
   /* write the min emax */
   GrowToAccomodate(&Sc->BlockEMaxesStream, 2 * Size(E->EMaxes));
@@ -661,7 +661,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
         Fill(idx2_Range(f64, PBrickVol.Vol), 0.0);
         v3i From3 = (Brick3 / Idx2->GroupBrick3) * Idx2->GroupBrick3;
         v3i NChildren3 =
-          Dims(Crop(extent(From3, Idx2->GroupBrick3), extent(Idx2->NBricks3s[Iter])));
+          Dims(Crop(extent(From3, Idx2->GroupBrick3), extent(Idx2->NBricks3[Iter])));
         PBrickVol.NChildrenMax = (i8)Prod(NChildren3);
         PBrickVol.ExtentLocal = extent(NChildren3 * SbDimsNonExt3);
         Insert(&PbIt, PKey, PBrickVol);
@@ -886,36 +886,38 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
   const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
   BrickAlloc_ = free_list_allocator(BrickBytes);
   idx2_RAII(encode_data, E, Init(&E));
-  idx2_BrickTraverse(timer Timer; StartTimer(&Timer);
-                     //    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
-                     //    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
-                     // BVol = local brick storage (we will copy brick data from the input to this)
-                     brick_volume BVol;
-                     Resize(&BVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E.Alloc);
-                     Fill(idx2_Range(f64, BVol.Vol), 0.0);
-                     extent BrickExtent(Top.BrickFrom3 * Idx2->BrickDims3, Idx2->BrickDims3);
-                     // BrickExtentCrop = the true extent of the brick (boundary bricks are cropped)
-                     extent BrickExtentCrop = Crop(BrickExtent, extent(Idx2->Dims3));
-                     BVol.ExtentLocal = Relative(BrickExtentCrop, BrickExtent);
-                     v2d MinMax = Copier.Copy(BrickExtentCrop, BVol.ExtentLocal, &BVol);
-                     Idx2->ValueRange.Min = Min(Idx2->ValueRange.Min, MinMax.Min);
-                     Idx2->ValueRange.Max = Max(Idx2->ValueRange.Max, MinMax.Max);
-                     //    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
-                     E.Iter = 0;
-                     E.Bricks3[E.Iter] = Top.BrickFrom3;
-                     E.Brick[E.Iter] = GetLinearBrick(*Idx2, E.Iter, E.Bricks3[E.Iter]);
-                     idx2_Assert(E.Brick[E.Iter] == Top.Address);
-                     u64 BrickKey = GetBrickKey(E.Iter, E.Brick[E.Iter]);
-                     Insert(&E.BrickPool, BrickKey, BVol);
-                     EncodeBrick(Idx2, P, &E);
-                     TotalTime_ += Seconds(ElapsedTime(&Timer));
-                     ,
-                     128,
-                     Idx2->BrickOrders[E.Iter],
-                     v3i(0),
-                     Idx2->NBricks3s[E.Iter],
-                     extent(Idx2->NBricks3s[E.Iter]),
-                     extent(Idx2->NBricks3s[E.Iter]));
+  idx2_BrickTraverse(
+    timer Timer; StartTimer(&Timer);
+    //    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
+    //    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
+    // BVol = local brick storage (we will copy brick data from the input to this)
+    brick_volume BVol;
+    Resize(&BVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E.Alloc);
+    Fill(idx2_Range(f64, BVol.Vol), 0.0);
+    extent BrickExtent(Top.BrickFrom3 * Idx2->BrickDims3, Idx2->BrickDims3);
+    // BrickExtentCrop = the true extent of the brick (boundary bricks are cropped)
+    extent BrickExtentCrop = Crop(BrickExtent, extent(Idx2->Dims3));
+    BVol.ExtentLocal = Relative(BrickExtentCrop, BrickExtent);
+    v2d MinMax = Copier.Copy(BrickExtentCrop, BVol.ExtentLocal, &BVol);
+    Idx2->ValueRange.Min = Min(Idx2->ValueRange.Min, MinMax.Min);
+    Idx2->ValueRange.Max = Max(Idx2->ValueRange.Max, MinMax.Max);
+    //    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
+    E.Iter = 0;
+    E.Bricks3[E.Iter] = Top.BrickFrom3;
+    E.Brick[E.Iter] = GetLinearBrick(*Idx2, E.Iter, E.Bricks3[E.Iter]);
+    idx2_Assert(E.Brick[E.Iter] == Top.Address);
+    u64 BrickKey = GetBrickKey(E.Iter, E.Brick[E.Iter]);
+    Insert(&E.BrickPool, BrickKey, BVol);
+    EncodeBrick(Idx2, P, &E);
+    TotalTime_ += Seconds(ElapsedTime(&Timer));
+    ,
+    128,
+    Idx2->BricksOrder[E.Iter],
+    v3i(0),
+    Idx2->NBricks3[E.Iter],
+    extent(Idx2->NBricks3[E.Iter]),
+    extent(Idx2->NBricks3[E.Iter])
+  );
 
   /* dump the bit streams to files */
   timer Timer;
@@ -1042,115 +1044,6 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "  )\n"); // end format)
   fprintf(Fp, ")\n");   // end )
   fclose(Fp);
-}
-
-
-error<idx2_err_code>
-EncodeWithMinMax(idx2_file* Idx2, const params& P, const volume& Vol)
-{
-  const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
-  BrickAlloc_ = free_list_allocator(BrickBytes);
-  idx2_RAII(encode_data, E, Init(&E));
-  idx2_BrickTraverse(
-    timer Timer; StartTimer(&Timer);
-    //    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
-    //    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
-    brick_volume BVol;
-    Resize(&BVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E.Alloc);
-    Fill(idx2_Range(f64, BVol.Vol), 0.0);
-    extent BrickExtent(Top.BrickFrom3 * Idx2->BrickDims3, Idx2->BrickDims3);
-    extent BrickExtentCrop = Crop(BrickExtent, extent(Idx2->Dims3));
-    BVol.ExtentLocal = Relative(BrickExtentCrop, BrickExtent);
-    v2d MinMax;
-    if (Vol.Type == dtype::float32) MinMax =
-      (CopyExtentExtentMinMax<f32, f64>(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol));
-    else if (Vol.Type == dtype::float64) MinMax =
-      (CopyExtentExtentMinMax<f64, f64>(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol));
-    Idx2->ValueRange.Min = Min(Idx2->ValueRange.Min, MinMax.Min);
-    Idx2->ValueRange.Max = Max(Idx2->ValueRange.Max, MinMax.Max);
-    //    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
-    E.Iter = 0;
-    E.Bricks3[E.Iter] = Top.BrickFrom3;
-    E.Brick[E.Iter] = GetLinearBrick(*Idx2, E.Iter, E.Bricks3[E.Iter]);
-    idx2_Assert(E.Brick[E.Iter] == Top.Address);
-    u64 BrickKey = GetBrickKey(E.Iter, E.Brick[E.Iter]);
-    Insert(&E.BrickPool, BrickKey, BVol);
-    EncodeBrick(Idx2, P, &E);
-    TotalTime_ += Seconds(ElapsedTime(&Timer));
-    ,
-    128,
-    Idx2->BrickOrders[E.Iter],
-    v3i(0),
-    Idx2->NBricks3s[E.Iter],
-    extent(Idx2->NBricks3s[E.Iter]),
-    extent(Idx2->NBricks3s[E.Iter]));
-
-  /* dump the bit streams to files */
-  timer Timer;
-  StartTimer(&Timer);
-  idx2_PropagateIfError(FlushChunks(*Idx2, &E));
-  idx2_PropagateIfError(FlushChunkExponents(*Idx2, &E));
-  timer RdoTimer;
-  StartTimer(&RdoTimer);
-  RateDistortionOpt(*Idx2, &E);
-  TotalTime_ += Seconds(ElapsedTime(&Timer));
-  printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
-
-  WriteMetaFile(*Idx2, P, idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field));
-  printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
-  printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
-  printf("num chunks              = %" PRIi64 "\n", ChunkStreamStat.Count());
-  printf("brick deltas      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickDeltasStat.Sum(),
-         BrickDeltasStat.Avg(),
-         BrickDeltasStat.StdDev());
-  printf("brick sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickSzsStat.Sum(),
-         BrickSzsStat.Avg(),
-         BrickSzsStat.StdDev());
-  printf("brick stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickStreamStat.Sum(),
-         BrickStreamStat.Avg(),
-         BrickStreamStat.StdDev());
-  printf("block stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BlockStat.Sum(),
-         BlockStat.Avg(),
-         BlockStat.StdDev());
-  printf("chunk sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkSzsStat.Sum(),
-         ChunkSzsStat.Avg(),
-         ChunkSzsStat.StdDev());
-  printf("chunk addrs       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkAddrsStat.Sum(),
-         ChunkAddrsStat.Avg(),
-         ChunkAddrsStat.StdDev());
-  printf("cpres chunk addrs total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         CpresChunkAddrsStat.Sum(),
-         CpresChunkAddrsStat.Avg(),
-         CpresChunkAddrsStat.StdDev());
-  printf("chunk stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkStreamStat.Sum(),
-         ChunkStreamStat.Avg(),
-         ChunkStreamStat.StdDev());
-  printf("brick exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickEMaxesStat.Sum(),
-         BrickEMaxesStat.Avg(),
-         BrickEMaxesStat.StdDev());
-  printf("block exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BlockEMaxStat.Sum(),
-         BlockEMaxStat.Avg(),
-         BlockEMaxStat.StdDev());
-  printf("chunk exp sizes   total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkEMaxSzsStat.Sum(),
-         ChunkEMaxSzsStat.Avg(),
-         ChunkEMaxSzsStat.StdDev());
-  printf("chunk exps stream total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkEMaxesStat.Sum(),
-         ChunkEMaxesStat.Avg(),
-         ChunkEMaxesStat.StdDev());
-  printf("total time              = %f seconds\n", TotalTime_);
-  //  _ASSERTE( _CrtCheckMemory( ) );
-  return idx2_Error(idx2_err_code::NoError);
 }
 
 
