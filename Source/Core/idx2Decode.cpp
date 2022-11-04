@@ -514,8 +514,8 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
         BrickOffset += Size(ChunkCache->ChunkStream);
         Insert(&StreamIt, RealBp, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
-        SeekToByte(Stream,
-                   BrickOffset); // seek to the correct byte offset of the brick in the chunk
+       // seek to the correct byte offset of the brick in the chunk
+        SeekToByte(Stream, BrickOffset);
       }
       else
       {
@@ -525,23 +525,26 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       ++NBps;
       //      timer Timer; StartTimer(&Timer);
       auto SizeBegin = BitSize(*Stream);
-      if (NBitPlanesDecoded <= 8)
-        Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
-      else
-        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp],
-                   NVals,
-                   N,
-                   Stream); // delay the transpose of bits to later
-                            //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+      bool BlockIsLosslesslyEncoded = (Read(Stream) == 0);
+      if (!BlockIsLosslesslyEncoded)
+      {
+        if (NBitPlanesDecoded <= 8)
+          Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
+        else // delay the transpose of bits to later
+          DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
+        //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+      }
       auto SizeEnd = BitSize(*Stream);
       D->BytesDecoded_ += SizeEnd - SizeBegin;
-    }                       // end bit plane loop
+      if (BlockIsLosslesslyEncoded)
+        break;
+    } // end bit plane loop
 
     if (NBitPlanesDecoded > 8)
     {
       //      timer Timer; StartTimer(&Timer);
       TransposeRecursive(BlockUInts, NBps); // transpose using the recursive algorithm
-                                            //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+      //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
     }
     /* do inverse zfp transform but only if any bit plane is decoded */
     if (NBps > 0)

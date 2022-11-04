@@ -10,6 +10,7 @@
 *.raw
 bin
 build
+build-linux
 cmake-build-debug
 CMakeFiles
 Source/Python/nanobind

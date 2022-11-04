@@ -486,12 +486,13 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
     ForwardShuffle((i64*)BlockFloats, BlockUInts, NDims);
     /* zfp encode */
     i8 N = 0; // number of significant coefficients in the block so far
-    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType) + (24 + NDims)),
-                         NBitPlanes); // TODO: why 24 (this is only based on empirical experiments
-                                      // with float32, for other types it might be different)?
+    // TODO: why 24 (this is only based on empirical experiments
+    // with float32, for other types it might be different)?
+    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType) + (24 + NDims)), NBitPlanes);
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
+      // TODO: why number 6?
       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
       if (TooHighPrecision)
         break;
@@ -536,8 +537,27 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
         PushBack(&E->BlockSigs, block_sig{ Block, RealBp });
       }
       /* encode the block */
+      // first, check if the brick is fully encoded
+      bool BlockIsLosslesslyEncoded = true;
+      for (int I = 0; I < sizeof(BlockUInts)/sizeof(u64); ++I)
+      {
+        if ((BlockUInts[I] << (NBitPlanes - 1 - Bp)) != 0)
+        {
+          BlockIsLosslesslyEncoded = false;
+          break;
+        }
+      }
       GrowIfTooFull(&C->BlockStream);
-      Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
+      if (!BlockIsLosslesslyEncoded)
+      {
+        Write(&C->BlockStream, 1);
+        Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
+      }
+      else
+      {
+        Write(&C->BlockStream, 0);
+        break;
+      }
     } // end bit plane loop
   }   // end zfp block loop
 

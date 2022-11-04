@@ -767,6 +767,7 @@ Decode(t* Block, int B, i64 S, i8& N, bitstream* Bs)
 
 
 // NOTE: this is the one being used
+// Return false if there is no more significant bit plane to encode
 template <typename t> void
 Encode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */ i8& N, bitstream* idx2_Restrict BsIn)
 {
@@ -776,16 +777,17 @@ Encode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */ i8& N, bitstream* i
   u64 X = 0;
   for (int I = 0; I < NVals; ++I)
     X += u64((Block[I] >> B) & 1u) << I;
+
   //  i8 P = (i8)Min((i64)N, S - BitSize(Bs));
   i8 P = N;
   if (P > 0)
   {
-    WriteLong(&Bs, X, P);
+    WriteLong(&Bs, X, P); // write verbatim bits for significant coefficients
     X >>= P; // P == 64 is fine since in that case we don't need X any more
   }
   for (; /*BitSize(Bs) < S &&*/ N < NVals;)
   {
-    if (Write(&Bs, !!X))
+    if (Write(&Bs, !!X)) // write group test bits
     { // group is significant
       for (; /*BitSize(Bs) < S &&*/ N + 1 < NVals;)
       {
