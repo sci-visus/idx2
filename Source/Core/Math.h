@@ -401,9 +401,9 @@ Exponent(t Val)
   if (Val != 0)
   {
     int E;
-    frexp(Val, &E);
+    frexp(Val, &E); // for non denormal float32, return a number in [-125, 128]
     /* clamp exponent in case Val is denormal */
-    return Max(E, 1 - traits<t>::ExpBias);
+    return Max(E, 1 - traits<t>::ExpBias); // return -126 (for float32) if denormal (which can return an exponent as small as -148)
   }
   return -traits<t>::ExpBias;
 }

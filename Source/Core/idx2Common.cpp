@@ -165,6 +165,53 @@ SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 }
 
 
+/* Write the metadata file (idx) */
+// TODO: return error type
+void
+WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
+{
+  FILE* Fp = fopen(FileName, "w");
+  fprintf(Fp, "(\n"); // begin (
+  fprintf(Fp, "  (common\n");
+  fprintf(Fp, "    (type \"Simulation\")\n"); // TODO: add this config to Idx2
+  fprintf(Fp, "    (name \"%s\")\n", P.Meta.Name);
+  fprintf(Fp, "    (field \"%s\")\n", P.Meta.Field);
+  fprintf(Fp, "    (dimensions %d %d %d)\n", idx2_PrV3i(Idx2.Dims3));
+  stref DType = ToString(Idx2.DType);
+  fprintf(Fp, "    (data-type \"%s\")\n", idx2_PrintScratchN(Size(DType), "%s", DType.ConstPtr));
+  fprintf(Fp, "    (min-max %.20f %.20f)\n", Idx2.ValueRange.Min, Idx2.ValueRange.Max);
+  fprintf(Fp, "    (accuracy %.20f)\n", Idx2.Accuracy);
+  fprintf(Fp, "  )\n"); // end common)
+  fprintf(Fp, "  (format\n");
+  fprintf(Fp, "    (version %d %d)\n", Idx2.Version[0], Idx2.Version[1]);
+  fprintf(Fp, "    (brick-size %d %d %d)\n", idx2_PrV3i(Idx2.BrickDims3));
+  char TransformOrder[128];
+  DecodeTransformOrder(Idx2.TformOrder, TransformOrder);
+  fprintf(Fp, "    (transform-order \"%s\")\n", TransformOrder);
+  fprintf(Fp, "    (num-levels %d)\n", Idx2.NLevels);
+  fprintf(Fp, "    (transform-passes-per-levels %d)\n", Idx2.NTformPasses);
+  fprintf(Fp, "    (bricks-per-tile %d)\n", Idx2.BricksPerChunkIn);
+  fprintf(Fp, "    (tiles-per-file %d)\n", Idx2.ChunksPerFileIn);
+  fprintf(Fp, "    (files-per-directory %d)\n", Idx2.FilesPerDir);
+  fprintf(Fp, "    (group-levels %s)\n", Idx2.GroupLevels ? "true" : "false");
+  fprintf(Fp, "    (group-sub-levels %s)\n", Idx2.GroupSubLevels ? "true" : "false");
+  fprintf(Fp, "    (group-bit-planes %s)\n", Idx2.GroupBitPlanes ? "true" : "false");
+  if (Size(Idx2.QualityLevelsIn) > 0)
+  {
+    fprintf(Fp, "    (quality-levels %d", (int)Size(Idx2.QualityLevelsIn));
+    idx2_ForEach (QIt, Idx2.QualityLevelsIn)
+    {
+      fprintf(Fp, " %d", *QIt);
+    }
+    fprintf(Fp, ")\n");
+  }
+  fprintf(Fp, "  )\n"); // end format)
+  fprintf(Fp, ")\n");   // end )
+  fclose(Fp);
+}
+
+
+
 // TODO: return error type
 error<idx2_err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName)

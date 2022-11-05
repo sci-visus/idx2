@@ -57,7 +57,6 @@ struct decode_data
 /* ---------------------- FUNCTIONS ----------------------*/
 
 
-
 idx2_Inline i64
 SizeBrickPool(const decode_data& D)
 {
@@ -79,3 +78,4 @@ void
 DecompressBufZstd(const buffer& Input, bitstream* Output);
 
 } // namespace idx2
+

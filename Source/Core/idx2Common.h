@@ -198,6 +198,9 @@ extern free_list_allocator BrickAlloc_;
 
 /* ---------------------- FUNCTIONS ----------------------*/
 
+void // TODO: should also return an error?
+WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName);
+
 error<idx2_err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName);
 
