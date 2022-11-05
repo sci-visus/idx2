@@ -69,6 +69,74 @@ void
 Dealloc(file_cache_table* FileCacheTable);
 
 
+idx2_Inline i64
+Size(const chunk_exp_cache& ChunkExpCache)
+{
+  return Size(ChunkExpCache.BrickExpsStream.Stream);
+}
+
+
+idx2_Inline i64
+Size(const chunk_rdo_cache& ChunkRdoCache)
+{
+  return Size(ChunkRdoCache.TruncationPoints) * sizeof(i16);
+}
+
+
+idx2_Inline i64
+Size(const chunk_cache& C)
+{
+  return Size(C.Bricks) * sizeof(u64) + Size(C.BrickSzs) * sizeof(i32) + sizeof(C.ChunkPos) +
+         Size(C.ChunkStream.Stream);
+}
+
+
+idx2_Inline i64
+Size(const file_exp_cache& F)
+{
+  i64 Result = 0;
+  idx2_ForEach (It, F.ChunkExpCaches)
+    Result += Size(*It);
+  Result += Size(F.ChunkExpSzs) * sizeof(i32);
+  return Result;
+}
+
+
+idx2_Inline i64
+Size(const file_rdo_cache& F)
+{
+  i64 Result = 0;
+  idx2_ForEach (It, F.TileRdoCaches)
+    Result += Size(*It);
+  return Result;
+}
+
+
+idx2_Inline i64
+Size(const file_cache& F)
+{
+  i64 Result = 0;
+  Result += Size(F.ChunkSizes) * sizeof(i64);
+  idx2_ForEach (It, F.ChunkCaches)
+    Result += Size(*It.Val);
+  return Result;
+}
+
+
+idx2_Inline i64
+Size(const file_cache_table& F)
+{
+  i64 Result = 0;
+  idx2_ForEach (It, F.FileCaches)
+    Result += Size(*It.Val);
+  idx2_ForEach (It, F.FileExpCaches)
+    Result += Size(*It.Val);
+  idx2_ForEach (It, F.FileRdoCaches)
+    Result += Size(*It.Val);
+  return Result;
+}
+
+
 expected<const chunk_exp_cache*, idx2_err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband);
 

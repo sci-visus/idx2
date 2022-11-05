@@ -29,6 +29,9 @@ set(IDX2_CORE_HEADER_FILES
   idx2Decode.h
   idx2Encode.h
   idx2Lookup.h
+  idx2Read.h
+  idx2Write.h
+  idx2SparseBricks.h
   InputOutput.h
   LinkedList.h
   Logger.h
@@ -52,30 +55,33 @@ set(IDX2_CORE_HEADER_FILES
 )
 
 set(IDX2_CORE_SOURCE_FILES
-  Args.cpp  
-  Assert.cpp  
+  Args.cpp
+  Assert.cpp
   DataSet.cpp
-  FileSystem.cpp  
+  FileSystem.cpp
   Format.cpp
-  idx2Common.cpp  
-  idx2Decode.cpp    
-  idx2Encode.cpp  
+  idx2Common.cpp
+  idx2Decode.cpp
+  idx2Encode.cpp
   idx2Lookup.cpp
-  InputOutput.cpp    
-  Logger.cpp  
-  Memory.cpp  
+  idx2Read.cpp
+  idx2Write.cpp
+  idx2SparseBricks.cpp
+  InputOutput.cpp
+  Logger.cpp
+  Memory.cpp
   MemoryMap.cpp
   StackTrace.cpp
-  String.cpp  
-  Utilities.cpp  
-  VarInt.cpp  
-  Volume.cpp  
-  Wavelet.cpp  
-  Zfp.cpp  
+  String.cpp
+  Utilities.cpp
+  VarInt.cpp
+  Volume.cpp
+  Wavelet.cpp
+  Zfp.cpp
 )
 
 add_library(idx2Core ${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_SOURCE_FILES})
-set_target_properties(idx2Core PROPERTIES 
+set_target_properties(idx2Core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER "${IDX2_CORE_HEADER_FILES}")
 target_compile_features(idx2Core PUBLIC cxx_std_17)

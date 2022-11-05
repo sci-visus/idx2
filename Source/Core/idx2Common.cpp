@@ -1,4 +1,5 @@
 #include "idx2Common.h"
+#include "InputOutput.h"
 #include "Math.h"
 
 
@@ -161,6 +162,195 @@ void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 {
   Idx2->DownsamplingFactor3 = DownsamplingFactor3;
+}
+
+
+// TODO: return error type
+error<idx2_err_code>
+ReadMetaFile(idx2_file* Idx2, cstr FileName)
+{
+  buffer Buf;
+  idx2_CleanUp(DeallocBuf(&Buf));
+  idx2_PropagateIfError(ReadFile(FileName, &Buf));
+  SExprResult Result = ParseSExpr((cstr)Buf.Data, Size(Buf), nullptr);
+  if (Result.type == SE_SYNTAX_ERROR)
+  {
+    fprintf(stderr, "Error(%d): %s.\n", Result.syntaxError.lineNumber, Result.syntaxError.message);
+    return idx2_Error(idx2_err_code::SyntaxError);
+  }
+  else
+  {
+    SExpr* Data = (SExpr*)malloc(sizeof(SExpr) * Result.count);
+    idx2_CleanUp(free(Data));
+    array<SExpr*> Stack;
+    Reserve(&Stack, Result.count);
+    idx2_CleanUp(Dealloc(&Stack));
+    // This time we supply the pool
+    SExprPool Pool = { Result.count, Data };
+    Result = ParseSExpr((cstr)Buf.Data, Size(Buf), &Pool);
+    // result.expr contains the successfully parsed SExpr
+    //    printf("parse .idx2 file successfully\n");
+    PushBack(&Stack, Result.expr);
+    bool GotId = false;
+    SExpr* LastExpr = nullptr;
+    while (Size(Stack) > 0)
+    {
+      SExpr* Expr = Back(Stack);
+      PopBack(&Stack);
+      if (Expr->next)
+        PushBack(&Stack, Expr->next);
+      if (GotId)
+      {
+        if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "version"))
+        {
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->Version[0] = Expr->i;
+          idx2_Assert(Expr->next);
+          Expr = Expr->next;
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->Version[1] = Expr->i;
+          //          printf("Version = %d.%d\n", Idx2->Version[0], Idx2->Version[1]);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "name"))
+        {
+          idx2_Assert(Expr->type == SE_STRING);
+          snprintf(Idx2->Name, Expr->s.len + 1, "%s", (cstr)Buf.Data + Expr->s.start);
+          //          printf("Name = %s\n", Idx2->Name);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "field"))
+        {
+          idx2_Assert(Expr->type == SE_STRING);
+          snprintf(Idx2->Field, Expr->s.len + 1, "%s", (cstr)Buf.Data + Expr->s.start);
+          //          printf("Field = %s\n", Idx2->Field);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "dimensions"))
+        {
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->Dims3.X = Expr->i;
+          idx2_Assert(Expr->next);
+          Expr = Expr->next;
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->Dims3.Y = Expr->i;
+          idx2_Assert(Expr->next);
+          Expr = Expr->next;
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->Dims3.Z = Expr->i;
+          //          printf("Dims = %d %d %d\n", idx2_PrV3i(Idx2->Dims3));
+        }
+        if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "accuracy"))
+        {
+          idx2_Assert(Expr->type == SE_FLOAT);
+          Idx2->Accuracy = Expr->f;
+          //          printf("Accuracy = %.17g\n", Idx2->Accuracy);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "data-type"))
+        {
+          idx2_Assert(Expr->type == SE_STRING);
+          Idx2->DType = StringTo<dtype>()(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
+          //          printf("Data type = %.*s\n", ToString(Idx2->DType).Size,
+          //          ToString(Idx2->DType).ConstPtr);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "min-max"))
+        {
+          idx2_Assert(Expr->type == SE_FLOAT || Expr->type == SE_INT);
+          Idx2->ValueRange.Min = Expr->i;
+          idx2_Assert(Expr->next);
+          Expr = Expr->next;
+          idx2_Assert(Expr->type == SE_FLOAT || Expr->type == SE_INT);
+          Idx2->ValueRange.Max = Expr->i;
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "brick-size"))
+        {
+          v3i BrickDims3(0);
+          idx2_Assert(Expr->type == SE_INT);
+          BrickDims3.X = Expr->i;
+          idx2_Assert(Expr->next);
+          Expr = Expr->next;
+          idx2_Assert(Expr->type == SE_INT);
+          BrickDims3.Y = Expr->i;
+          idx2_Assert(Expr->next);
+          Expr = Expr->next;
+          idx2_Assert(Expr->type == SE_INT);
+          BrickDims3.Z = Expr->i;
+          SetBrickSize(Idx2, BrickDims3);
+          //          printf("Brick size %d %d %d\n", idx2_PrV3i(Idx2->BrickDims3));
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-order"))
+        {
+          idx2_Assert(Expr->type == SE_STRING);
+          Idx2->TformOrder =
+            EncodeTransformOrder(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
+          char TransformOrder[128];
+          DecodeTransformOrder(Idx2->TformOrder, TransformOrder);
+          //          printf("Transform order = %s\n", TransformOrder);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "num-levels"))
+        {
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->NLevels = i8(Expr->i);
+          //          printf("Num levels = %d\n", Idx2->NLevels);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bricks-per-tile"))
+        {
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->BricksPerChunkIn = Expr->i;
+          //          printf("Bricks per chunk = %d\n", Idx2->BricksPerChunks[0]);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "tiles-per-file"))
+        {
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->ChunksPerFileIn = Expr->i;
+          //          printf("Chunks per file = %d\n", Idx2->ChunksPerFiles[0]);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "files-per-directory"))
+        {
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->FilesPerDir = Expr->i;
+          //          printf("Files per directory = %d\n", Idx2->FilesPerDir);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-levels"))
+        {
+          idx2_Assert(Expr->type == SE_BOOL);
+          Idx2->GroupLevels = Expr->i;
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-sub-levels"))
+        {
+          idx2_Assert(Expr->type == SE_BOOL);
+          Idx2->GroupSubLevels = Expr->i;
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-bit-planes"))
+        {
+          idx2_Assert(Expr->type == SE_BOOL);
+          Idx2->GroupBitPlanes = Expr->i;
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "quality-levels"))
+        {
+          int NumQualityLevels = Expr->i;
+          Resize(&Idx2->QualityLevelsIn, NumQualityLevels);
+          idx2_For (int, I, 0, NumQualityLevels)
+          {
+            Idx2->QualityLevelsIn[I] = Expr->i;
+            Expr = Expr->next;
+          }
+        }
+      }
+      if (Expr->type == SE_ID)
+      {
+        LastExpr = Expr;
+        GotId = true;
+      }
+      else if (Expr->type == SE_LIST)
+      {
+        PushBack(&Stack, Expr->head);
+        GotId = false;
+      }
+      else
+      {
+        GotId = false;
+      }
+    }
+  }
+  return idx2_Error(idx2_err_code::NoError);
 }
 
 

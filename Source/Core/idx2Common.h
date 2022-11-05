@@ -198,6 +198,9 @@ extern free_list_allocator BrickAlloc_;
 
 /* ---------------------- FUNCTIONS ----------------------*/
 
+error<idx2_err_code>
+ReadMetaFile(idx2_file* Idx2, cstr FileName);
+
 /* Compute the output grid (from, dims, strides) */
 grid
 GetGrid(const idx2_file& Idx2, const extent& Ext);
