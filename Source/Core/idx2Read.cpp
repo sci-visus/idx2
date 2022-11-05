@@ -290,7 +290,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
 expected<const chunk_exp_cache*, idx2_err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband)
 {
-  file_id FileId = ConstructFilePathExponents(Idx2, Brick, Level, Subband);
+  file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
   auto FileExpCacheIt = Lookup(&D->FcTable.FileExpCaches, FileId.Id);
   if (!FileExpCacheIt)
   {

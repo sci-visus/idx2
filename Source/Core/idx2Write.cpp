@@ -41,7 +41,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
   Rewind(&Sc->BrickEMaxesStream);
 
   /* write to file */
-  file_id FileId = ConstructFilePathExponents(Idx2, Sc->LastBrick, Iter, Level);
+  file_id FileId = ConstructFilePath(Idx2, Sc->LastBrick, Iter, Level, ExponentBitPlane_);
   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   WriteBuffer(Fp, ToBuffer(E->ChunkEMaxesStream));
   /* keep track of the chunk sizes */
@@ -56,7 +56,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
   GrowToAccomodate(ChunkEMaxSzs, 4);
   WriteVarByte(ChunkEMaxSzs, Size(E->ChunkEMaxesStream));
 
-  u64 ChunkAddress = GetChunkAddress(Idx2, Sc->LastBrick, Iter, Level, 0);
+  u64 ChunkAddress = GetChunkAddress(Idx2, Sc->LastBrick, Iter, Level, ExponentBitPlane_);
   Insert(&E->ChunkRDOLengths, ChunkAddress, (u32)Size(E->ChunkEMaxesStream));
 
   Rewind(&E->ChunkEMaxesStream);
@@ -76,7 +76,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
   idx2_ForEach (CemIt, E->ChunkEMaxesMeta)
   {
     bitstream* ChunkEMaxSzs = CemIt.Val;
-    file_id FileId = ConstructFilePathExponents(Idx2, *CemIt.Key);
+    file_id FileId = ConstructFilePath(Idx2, *CemIt.Key);
     idx2_Assert(FileId.Id == *CemIt.Key);
     /* write chunk emax sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");

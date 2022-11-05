@@ -8,6 +8,7 @@ namespace idx2
 {
 
 
+
 u64
 GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3)
 {
@@ -21,6 +22,31 @@ GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3)
   }
   return LinearBrick;
 }
+
+
+file_id
+ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
+{
+  i16 BitPlane = i16((i32(BrickAddress & 0xFFF) << 20) >> 20);
+  i8 Level = (BrickAddress >> 12) & 0x3F;
+  i8 Iter = (BrickAddress >> 60) & 0xF;
+  u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[Iter]);
+  return ConstructFilePath(Idx2, Brick, Iter, Level, BitPlane);
+}
+
+
+static file_id
+ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel);
+
+
+//static idx2_Inline file_id
+//ConstructFilePathExponents(const idx2_file& Idx2, u64 BrickAddress)
+//{
+//  i8 Level = (BrickAddress >> 12) & 0x3F;
+//  i8 Iter = (BrickAddress >> 60) & 0xF;
+//  u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[Iter]);
+//  return ConstructFilePathExponents(Idx2, Brick, Iter, Level);
+//}
 
 
 file_id
@@ -58,6 +84,11 @@ ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level)
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
 {
+  if (BitPlaneIsExponent(BitPlane)) //
+  {
+    return ConstructFilePathExponents(Idx2, Brick, Level, SubLevel);
+  }
+
 #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
 #define idx2_PrintBrick                                                                            \
   for (int Depth = 0; Depth + 1 < Idx2.FilesDirsDepth[Level].Len; ++Depth)                          \
@@ -94,7 +125,7 @@ ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 B
 }
 
 
-file_id
+static file_id
 ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel)
 {
 #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
@@ -118,7 +149,7 @@ ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLev
   idx2_PrintSubLevel;
   idx2_PrintBrick;
   idx2_PrintExtension;
-  u64 FileId = GetFileAddressExp(Idx2.BricksPerFile[Level], BrickBackup, Level, SubLevel);
+  u64 FileId = GetFileAddress(Idx2, BrickBackup, Level, SubLevel, ExponentBitPlane_);
   return file_id{ stref{ FilePath, Pr.Size }, FileId };
 #undef idx2_PrintLevel
 #undef idx2_PrintSubLevel
