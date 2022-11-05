@@ -9,7 +9,7 @@
 #include "Common.h"
 #include "Macros.h"
 #include "Math.h"
-//#include <immintrin.h>
+#include <immintrin.h>
 //#include <iostream>
 
 

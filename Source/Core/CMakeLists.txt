@@ -83,10 +83,10 @@ target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 
 if (MSVC)
   target_compile_definitions(idx2Core PUBLIC -D_CRT_SECURE_NO_WARNINGS)
-  target_compile_options(idx2Core PUBLIC /Zc:preprocessor /Zc:__cplusplus /wd5105)
+  target_compile_options(idx2Core PUBLIC /arch:AVX2 /Zc:preprocessor /Zc:__cplusplus /wd5105)
   target_link_options(idx2Core PUBLIC dbghelp.lib)
 elseif (UNIX)
-  target_compile_options(idx2Core PUBLIC -Wno-format-zero-length)
+  target_compile_options(idx2Core PUBLIC -Wno-format-zero-length -mavx2)
 endif()
 
 install(TARGETS idx2Core
