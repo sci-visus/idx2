@@ -122,7 +122,7 @@ struct brick_copier
 /* FUNCTIONS */
 
 void
-WriteMetaFile(const idx2_file& Idx2, cstr FileName);
+CompressBufZstd(const buffer& Input, bitstream* Output);
 
 /* Encode a whole volume, assuming the volume is available  */
 error<idx2_err_code>
