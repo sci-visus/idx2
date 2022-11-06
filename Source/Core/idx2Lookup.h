@@ -238,12 +238,16 @@ GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 Bit
 idx2_Inline u64
 GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
 {
-  if (Idx2.GroupSubLevels)
-    SubLevel = 0;
-  if (Idx2.GroupLevels)
-    Level = 0;
-  if (!BitPlaneIsExponent(BitPlane) && Idx2.GroupBitPlanes)
-    BitPlane = 0;
+  // NOTE: for now the exponent files do not care about Idx2.GroupLevels etc
+  if (!BitPlaneIsExponent(BitPlane))
+  {
+    if (Idx2.GroupSubLevels)
+      SubLevel = 0;
+    if (Idx2.GroupLevels)
+      Level = 0;
+    if (Idx2.GroupBitPlanes)
+      BitPlane = 0;
+  }
   return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, SubLevel, BitPlane);
 }
 

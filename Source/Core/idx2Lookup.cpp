@@ -27,7 +27,7 @@ GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3)
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
 {
-  i16 BitPlane = i16((i32(BrickAddress & 0xFFF) << 20) >> 20);
+  i16 BitPlane = i16((i32(BrickAddress & 0xFFF) << 20) >> 20); // this convoluted double shifts is to keep the sign of BitPlane
   i8 Level = (BrickAddress >> 12) & 0x3F;
   i8 Iter = (BrickAddress >> 60) & 0xF;
   u64 Brick = ((BrickAddress >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[Iter]);
