@@ -37,6 +37,13 @@ operator==(const stref& Lhs, const stref& Rhs)
 }
 
 
+bool
+operator!=(const stref& Lhs, const stref& Rhs)
+{
+  return !(Lhs == Rhs);
+}
+
+
 stref
 TrimLeft(const stref& Str)
 {

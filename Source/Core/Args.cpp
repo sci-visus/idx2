@@ -8,6 +8,7 @@ namespace idx2
 {
 
 
+/* Copy the input string into Val */
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
 {
@@ -28,6 +29,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
 }
 
 
+/* Point Val to the input string */
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val)
 {
@@ -41,6 +43,17 @@ OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val)
   }
 
   return false;
+}
+
+
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, stref* Val)
+{
+  cstr Temp;
+  if (!OptVal(NArgs, Args, Opt, &Temp))
+    return false;
+  *Val = stref(Temp);
+  return true;
 }
 
 

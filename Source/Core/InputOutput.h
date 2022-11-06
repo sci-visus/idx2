@@ -60,7 +60,7 @@ namespace idx2
   idx2_RAII(FILE*, Fp = fopen(FileName, Mode), , if (Fp) fclose(Fp));                              \
   if (!Fp)                                                                                         \
   {                                                                                                \
-    CreateFullDir(GetDirName(FileName));                                                           \
+    CreateFullDir(GetParentPath(FileName));                                                           \
     Fp = fopen(FileName, Mode);                                                                    \
     idx2_Assert(Fp);                                                                               \
   }

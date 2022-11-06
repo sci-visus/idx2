@@ -42,6 +42,20 @@ path::path(const stref& Str)
 }
 
 
+bool
+path::operator==(const path& Other) const
+{
+  if (this->NParts != Other.NParts)
+    return false;
+  for (int I = 0; I < this->NParts; ++I)
+  {
+    if (this->Parts[I] != Other.Parts[I])
+      return false;
+  }
+  return true;
+}
+
+
 void
 Init(path* Path, const stref& Str)
 {
@@ -72,7 +86,7 @@ GetFileName(const stref& Path)
 
 
 stref
-GetDirName(const stref& Path)
+GetParentPath(const stref& Path)
 {
   idx2_Assert(!Contains(Path, '\\'));
   cstr LastSlash = FindLast(RevBegin(Path), RevEnd(Path), '/');

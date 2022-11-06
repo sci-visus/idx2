@@ -67,7 +67,7 @@ ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level)
   int Shift = 0;
   thread_local static char FilePath[256];
   printer Pr(FilePath, sizeof(FilePath));
-  idx2_Print(&Pr, "%s/%s/%s/TruncationPoints/", Idx2.Dir, Idx2.Name, Idx2.Field);
+  idx2_Print(&Pr, "%.*s/%s/%s/TruncationPoints/", Idx2.Dir.Size, Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
   idx2_PrintLevel;
   idx2_PrintBrick;
   idx2_PrintExtension;
@@ -106,7 +106,7 @@ ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 B
   int Shift = 0;
   thread_local static char FilePath[256];
   printer Pr(FilePath, sizeof(FilePath));
-  idx2_Print(&Pr, "%s/%s/%s/BrickData/", Idx2.Dir, Idx2.Name, Idx2.Field);
+  idx2_Print(&Pr, "%.*s/%s/%s/BrickData/", Idx2.Dir.Size, Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
   if (!Idx2.GroupBitPlanes)
     idx2_PrintBitPlane;
   if (!Idx2.GroupLevels)
@@ -144,7 +144,7 @@ ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLev
   int Shift = 0;
   thread_local static char FilePath[256];
   printer Pr(FilePath, sizeof(FilePath));
-  idx2_Print(&Pr, "%s/%s/%s/BrickExponents/", Idx2.Dir, Idx2.Name, Idx2.Field);
+  idx2_Print(&Pr, "%.*s/%s/%s/BrickExponents/", Idx2.Dir.Size, Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
   idx2_PrintLevel;
   idx2_PrintSubLevel;
   idx2_PrintBrick;

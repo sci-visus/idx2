@@ -16,6 +16,7 @@ struct path
   int NParts = 0;
   path();
   path(const stref& Str);
+  bool operator==(const path& Other) const;
 };
 
 /* General */
@@ -30,7 +31,7 @@ stref GetExtension(const stref& Path);
 i64 GetFileSize(const stref& Path);
 
 /* Directory related */
-stref GetDirName(const stref& Path);
+stref GetParentPath(const stref& Path);
 bool CreateFullDir(const stref& Path);
 bool DirExists(const stref& Path);
 void RemoveDir(cstr path);

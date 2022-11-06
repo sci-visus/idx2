@@ -120,7 +120,7 @@ SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir)
 
 
 void
-SetDir(idx2_file* Idx2, cstr Dir)
+SetDir(idx2_file* Idx2, stref Dir)
 {
   Idx2->Dir = Dir;
 }

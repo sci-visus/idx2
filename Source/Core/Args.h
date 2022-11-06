@@ -5,7 +5,7 @@
 #include "Array.h"
 #include "Common.h"
 #include "Enum.h"
-
+#include "String.h"
 
 namespace idx2
 {
@@ -13,6 +13,7 @@ namespace idx2
 
 bool OptVal(int NArgs, cstr* Args, cstr Opt, str Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val);
+bool OptVal(int NArgs, cstr* Args, cstr Opt, stref* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, int* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, i64* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val);

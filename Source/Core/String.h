@@ -56,6 +56,9 @@ RevEnd(stref Str);
 bool
 operator==(const stref& Lhs, const stref& Rhs);
 
+bool
+operator!=(const stref& Lhs, const stref& Rhs);
+
 /* Remove spaces at the start of a string */
 stref
 TrimLeft(const stref& Str);

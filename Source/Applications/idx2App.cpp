@@ -35,10 +35,18 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
               "Example: --accuracy 0.01\n");
 
   // Parse the input directory (--in_dir)
-  idx2_ExitIf(
-    !OptVal(Argc, Argv, "--in_dir", &P->InDir),
-    "Provide --in_dir (input directory)\n"
-    "For example, if the input file is C:/Data/MIRANDA/DENSITY.idx2, the --in_dir is C:/Data\n");
+  OptVal(Argc, Argv, "--in_dir", &P->InDir);
+  if (!OptExists(Argc, Argv, "--in_dir"))
+  { // try to parse the input directory from the input file
+    auto Parent = GetParentPath(P->InputFile);
+    P->InDir = GetParentPath(Parent);
+    if (P->InDir == Parent)
+      P->InDir = "./";
+  }
+  //idx2_ExitIf(
+  //  !OptVal(Argc, Argv, "--in_dir", &P->InDir),
+  //  "Provide --in_dir (input directory)\n"
+  //  "For example, if the input file is C:/Data/MIRANDA/DENSITY.idx2, the --in_dir is C:/Data\n");
 
   /* Parse the optional quality and decode levels */
   OptVal(Argc, Argv, "--quality_level", &P->QualityLevel);

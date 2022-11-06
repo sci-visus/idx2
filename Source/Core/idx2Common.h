@@ -88,7 +88,7 @@ struct params
   int DecodePrecision = 0;
   int QualityLevel = -1;
   cstr OutDir = ".";      // TODO: change this to local storage
-  cstr InDir = ".";       // TODO: change this to local storage
+  stref InDir = ".";       // TODO: change this to local storage
   cstr OutFile = nullptr; // TODO: change this to local storage
   bool Pause = false;
   enum class out_mode
@@ -173,7 +173,7 @@ struct idx2_file
   stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
   transform_details Td;           // used for normal transform
   transform_details TdExtrpolate; // used only for extrapolation
-  cstr Dir = "./";
+  stref Dir;
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
   array<int> QualityLevelsIn; // [] -> bytes
   array<i64> RdoLevels;       // [] -> bytes
@@ -251,7 +251,7 @@ void
 SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
 
 void
-SetDir(idx2_file* Idx2, cstr Dir);
+SetDir(idx2_file* Idx2, stref Dir);
 
 void
 SetGroupLevels(idx2_file* Idx2, bool GroupLevels);
