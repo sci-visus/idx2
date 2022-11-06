@@ -219,14 +219,32 @@ GetFileAddressRdo(int BricksPerFile, u64 Brick, i8 Iter)
 
 
 idx2_Inline u64
-GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
+GetAddress(u64 Brick, int BrickShift, i8 Level, i8 SubLevel, i16 BitPlane)
 {
-  return (Idx2.GroupLevels ? 0 : u64(Iter) << 60) +                  // 4 bits
-         u64((Brick >> Log2Ceil(Idx2.BricksPerFile[Iter])) << 18) + // 42 bits
-         (Idx2.GroupSubLevels ? 0 : u64(Level) << 12) +              // 6 bits
-         BitPlaneIsExponent(BitPlane)
-           ? (u64(BitPlane) & 0xFFF)
-           : (Idx2.GroupBitPlanes ? 0 : u64(BitPlane) & 0xFFF); // 12 bits
+  return (u64(Level) << 60) +               // 4 bits
+         u64((Brick >> BrickShift) << 18) + // 42 bits
+         (u64(SubLevel << 12)) +            // 6 bits
+         (u64(BitPlane) & 0xFFF);           // 12 bits
+}
+
+
+idx2_Inline u64
+GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
+{
+  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerChunk[Level]), Level, SubLevel, BitPlane);
+}
+
+
+idx2_Inline u64
+GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
+{
+  if (Idx2.GroupSubLevels)
+    SubLevel = 0;
+  if (Idx2.GroupLevels)
+    Level = 0;
+  if (!BitPlaneIsExponent(BitPlane) && Idx2.GroupBitPlanes)
+    BitPlane = 0;
+  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, SubLevel, BitPlane);
 }
 
 
@@ -240,16 +258,6 @@ ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 B
 
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress);
-
-
-idx2_Inline u64
-GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
-{
-  return (u64(Iter) << 60) +                                          // 4 bits
-         u64((Brick >> Log2Ceil(Idx2.BricksPerChunk[Iter])) << 18) + // 42 bits
-         (u64(Level << 12)) +                                         // 6 bits
-         (u64(BitPlane) & 0xFFF);                                     // 12 bits
-}
 
 
 // Compose a key from Brick + Iteration

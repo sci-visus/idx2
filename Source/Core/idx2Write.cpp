@@ -26,6 +26,7 @@ static stat ChunkAddrsStat;
 static stat ChunkSzsStat;
 
 
+static int Iteration = 0;
 // Write once per chunk
 void
 WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 Iter, i8 Level)
@@ -42,6 +43,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
 
   /* write to file */
   file_id FileId = ConstructFilePath(Idx2, Sc->LastBrick, Iter, Level, ExponentBitPlane_);
+  printf("%d: write file = %llu %s\n", Iteration++, FileId.Id, FileId.Name.ConstPtr);
   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   WriteBuffer(Fp, ToBuffer(E->ChunkEMaxesStream));
   /* keep track of the chunk sizes */
@@ -77,6 +79,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
   {
     bitstream* ChunkEMaxSzs = CemIt.Val;
     file_id FileId = ConstructFilePath(Idx2, *CemIt.Key);
+    printf("%d: flush file = %llu %s\n", Iteration++, FileId.Id, FileId.Name.ConstPtr);
     idx2_Assert(FileId.Id == *CemIt.Key);
     /* write chunk emax sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
