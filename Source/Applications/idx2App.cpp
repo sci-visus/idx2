@@ -14,25 +14,29 @@ using namespace idx2;
 static void
 ParseDecodeOptions(int Argc, cstr* Argv, params* P)
 {
+  idx2_ExitIf(!OptVal(Argc, Argv, "--decode", &P->InputFile), "Provide input file after --decode\n"); // TODO: we actually cannot detect if --decode is not followed by a file name
   v3i First3, Last3;
-  // Parse the first extent coordinates (--first)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--first", &First3),
-              "Provide --first (the first sample of the box to decode)\n"
-              "Example: --first 0 400 0\n");
+  if (OptExists(Argc, Argv, "--first") || OptExists(Argc, Argv, "--last"))
+  {
+    // Parse the first extent coordinates (--first)
+    idx2_ExitIf(!OptVal(Argc, Argv, "--first", &First3),
+                "Provide --first (the first sample of the box to decode)\n"
+                "Example: --first 0 400 0\n");
 
-  // Parse the last extent coordinates (--last)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--last", &Last3),
-              "Provide --last (the last sample of the box to decode)\n"
-              "Example: --first 919 655 719\n");
-  P->DecodeExtent = extent(First3, Last3 - First3 + 1);
+    // Parse the last extent coordinates (--last)
+    idx2_ExitIf(!OptVal(Argc, Argv, "--last", &Last3),
+                "Provide --last (the last sample of the box to decode)\n"
+                "Example: --first 919 655 719\n");
+    P->DecodeExtent = extent(First3, Last3 - First3 + 1);
+  }
 
   // Parse the downsampling factor
   idx2_ExitIf(!OptVal(Argc, Argv, "--downsampling", &P->DownsamplingFactor3), "Provide --downsampling (0 0 0 means full resolution, 1 1 2 means half X, half Y, quarter Z)\n");
 
   // Parse the decode accuracy (--accuracy)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--accuracy", &P->DecodeAccuracy),
-              "Provide --accuracy\n"
-              "Example: --accuracy 0.01\n");
+  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->DecodeAccuracy),
+              "Provide --tolerance\n"
+              "Example: --tolerance 0.01\n");
 
   // Parse the input directory (--in_dir)
   OptVal(Argc, Argv, "--in_dir", &P->InDir);
@@ -109,6 +113,7 @@ CheckFileSizes(params* P)
 static void
 ParseEncodeOptions(int Argc, cstr* Argv, params* P)
 {
+  idx2_ExitIf(!OptVal(Argc, Argv, "--encode", &P->InputFile), "Provide input file after --encode\n"); // TODO: we actually cannot currently detect if --encode is not followed by a file names
   // First, try to parse the metadata from the file name
   auto ParseOk = StrToMetaData(P->InputFile, &P->Meta);
   // if the previous parse fails, parse metadata from the command line
@@ -130,34 +135,38 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
   idx2_ExitIf(P->Meta.DType == dtype::__Invalid__, "Data type not supported\n");
 
   // Parse the brick dimensions (--brick_size)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--brick_size", &P->BrickDims3),
-              "Provide --brick_size\n"
-              "Example: --brick_size 32 32 32\n");
+  OptVal(Argc, Argv, "--brick_size", &P->BrickDims3);
+  //idx2_ExitIf(!OptVal(Argc, Argv, "--brick_size", &P->BrickDims3),
+  //            "Provide --brick_size\n"
+  //            "Example: --brick_size 32 32 32\n");
 
   // Parse the number of levels (--num_levels)
   idx2_ExitIf(!OptVal(Argc, Argv, "--num_levels", &P->NLevels),
               "Provide --num_levels\n"
               "Example: --num_levels 2\n");
 
-  // Parse the accuracy (--accuracy)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--accuracy", &P->Accuracy),
-              "Provide --accuracy\n"
-              "Example: --accuracy 1e-9\n");
+  // Parse the tolerance (--tolerance)
+  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->Accuracy),
+              "Provide --tolerance for absolute error tolerance\n"
+              "Example: --tolerance 1e-9\n");
 
-  // Parse the number of bricks per tile (--bricks_per_tile)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--bricks_per_tile", &P->BricksPerChunk),
-              "Provide --bricks_per_tile\n"
-              "Example: --bricks_per_tile 512\n");
+  OptVal(Argc, Argv, "--bricks_per_tile", &P->BricksPerChunk);
+  OptVal(Argc, Argv, "--tiles_per_file", &P->ChunksPerFile);
+  OptVal(Argc, Argv, "--files_per_dir", &P->FilesPerDir);
+  //// Parse the number of bricks per tile (--bricks_per_tile)
+  //idx2_ExitIf(!OptVal(Argc, Argv, "--bricks_per_tile", &P->BricksPerChunk),
+  //            "Provide --bricks_per_tile\n"
+  //            "Example: --bricks_per_tile 512\n");
 
-  // Parse the number of tiles per file (--tiles_per_file)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--tiles_per_file", &P->ChunksPerFile),
-              "Provide --tiles_per_file\n"
-              "Example: --tiles_per_file 4096\n");
+  //// Parse the number of tiles per file (--tiles_per_file)
+  //idx2_ExitIf(!OptVal(Argc, Argv, "--tiles_per_file", &P->ChunksPerFile),
+  //            "Provide --tiles_per_file\n"
+  //            "Example: --tiles_per_file 4096\n");
 
-  // Parse the number of files per directory (--files_per_dir)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--files_per_dir", &P->FilesPerDir),
-              "Provide --files_per_dir\n"
-              "Example: --files_per_dir 4096\n");
+  //// Parse the number of files per directory (--files_per_dir)
+  //idx2_ExitIf(!OptVal(Argc, Argv, "--files_per_dir", &P->FilesPerDir),
+  //            "Provide --files_per_dir\n"
+  //            "Example: --files_per_dir 4096\n");
 
   // Parse the optional RDO levels (--quality_levels)
   OptVal(Argc, Argv, "--quality_levels", &P->RdoLevels);
@@ -197,12 +206,17 @@ ParseParams(int Argc, cstr* Argv)
              : OptExists(Argc, Argv, "--decode") ? P.Action = action::Decode
                                                  : action::__Invalid__;
 
-  idx2_ExitIf(P.Action == action::__Invalid__, "Provide either --encode or --decode\n");
+  idx2_ExitIf(P.Action == action::__Invalid__,
+              "Provide either --encode or --decode\n"
+              "Example 1: --encode /Users/abc/Miranda-Density-[384-384-256]-Float64.raw\n"
+              "Example 2: --encode Miranda-Density-[384-384-256]-Float64.raw\n"
+              "Example 3: --decode /Users/abc/Miranda/Density.idx2\n"
+              "Example 4: --decode Miranda/Density.idx2\n");
 
-  // Parse the input file (--input)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--input", &P.InputFile),
-              "Provide --input\n"
-              "Example: --input /Users/abc/MIRANDA-DENSITY-[384-384-256]-Float64.raw\n");
+  //// Parse the input file (--input)
+  //idx2_ExitIf(!OptVal(Argc, Argv, "--input", &P.InputFile),
+  //            "Provide --input\n"
+  //            "Example: --input /Users/abc/MIRANDA-DENSITY-[384-384-256]-Float64.raw\n");
 
   // Parse the pause option (--pause): wait for keyboard input at the end
   P.Pause = OptExists(Argc, Argv, "--pause");

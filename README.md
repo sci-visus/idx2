@@ -14,29 +14,34 @@ Currently there is an executable (named `idx2App`) for 2-way conversion between 
 
 The optional dependencies are only needed if `BUILD_IDX2PY` is set to `ON` in CMake.
 
-# Using `idx2App` to convert from raw to idx2
+# Using the `idx2App` command line tool to encode raw to idx2
 ```
-idx2App --encode --input MIRANDA-VISCOSITY-[384-384-256]-Float64.raw --accuracy 1e-16 --num_levels 2 --brick_size 64 64 64 --bricks_per_tile 512 --tiles_per_file 512 --files_per_dir 512 --out_dir .
+idx2App --encode Miranda-Viscosity-[384-384-256]-Float64.raw --tolerance 1e-16 --num_levels 2 --out_dir .
 ```
 
-For convenience, the metadata is automatically parsed if the input raw file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.raw` format, where `Name` and `Field` can be anything, `DimX`, `DimY`, `DimZ` are the field's dimensions (any of which can be 1), and `Type` is either `Float32` or `Float64` (currently idx2 only supports **floating-point** scalar fields).
+For convenience, the dimensions of the input are automatically parsed if the input raw file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.raw` format, where `Name` and `Field` can be anything, `DimX`, `DimY`, `DimZ` are the field's dimensions (any of which can be 1), and `Type` is either `Float32` or `Float64` (currently idx2 only supports **floating-point** scalar fields).
 If the input raw file name is not in this form, please additionally provide `--name`, `--field`, `--dims`, and `--type`.
-Most of the time, the only options that should be customized are `--input` (the input raw file), `--out_dir` (the output directory), `--num_levels` (the number of resolution levels) and `--accuracy` (the absolute error tolerance). The output will be multiple files written to the `out_dir/Name` directory, and the main metadata file is `out_dir/Name/Field.idx2`.
+Most of the time, the only options that should be customized are `--input` (the input raw file), `--out_dir` (the output directory), `--num_levels` (the number of resolution levels) and `--tolerance` (the absolute error tolerance).
+The outputs will be multiple files written to the `out_dir/Name` directory, and the main metadata is stored in `out_dir/Name/Field.idx2`.
 
-# Using `idx2` to convert from idx2 to raw
+# Using the `idx2App` command line tool to decode idx2 to raw
 ```
-idx2App --decode --input MIRANDA/VISCOSITY.idx2 --in_dir . --first 0 0 0 --last 383 383 255 --downsampling 1 1 1 --accuracy 0.001
+idx2App --decode Miranda/Viscosity.idx2 --downsampling 1 1 1 --tolerance 0.001
 ```
 
-Use `--first` and `--last` (inclusive) to specify the region of interest (which can be the whole field), `--downsampling` specifies the desired downsampling passes along each axis (each pass halves the number of samples along an axis), and `--accuracy` to specify the desired absolute error tolerance. The output will be written to a "raw" file in the directory specified by `--in_dir`.
+`--downsampling` specifies the desired downsampling passes along each axis (each pass halves the number of samples along an axis), and `--accuracy` to specify the desired absolute error tolerance.
+The output will be written to a raw file in the current directory.
+Optionally, use `--first x_begin y_begin z_begin` and `--last x_end y_end z_end` (the end points are inclusive) to specify the region of interest instead of decoding the whole field.
 
-# Reading data from idx2 to memory
+# Using the C++ API to read from an idx2 dataset to memory
 
-## Using `idx2`
-With CMake, you can build an `idx2` library and link it against your project. Then, just `#include <idx2.h>` to use it.
+See the `Source/Applications/idx2Samples.cpp` file for an example of how to use idx2's C++ API.
 
-## Using the header-only library `idx2.hpp`
-Alternatively, you may want to just include a single header file for convenience. The `idx2.hpp` header file can be included anywhere, but you need to `#define idx2_Implementation` in *exactly one* of your cpp files before including it.
+## (Most convenient option) Using the header-only library `idx2.hpp`
+Just include a single header file for convenience. The `idx2.hpp` header file can be included anywhere, but you need to `#define idx2_Implementation` in *exactly one* of your cpp files before including it.
+
+## Using the compiled `idx2` library
+Alternatively, with CMake, you can build an `idx2` library and link it against your project. Then, just `#include <idx2.h>` to use it.
 
 ```
 #define idx2_Implementation

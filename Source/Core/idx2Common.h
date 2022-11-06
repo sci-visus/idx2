@@ -73,14 +73,14 @@ struct params
   metadata Meta;
   v2i Version = v2i(1, 0);
   // v3i Dims3 = v3i(256);
-  v3i BrickDims3 = v3i(32);
+  v3i BrickDims3 = v3i(64);
   array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
   int NLevels = 1;
-  f64 Accuracy = 1e-9;
+  f64 Accuracy = 1e-7;
   int BricksPerChunk = 512;
-  int ChunksPerFile = 4096;
-  int FilesPerDir = 4096;
+  int ChunksPerFile = 512;
+  int FilesPerDir = 512;
   /* decode exclusive */
   extent DecodeExtent;
   v3i DownsamplingFactor3; // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
