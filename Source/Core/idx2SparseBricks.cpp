@@ -1,5 +1,5 @@
 #include "idx2SparseBricks.h"
-
+#include "idx2Common.h"
 
 namespace idx2
 {

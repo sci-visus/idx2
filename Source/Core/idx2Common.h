@@ -73,7 +73,7 @@ struct params
   metadata Meta;
   v2i Version = v2i(1, 0);
   // v3i Dims3 = v3i(256);
-  v3i BrickDims3 = v3i(64);
+  v3i BrickDims3 = v3i(32);
   array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
   int NLevels = 1;
@@ -128,10 +128,10 @@ struct idx2_file
   static constexpr int MaxBrickDim =
     256; // so max number of blocks per subband can be represented in 2 bytes
   static constexpr int MaxLevels = 16;
-  static constexpr int MaxTformPassesPerLevels = 9;
+  static constexpr int MaxTransformPassesPerLevels = 9;
   static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
-  char Name[32] = {};
-  char Field[32] = {};
+  char Name[64] = {};
+  char Field[64] = {};
   v3i Dims3 = v3i(256);
   v3i DownsamplingFactor3 = v3i(0);
   dtype DType = dtype::__Invalid__;
@@ -140,7 +140,7 @@ struct idx2_file
   v3i BlockDims3 = v3i(4);
   v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
   static constexpr int NTformPasses = 1;
-  u64 TformOrder = 0;
+  u64 TransformOrder = 0;
   stack_array<u8, MaxLevels> DecodeSubbandMasks; // one subband mask per level
   stack_array<v3i, MaxLevels> NBricks3; // number of bricks per level
   stack_array<v3i, MaxLevels> NChunks3;
@@ -173,7 +173,7 @@ struct idx2_file
   stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
   transform_details Td;           // used for normal transform
   transform_details TdExtrpolate; // used only for extrapolation
-  stref Dir;
+  stref Dir; // the directory containing the idx2 dataset
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
   array<int> QualityLevelsIn; // [] -> bytes
   array<i64> RdoLevels;       // [] -> bytes

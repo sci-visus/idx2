@@ -499,7 +499,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
   idx2_Assert(BVol.Buffer);
 
   // TODO: we do not need to pre-extrapolate
-  ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TformOrder, &BVol);
+  ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TransformOrder, &BVol);
 
   /* do wavelet transform */
   if (!P.WaveletOnly)

@@ -186,7 +186,7 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "    (version %d %d)\n", Idx2.Version[0], Idx2.Version[1]);
   fprintf(Fp, "    (brick-size %d %d %d)\n", idx2_PrV3i(Idx2.BrickDims3));
   char TransformOrder[128];
-  DecodeTransformOrder(Idx2.TformOrder, TransformOrder);
+  DecodeTransformOrder(Idx2.TransformOrder, TransformOrder);
   fprintf(Fp, "    (transform-order \"%s\")\n", TransformOrder);
   fprintf(Fp, "    (num-levels %d)\n", Idx2.NLevels);
   fprintf(Fp, "    (transform-passes-per-levels %d)\n", Idx2.NTformPasses);
@@ -325,10 +325,10 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-order"))
         {
           idx2_Assert(Expr->type == SE_STRING);
-          Idx2->TformOrder =
+          Idx2->TransformOrder =
             EncodeTransformOrder(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
           char TransformOrder[128];
-          DecodeTransformOrder(Idx2->TformOrder, TransformOrder);
+          DecodeTransformOrder(Idx2->TransformOrder, TransformOrder);
           //          printf("Transform order = %s\n", TransformOrder);
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "num-levels"))
@@ -427,9 +427,9 @@ ComputeTransformOrder(idx2_file* Idx2, const params& P, char* TformOrder)
   }
   TformOrder[J++] = '+';
   TformOrder[J++] = '+';
-  Idx2->TformOrder = EncodeTransformOrder(TformOrder);
+  Idx2->TransformOrder = EncodeTransformOrder(TformOrder);
   Idx2->TransformOrderFull.Len =
-    DecodeTransformOrder(Idx2->TformOrder, Idx2->NTformPasses, Idx2->TransformOrderFull.Data);
+    DecodeTransformOrder(Idx2->TransformOrder, Idx2->NTformPasses, Idx2->TransformOrderFull.Data);
 }
 
 
@@ -438,8 +438,8 @@ static void
 BuildSubbands(idx2_file* Idx2, const params& P)
 {
   Idx2->BrickDimsExt3 = idx2_ExtDims(Idx2->BrickDims3);
-  BuildSubbands(Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->Subbands);
-  BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TformOrder, &Idx2->SubbandsNonExt);
+  BuildSubbands(Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->Subbands);
+  BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->SubbandsNonExt);
 
   // Compute the decode subband mask based on DownsamplingFactor3
   v3i Df3 = P.DownsamplingFactor3;
@@ -666,9 +666,9 @@ ComputeFileDirDepths(idx2_file* Idx2, const params& P)
 static void
 ComputeWaveletTransformDetails(idx2_file* Idx2)
 {
-  ComputeTransformDetails(&Idx2->Td, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TformOrder);
+  ComputeTransformDetails(&Idx2->Td, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder);
   int NLevels = Log2Floor(Max(Max(Idx2->BrickDims3.X, Idx2->BrickDims3.Y), Idx2->BrickDims3.Z));
-  ComputeTransformDetails(&Idx2->TdExtrpolate, Idx2->BrickDims3, NLevels, Idx2->TformOrder);
+  ComputeTransformDetails(&Idx2->TdExtrpolate, Idx2->BrickDims3, NLevels, Idx2->TransformOrder);
 }
 
 

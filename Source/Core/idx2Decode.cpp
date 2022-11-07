@@ -135,7 +135,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     bool CodedInNextIter =
       D->Subband == 0 && D->Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextIter)
-      continue; // CodedInNextIter just means that this block belongs to the LLL subband?
+      continue; // CodedInNextIter j/ust means that this block belongs to the LLL subband?
     // we read the exponent for the block
     i16 EMax = SizeOf(Idx2.DType) > 4
                  ? (i16)Read(&BrickExpsStream, 16) - traits<f64>::ExpBias
