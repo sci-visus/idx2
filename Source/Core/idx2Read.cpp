@@ -78,13 +78,16 @@ DeallocFileCacheTable(file_cache_table* FileCacheTable)
 
 /* Given a brick address, open the file associated with the brick and cache its chunk information */
 static error<idx2_err_code>
-ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, const file_id& FileId)
+ReadFile(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id& FileId)
 {
   timer IOTimer;
   StartTimer(&IOTimer);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-  idx2_ReturnErrorIf(!Fp, idx2::idx2_err_code::FileNotFound);
+  idx2_ReturnErrorIf(!Fp, idx2::idx2_err_code::FileNotFound, "File: %s", FileId.Name.ConstPtr);
   idx2_FSeek(Fp, 0, SEEK_END);
+  int S = 0; // total number of bytes used to store exponents info
+  ReadBackwardPOD(Fp, &S);
+  idx2_FSeek(Fp, S, SEEK_CUR); // skip the exponents info at the end
   int NChunks = 0;
   ReadBackwardPOD(Fp, &NChunks);
   // TODO: check if there are too many NChunks
@@ -134,21 +137,21 @@ ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, con
 }
 
 
+/* Read and decode the sizes of the compressed exponent chunks in a file */
 static error<idx2_err_code>
-ReadFileExponents(decode_data* D,
-                  file_cache_table::iterator* FileCacheIt,
-                  const file_id& FileId)
+ReadFileExponents(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id& FileId)
 {
   timer IOTimer;
   StartTimer(&IOTimer);
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
+  idx2_ReturnErrorIf(!Fp, idx2::idx2_err_code::FileNotFound, "File: %s", FileId.Name.ConstPtr);
   idx2_FSeek(Fp, 0, SEEK_END);
   int S = 0; // total bytes of the encoded chunk sizes
+  ReadBackwardPOD(Fp, &S); // ignore this
   ReadBackwardPOD(Fp, &S);
-  //  idx2_AbortIf(ChunkEMaxSzsSz > 0, "Invalid ChunkEMaxSzsSz from file %s\n",
-  //  FileId.Name.ConstPtr); // TODO: we need better validity checking
   Rewind(&D->ChunkEMaxSzsStream);
   GrowToAccomodate(&D->ChunkEMaxSzsStream, S - Size(D->ChunkEMaxSzsStream));
+  // Read the emax sizes
   ReadBackwardBuffer(Fp, &D->ChunkEMaxSzsStream.Stream, S);
   D->BytesExps_ += sizeof(int) + S;
   D->DecodeIOTime_ += ElapsedTime(&IOTimer);
@@ -208,7 +211,6 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i
                     ChunkCache,
                     ChunkAddress,
                     Log2Ceil(Idx2.BricksPerChunk[Iter])); // TODO: check for error
-    //    PushBack(&D->RequestedChunks, t2<u64, u64>{ChunkAddress, FileId.Id});
   }
 
   return ChunkCacheIt.Val;
@@ -257,6 +259,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     InitRead(&ChunkExpStream, ChunkExpStream.Stream);
     FileCache->ChunkExpCaches[D->ChunkInFile] = ChunkExpCache;
   }
+
   return &FileCache->ChunkExpCaches[D->ChunkInFile];
 }
 

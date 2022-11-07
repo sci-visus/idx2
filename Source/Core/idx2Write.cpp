@@ -80,7 +80,6 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     i8 Level = LevelFromChannelKey(*ScIt.Key);
     WriteChunkExponents(Idx2, E, ScIt.Val, Iteration, Level);
   }
-  // TODO: write the E->FileEMaxBuffer
   // TODO: deallocate the file emax buffer after it is flushed to a file
   // TODO: need to "interleave" this with FlushChunk
   // TODO: detect that we are done with a file to flush it as soon as possible instead of at the end (maybe count the number of chunks in a file)
@@ -101,7 +100,11 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     WriteBuffer(Fp, ToBuffer(*ChunkEMaxSzs));
     // write the number of chunks with exponent info
     WritePOD(Fp, (int)Size(*ChunkEMaxSzs));
+    // write the total number of bytes used for storin the exponents
+    auto TotalExpBytes = ToBuffer(CemIt.Val->FileEMaxBuffer).Bytes + ToBuffer(*ChunkEMaxSzs).Bytes + sizeof(int);
+    WritePOD(Fp, (int)TotalExpBytes);
   }
+
   return idx2_Error(idx2_err_code::NoError);
 }
 
