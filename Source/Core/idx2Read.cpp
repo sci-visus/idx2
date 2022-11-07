@@ -202,38 +202,38 @@ ReadFileExponents(decode_data* D,
 }
 
 
-static error<idx2_err_code>
-ReadFileRdos(const idx2_file& Idx2,
-             hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
-             const file_id& FileId)
-{
-  timer IOTimer;
-  StartTimer(&IOTimer);
-  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-  idx2_FSeek(Fp, 0, SEEK_END);
-  int NumChunks = 0;
-  i64 Sz = idx2_FTell(Fp) - sizeof(NumChunks);
-  ReadBackwardPOD(Fp, &NumChunks);
-  //BytesRdos_ += sizeof(NumChunks);
-  file_rdo_cache FileRdoCache;
-  Resize(&FileRdoCache.TileRdoCaches, NumChunks);
-  idx2_RAII(buffer, CompresBuf, AllocBuf(&CompresBuf, Sz), DeallocBuf(&CompresBuf));
-  ReadBackwardBuffer(Fp, &CompresBuf);
-  //DecodeIOTime_ += ElapsedTime(&IOTimer);
-  //BytesRdos_ += Size(CompresBuf);
-  idx2_RAII(bitstream, Bs, );
-  DecompressBufZstd(CompresBuf, &Bs);
-  int Pos = 0;
-  idx2_For (int, I, 0, Size(FileRdoCache.TileRdoCaches))
-  {
-    chunk_rdo_cache& TileRdoCache = FileRdoCache.TileRdoCaches[I];
-    Resize(&TileRdoCache.TruncationPoints, Size(Idx2.RdoLevels) * Size(Idx2.Subbands));
-    idx2_ForEach (It, TileRdoCache.TruncationPoints)
-      *It = ((const i16*)Bs.Stream.Data)[Pos++];
-  }
-  Insert(FileRdoCacheIt, FileId.Id, FileRdoCache);
-  return idx2_Error(idx2_err_code::NoError);
-}
+//static error<idx2_err_code>
+//ReadFileRdos(const idx2_file& Idx2,
+//             hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
+//             const file_id& FileId)
+//{
+//  timer IOTimer;
+//  StartTimer(&IOTimer);
+//  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
+//  idx2_FSeek(Fp, 0, SEEK_END);
+//  int NumChunks = 0;
+//  i64 Sz = idx2_FTell(Fp) - sizeof(NumChunks);
+//  ReadBackwardPOD(Fp, &NumChunks);
+//  //BytesRdos_ += sizeof(NumChunks);
+//  file_rdo_cache FileRdoCache;
+//  Resize(&FileRdoCache.TileRdoCaches, NumChunks);
+//  idx2_RAII(buffer, CompresBuf, AllocBuf(&CompresBuf, Sz), DeallocBuf(&CompresBuf));
+//  ReadBackwardBuffer(Fp, &CompresBuf);
+//  //DecodeIOTime_ += ElapsedTime(&IOTimer);
+//  //BytesRdos_ += Size(CompresBuf);
+//  idx2_RAII(bitstream, Bs, );
+//  DecompressBufZstd(CompresBuf, &Bs);
+//  int Pos = 0;
+//  idx2_For (int, I, 0, Size(FileRdoCache.TileRdoCaches))
+//  {
+//    chunk_rdo_cache& TileRdoCache = FileRdoCache.TileRdoCaches[I];
+//    Resize(&TileRdoCache.TruncationPoints, Size(Idx2.RdoLevels) * Size(Idx2.Subbands));
+//    idx2_ForEach (It, TileRdoCache.TruncationPoints)
+//      *It = ((const i16*)Bs.Stream.Data)[Pos++];
+//  }
+//  Insert(FileRdoCacheIt, FileId.Id, FileRdoCache);
+//  return idx2_Error(idx2_err_code::NoError);
+//}
 
 
 /* Given a brick address, read the chunk associated with the brick and cache the chunk */
