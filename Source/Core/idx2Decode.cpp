@@ -23,7 +23,7 @@ Init(decode_data* D, allocator* Alloc = nullptr)
 {
   Init(&D->BrickPool, 5);
   D->Alloc = Alloc ? Alloc : &BrickAlloc_;
-  Init(&D->FcTable);
+  Init(&D->FileCacheTable);
   Init(&D->Streams, 7);
   //  Reserve(&D->RequestedChunks, 64);
 }
@@ -36,7 +36,7 @@ Dealloc(decode_data* D)
   idx2_ForEach (BrickVolIt, D->BrickPool)
     Dealloc(&BrickVolIt.Val->Vol);
   Dealloc(&D->BrickPool);
-  Dealloc(&D->FcTable);
+  DeallocFileCacheTable(&D->FileCacheTable);
   Dealloc(&D->BlockStream);
   Dealloc(&D->Streams);
   DeallocBuf(&D->CompressedChunkExps);

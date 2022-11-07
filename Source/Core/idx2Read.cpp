@@ -15,17 +15,12 @@ namespace idx2
 
 static error<idx2_err_code>
 ReadFileExponents(decode_data* D,
-                  hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
+                  file_cache_table::iterator* FileExpCacheIt,
                   const file_id& FileId);
 
 
 static error<idx2_err_code>
-ReadFileRdos(const idx2_file& Idx2,
-             hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
-             const file_id& FileId);
-
-static error<idx2_err_code>
-ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, const file_id& FileId);
+ReadFile(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id& FileId);
 
 
 static idx2_Inline bool
@@ -43,13 +38,6 @@ Dealloc(chunk_exp_cache* ChunkExpCache)
 
 
 static void
-Dealloc(chunk_rdo_cache* ChunkRdoCache)
-{
-  Dealloc(&ChunkRdoCache->TruncationPoints);
-}
-
-
-static void
 Dealloc(chunk_cache* ChunkCache)
 {
   Dealloc(&ChunkCache->Bricks);
@@ -59,56 +47,32 @@ Dealloc(chunk_cache* ChunkCache)
 
 
 static void
-Dealloc(file_exp_cache* FileExpCache)
-{
-  idx2_ForEach (ChunkExpCacheIt, FileExpCache->ChunkExpCaches)
-    Dealloc(ChunkExpCacheIt);
-  Dealloc(&FileExpCache->ChunkExpCaches);
-  Dealloc(&FileExpCache->ChunkExpSzs);
-}
-
-
-static void
-Dealloc(file_rdo_cache* FileRdoCache)
-{
-  idx2_ForEach (TileRdoCacheIt, FileRdoCache->TileRdoCaches)
-  {
-    Dealloc(TileRdoCacheIt);
-  }
-}
-
-
-static void
 Dealloc(file_cache* FileCache)
 {
   Dealloc(&FileCache->ChunkSizes);
-  idx2_ForEach (ChunkCacheIt, FileCache->ChunkCaches)
-    Dealloc(ChunkCacheIt.Val);
   Dealloc(&FileCache->ChunkCaches);
+  Dealloc(&FileCache->ChunkExpCaches);
+  Dealloc(&FileCache->ChunkExpSizes);
 }
 
 
-void
-Init(file_cache_table* FileCacheTable)
-{
-  Init(&FileCacheTable->FileCaches, 8);
-  Init(&FileCacheTable->FileExpCaches, 5);
-  Init(&FileCacheTable->FileRdoCaches, 5);
-}
+//void
+//InitFileCacheTable(file_cache_table* FileCacheTable)
+//{
+//  Init(&FileCacheTable->FileCaches, 8);
+//  Init(&FileCacheTable->FileExpCaches, 5);
+//  Init(&FileCacheTable->FileRdoCaches, 5);
+//}
 
 
 void
-Dealloc(file_cache_table* FileCacheTable)
+DeallocFileCacheTable(file_cache_table* FileCacheTable)
 {
-  idx2_ForEach (FileCacheIt, FileCacheTable->FileCaches)
+  idx2_ForEach (FileCacheIt, *FileCacheTable)
+  {
     Dealloc(FileCacheIt.Val);
-  Dealloc(&FileCacheTable->FileCaches);
-  idx2_ForEach (FileExpCacheIt, FileCacheTable->FileExpCaches)
-    Dealloc(FileExpCacheIt.Val);
-  Dealloc(&FileCacheTable->FileExpCaches);
-  idx2_ForEach (FileRdoCacheIt, FileCacheTable->FileRdoCaches)
-    Dealloc(FileRdoCacheIt.Val);
-  Dealloc(&FileCacheTable->FileRdoCaches);
+  }
+  Dealloc(FileCacheTable);
 }
 
 
@@ -172,7 +136,7 @@ ReadFile(decode_data* D, hash_table<u64, file_cache>::iterator* FileCacheIt, con
 
 static error<idx2_err_code>
 ReadFileExponents(decode_data* D,
-                  hash_table<u64, file_exp_cache>::iterator* FileExpCacheIt,
+                  file_cache_table::iterator* FileCacheIt,
                   const file_id& FileId)
 {
   timer IOTimer;
@@ -189,51 +153,17 @@ ReadFileExponents(decode_data* D,
   D->BytesExps_ += sizeof(int) + S;
   D->DecodeIOTime_ += ElapsedTime(&IOTimer);
   InitRead(&D->ChunkEMaxSzsStream, D->ChunkEMaxSzsStream.Stream);
-  file_exp_cache FileExpCache;
-  Reserve(&FileExpCache.ChunkExpSzs, S);
+  file_cache FileCache;
+  Reserve(&FileCache.ChunkExpSizes, S);
   i32 CeSz = 0;
   while (Size(D->ChunkEMaxSzsStream) < S)
-    PushBack(&FileExpCache.ChunkExpSzs, CeSz += (i32)ReadVarByte(&D->ChunkEMaxSzsStream));
-  Resize(&FileExpCache.ChunkExpCaches, Size(FileExpCache.ChunkExpSzs));
+    PushBack(&FileCache.ChunkExpSizes, CeSz += (i32)ReadVarByte(&D->ChunkEMaxSzsStream));
+  Resize(&FileCache.ChunkExpCaches, Size(FileCache.ChunkExpSizes));
   idx2_Assert(Size(D->ChunkEMaxSzsStream) == S);
-  Insert(FileExpCacheIt, FileId.Id, FileExpCache);
+  Insert(FileCacheIt, FileId.Id, FileCache);
 
   return idx2_Error(idx2_err_code::NoError);
 }
-
-
-//static error<idx2_err_code>
-//ReadFileRdos(const idx2_file& Idx2,
-//             hash_table<u64, file_rdo_cache>::iterator* FileRdoCacheIt,
-//             const file_id& FileId)
-//{
-//  timer IOTimer;
-//  StartTimer(&IOTimer);
-//  idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-//  idx2_FSeek(Fp, 0, SEEK_END);
-//  int NumChunks = 0;
-//  i64 Sz = idx2_FTell(Fp) - sizeof(NumChunks);
-//  ReadBackwardPOD(Fp, &NumChunks);
-//  //BytesRdos_ += sizeof(NumChunks);
-//  file_rdo_cache FileRdoCache;
-//  Resize(&FileRdoCache.TileRdoCaches, NumChunks);
-//  idx2_RAII(buffer, CompresBuf, AllocBuf(&CompresBuf, Sz), DeallocBuf(&CompresBuf));
-//  ReadBackwardBuffer(Fp, &CompresBuf);
-//  //DecodeIOTime_ += ElapsedTime(&IOTimer);
-//  //BytesRdos_ += Size(CompresBuf);
-//  idx2_RAII(bitstream, Bs, );
-//  DecompressBufZstd(CompresBuf, &Bs);
-//  int Pos = 0;
-//  idx2_For (int, I, 0, Size(FileRdoCache.TileRdoCaches))
-//  {
-//    chunk_rdo_cache& TileRdoCache = FileRdoCache.TileRdoCaches[I];
-//    Resize(&TileRdoCache.TruncationPoints, Size(Idx2.RdoLevels) * Size(Idx2.Subbands));
-//    idx2_ForEach (It, TileRdoCache.TruncationPoints)
-//      *It = ((const i16*)Bs.Stream.Data)[Pos++];
-//  }
-//  Insert(FileRdoCacheIt, FileId.Id, FileRdoCache);
-//  return idx2_Error(idx2_err_code::NoError);
-//}
 
 
 /* Given a brick address, read the chunk associated with the brick and cache the chunk */
@@ -241,7 +171,7 @@ expected<const chunk_cache*, idx2_err_code>
 ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
 {
   file_id FileId = ConstructFilePath(Idx2, Brick, Iter, Level, BitPlane);
-  auto FileCacheIt = Lookup(&D->FcTable.FileCaches, FileId.Id);
+  auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
   if (!FileCacheIt)
   {
     auto ReadFileOk = ReadFile(D, &FileCacheIt, FileId);
@@ -291,28 +221,29 @@ expected<const chunk_exp_cache*, idx2_err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband)
 {
   file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
-  auto FileExpCacheIt = Lookup(&D->FcTable.FileExpCaches, FileId.Id);
-  if (!FileExpCacheIt)
+  auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
+  if (!FileCacheIt)
   {
-    auto ReadFileOk = ReadFileExponents(D, &FileExpCacheIt, FileId);
+    auto ReadFileOk = ReadFileExponents(D, &FileCacheIt, FileId);
     if (!ReadFileOk)
       idx2_PropagateError(ReadFileOk);
   }
-  if (!FileExpCacheIt)
+  if (!FileCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound);
 
-  file_exp_cache* FileExpCache = FileExpCacheIt.Val;
+  file_cache* FileCache = FileCacheIt.Val;
   idx2_Assert(D->ChunkInFile < Size(FileExpCache->ChunkExpSzs));
 
   /* find the appropriate chunk */
-  if (IsEmpty(FileExpCache->ChunkExpCaches[D->ChunkInFile]))
+  if (IsEmpty(FileCache->ChunkExpCaches[D->ChunkInFile]))
   {
     timer IOTimer;
     StartTimer(&IOTimer);
     idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-    idx2_Assert(Fp); // TODO: return an error
-    i32 ChunkExpOffset = D->ChunkInFile == 0 ? 0 : FileExpCache->ChunkExpSzs[D->ChunkInFile - 1];
-    i32 ChunkExpSize = FileExpCache->ChunkExpSzs[D->ChunkInFile] - ChunkExpOffset;
+    if (!Fp)
+      return idx2_Error(idx2_err_code::FileNotFound, "File: %s", FileId.Name.ConstPtr);
+    i32 ChunkExpOffset = D->ChunkInFile == 0 ? 0 : FileCache->ChunkExpSizes[D->ChunkInFile - 1];
+    i32 ChunkExpSize = FileCache->ChunkExpSizes[D->ChunkInFile] - ChunkExpOffset;
     idx2_FSeek(Fp, ChunkExpOffset, SEEK_SET);
     chunk_exp_cache ChunkExpCache;
     bitstream& ChunkExpStream = ChunkExpCache.BrickExpsStream;
@@ -324,9 +255,9 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     D->BytesExps_ += ChunkExpSize;
     D->DecodeIOTime_ += ElapsedTime(&IOTimer);
     InitRead(&ChunkExpStream, ChunkExpStream.Stream);
-    FileExpCache->ChunkExpCaches[D->ChunkInFile] = ChunkExpCache;
+    FileCache->ChunkExpCaches[D->ChunkInFile] = ChunkExpCache;
   }
-  return &FileExpCache->ChunkExpCaches[D->ChunkInFile];
+  return &FileCache->ChunkExpCaches[D->ChunkInFile];
 }
 
 

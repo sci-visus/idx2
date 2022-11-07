@@ -25,7 +25,7 @@ struct decode_params
 struct decode_data
 {
   allocator* Alloc = nullptr;
-  file_cache_table FcTable;
+  file_cache_table FileCacheTable;
   hash_table<u64, brick_volume> BrickPool;
   i8 Level  = 0; // current level being decoded
   i8 Subband = 0; // current subband being decoded
