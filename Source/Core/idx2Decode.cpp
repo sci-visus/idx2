@@ -86,20 +86,20 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
   /* read the rdo information if present */
-  int MinBitPlane = traits<i16>::Min;
-  if (Size(Idx2.RdoLevels) > 0 && D->QualityLevel >= 0)
-  {
-    //    printf("reading rdo\n");
-    auto ReadChunkRdoResult = ReadChunkRdos(Idx2, D, Brick, D->Level);
-    if (!ReadChunkRdoResult)
-      return Error(ReadChunkRdoResult);
-    const chunk_rdo_cache* ChunkRdoCache = Value(ReadChunkRdoResult);
-    int Ql = Min(D->QualityLevel, (int)Size(Idx2.RdoLevels) - 1);
-    MinBitPlane = ChunkRdoCache->TruncationPoints[D->Subband * Size(Idx2.RdoLevels) + Ql];
-  }
+  //int MinBitPlane = traits<i16>::Min;
+  //if (Size(Idx2.RdoLevels) > 0 && D->QualityLevel >= 0)
+  //{
+  //  //    printf("reading rdo\n");
+  //  auto ReadChunkRdoResult = ReadChunkRdos(Idx2, D, Brick, D->Level);
+  //  if (!ReadChunkRdoResult)
+  //    return Error(ReadChunkRdoResult);
+  //  const chunk_rdo_cache* ChunkRdoCache = Value(ReadChunkRdoResult);
+  //  int Ql = Min(D->QualityLevel, (int)Size(Idx2.RdoLevels) - 1);
+  //  MinBitPlane = ChunkRdoCache->TruncationPoints[D->Subband * Size(Idx2.RdoLevels) + Ql];
+  //}
 
-  if (MinBitPlane == traits<i16>::Max)
-    return idx2_Error(idx2_err_code::NoError);
+  //if (MinBitPlane == traits<i16>::Max)
+  //  return idx2_Error(idx2_err_code::NoError);
   int BlockCount = Prod(NBlocks3);
   if (D->Subband == 0 && D->Level + 1 < Idx2.NLevels)
     BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
@@ -149,8 +149,8 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       i16 RealBp = Bp + EMax;
       if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1)
         break; // this bit plane is not needed to satisfy the input accuracy
-      if (RealBp < MinBitPlane)
-        break; // break due to rdo optimization
+      //if (RealBp < MinBitPlane)
+      //  break; // break due to rdo optimization
       auto StreamIt = Lookup(&Streams, RealBp);
       bitstream* Stream = nullptr;
       if (!StreamIt)

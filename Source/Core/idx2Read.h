@@ -140,8 +140,8 @@ Size(const file_cache_table& F)
 expected<const chunk_exp_cache*, idx2_err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband);
 
-expected<const chunk_rdo_cache*, idx2_err_code>
-ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter);
+//expected<const chunk_rdo_cache*, idx2_err_code>
+//ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter);
 
 expected<const chunk_cache*, idx2_err_code>
 ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter, i8 Level, i16 BitPlane);

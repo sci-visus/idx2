@@ -35,8 +35,8 @@ ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
 }
 
 
-static file_id
-ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel);
+//static file_id
+//ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel);
 
 
 //static idx2_Inline file_id
@@ -49,45 +49,43 @@ ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLev
 //}
 
 
-file_id
-ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level)
-{
-#define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
-#define idx2_PrintBrick                                                                            \
-  for (int Depth = 0; Depth + 1 < Idx2.FilesDirsDepth[Level].Len; ++Depth)                          \
-  {                                                                                                \
-    int BitLen =                                                                                   \
-      idx2_BitSizeOf(u64) - Idx2.BricksOrderStr[Level].Len + Idx2.FilesDirsDepth[Level][Depth];     \
-    idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));                                   \
-    Brick <<= Idx2.FilesDirsDepth[Level][Depth];                                                    \
-    Shift += Idx2.FilesDirsDepth[Level][Depth];                                                     \
-  }
-#define idx2_PrintExtension idx2_Print(&Pr, ".rdo");
-  u64 BrickBackup = Brick;
-  int Shift = 0;
-  thread_local static char FilePath[256];
-  printer Pr(FilePath, sizeof(FilePath));
-  idx2_Print(&Pr, "%.*s/%s/%s/TruncationPoints/", Idx2.Dir.Size, Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
-  idx2_PrintLevel;
-  idx2_PrintBrick;
-  idx2_PrintExtension;
-  u64 FileId = GetFileAddressRdo(Idx2.BricksPerFile[Level], BrickBackup, Level);
-  return file_id{ stref{ FilePath, Pr.Size }, FileId };
-#undef idx2_PrintLevel
-#undef idx2_PrintBrick
-#undef idx2_PrintExtension
-}
+//file_id
+//ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level)
+//{
+//#define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
+//#define idx2_PrintBrick                                                                            \
+//  for (int Depth = 0; Depth + 1 < Idx2.FilesDirsDepth[Level].Len; ++Depth)                          \
+//  {                                                                                                \
+//    int BitLen =                                                                                   \
+//      idx2_BitSizeOf(u64) - Idx2.BricksOrderStr[Level].Len + Idx2.FilesDirsDepth[Level][Depth];     \
+//    idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));                                   \
+//    Brick <<= Idx2.FilesDirsDepth[Level][Depth];                                                    \
+//    Shift += Idx2.FilesDirsDepth[Level][Depth];                                                     \
+//  }
+//#define idx2_PrintExtension idx2_Print(&Pr, ".rdo");
+//  u64 BrickBackup = Brick;
+//  int Shift = 0;
+//  thread_local static char FilePath[256];
+//  printer Pr(FilePath, sizeof(FilePath));
+//  idx2_Print(&Pr, "%.*s/%s/%s/TruncationPoints/", Idx2.Dir.Size, Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
+//  idx2_PrintLevel;
+//  idx2_PrintBrick;
+//  idx2_PrintExtension;
+//  u64 FileId = GetFileAddressRdo(Idx2.BricksPerFile[Level], BrickBackup, Level);
+//  return file_id{ stref{ FilePath, Pr.Size }, FileId };
+//#undef idx2_PrintLevel
+//#undef idx2_PrintBrick
+//#undef idx2_PrintExtension
+//}
 
-// TODO: write a struct to help with bit packing / unpacking so we don't have to manually edit these
-// TODO: make the following inline
 
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
 {
-  if (BitPlaneIsExponent(BitPlane)) //
-  {
-    return ConstructFilePathExponents(Idx2, Brick, Level, SubLevel);
-  }
+//  if (BitPlaneIsExponent(BitPlane)) //
+//  {
+//    return ConstructFilePathExponents(Idx2, Brick, Level, SubLevel);
+//  }
 
 #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
 #define idx2_PrintBrick                                                                            \
@@ -125,37 +123,37 @@ ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 B
 }
 
 
-static file_id
-ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel)
-{
-#define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
-#define idx2_PrintBrick                                                                            \
-  for (int Depth = 0; Depth + 1 < Idx2.FilesDirsDepth[Level].Len; ++Depth)                          \
-  {                                                                                                \
-    int BitLen =                                                                                   \
-      idx2_BitSizeOf(u64) - Idx2.BricksOrderStr[Level].Len + Idx2.FilesDirsDepth[Level][Depth];     \
-    idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));                                   \
-    Brick <<= Idx2.FilesDirsDepth[Level][Depth];                                                    \
-    Shift += Idx2.FilesDirsDepth[Level][Depth];                                                     \
-  }
-#define idx2_PrintSubLevel idx2_Print(&Pr, "/S%02x", SubLevel);
-#define idx2_PrintExtension idx2_Print(&Pr, ".bex");
-  u64 BrickBackup = Brick;
-  int Shift = 0;
-  thread_local static char FilePath[256];
-  printer Pr(FilePath, sizeof(FilePath));
-  idx2_Print(&Pr, "%.*s/%s/%s/BrickExponents/", Idx2.Dir.Size, Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
-  idx2_PrintLevel;
-  idx2_PrintSubLevel;
-  idx2_PrintBrick;
-  idx2_PrintExtension;
-  u64 FileId = GetFileAddress(Idx2, BrickBackup, Level, SubLevel, ExponentBitPlane_);
-  return file_id{ stref{ FilePath, Pr.Size }, FileId };
-#undef idx2_PrintLevel
-#undef idx2_PrintSubLevel
-#undef idx2_PrintBrick
-#undef idx2_PrintExtension
-}
+//static file_id
+//ConstructFilePathExponents(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel)
+//{
+//#define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
+//#define idx2_PrintBrick                                                                            \
+//  for (int Depth = 0; Depth + 1 < Idx2.FilesDirsDepth[Level].Len; ++Depth)                          \
+//  {                                                                                                \
+//    int BitLen =                                                                                   \
+//      idx2_BitSizeOf(u64) - Idx2.BricksOrderStr[Level].Len + Idx2.FilesDirsDepth[Level][Depth];     \
+//    idx2_Print(&Pr, "/B%" PRIx64, TakeFirstBits(Brick, BitLen));                                   \
+//    Brick <<= Idx2.FilesDirsDepth[Level][Depth];                                                    \
+//    Shift += Idx2.FilesDirsDepth[Level][Depth];                                                     \
+//  }
+//#define idx2_PrintSubLevel idx2_Print(&Pr, "/S%02x", SubLevel);
+//#define idx2_PrintExtension idx2_Print(&Pr, ".bex");
+//  u64 BrickBackup = Brick;
+//  int Shift = 0;
+//  thread_local static char FilePath[256];
+//  printer Pr(FilePath, sizeof(FilePath));
+//  idx2_Print(&Pr, "%.*s/%s/%s/BrickExponents/", Idx2.Dir.Size, Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
+//  idx2_PrintLevel;
+//  idx2_PrintSubLevel;
+//  idx2_PrintBrick;
+//  idx2_PrintExtension;
+//  u64 FileId = GetFileAddress(Idx2, BrickBackup, Level, SubLevel, ExponentBitPlane_);
+//  return file_id{ stref{ FilePath, Pr.Size }, FileId };
+//#undef idx2_PrintLevel
+//#undef idx2_PrintSubLevel
+//#undef idx2_PrintBrick
+//#undef idx2_PrintExtension
+//}
 
 
 // file_id

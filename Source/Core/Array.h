@@ -48,6 +48,7 @@ template <typename t> void Reserve(array<t>* Array, i64 Capacity);
 template <typename t> void Clear(array<t>* Array);
 
 template <typename t> void PushBack(array<t>* Array, const t& Item);
+template <typename t> void PushBack(array<t>* Array, const t* Items, i64 NItems);
 template <typename t> void PushBack(array<t>* Array);
 template <typename t> void PopBack(array<t>* Array);
 template <typename t> buffer ToBuffer(const array<t>& Array);
@@ -184,6 +185,19 @@ PushBack(array<t>* Array, const t& Item)
   if (Array->Size >= Array->Capacity)
     SetCapacity(Array);
   (*Array)[Array->Size++] = Item;
+}
+
+template <typename t> idx2_Inline void
+PushBack(array<t>* Array, const t* Items, i64 NItems)
+{
+  i64 Size = Array->Size;
+  i64 NewCapacity = Max(Array->Capacity * 3 / 2 + 8, Size + NItems);
+  SetCapacity(Array, NewCapacity);
+  for (i64 I = 0; I < NItems; ++I)
+  {
+    Array->Buffer[I + Size] = Items[I];
+  }
+  Array->Size = Size + NItems;
 }
 
 

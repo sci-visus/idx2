@@ -20,6 +20,7 @@ namespace idx2
 
 static void
 Init(encode_data* E, allocator* Alloc = nullptr);
+
 static void
 Dealloc(encode_data* E);
 
@@ -63,239 +64,239 @@ struct rdo_mini
 /* Rate distortion optimization is done once per tile and iter/level */
 // TODO: change the word "Chunk" to "Tile" elsewhere where it makes sense
 // TODO: normalize the distortion by the number of samples a chunk has
-static void
-RateDistortionOpt(const idx2_file& Idx2, encode_data* E)
-{
-  if (Size(Idx2.RdoLevels) == 0)
-    return;
-  constexpr u64 InfInt = 0x7FF0000000000000ull;
-  const f64 Inf = *(f64*)(&InfInt);
-
-  auto& ChunkRDOs = E->ChunkRDOs;
-  i16 MinBitPlane = traits<i16>::Max, MaxBitPlane = traits<i16>::Min;
-  idx2_ForEach (CIt, ChunkRDOs)
-  {
-    i16 BitPlane = i16(CIt->Address & 0xFFF);
-    MinBitPlane = Min(MinBitPlane, BitPlane);
-    MaxBitPlane = Max(MaxBitPlane, BitPlane);
-  }
-  //  InsertionSort(Begin(ChunkRDOs), End(ChunkRDOs)); // TODO: this should be quicksort
-  std::sort(Begin(ChunkRDOs), End(ChunkRDOs));
-  array<rdo_precompute> RdoPrecomputes;
-  Reserve(&RdoPrecomputes, 128); // each rdo_precompute corresponds to a tile
-  idx2_CleanUp(idx2_ForEach (It, RdoPrecomputes) {
-    Dealloc(&It->Hull);
-    Dealloc(&It->TruncationPoints);
-  } Dealloc(&RdoPrecomputes););
-  int TileStart = -1, TileEnd = -1;
-  array<rdo_mini> RdoTile;
-  idx2_CleanUp(Dealloc(&RdoTile)); // just for a single tile
-  while (true)
-  { // loop through all chunks and detect the tile boundaries (Start, End)
-    TileStart = TileEnd + 1;
-    if (TileStart >= Size(ChunkRDOs))
-      break;
-    TileEnd = TileStart + 1; // exclusive end
-    const auto& C = ChunkRDOs[TileStart];
-    while (TileEnd < Size(ChunkRDOs) && (ChunkRDOs[TileEnd].Address >> 12) == (C.Address >> 12))
-    {
-      ++TileEnd;
-    }
-    Clear(&RdoTile);
-    Reserve(&RdoTile, TileEnd - TileStart + 1);
-    i16 Bp = i16(ChunkRDOs[TileStart].Address & 0xFFF) + 1;
-    PushBack(&RdoTile, rdo_mini{ pow(2.0, Bp), 0, Inf });
-    i64 PrevLength = 0;
-    idx2_For (int, Z, TileStart, TileEnd)
-    {
-      u64 Addr = (ChunkRDOs[Z].Address >> 12) << 12;
-      auto LIt = Lookup(&E->ChunkRDOLengths, Addr);
-      idx2_Assert(LIt);
-      i16 BitPlane = i16(ChunkRDOs[Z].Address & 0xFFF);
-      PushBack(&RdoTile, rdo_mini{ pow(2.0, BitPlane), PrevLength += ChunkRDOs[Z].Length, 0.0 });
-      ChunkRDOs[Z].Length = PrevLength + *LIt.Val;
-    }
-    array<int> Hull;
-    Reserve(&Hull, Size(RdoTile));
-    PushBack(&Hull, 0);
-    /* precompute the convex hull and lambdas */
-    int HLast = 0;
-    idx2_For (int, Z, 1, Size(RdoTile))
-    {
-      f64 DeltaD = RdoTile[HLast].Distortion - RdoTile[Z].Distortion;
-      f64 DeltaL = f64(RdoTile[Z].Length - RdoTile[HLast].Length);
-      if (DeltaD > 0)
-      {
-        while (DeltaD >= DeltaL * RdoTile[HLast].Lambda)
-        {
-          idx2_Assert(Size(Hull) > 0);
-          PopBack(&Hull);
-          HLast = Back(Hull);
-          DeltaD = RdoTile[HLast].Distortion - RdoTile[Z].Distortion;
-          DeltaL = f64(RdoTile[Z].Length - RdoTile[HLast].Length);
-        }
-        HLast = Z; // TODO: or Z + 1?
-        PushBack(&Hull, HLast);
-        RdoTile[HLast].Lambda = DeltaD / DeltaL;
-      }
-    } // end Z loop
-    idx2_Assert(TileEnd - TileStart + 1 == Size(RdoTile));
-    idx2_For (int, Z, 1, Size(RdoTile))
-    {
-      ChunkRDOs[Z + TileStart - 1].Lambda = RdoTile[Z].Lambda;
-    }
-    u64 Address = ChunkRDOs[TileStart].Address;
-    PushBack(&RdoPrecomputes, rdo_precompute{ Address, TileStart, Hull, array<int>() });
-  }
-
-  /* search for a suitable global lambda */
-  idx2_For (int, R, 0, Size(Idx2.RdoLevels))
-  { // for all quality levels
-    printf("optimizing for rdo level %d\n", R);
-    f64 LowLambda = -2, HighLambda = -1, Lambda = 1;
-    int Count = 0;
-    do
-    { // search for the best Lambda (TruncationPoints stores the output)
-      if (LowLambda > 0 && HighLambda > 0)
-      {
-        ++Count;
-        if (Count >= 20)
-        {
-          Lambda = HighLambda;
-          break;
-        }
-        Lambda = 0.5 * LowLambda + 0.5 * HighLambda;
-      }
-      else if (Lambda == 0)
-      {
-        Lambda = HighLambda;
-        break;
-      }
-      i64 TotalLength = 0;
-      idx2_ForEach (TIt, RdoPrecomputes)
-      { // for each tile
-        int J = 0;
-        while (J + 1 < Size(TIt->Hull))
-        {
-          int Z = TIt->Hull[J + 1] + TIt->Start - 1;
-          idx2_Assert(Z >= TIt->Start);
-          if (ChunkRDOs[Z].Lambda > Lambda)
-            ++J;
-          else
-            break;
-        }
-        Resize(&TIt->TruncationPoints, Size(Idx2.RdoLevels));
-        TIt->TruncationPoints[R] = J;
-        TotalLength += J == 0 ? 0 : ChunkRDOs[TIt->Hull[J] + TIt->Start - 1].Length;
-      }
-      if (TotalLength > Idx2.RdoLevels[R])
-      { // we overshot, need to increase lambda
-        LowLambda = Lambda;
-        if (HighLambda < 0)
-          Lambda *= 2;
-      }
-      else
-      { // we did not overshoot, need to decrease Lambda
-        HighLambda = Lambda;
-        if (LowLambda < 0)
-          Lambda *= 0.5;
-      }
-      // idx2_Assert(LowLambda <= HighLambda);
-    } while (true);
-  }
-
-  /* write the truncation points to files */
-  //  InsertionSort(Begin(RdoPrecomputes), End(RdoPrecomputes)); // TODO: quicksort
-  std::sort(Begin(RdoPrecomputes), End(RdoPrecomputes));
-  i64 Pos = 0;
-  idx2_RAII(array<i16>, Buffer, Reserve(&Buffer, 128));
-  idx2_RAII(bitstream, BitStream, );
-  idx2_For (i8, Iter, 0, Idx2.NLevels)
-  {
-    extent Ext(Idx2.Dims3);
-    v3i BrickDims3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Iter);
-    v3i BrickFirst3 = From(Ext) / BrickDims3;
-    v3i BrickLast3 = Last(Ext) / BrickDims3;
-    extent ExtentInBricks(BrickFirst3, BrickLast3 - BrickFirst3 + 1);
-    v3i ChunkDims3 = Idx2.BricksPerChunk3s[Iter] * BrickDims3;
-    v3i ChunkFirst3 = From(Ext) / ChunkDims3;
-    v3i ChunkLast3 = Last(Ext) / ChunkDims3;
-    extent ExtentInChunks(ChunkFirst3, ChunkLast3 - ChunkFirst3 + 1);
-    v3i FileDims3 = ChunkDims3 * Idx2.ChunksPerFile3s[Iter];
-    v3i FileFirst3 = From(Ext) / FileDims3;
-    v3i FileLast3 = Last(Ext) / FileDims3;
-    extent ExtentInFiles(FileFirst3, FileLast3 - FileFirst3 + 1);
-    extent VolExt(Idx2.Dims3);
-    v3i VolBrickFirst3 = From(VolExt) / BrickDims3;
-    v3i VolBrickLast3 = Last(VolExt) / BrickDims3;
-    extent VolExtentInBricks(VolBrickFirst3, VolBrickLast3 - VolBrickFirst3 + 1);
-    v3i VolChunkFirst3 = From(VolExt) / ChunkDims3;
-    v3i VolChunkLast3 = Last(VolExt) / ChunkDims3;
-    extent VolExtentInChunks(VolChunkFirst3, VolChunkLast3 - VolChunkFirst3 + 1);
-    v3i VolFileFirst3 = From(VolExt) / FileDims3;
-    v3i VolFileLast3 = Last(VolExt) / FileDims3;
-    extent VolExtentInFiles(VolFileFirst3, VolFileLast3 - VolFileFirst3 + 1);
-    idx2_FileTraverse(
-      u64 FileAddr = FileTop.Address;
-      // int ChunkInFile = 0;
-      u64 FirstBrickAddr =
-        ((FileAddr * Idx2.ChunksPerFile[Iter]) + 0) * Idx2.BricksPerChunk[Iter] + 0;
-      file_id FileId = ConstructFilePathRdos(Idx2, FirstBrickAddr, Iter);
-      int NumChunks = 0;
-      idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
-      idx2_ChunkTraverse(
-        ++NumChunks; u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFile[Iter]) + ChunkTop.Address;
-        // ChunkInFile = ChunkTop.ChunkInFile;
-        idx2_For (i8, Level, 0, Size(Idx2.Subbands)) {
-          const auto& Rdo = RdoPrecomputes[Pos];
-          i8 RdoIter = (Rdo.Address >> 60) & 0xF;
-          u64 RdoAddress = (Rdo.Address >> 18) & 0x3FFFFFFFFFFull;
-          i8 RdoLevel = (Rdo.Address >> 12) & 0x3F;
-          if (RdoIter == Iter && RdoLevel == Level && RdoAddress == ChunkAddr)
-          {
-            ++Pos;
-            idx2_For (int, R, 0, Size(Idx2.RdoLevels))
-            { // for each quality level
-              int J = Rdo.TruncationPoints[R];
-              if (J == 0)
-              {
-                PushBack(&Buffer, traits<i16>::Max);
-                continue;
-              }
-              int Z = Rdo.Hull[J] + Rdo.Start - 1;
-              u64 Address = ChunkRDOs[Z].Address;
-              idx2_Assert((Rdo.Address >> 12) == (Address >> 12));
-              i16 BitPlane = i16(Address & 0xFFF);
-              PushBack(&Buffer, BitPlane);
-            }
-          }
-          else
-          { // somehow the tile is not there (tile produces no chunk i.e. it compresses to 0 bits)
-            idx2_For (int, R, 0, Size(Idx2.RdoLevels))
-            { // for each quality level
-              PushBack(&Buffer, traits<i16>::Max);
-            }
-          }
-        } // end level loop
-        ,
-        64,
-        Idx2.ChunksOrderInFile[Iter],
-        FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Iter],
-        Idx2.ChunksPerFile3s[Iter],
-        ExtentInChunks,
-        VolExtentInChunks); // end chunk (tile) traverse
-      buffer Buf(Buffer.Buffer.Data, Size(Buffer) * sizeof(i16));
-      CompressBufZstd(Buf, &BitStream);
-      WriteBuffer(Fp, buffer{ BitStream.Stream.Data, Size(BitStream) });
-      WritePOD(Fp, NumChunks);
-      fclose(Fp);
-      Clear(&Buffer);
-      Rewind(&BitStream);
-      , 64, Idx2.FilesOrder[Iter], v3i(0), Idx2.NFiles3[Iter], ExtentInFiles, VolExtentInFiles);
-  } // end level loop
-  idx2_Assert(Pos == Size(RdoPrecomputes));
-}
-
+//static void
+//RateDistortionOpt(const idx2_file& Idx2, encode_data* E)
+//{
+//  if (Size(Idx2.RdoLevels) == 0)
+//    return;
+//  constexpr u64 InfInt = 0x7FF0000000000000ull;
+//  const f64 Inf = *(f64*)(&InfInt);
+//
+//  auto& ChunkRDOs = E->ChunkRDOs;
+//  i16 MinBitPlane = traits<i16>::Max, MaxBitPlane = traits<i16>::Min;
+//  idx2_ForEach (CIt, ChunkRDOs)
+//  {
+//    i16 BitPlane = i16(CIt->Address & 0xFFF);
+//    MinBitPlane = Min(MinBitPlane, BitPlane);
+//    MaxBitPlane = Max(MaxBitPlane, BitPlane);
+//  }
+//  //  InsertionSort(Begin(ChunkRDOs), End(ChunkRDOs)); // TODO: this should be quicksort
+//  std::sort(Begin(ChunkRDOs), End(ChunkRDOs));
+//  array<rdo_precompute> RdoPrecomputes;
+//  Reserve(&RdoPrecomputes, 128); // each rdo_precompute corresponds to a tile
+//  idx2_CleanUp(idx2_ForEach (It, RdoPrecomputes) {
+//    Dealloc(&It->Hull);
+//    Dealloc(&It->TruncationPoints);
+//  } Dealloc(&RdoPrecomputes););
+//  int TileStart = -1, TileEnd = -1;
+//  array<rdo_mini> RdoTile;
+//  idx2_CleanUp(Dealloc(&RdoTile)); // just for a single tile
+//  while (true)
+//  { // loop through all chunks and detect the tile boundaries (Start, End)
+//    TileStart = TileEnd + 1;
+//    if (TileStart >= Size(ChunkRDOs))
+//      break;
+//    TileEnd = TileStart + 1; // exclusive end
+//    const auto& C = ChunkRDOs[TileStart];
+//    while (TileEnd < Size(ChunkRDOs) && (ChunkRDOs[TileEnd].Address >> 12) == (C.Address >> 12))
+//    {
+//      ++TileEnd;
+//    }
+//    Clear(&RdoTile);
+//    Reserve(&RdoTile, TileEnd - TileStart + 1);
+//    i16 Bp = i16(ChunkRDOs[TileStart].Address & 0xFFF) + 1;
+//    PushBack(&RdoTile, rdo_mini{ pow(2.0, Bp), 0, Inf });
+//    i64 PrevLength = 0;
+//    idx2_For (int, Z, TileStart, TileEnd)
+//    {
+//      u64 Addr = (ChunkRDOs[Z].Address >> 12) << 12;
+//      auto LIt = Lookup(&E->ChunkRDOLengths, Addr);
+//      idx2_Assert(LIt);
+//      i16 BitPlane = i16(ChunkRDOs[Z].Address & 0xFFF);
+//      PushBack(&RdoTile, rdo_mini{ pow(2.0, BitPlane), PrevLength += ChunkRDOs[Z].Length, 0.0 });
+//      ChunkRDOs[Z].Length = PrevLength + *LIt.Val;
+//    }
+//    array<int> Hull;
+//    Reserve(&Hull, Size(RdoTile));
+//    PushBack(&Hull, 0);
+//    /* precompute the convex hull and lambdas */
+//    int HLast = 0;
+//    idx2_For (int, Z, 1, Size(RdoTile))
+//    {
+//      f64 DeltaD = RdoTile[HLast].Distortion - RdoTile[Z].Distortion;
+//      f64 DeltaL = f64(RdoTile[Z].Length - RdoTile[HLast].Length);
+//      if (DeltaD > 0)
+//      {
+//        while (DeltaD >= DeltaL * RdoTile[HLast].Lambda)
+//        {
+//          idx2_Assert(Size(Hull) > 0);
+//          PopBack(&Hull);
+//          HLast = Back(Hull);
+//          DeltaD = RdoTile[HLast].Distortion - RdoTile[Z].Distortion;
+//          DeltaL = f64(RdoTile[Z].Length - RdoTile[HLast].Length);
+//        }
+//        HLast = Z; // TODO: or Z + 1?
+//        PushBack(&Hull, HLast);
+//        RdoTile[HLast].Lambda = DeltaD / DeltaL;
+//      }
+//    } // end Z loop
+//    idx2_Assert(TileEnd - TileStart + 1 == Size(RdoTile));
+//    idx2_For (int, Z, 1, Size(RdoTile))
+//    {
+//      ChunkRDOs[Z + TileStart - 1].Lambda = RdoTile[Z].Lambda;
+//    }
+//    u64 Address = ChunkRDOs[TileStart].Address;
+//    PushBack(&RdoPrecomputes, rdo_precompute{ Address, TileStart, Hull, array<int>() });
+//  }
+//
+//  /* search for a suitable global lambda */
+//  idx2_For (int, R, 0, Size(Idx2.RdoLevels))
+//  { // for all quality levels
+//    printf("optimizing for rdo level %d\n", R);
+//    f64 LowLambda = -2, HighLambda = -1, Lambda = 1;
+//    int Count = 0;
+//    do
+//    { // search for the best Lambda (TruncationPoints stores the output)
+//      if (LowLambda > 0 && HighLambda > 0)
+//      {
+//        ++Count;
+//        if (Count >= 20)
+//        {
+//          Lambda = HighLambda;
+//          break;
+//        }
+//        Lambda = 0.5 * LowLambda + 0.5 * HighLambda;
+//      }
+//      else if (Lambda == 0)
+//      {
+//        Lambda = HighLambda;
+//        break;
+//      }
+//      i64 TotalLength = 0;
+//      idx2_ForEach (TIt, RdoPrecomputes)
+//      { // for each tile
+//        int J = 0;
+//        while (J + 1 < Size(TIt->Hull))
+//        {
+//          int Z = TIt->Hull[J + 1] + TIt->Start - 1;
+//          idx2_Assert(Z >= TIt->Start);
+//          if (ChunkRDOs[Z].Lambda > Lambda)
+//            ++J;
+//          else
+//            break;
+//        }
+//        Resize(&TIt->TruncationPoints, Size(Idx2.RdoLevels));
+//        TIt->TruncationPoints[R] = J;
+//        TotalLength += J == 0 ? 0 : ChunkRDOs[TIt->Hull[J] + TIt->Start - 1].Length;
+//      }
+//      if (TotalLength > Idx2.RdoLevels[R])
+//      { // we overshot, need to increase lambda
+//        LowLambda = Lambda;
+//        if (HighLambda < 0)
+//          Lambda *= 2;
+//      }
+//      else
+//      { // we did not overshoot, need to decrease Lambda
+//        HighLambda = Lambda;
+//        if (LowLambda < 0)
+//          Lambda *= 0.5;
+//      }
+//      // idx2_Assert(LowLambda <= HighLambda);
+//    } while (true);
+//  }
+//
+//  /* write the truncation points to files */
+//  //  InsertionSort(Begin(RdoPrecomputes), End(RdoPrecomputes)); // TODO: quicksort
+//  std::sort(Begin(RdoPrecomputes), End(RdoPrecomputes));
+//  i64 Pos = 0;
+//  idx2_RAII(array<i16>, Buffer, Reserve(&Buffer, 128));
+//  idx2_RAII(bitstream, BitStream, );
+//  idx2_For (i8, Iter, 0, Idx2.NLevels)
+//  {
+//    extent Ext(Idx2.Dims3);
+//    v3i BrickDims3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Iter);
+//    v3i BrickFirst3 = From(Ext) / BrickDims3;
+//    v3i BrickLast3 = Last(Ext) / BrickDims3;
+//    extent ExtentInBricks(BrickFirst3, BrickLast3 - BrickFirst3 + 1);
+//    v3i ChunkDims3 = Idx2.BricksPerChunk3s[Iter] * BrickDims3;
+//    v3i ChunkFirst3 = From(Ext) / ChunkDims3;
+//    v3i ChunkLast3 = Last(Ext) / ChunkDims3;
+//    extent ExtentInChunks(ChunkFirst3, ChunkLast3 - ChunkFirst3 + 1);
+//    v3i FileDims3 = ChunkDims3 * Idx2.ChunksPerFile3s[Iter];
+//    v3i FileFirst3 = From(Ext) / FileDims3;
+//    v3i FileLast3 = Last(Ext) / FileDims3;
+//    extent ExtentInFiles(FileFirst3, FileLast3 - FileFirst3 + 1);
+//    extent VolExt(Idx2.Dims3);
+//    v3i VolBrickFirst3 = From(VolExt) / BrickDims3;
+//    v3i VolBrickLast3 = Last(VolExt) / BrickDims3;
+//    extent VolExtentInBricks(VolBrickFirst3, VolBrickLast3 - VolBrickFirst3 + 1);
+//    v3i VolChunkFirst3 = From(VolExt) / ChunkDims3;
+//    v3i VolChunkLast3 = Last(VolExt) / ChunkDims3;
+//    extent VolExtentInChunks(VolChunkFirst3, VolChunkLast3 - VolChunkFirst3 + 1);
+//    v3i VolFileFirst3 = From(VolExt) / FileDims3;
+//    v3i VolFileLast3 = Last(VolExt) / FileDims3;
+//    extent VolExtentInFiles(VolFileFirst3, VolFileLast3 - VolFileFirst3 + 1);
+//    idx2_FileTraverse(
+//      u64 FileAddr = FileTop.Address;
+//      // int ChunkInFile = 0;
+//      u64 FirstBrickAddr =
+//        ((FileAddr * Idx2.ChunksPerFile[Iter]) + 0) * Idx2.BricksPerChunk[Iter] + 0;
+//      file_id FileId = ConstructFilePathRdos(Idx2, FirstBrickAddr, Iter);
+//      int NumChunks = 0;
+//      idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
+//      idx2_ChunkTraverse(
+//        ++NumChunks; u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFile[Iter]) + ChunkTop.Address;
+//        // ChunkInFile = ChunkTop.ChunkInFile;
+//        idx2_For (i8, Level, 0, Size(Idx2.Subbands)) {
+//          const auto& Rdo = RdoPrecomputes[Pos];
+//          i8 RdoIter = (Rdo.Address >> 60) & 0xF;
+//          u64 RdoAddress = (Rdo.Address >> 18) & 0x3FFFFFFFFFFull;
+//          i8 RdoLevel = (Rdo.Address >> 12) & 0x3F;
+//          if (RdoIter == Iter && RdoLevel == Level && RdoAddress == ChunkAddr)
+//          {
+//            ++Pos;
+//            idx2_For (int, R, 0, Size(Idx2.RdoLevels))
+//            { // for each quality level
+//              int J = Rdo.TruncationPoints[R];
+//              if (J == 0)
+//              {
+//                PushBack(&Buffer, traits<i16>::Max);
+//                continue;
+//              }
+//              int Z = Rdo.Hull[J] + Rdo.Start - 1;
+//              u64 Address = ChunkRDOs[Z].Address;
+//              idx2_Assert((Rdo.Address >> 12) == (Address >> 12));
+//              i16 BitPlane = i16(Address & 0xFFF);
+//              PushBack(&Buffer, BitPlane);
+//            }
+//          }
+//          else
+//          { // somehow the tile is not there (tile produces no chunk i.e. it compresses to 0 bits)
+//            idx2_For (int, R, 0, Size(Idx2.RdoLevels))
+//            { // for each quality level
+//              PushBack(&Buffer, traits<i16>::Max);
+//            }
+//          }
+//        } // end level loop
+//        ,
+//        64,
+//        Idx2.ChunksOrderInFile[Iter],
+//        FileTop.FileFrom3 * Idx2.ChunksPerFile3s[Iter],
+//        Idx2.ChunksPerFile3s[Iter],
+//        ExtentInChunks,
+//        VolExtentInChunks); // end chunk (tile) traverse
+//      buffer Buf(Buffer.Buffer.Data, Size(Buffer) * sizeof(i16));
+//      CompressBufZstd(Buf, &BitStream);
+//      WriteBuffer(Fp, buffer{ BitStream.Stream.Data, Size(BitStream) });
+//      WritePOD(Fp, NumChunks);
+//      fclose(Fp);
+//      Clear(&Buffer);
+//      Rewind(&BitStream);
+//      , 64, Idx2.FilesOrder[Iter], v3i(0), Idx2.NFiles3[Iter], ExtentInFiles, VolExtentInFiles);
+//  } // end level loop
+//  idx2_Assert(Pos == Size(RdoPrecomputes));
+//}
+//
 
 // TODO: return an error code
 static void
@@ -498,7 +499,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
   volume& BVol = BIt.Val->Vol;
   idx2_Assert(BVol.Buffer);
 
-  // TODO: we do not need to pre-extrapolate
+  // TODO: we do not need to pre-extrapolate, instead just compute and store the extrapolated values
   ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TransformOrder, &BVol);
 
   /* do wavelet transform */
@@ -561,106 +562,6 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
 }
 
 
-// static void
-// EncodeBrickNASAWithMask
-//( /*----------------------------*/
-//   idx2_file*    Idx2           ,
-//   const params& P              ,
-//   encode_data*  E              ,
-//   bool          IncIter = false
-//) /*----------------------------*/
-//{
-//   idx2_Assert(Idx2->NLevels <= idx2_file::MaxLevels);
-//
-//   i8 Iter = E->Iter += IncIter;
-//   bool Valid = true;
-//   if (Iter == 0 && P.NasaMask.Buffer)
-//     Valid = P.NasaMask.At<int8>(v3i(E->Bricks3[Iter].X, E->Bricks3[Iter].Y, 0));
-//
-//   u64 Brick = E->Brick[Iter];
-//   printf("level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]),
-//   Brick); auto BIt = Lookup(&E->BrickPool, GetBrickKey(Iter, Brick)); idx2_Assert(BIt); volume&
-//   BVol = BIt.Val->Vol; idx2_Assert(BVol.Buffer);
-//
-//   if (Valid) { /* extrapolate the brick to, say 65^3 */
-//     // TODO: we do not need to pre-extrapolate
-//     ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TformOrder, &BVol);
-//   }
-//
-//   if (Valid) { /* do wavelet transform */
-//     if (!P.WaveletOnly) {
-//       if (Iter + 1 < Idx2->NLevels)
-//         ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
-//       else
-//         ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, true);
-//     } else {
-//       ForwardCdf53(Idx2->BrickDimsExt3, E->Iter, Idx2->Subbands, Idx2->Td, &BVol, false);
-//     }
-//   }
-//
-//   if (Valid) { /* compute the min-max tree if needed */
-//     if (P.ComputeMinMax) {
-////      v3i NBlocks3 = (BrickDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
-////      //u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-////      idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
-////        f64 BlockMin =
-////          v3i Z3(DecodeMorton3(Block));
-////        idx2_NextMorton(Block, Z3, NBlocks3);
-////        v3i D3 = Z3 * Idx2->BlockDims3;
-////        v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-////        BrickVol->At<f64>(From3, Strd3, D3 + S3);
-////      }
-//    }
-//  }
-//  /* recursively encode the brick, one subband at a time */
-//  idx2_For(i8, Sb, 0, Size(Idx2->Subbands)) { // subband loop
-//    const subband& S = Idx2->Subbands[Sb];
-//    v3i SbDimsNonExt3 = idx2_NonExtDims(Dims(S.Grid));
-//    i8 NextIter = Iter + 1;
-//    if (Sb == 0 && NextIter < Idx2->NLevels) { // need to encode the parent brick
-//      /* find the parent brick and create it if not found */
-//      v3i Brick3 = E->Bricks3[Iter];
-//      v3i PBrick3 = (E->Bricks3[NextIter] = Brick3 / Idx2->GroupBrick3);
-//      u64 PBrick = (E->Brick[NextIter] = GetLinearBrick(*Idx2, NextIter, PBrick3));
-//      u64 PKey = GetBrickKey(NextIter, PBrick);
-//      auto PbIt = Lookup(&E->BrickPool, PKey);
-//      if (!PbIt) { // instantiate the parent brick in the hash table
-//        brick_volume PBrickVol;
-//        if (Valid) {
-//          PBrickVol.AnyChild = true;
-//        } else {
-//          ++PbIt.Val->NChildren;
-//          goto EXIT;
-//        }
-//
-//        Resize(&PBrickVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E->Alloc);
-//        Fill(idx2_Range(f64, PBrickVol.Vol), 0.0);
-//        v3i From3 = (Brick3 / Idx2->GroupBrick3) * Idx2->GroupBrick3;
-//        v3i NChildren3 = Dims(Crop(extent(From3, Idx2->GroupBrick3),
-//        extent(Idx2->NBricks3s[Iter]))); PBrickVol.NChildrenMax = (i8)Prod(NChildren3);
-//        PBrickVol.ExtentLocal = extent(NChildren3 * SbDimsNonExt3);
-//        Insert(&PbIt, PKey, PBrickVol);
-//      }
-//      /* copy data to the parent brick and (optionally) encode it */
-//      v3i LocalBrickPos3 = Brick3 % Idx2->GroupBrick3;
-//      grid SbGridNonExt = S.Grid; SetDims(&SbGridNonExt, SbDimsNonExt3);
-//      extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
-//      CopyGridExtent<f64, f64>(SbGridNonExt, BVol, ToGrid, &PbIt.Val->Vol);
-////      Copy(SbGridNonExt, BVol, ToGrid, &PbIt.Val->Vol);
-//      bool LastChild = ++PbIt.Val->NChildren == PbIt.Val->NChildrenMax;
-//      if (LastChild) EncodeBrick(Idx2, P, E, true);
-//    } // end Sb == 0 && NextIteration < Idx2->NLevels
-//    E->Level = Sb;
-//    if (Idx2->Version == v2i(1, 0))
-//      EncodeSubband(Idx2, E, S.Grid, &BVol);
-//  } // end subband loop
-// EXIT:
-//  Dealloc(&BVol);
-//  Delete(&E->BrickPool, GetBrickKey(Iter, Brick));
-//  E->Iter -= IncIter;
-//}
-
-
 // TODO: return true error code
 struct channel_ptr
 {
@@ -681,7 +582,7 @@ struct channel_ptr
 };
 
 
-f64 TotalTime_ = 0;
+f64 TotalTime_ = 0; // TODO: move to somewhere
 
 
 /*
@@ -751,11 +652,11 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
   StartTimer(&Timer);
   idx2_PropagateIfError(FlushChunks(*Idx2, &E));
   idx2_PropagateIfError(FlushChunkExponents(*Idx2, &E));
-  timer RdoTimer;
-  StartTimer(&RdoTimer);
-  RateDistortionOpt(*Idx2, &E);
+  //timer RdoTimer;
+  //StartTimer(&RdoTimer);
+  //RateDistortionOpt(*Idx2, &E);
   TotalTime_ += Seconds(ElapsedTime(&Timer));
-  printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
+  //printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
 
   WriteMetaFile(*Idx2, P, idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field));
   printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
@@ -766,14 +667,6 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
   return idx2_Error(idx2_err_code::NoError);
 }
 
-
-error<idx2_err_code>
-EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3)
-{
-  // TODO: First, we copy the brick to a buffer backed by memory-mapped file
-  // TODO: Then, if this brick
-  return idx2_Error(idx2_err_code::NoError);
-}
 
 // TODO: make sure the wavelet normalization works across levels
 // TODO: progressive decoding (maintaning a buffer (something like a FIFO queue) for the bricks)

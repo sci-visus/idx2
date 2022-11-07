@@ -330,22 +330,22 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
 }
 
 
-expected<const chunk_rdo_cache*, idx2_err_code>
-ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter)
-{
-  file_id FileId = ConstructFilePathRdos(Idx2, Brick, Iter);
-  auto FileRdoCacheIt = Lookup(&D->FcTable.FileRdoCaches, FileId.Id);
-  if (!FileRdoCacheIt)
-  {
-    auto ReadFileOk = ReadFileRdos(Idx2, &FileRdoCacheIt, FileId);
-    if (!ReadFileOk)
-      idx2_PropagateError(ReadFileOk);
-  }
-  if (!FileRdoCacheIt)
-    return idx2_Error(idx2_err_code::FileNotFound);
-  file_rdo_cache* FileRdoCache = FileRdoCacheIt.Val;
-  return &FileRdoCache->TileRdoCaches[D->ChunkInFile];
-}
+//expected<const chunk_rdo_cache*, idx2_err_code>
+//ReadChunkRdos(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Iter)
+//{
+//  file_id FileId = ConstructFilePathRdos(Idx2, Brick, Iter);
+//  auto FileRdoCacheIt = Lookup(&D->FcTable.FileRdoCaches, FileId.Id);
+//  if (!FileRdoCacheIt)
+//  {
+//    auto ReadFileOk = ReadFileRdos(Idx2, &FileRdoCacheIt, FileId);
+//    if (!ReadFileOk)
+//      idx2_PropagateError(ReadFileOk);
+//  }
+//  if (!FileRdoCacheIt)
+//    return idx2_Error(idx2_err_code::FileNotFound);
+//  file_rdo_cache* FileRdoCache = FileRdoCacheIt.Val;
+//  return &FileRdoCache->TileRdoCaches[D->ChunkInFile];
+//}
 
 
 } // namespace idx2

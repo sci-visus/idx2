@@ -30,6 +30,19 @@ MemCopy(const buffer& Src, buffer* Dst, u64 Bytes)
 }
 
 
+//i64
+//Append(const buffer& Src, buffer* Dst)
+//{
+// TODO: not yet complete
+//  i64 NewSize = Max(Dst->Bytes * 3 / 2 + 1, Src.Bytes);
+//  Resize();
+//  idx2_Assert(Dst->Data, "Copy to null");
+//  idx2_Assert(Src.Data || Src.Bytes == 0, "Copy from null");
+//  idx2_Assert(Dst->Bytes >= Src.Bytes, "Copy to a smaller buffer");
+//  memcpy(Dst->Data, Src.Data, size_t(Bytes));
+// }
+
+
 buffer
 operator+(const buffer& Buf, i64 Bytes)
 {

@@ -27,6 +27,13 @@ struct chunk_meta_info
 };
 
 
+struct chunk_emax_info
+{
+  bitstream EMaxSizes;
+  array<u8> FileEMaxBuffer;
+};
+
+
 // Each channel corresponds to one (iteration, subband, bit plane) tuple
 struct channel
 {
@@ -80,15 +87,19 @@ struct encode_data
 {
   allocator* Alloc = nullptr;
   hash_table<u64, brick_volume> BrickPool;
-  hash_table<u32, channel> Channels;        // each corresponds to (bit plane, iteration, level)
-  hash_table<u16, sub_channel> SubChannels; // only consider level and iteration
+  // each corresponds to (bit plane, iteration, level)
+  hash_table<u32, channel> Channels;
+  // only consider level and iteration
+  hash_table<u16, sub_channel> SubChannels;
   i8 Iter = 0;
   i8 Level = 0;
   stack_array<u64, idx2_file::MaxLevels> Brick;
   stack_array<v3i, idx2_file::MaxLevels> Bricks3;
-  hash_table<u64, chunk_meta_info> ChunkMeta; // map from file address to chunk info
-  hash_table<u64, bitstream>
-    ChunkEMaxesMeta; // map from file address to a stream of chunk emax sizes
+  // map from file address to chunk info
+  hash_table<u64, chunk_meta_info> ChunkMeta;
+  // map from file address to a stream of chunk emax sizes
+  // TODO: merge this with the above
+  hash_table<u64, chunk_emax_info> ChunkEMaxesMeta;
   bitstream CpresEMaxes;
   bitstream CpresChunkAddrs;
   bitstream ChunkStream;
@@ -98,7 +109,8 @@ struct encode_data
   array<i16> EMaxes;
   bitstream BlockStream; // only used by v0.1
   array<t2<u32, channel*>> SortedChannels;
-  array<rdo_chunk> ChunkRDOs; // list of chunks and their sizes, sorted by bit plane
+  // list of chunks and their sizes, sorted by bit plane
+  array<rdo_chunk> ChunkRDOs;
   hash_table<u64, u32> ChunkRDOLengths;
 };
 
@@ -176,6 +188,13 @@ Dealloc(chunk_meta_info* Cm)
 {
   Dealloc(&Cm->Addrs);
   Dealloc(&Cm->Sizes);
+}
+
+idx2_Inline void
+Dealloc(chunk_emax_info* Ce)
+{
+  Dealloc(&Ce->EMaxSizes);
+  Dealloc(&Ce->FileEMaxBuffer);
 }
 
 
