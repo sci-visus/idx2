@@ -28,10 +28,13 @@ struct chunk_cache
 
 struct file_cache
 {
-  array<i64> ChunkSizes;                    // TODO: 32-bit to store chunk sizes?
-  array<chunk_exp_cache> ChunkExpCaches;
-  array<i32> ChunkExpSizes;
+  array<i64> ChunkOffsets;                    // TODO: 32-bit to store chunk sizes?
   hash_table<u64, chunk_cache> ChunkCaches; // [chunk address] -> chunk cache
+  array<chunk_exp_cache> ChunkExpCaches;
+  array<i32> ChunkExpOffsets;
+  i64 ExponentBeginOffset = 0;                // where in the file the exponent information begins
+  bool ExponentCached = false;
+  bool DataCached = false;
 };
 
 
@@ -66,30 +69,30 @@ Size(const file_cache& F)
 {
   /* bit plane chunks */
   i64 Result = 0;
-  Result += Size(F.ChunkSizes) * sizeof(i64);
+  Result += Size(F.ChunkOffsets) * sizeof(i64);
   idx2_ForEach (It, F.ChunkCaches)
     Result += Size(*It.Val);
 
   /* exponent chunks */
   idx2_ForEach (It, F.ChunkExpCaches)
     Result += Size(*It);
-  Result += Size(F.ChunkExpSizes) * sizeof(i32);
+  Result += Size(F.ChunkExpOffsets) * sizeof(i32);
   return Result;
 }
 
 
-idx2_Inline i64
-Size(const file_cache_table& F)
-{
-  i64 Result = 0;
-  idx2_ForEach (It, F)
-    Result += Size(*It.Val);
-//  idx2_ForEach (It, F.FileExpCaches)
+//idx2_Inline i64
+//Size(const file_cache_table& F)
+//{
+//  i64 Result = 0;
+//  idx2_ForEach (It, F)
 //    Result += Size(*It.Val);
-//  idx2_ForEach (It, F.FileRdoCaches)
-//    Result += Size(*It.Val);
-  return Result;
-}
+////  idx2_ForEach (It, F.FileExpCaches)
+////    Result += Size(*It.Val);
+////  idx2_ForEach (It, F.FileRdoCaches)
+////    Result += Size(*It.Val);
+//  return Result;
+//}
 
 
 expected<const chunk_exp_cache*, idx2_err_code>

@@ -45,7 +45,6 @@ struct decode_data
   int EffIter = 0;
   u64 LastTile = 0;
 
-  u64 BytesRdos_ = 0;
   u64 DecodeIOTime_ = 0;
   u64 BytesExps_ = 0;
   u64 BytesData_ = 0;

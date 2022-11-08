@@ -6,6 +6,7 @@
 #include "Statistics.h"
 #include "VarInt.h"
 
+#include <iostream>
 
 namespace idx2
 {
@@ -52,7 +53,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
   {
     chunk_emax_info ChunkEMaxInfo;
     InitWrite(&ChunkEMaxInfo.EMaxSizes, 128);
-    Init(&ChunkEMaxInfo.FileEMaxBuffer, 128);
+    //Init(&ChunkEMaxInfo.FileEMaxBuffer, 128);
     Insert(&CemIt, FileId.Id, ChunkEMaxInfo);
   }
   bitstream* ChunkEMaxSzs = &CemIt.Val->EMaxSizes;
@@ -98,9 +99,9 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     WriteBuffer(Fp, ToBuffer(CemIt.Val->FileEMaxBuffer));
     // write the (compressed) sizes of the exponents
     WriteBuffer(Fp, ToBuffer(*ChunkEMaxSzs));
-    // write the number of chunks with exponent info
+    // write the size (in bytes) of the compressed exponent sizes
     WritePOD(Fp, (int)Size(*ChunkEMaxSzs));
-    // write the total number of bytes used for storin the exponents
+    // write the total number of bytes used for storing the exponents
     auto TotalExpBytes = ToBuffer(CemIt.Val->FileEMaxBuffer).Bytes + ToBuffer(*ChunkEMaxSzs).Bytes + sizeof(int);
     WritePOD(Fp, (int)TotalExpBytes);
   }
@@ -183,6 +184,7 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     {
       FileId = ConstructFilePath(Idx2, *CmIt.Key);
     }
+    printf("%llu %s\n", FileId.Id, FileId.Name.ConstPtr);
     idx2_Assert(FileId.Id == *CmIt.Key);
     /* compress and write chunk sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
@@ -196,6 +198,8 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     // write size of the compressed chunk addresses
     WritePOD(Fp, (int)Size(E->CpresChunkAddrs));
     WritePOD(Fp, (int)Size(Cm->Addrs)); // number of chunks
+    std::cout << Size(Cm->Sizes) << " " << Size(E->CpresChunkAddrs) << " " << Size(Cm->Addrs)
+              << "\n";
     ChunkAddrsStat.Add((f64)Size(Cm->Addrs) * sizeof(Cm->Addrs[0]));
     CpresChunkAddrsStat.Add((f64)Size(E->CpresChunkAddrs));
   }

@@ -248,6 +248,12 @@ GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitP
 //    if (Idx2.GroupBitPlanes)
 //      BitPlane = 0;
 //  }
+  if (Idx2.GroupSubLevels)
+    SubLevel = 0;
+  if (Idx2.GroupLevels)
+    Level = 0;
+  if (Idx2.GroupBitPlanes)
+    BitPlane = 0;
   return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, SubLevel, BitPlane);
 }
 

@@ -9402,7 +9402,7 @@ struct file_rdo_cache
 
 struct file_cache
 {
-  array<i64> ChunkSizes;                    // TODO: 32-bit to store chunk sizes?
+  array<i64> ChunkOffsets;                    // TODO: 32-bit to store chunk sizes?
   hash_table<u64, chunk_cache> ChunkCaches; // [chunk address] -> chunk cache
 };
 
@@ -9524,7 +9524,7 @@ idx2_Inline i64
 Size(const file_cache& F)
 {
   i64 Result = 0;
-  Result += Size(F.ChunkSizes) * sizeof(i64);
+  Result += Size(F.ChunkOffsets) * sizeof(i64);
   idx2_ForEach (It, F.ChunkCaches)
     Result += Size(*It.Val);
   return Result;

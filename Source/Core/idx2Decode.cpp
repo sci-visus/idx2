@@ -449,10 +449,9 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
   printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
   printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));
-  printf("rdo   bytes read    = %" PRIi64 "\n", D.BytesRdos_);
   printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_);
   printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
-  printf("total bytes read    = %" PRIi64 "\n", D.BytesRdos_ + D.BytesExps_ + D.BytesData_);
+  printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_ + D.BytesData_);
   printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_ / 8);
 
   return idx2_Error(err_code::NoError);
