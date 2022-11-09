@@ -300,10 +300,7 @@ main(int Argc, cstr* Argv)
   }
   else if (P.Action == action::Decode)
   {
-    SetDir(&Idx2, P.InDir);
-    SetDownsamplingFactor(&Idx2, P.DownsamplingFactor3);
-    idx2_ExitIfError(ReadMetaFile(&Idx2, idx2_PrintScratch("%s", P.InputFile)));
-    idx2_ExitIfError(Finalize(&Idx2, P));
+    idx2_PropagateIfError(Init(&Idx2, P));
     Decode(Idx2, P);
   }
 
