@@ -300,8 +300,8 @@ main(int Argc, cstr* Argv)
   }
   else if (P.Action == action::Decode)
   {
-    idx2_PropagateIfError(Init(&Idx2, P));
-    Decode(Idx2, P);
+    idx2_ExitIfError(Init(&Idx2, P));
+    idx2_ExitIfError(Decode(Idx2, P));
   }
 
   if (P.Pause)

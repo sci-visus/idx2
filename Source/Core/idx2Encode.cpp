@@ -431,7 +431,6 @@ Init(encode_data* E, allocator* Alloc)
   InitWrite(&E->CpresChunkAddrs, 16384);
   InitWrite(&E->ChunkStream, 16384);
   InitWrite(&E->ChunkEMaxesStream, 32768);
-  Init(&E->ChunkRDOLengths, 10);
 }
 
 
@@ -458,8 +457,6 @@ Dealloc(encode_data* E)
   Dealloc(&E->BlockSigs);
   Dealloc(&E->EMaxes);
   Dealloc(&E->BlockStream);
-  Dealloc(&E->ChunkRDOs);
-  Dealloc(&E->ChunkRDOLengths);
 }
 
 

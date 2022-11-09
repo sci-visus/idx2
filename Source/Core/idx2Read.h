@@ -28,12 +28,12 @@ struct chunk_cache
 
 struct file_cache
 {
-  array<i64> ChunkOffsets;                    // TODO: 32-bit to store chunk sizes?
+  array<i64> ChunkOffsets;                  // TODO: 32-bit to store chunk sizes?
   hash_table<u64, chunk_cache> ChunkCaches; // [chunk address] -> chunk cache
   array<chunk_exp_cache> ChunkExpCaches;
   array<i32> ChunkExpOffsets;
-  i64 ExponentBeginOffset = 0;                // where in the file the exponent information begins
-  bool ExponentCached = false;
+  i64 ExponentBeginOffset = 0;              // where in the file the exponent information begins
+  bool ExpCached = false;
   bool DataCached = false;
 };
 

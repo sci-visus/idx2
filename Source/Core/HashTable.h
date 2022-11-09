@@ -309,6 +309,7 @@ Insert(hash_table<k, v>* Ht, const k& Key, const v& Val)
 }
 
 
+/* Insert a new element "inplace" without performing lookup again */
 template <typename k, typename v> void
 Insert(typename hash_table<k, v>::iterator* It, const k& Key, const v& Val)
 {

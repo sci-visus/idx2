@@ -36,7 +36,11 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
   BrickEMaxesStat.Add((f64)Size(Sc->BrickEMaxesStream));
   Rewind(&E->ChunkEMaxesStream);
   CompressBufZstd(ToBuffer(Sc->BrickEMaxesStream), &E->ChunkEMaxesStream);
-//  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
+  if (Iter == 2 && Level == 7)
+  {
+    int Stop = 0;
+  }
+    //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
   ChunkEMaxesStat.Add((f64)Size(E->ChunkEMaxesStream));
 
   /* rewind */
@@ -60,13 +64,14 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 I
   GrowToAccomodate(ChunkEMaxSzs, 4);
   // write the size of the exponent stream for current chunk
   WriteVarByte(ChunkEMaxSzs, Size(E->ChunkEMaxesStream));
+  if (Iter == 2 && Level == 7)
+  {
+    auto Sz = Size(E->ChunkEMaxesStream);
+    int Stop = 0;
+  }
   array<u8>* EMaxBuffer = &CemIt.Val->FileEMaxBuffer;
   // write the exponents to the exponent buffer for the whole file
   PushBack(EMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
-
-  u64 ChunkAddress = GetChunkAddress(Idx2, Sc->LastBrick, Iter, Level, ExponentBitPlane_);
-  Insert(&E->ChunkRDOLengths, ChunkAddress, (u32)Size(E->ChunkEMaxesStream));
-
   Rewind(&E->ChunkEMaxesStream);
 }
 
@@ -80,6 +85,8 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     i8 Iteration = IterationFromChannelKey(*ScIt.Key);
     i8 Level = LevelFromChannelKey(*ScIt.Key);
     WriteChunkExponents(Idx2, E, ScIt.Val, Iteration, Level);
+    if (Iteration == 2 && Level == 7)
+      int Stop = 0;
   }
   // TODO: deallocate the file emax buffer after it is flushed to a file
   // TODO: need to "interleave" this with FlushChunk
@@ -90,6 +97,14 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
   {
     bitstream* ChunkEMaxSzs = &CemIt.Val->EMaxSizes;
     file_id FileId = ConstructFilePath(Idx2, *CemIt.Key);
+    auto Iter = IterationFromChannelKey(*CemIt.Key);
+    auto Level = LevelFromChannelKey(*CemIt.Key);
+    if (FileId.Id == 2305843009213693952ull)
+      int Stop = 0;
+    if (Iter == 2 && Level == 7)
+    {
+      int Stop = 0;
+    }
     idx2_Assert(FileId.Id == *CemIt.Key);
     /* write chunk emax sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
@@ -97,6 +112,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     ChunkEMaxSzsStat.Add((f64)Size(*ChunkEMaxSzs));
     // write the exponent buffer
     WriteBuffer(Fp, ToBuffer(CemIt.Val->FileEMaxBuffer));
+    auto Offset = idx2_FTell(Fp);
     // write the (compressed) sizes of the exponents
     WriteBuffer(Fp, ToBuffer(*ChunkEMaxSzs));
     // write the size (in bytes) of the compressed exponent sizes
@@ -150,8 +166,12 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Iter, i8 Level,
   // Write the size of the chunk stream
   WriteVarByte(&ChunkMeta->Sizes, Size(E->ChunkStream));
   u64 ChunkAddress = GetChunkAddress(Idx2, C->LastBrick, Iter, Level, BitPlane);
+  if (Iter == 2 && Level == 7)
+  {
+    int Stop = 0;
+    printf("bit plane = %d\n", BitPlane);
+  }
   PushBack(&ChunkMeta->Addrs, ChunkAddress);
-  PushBack(&E->ChunkRDOs, rdo_chunk{ ChunkAddress, Size(E->ChunkStream), 0.0 });
   Rewind(&E->ChunkStream);
 }
 

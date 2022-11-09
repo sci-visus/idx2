@@ -109,9 +109,6 @@ struct encode_data
   array<i16> EMaxes;
   bitstream BlockStream; // only used by v0.1
   array<t2<u32, channel*>> SortedChannels;
-  // list of chunks and their sizes, sorted by bit plane
-  array<rdo_chunk> ChunkRDOs;
-  hash_table<u64, u32> ChunkRDOLengths;
 };
 
 
