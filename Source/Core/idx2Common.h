@@ -179,7 +179,7 @@ struct idx2_file
   array<i64> RdoLevels;       // [] -> bytes
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
-  bool GroupSubLevels = true;
+  bool GroupSubbands = true;
 };
 
 

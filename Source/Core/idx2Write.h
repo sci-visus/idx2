@@ -21,7 +21,7 @@ error<idx2_err_code>
 FlushChunkExponents(const idx2_file& Idx2, encode_data* E);
 
 void
-WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 Iter, i8 Level);
+WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 Level, i8 Subband);
 
 error<idx2_err_code>
 FlushChunks(const idx2_file& Idx2, encode_data* E);

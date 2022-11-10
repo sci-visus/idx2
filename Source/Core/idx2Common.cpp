@@ -136,7 +136,7 @@ SetGroupLevels(idx2_file* Idx2, bool GroupLevels)
 void
 SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels)
 {
-  Idx2->GroupSubLevels = GroupSubLevels;
+  Idx2->GroupSubbands = GroupSubLevels;
 }
 
 
@@ -194,7 +194,7 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "    (tiles-per-file %d)\n", Idx2.ChunksPerFileIn);
   fprintf(Fp, "    (files-per-directory %d)\n", Idx2.FilesPerDir);
   fprintf(Fp, "    (group-levels %s)\n", Idx2.GroupLevels ? "true" : "false");
-  fprintf(Fp, "    (group-sub-levels %s)\n", Idx2.GroupSubLevels ? "true" : "false");
+  fprintf(Fp, "    (group-sub-levels %s)\n", Idx2.GroupSubbands ? "true" : "false");
   fprintf(Fp, "    (group-bit-planes %s)\n", Idx2.GroupBitPlanes ? "true" : "false");
   if (Size(Idx2.QualityLevelsIn) > 0)
   {
@@ -363,7 +363,7 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-sub-levels"))
         {
           idx2_Assert(Expr->type == SE_BOOL);
-          Idx2->GroupSubLevels = Expr->i;
+          Idx2->GroupSubbands = Expr->i;
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-bit-planes"))
         {

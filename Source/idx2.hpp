@@ -9612,7 +9612,7 @@ struct encode_data
   hash_table<u64, brick_volume> BrickPool;
   hash_table<u32, channel> Channels;        // each corresponds to (bit plane, iteration, level)
   hash_table<u16, sub_channel> SubChannels; // only consider level and iteration
-  i8 Iter = 0;
+  i8 Level = 0;
   i8 Level = 0;
   stack_array<u64, idx2_file::MaxLevels> Brick;
   stack_array<v3i, idx2_file::MaxLevels> Bricks3;

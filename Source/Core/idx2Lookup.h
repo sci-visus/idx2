@@ -197,88 +197,67 @@ BitPlaneIsExponent(i16 BitPlane)
 }
 
 
-//file_id
-//ConstructFilePathRdos(const idx2_file& Idx2, u64 Brick, i8 Level);
-
-
-//idx2_Inline u64
-//GetFileAddressExp(int BricksPerFile, u64 Brick, i8 Iter, i8 Level)
-//{
-//  return (u64(Iter) << 60) +                             // 4 bits
-//         u64((Brick >> Log2Ceil(BricksPerFile)) << 18) + // 42 bits
-//         (u64(Level) << 12);                             // 6 bits
-//}
-
-
-//idx2_Inline u64
-//GetFileAddressRdo(int BricksPerFile, u64 Brick, i8 Iter)
-//{
-//  return (u64(Iter) << 60) +                            // 4 bits
-//         u64((Brick >> Log2Ceil(BricksPerFile)) << 18); // 42 bits
-//}
-
-
 idx2_Inline u64
-GetAddress(u64 Brick, int BrickShift, i8 Level, i8 SubLevel, i16 BitPlane)
+GetAddress(u64 Brick, int BrickShift, i8 Level, i8 Subband, i16 BitPlane)
 {
   return (u64(Level) << 60) +               // 4 bits
          u64((Brick >> BrickShift) << 18) + // 42 bits
-         (u64(SubLevel << 12)) +            // 6 bits
+         (u64(Subband << 12)) +             // 6 bits
          (u64(BitPlane) & 0xFFF);           // 12 bits
 }
 
 
-idx2_Inline u64
-GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
+idx2_Inline void
+UnpackAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8* Subband, i16* BitPlane)
 {
-  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerChunk[Level]), Level, SubLevel, BitPlane);
+  *BitPlane = i16((i32(Address & 0xFFF) << 20) >> 20); // this convoluted double shifts is to keep the sign of BitPlane
+  *Subband = (Address >> 12) & 0x3F;
+  *Level = (Address >> 60) & 0xF;
+  *Brick = ((Address >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[*Level]);
 }
 
 
 idx2_Inline u64
-GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane)
+GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPlane)
 {
-//  // NOTE: for now the exponent files do not care about Idx2.GroupLevels etc
-//  if (!BitPlaneIsExponent(BitPlane))
-//  {
-//    if (Idx2.GroupSubLevels)
-//      SubLevel = 0;
-//    if (Idx2.GroupLevels)
-//      Level = 0;
-//    if (Idx2.GroupBitPlanes)
-//      BitPlane = 0;
-//  }
-  if (Idx2.GroupSubLevels)
-    SubLevel = 0;
+  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerChunk[Level]), Level, Subband, BitPlane);
+}
+
+
+idx2_Inline u64
+GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPlane)
+{
+  if (Idx2.GroupSubbands)
+    Subband = 0;
   if (Idx2.GroupLevels)
     Level = 0;
   if (Idx2.GroupBitPlanes)
     BitPlane = 0;
-  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, SubLevel, BitPlane);
+  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, Subband, BitPlane);
 }
 
 
 u64
-GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3);
+GetLinearBrick(const idx2_file& Idx2, int Level, v3i Brick3);
 
 
 file_id
-ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 SubLevel, i16 BitPlane);
+ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPlane);
 
 
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress);
 
 
-// Compose a key from Brick + Iteration
+// Compose a key from Brick + Level
 idx2_Inline u64
-GetBrickKey(i8 Iter, u64 Brick)
+GetBrickKey(i8 Level, u64 Brick)
 {
-  return (Brick << 4) + Iter;
+  return (Brick << 4) + Level;
 }
 
 
-// Get the Brick from a Key composed of Brick + Iteration
+// Get the Brick from a Key composed of Brick + Level
 idx2_Inline u64
 BrickFromBrickKey(u64 BrickKey)
 {
@@ -286,25 +265,17 @@ BrickFromBrickKey(u64 BrickKey)
 }
 
 
-// Get the Iteration from a Key composed of Brick + Iteration
-idx2_Inline i8
-IterationFromBrickKey(u64 BrickKey)
-{
-  return i8(BrickKey & 0xF);
-}
-
-
-// Compose a Key from Iteration + Level + BitPlane
+// Compose a Key from Level + Subband + BitPlane
 idx2_Inline u32
-GetChannelKey(i16 BitPlane, i8 Iter, i8 Level)
+GetChannelKey(i16 BitPlane, i8 Level, i8 Subband)
 {
-  return (u32(BitPlane) << 16) + (u32(Level) << 4) + Iter;
+  return (u32(BitPlane) << 16) + (u32(Subband) << 4) + Level;
 }
 
 
 // Get Level from a Key composed of Iteration + Level + BitPlane
 idx2_Inline i8
-LevelFromChannelKey(u64 ChannelKey)
+GetSubbandFromChannelKey(u64 ChannelKey)
 {
   return i8((ChannelKey >> 4) & 0xFFFF);
 }
@@ -312,7 +283,7 @@ LevelFromChannelKey(u64 ChannelKey)
 
 // Get Iteration from a Key composed of Iteration + Level + BitPlane
 idx2_Inline i8
-IterationFromChannelKey(u64 ChannelKey)
+GetLevelFromChannelKey(u64 ChannelKey)
 {
   return i8(ChannelKey & 0xF);
 }
@@ -326,12 +297,12 @@ BitPlaneFromChannelKey(u64 ChannelKey)
 }
 
 
-// Get a Key composed from Iteration + Level
-idx2_Inline u16
-GetSubChannelKey(i8 Iter, i8 Level)
-{
-  return (u16(Level) << 4) + Iter;
-}
+//// Get a Key composed from Iteration + Level
+//idx2_Inline u16
+//GetSubChannelKey(i8 Level, i8 Subband)
+//{
+//  return (u16(Subband) << 4) + Level;
+//}
 
 
 } // namespace idx2

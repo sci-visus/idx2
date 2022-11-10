@@ -105,13 +105,15 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
 
   /* first, read the block exponents */
+  if (Brick == 0 && D->Level == 2 && D->Subband == 7)
+    int Stop = 0;
   auto ReadChunkExpResult = ReadChunkExponents(Idx2, D, Brick, D->Level, D->Subband);
   if (!ReadChunkExpResult)
     return Error(ReadChunkExpResult);
 
-  const chunk_exp_cache* ChunkExpCache = Value(ReadChunkExpResult);
+  const chunk_cache* ChunkExpCache = Value(ReadChunkExpResult);
   i32 BrickExpOffset = (D->BrickInChunk * BlockCount) * (SizeOf(Idx2.DType) > 4 ? 2 : 1);
-  bitstream BrickExpsStream = ChunkExpCache->BrickExpsStream;
+  bitstream BrickExpsStream = ChunkExpCache->ChunkStream;
   SeekToByte(&BrickExpsStream, BrickExpOffset);
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);

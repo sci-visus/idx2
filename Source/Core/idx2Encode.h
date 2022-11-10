@@ -27,10 +27,10 @@ struct chunk_meta_info
 };
 
 
-struct chunk_emax_info
+struct chunk_exp_info
 {
-  bitstream EMaxSizes;
-  array<u8> FileEMaxBuffer;
+  bitstream ExpSizes;
+  array<u8> FileExpBuffer;
 };
 
 
@@ -39,7 +39,7 @@ struct channel
 {
   /* brick-related streams, to be reset once per chunk */
   bitstream BrickDeltasStream; // store data for many bricks
-  bitstream BrickSzsStream;    // store data for many bricks
+  bitstream BrickSizeStream;    // store data for many bricks
   bitstream BrickStream;       // store data for many bricks
   /* block-related streams, to be reset once per brick */
   bitstream BlockStream; // store data for many blocks
@@ -49,36 +49,36 @@ struct channel
 };
 
 
+struct channel_info
+{
+  i16 BitPlane = 0;
+  i8 Level = 0;
+  i8 Subband = 0;
+  channel* Channel = nullptr;
+};
+
+
 // Each sub-channel corresponds to one (iteration, subband) tuple
 struct sub_channel
 {
-  bitstream BlockEMaxesStream;
-  bitstream BrickEMaxesStream; // at the end of each brick we copy from BlockEMaxesStream to here
+  bitstream BlockExpStream;
+  bitstream BrickExpStream; // at the end of each brick we copy from BlockEMaxesStream to here
   u64 LastChunk = 0;
   u64 LastBrick = 0;
 };
 
 
-struct sub_channel_ptr
+struct sub_channel_info
 {
-  i8 Iteration = 0;
   i8 Level = 0;
-  sub_channel* ChunkEMaxesPtr = nullptr;
-  idx2_Inline bool operator<(const sub_channel_ptr& Other) const
+  i8 Subband = 0;
+  sub_channel* SubChannel = nullptr;
+  idx2_Inline bool operator<(const sub_channel_info& Other) const
   {
-    if (Iteration == Other.Iteration)
-      return Level < Other.Level;
-    return Iteration < Other.Iteration;
+    if (Level == Other.Level)
+      return Subband < Other.Subband;
+    return Level > Other.Level; // TODO: should we sort by increasing level instead?
   }
-};
-
-
-struct rdo_chunk
-{
-  u64 Address;
-  i64 Length;
-  f64 Lambda;
-  idx2_Inline bool operator<(const rdo_chunk& Other) const { return Address > Other.Address; }
 };
 
 
@@ -87,28 +87,29 @@ struct encode_data
 {
   allocator* Alloc = nullptr;
   hash_table<u64, brick_volume> BrickPool;
-  // each corresponds to (bit plane, iteration, level)
+  // each corresponds to (level, subband, bit plane)
   hash_table<u32, channel> Channels;
-  // only consider level and iteration
-  hash_table<u16, sub_channel> SubChannels;
-  i8 Iter = 0;
+  // only consider level and subband
+  hash_table<u64, sub_channel> SubChannels;
   i8 Level = 0;
+  i8 Subband = 0;
   stack_array<u64, idx2_file::MaxLevels> Brick;
   stack_array<v3i, idx2_file::MaxLevels> Bricks3;
   // map from file address to chunk info
   hash_table<u64, chunk_meta_info> ChunkMeta;
   // map from file address to a stream of chunk emax sizes
   // TODO: merge this with the above
-  hash_table<u64, chunk_emax_info> ChunkEMaxesMeta;
-  bitstream CpresEMaxes;
-  bitstream CpresChunkAddrs;
+  hash_table<u64, chunk_exp_info> ChunkExponents;
+  //bitstream CompressedExps;
+  bitstream CompressedChunkAddresses;
   bitstream ChunkStream;
   /* block emaxes related */
-  bitstream ChunkEMaxesStream;
+  bitstream ChunkExpStream;
   array<block_sig> BlockSigs;
-  array<i16> EMaxes;
-  bitstream BlockStream; // only used by v0.1
+  array<i16> SubbandExps;
+  //bitstream BlockStream; // only used by v0.1
   array<t2<u32, channel*>> SortedChannels;
+  array<sub_channel_info> SortedSubChannels;
 };
 
 
@@ -149,7 +150,7 @@ Init(channel* C)
 {
   InitWrite(&C->BrickStream, 16384);
   InitWrite(&C->BrickDeltasStream, 32);
-  InitWrite(&C->BrickSzsStream, 256);
+  InitWrite(&C->BrickSizeStream, 256);
   InitWrite(&C->BlockStream, 256);
 }
 
@@ -158,7 +159,7 @@ idx2_Inline void
 Dealloc(channel* C)
 {
   Dealloc(&C->BrickDeltasStream);
-  Dealloc(&C->BrickSzsStream);
+  Dealloc(&C->BrickSizeStream);
   Dealloc(&C->BrickStream);
   Dealloc(&C->BlockStream);
 }
@@ -167,16 +168,16 @@ Dealloc(channel* C)
 idx2_Inline void
 Init(sub_channel* Sc)
 {
-  InitWrite(&Sc->BlockEMaxesStream, 64);
-  InitWrite(&Sc->BrickEMaxesStream, 8192);
+  InitWrite(&Sc->BlockExpStream, 64);
+  InitWrite(&Sc->BrickExpStream, 8192);
 }
 
 
 idx2_Inline void
 Dealloc(sub_channel* Sc)
 {
-  Dealloc(&Sc->BlockEMaxesStream);
-  Dealloc(&Sc->BrickEMaxesStream);
+  Dealloc(&Sc->BlockExpStream);
+  Dealloc(&Sc->BrickExpStream);
 }
 
 
@@ -188,10 +189,10 @@ Dealloc(chunk_meta_info* Cm)
 }
 
 idx2_Inline void
-Dealloc(chunk_emax_info* Ce)
+Dealloc(chunk_exp_info* Ce)
 {
-  Dealloc(&Ce->EMaxSizes);
-  Dealloc(&Ce->FileEMaxBuffer);
+  Dealloc(&Ce->ExpSizes);
+  Dealloc(&Ce->FileExpBuffer);
 }
 
 
