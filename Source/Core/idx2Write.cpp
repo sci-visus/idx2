@@ -36,11 +36,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
   BrickEMaxesStat.Add((f64)Size(Sc->BrickExpStream));
   Rewind(&E->ChunkExpStream);
   CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
-  if (Level == 2 && Subband == 7)
-  {
-    int Stop = 0;
-  }
-    //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
+  //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
   ChunkEMaxesStat.Add((f64)Size(E->ChunkExpStream));
 
   /* rewind */
@@ -66,11 +62,6 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
   GrowToAccomodate(ChunkEMaxSzs, 4);
   // write the size of the exponent stream for current chunk
   WriteVarByte(ChunkEMaxSzs, Size(E->ChunkExpStream));
-  if (Level == 2 && Subband == 7)
-  {
-    auto Sz = Size(E->ChunkExpStream);
-    int Stop = 0;
-  }
   array<u8>* EMaxBuffer = &CemIt.Val->FileExpBuffer;
   // write the exponents to the exponent buffer for the whole file
   PushBack(EMaxBuffer, E->ChunkExpStream.Stream.Data, Size(E->ChunkExpStream));
@@ -108,8 +99,6 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
   {
     bitstream* ChunkExpSizes = &CeIt.Val->ExpSizes;
     file_id FileId = ConstructFilePath(Idx2, *CeIt.Key);
-    if (FileId.Id == 2305843009213693952ull)
-      int Stop = 0;
     idx2_Assert(FileId.Id == *CeIt.Key);
     /* write chunk emax sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");

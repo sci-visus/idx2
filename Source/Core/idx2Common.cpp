@@ -148,17 +148,6 @@ SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes)
 
 
 void
-SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels)
-{
-  Clear(&Idx2->QualityLevelsIn);
-  idx2_ForEach (It, QualityLevels)
-  {
-    PushBack(&Idx2->QualityLevelsIn, (int)*It);
-  };
-}
-
-
-void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 {
   Idx2->DownsamplingFactor3 = DownsamplingFactor3;
@@ -196,15 +185,6 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "    (group-levels %s)\n", Idx2.GroupLevels ? "true" : "false");
   fprintf(Fp, "    (group-sub-levels %s)\n", Idx2.GroupSubbands ? "true" : "false");
   fprintf(Fp, "    (group-bit-planes %s)\n", Idx2.GroupBitPlanes ? "true" : "false");
-  if (Size(Idx2.QualityLevelsIn) > 0)
-  {
-    fprintf(Fp, "    (quality-levels %d", (int)Size(Idx2.QualityLevelsIn));
-    idx2_ForEach (QIt, Idx2.QualityLevelsIn)
-    {
-      fprintf(Fp, " %d", *QIt);
-    }
-    fprintf(Fp, ")\n");
-  }
   fprintf(Fp, "  )\n"); // end format)
   fprintf(Fp, ")\n");   // end )
   fclose(Fp);
@@ -369,16 +349,6 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
         {
           idx2_Assert(Expr->type == SE_BOOL);
           Idx2->GroupBitPlanes = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "quality-levels"))
-        {
-          int NumQualityLevels = Expr->i;
-          Resize(&Idx2->QualityLevelsIn, NumQualityLevels);
-          idx2_For (int, I, 0, NumQualityLevels)
-          {
-            Idx2->QualityLevelsIn[I] = Expr->i;
-            Expr = Expr->next;
-          }
         }
       }
       if (Expr->type == SE_ID)
@@ -672,19 +642,6 @@ ComputeWaveletTransformDetails(idx2_file* Idx2)
 }
 
 
-/* compute actual number of bytes for each rdo (rate-distortion optimization) quality level (not used for now) */
-static void
-ComputeRdoQualityLevels(idx2_file* Idx2, const params& P)
-{
-  i64 TotalUncompressedSize = Prod<i64>(Idx2->Dims3) * SizeOf(Idx2->DType);
-  Reserve(&Idx2->RdoLevels, Size(Idx2->QualityLevelsIn));
-  idx2_ForEach (It, Idx2->QualityLevelsIn)
-  {
-    PushBack(&Idx2->RdoLevels, TotalUncompressedSize / *It);
-  }
-}
-
-
 error<idx2_err_code>
 Finalize(idx2_file* Idx2, const params& P)
 {
@@ -706,7 +663,6 @@ Finalize(idx2_file* Idx2, const params& P)
   idx2_PropagateIfError(ComputeFileDirDepths(Idx2, P));
 
   ComputeWaveletTransformDetails(Idx2);
-  ComputeRdoQualityLevels(Idx2, P);
 
   return idx2_Error(idx2_err_code::NoError);
 }
@@ -720,8 +676,6 @@ Dealloc(idx2_file* Idx2)
   Dealloc(&Idx2->FilesOrderStr);
   Dealloc(&Idx2->Subbands);
   Dealloc(&Idx2->SubbandsNonExt);
-  Dealloc(&Idx2->QualityLevelsIn);
-  Dealloc(&Idx2->RdoLevels);
 }
 
 

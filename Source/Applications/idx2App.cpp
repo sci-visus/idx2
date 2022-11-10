@@ -259,7 +259,6 @@ SetParams(idx2_file* Idx2, const params& P)
   SetGroupLevels(Idx2, P.GroupLevels);
   SetGroupBitPlanes(Idx2, P.GroupBitPlanes);
   SetGroupSubLevels(Idx2, P.GroupSubLevels);
-  SetQualityLevels(Idx2, P.RdoLevels);
 
   return Finalize(Idx2, P);
 }

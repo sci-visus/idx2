@@ -37,9 +37,9 @@ struct decode_data
   bitstream BlockStream;                                   // used only by v0.1
   hash_table<i16, bitstream> Streams;
   buffer CompressedChunkExps;
-  bitstream ChunkEMaxSzsStream;
+  bitstream ChunkExpSizeStream;
   bitstream ChunkAddrsStream;
-  bitstream ChunkSzsStream;
+  bitstream ChunkSizeStream;
   //  array<t2<u64, u64>> RequestedChunks; // is cleared after each tile
   int QualityLevel = -1;
   int EffIter = 0;

@@ -125,8 +125,8 @@ struct idx2_file
   static constexpr int MaxBricksPerChunk = 32768;
   static constexpr int MaxChunksPerFile = 4906;
   static constexpr int MaxFilesPerDir = 4096;
-  static constexpr int MaxBrickDim =
-    256; // so max number of blocks per subband can be represented in 2 bytes
+  // so max number of blocks per subband can be represented in 2 bytes
+  static constexpr int MaxBrickDim = 256;
   static constexpr int MaxLevels = 16;
   static constexpr int MaxTransformPassesPerLevels = 9;
   static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
@@ -157,9 +157,9 @@ struct idx2_file
   stack_array<u64, MaxLevels> FilesOrder;
   f64 Accuracy = 0;
   i8 NLevels = 1;
-  int FilesPerDir = 4096; // maximum number of files (or sub-directories) per directory
+  int FilesPerDir = 512; // maximum number of files (or sub-directories) per directory
   int BricksPerChunkIn = 512;
-  int ChunksPerFileIn = 4096;
+  int ChunksPerFileIn = 512;
   stack_array<int, MaxLevels> BricksPerChunk = { { 512 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
@@ -175,8 +175,6 @@ struct idx2_file
   transform_details TdExtrpolate; // used only for extrapolation
   stref Dir; // the directory containing the idx2 dataset
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
-  array<int> QualityLevelsIn; // [] -> bytes
-  array<i64> RdoLevels;       // [] -> bytes
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
   bool GroupSubbands = true;
@@ -261,9 +259,6 @@ SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels);
 
 void
 SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
-
-void
-SetQualityLevels(idx2_file* Idx2, const array<int>& QualityLevels);
 
 void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);

@@ -297,12 +297,4 @@ BitPlaneFromChannelKey(u64 ChannelKey)
 }
 
 
-//// Get a Key composed from Iteration + Level
-//idx2_Inline u16
-//GetSubChannelKey(i8 Level, i8 Subband)
-//{
-//  return (u16(Subband) << 4) + Level;
-//}
-
-
 } // namespace idx2

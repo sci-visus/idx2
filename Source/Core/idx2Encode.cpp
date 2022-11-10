@@ -229,16 +229,16 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
 
 
 static void
-EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = false)
+EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLevel = false)
 {
   idx2_Assert(Idx2->NLevels <= idx2_file::MaxLevels);
 
-  i8 Iter = E->Level += IncIter;
+  i8 Level = E->Level += IncrementLevel;
 
-  u64 Brick = E->Brick[Iter];
+  u64 Brick = E->Brick[Level];
   //printf(
   //  "level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]), Brick);
-  auto BIt = Lookup(&E->BrickPool, GetBrickKey(Iter, Brick));
+  auto BIt = Lookup(&E->BrickPool, GetBrickKey(Level, Brick));
   idx2_Assert(BIt);
   volume& BVol = BIt.Val->Vol;
   idx2_Assert(BVol.Buffer);
@@ -249,7 +249,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
   /* do wavelet transform */
   if (!P.WaveletOnly)
   {
-    if (Iter + 1 < Idx2->NLevels)
+    if (Level + 1 < Idx2->NLevels)
       ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->Td, &BVol, false);
     else
       ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->Td, &BVol, true);
@@ -264,14 +264,14 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
   { // subband loop
     const subband& S = Idx2->Subbands[Sb];
     v3i SbDimsNonExt3 = idx2_NonExtDims(Dims(S.Grid));
-    i8 NextIter = Iter + 1;
-    if (Sb == 0 && NextIter < Idx2->NLevels)
+    i8 NextLevel = Level + 1;
+    if (Sb == 0 && NextLevel < Idx2->NLevels)
     { // need to encode the parent brick
       /* find the parent brick and create it if not found */
-      v3i Brick3 = E->Bricks3[Iter];
-      v3i PBrick3 = (E->Bricks3[NextIter] = Brick3 / Idx2->GroupBrick3);
-      u64 PBrick = (E->Brick[NextIter] = GetLinearBrick(*Idx2, NextIter, PBrick3));
-      u64 PKey = GetBrickKey(NextIter, PBrick);
+      v3i Brick3 = E->Bricks3[Level];
+      v3i PBrick3 = (E->Bricks3[NextLevel] = Brick3 / Idx2->GroupBrick3);
+      u64 PBrick = (E->Brick[NextLevel] = GetLinearBrick(*Idx2, NextLevel, PBrick3));
+      u64 PKey = GetBrickKey(NextLevel, PBrick);
       auto PbIt = Lookup(&E->BrickPool, PKey);
       if (!PbIt)
       { // instantiate the parent brick in the hash table
@@ -280,7 +280,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
         Fill(idx2_Range(f64, PBrickVol.Vol), 0.0);
         v3i From3 = (Brick3 / Idx2->GroupBrick3) * Idx2->GroupBrick3;
         v3i NChildren3 =
-          Dims(Crop(extent(From3, Idx2->GroupBrick3), extent(Idx2->NBricks3[Iter])));
+          Dims(Crop(extent(From3, Idx2->GroupBrick3), extent(Idx2->NBricks3[Level])));
         PBrickVol.NChildrenMax = (i8)Prod(NChildren3);
         PBrickVol.ExtentLocal = extent(NChildren3 * SbDimsNonExt3);
         Insert(&PbIt, PKey, PBrickVol);
@@ -301,8 +301,8 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncIter = fal
       EncodeSubband(Idx2, E, S.Grid, &BVol);
   } // end subband loop
   Dealloc(&BVol);
-  Delete(&E->BrickPool, GetBrickKey(Iter, Brick));
-  E->Level -= IncIter;
+  Delete(&E->BrickPool, GetBrickKey(Level, Brick));
+  E->Level -= IncrementLevel;
 }
 
 

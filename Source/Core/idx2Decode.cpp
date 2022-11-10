@@ -25,7 +25,6 @@ Init(decode_data* D, allocator* Alloc = nullptr)
   D->Alloc = Alloc ? Alloc : &BrickAlloc_;
   Init(&D->FileCacheTable);
   Init(&D->Streams, 7);
-  //  Reserve(&D->RequestedChunks, 64);
 }
 
 
@@ -40,10 +39,9 @@ Dealloc(decode_data* D)
   Dealloc(&D->BlockStream);
   Dealloc(&D->Streams);
   DeallocBuf(&D->CompressedChunkExps);
-  Dealloc(&D->ChunkEMaxSzsStream);
+  Dealloc(&D->ChunkExpSizeStream);
   Dealloc(&D->ChunkAddrsStream);
-  Dealloc(&D->ChunkSzsStream);
-  //  Dealloc(&D->RequestedChunks);
+  Dealloc(&D->ChunkSizeStream);
 }
 
 
@@ -85,35 +83,18 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
   u64 Brick = D->Brick[D->Level];
   v3i SbDims3 = Dims(SbGrid);
   v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
-  /* read the rdo information if present */
-  //int MinBitPlane = traits<i16>::Min;
-  //if (Size(Idx2.RdoLevels) > 0 && D->QualityLevel >= 0)
-  //{
-  //  //    printf("reading rdo\n");
-  //  auto ReadChunkRdoResult = ReadChunkRdos(Idx2, D, Brick, D->Level);
-  //  if (!ReadChunkRdoResult)
-  //    return Error(ReadChunkRdoResult);
-  //  const chunk_rdo_cache* ChunkRdoCache = Value(ReadChunkRdoResult);
-  //  int Ql = Min(D->QualityLevel, (int)Size(Idx2.RdoLevels) - 1);
-  //  MinBitPlane = ChunkRdoCache->TruncationPoints[D->Subband * Size(Idx2.RdoLevels) + Ql];
-  //}
-
-  //if (MinBitPlane == traits<i16>::Max)
-  //  return idx2_Error(idx2_err_code::NoError);
   int BlockCount = Prod(NBlocks3);
   if (D->Subband == 0 && D->Level + 1 < Idx2.NLevels)
     BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
 
   /* first, read the block exponents */
-  if (Brick == 0 && D->Level == 2 && D->Subband == 7)
-    int Stop = 0;
   auto ReadChunkExpResult = ReadChunkExponents(Idx2, D, Brick, D->Level, D->Subband);
   if (!ReadChunkExpResult)
     return Error(ReadChunkExpResult);
 
-  const chunk_cache* ChunkExpCache = Value(ReadChunkExpResult);
+  const chunk_exp_cache* ChunkExpCache = Value(ReadChunkExpResult);
   i32 BrickExpOffset = (D->BrickInChunk * BlockCount) * (SizeOf(Idx2.DType) > 4 ? 2 : 1);
-  bitstream BrickExpsStream = ChunkExpCache->ChunkStream;
+  bitstream BrickExpsStream = ChunkExpCache->ChunkExpStream;
   SeekToByte(&BrickExpsStream, BrickExpOffset);
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
@@ -151,25 +132,21 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       i16 RealBp = Bp + EMax;
       if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1)
         break; // this bit plane is not needed to satisfy the input accuracy
-      //if (RealBp < MinBitPlane)
-      //  break; // break due to rdo optimization
       auto StreamIt = Lookup(&Streams, RealBp);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
         auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Level, D->Subband, RealBp);
         if (!ReadChunkResult)
-        {
-          //idx2_Assert(false);
           return Error(ReadChunkResult);
-        }
+
         const chunk_cache* ChunkCache = Value(ReadChunkResult);
         auto BrickIt = BinarySearch(idx2_Range(ChunkCache->Bricks), Brick);
         idx2_Assert(BrickIt != End(ChunkCache->Bricks));
         idx2_Assert(*BrickIt == Brick);
         i64 BrickInChunk = BrickIt - Begin(ChunkCache->Bricks);
-        idx2_Assert(BrickInChunk < Size(ChunkCache->BrickSzs));
-        i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSzs[BrickInChunk - 1];
+        idx2_Assert(BrickInChunk < Size(ChunkCache->BrickSizes));
+        i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSizes[BrickInChunk - 1];
         BrickOffset += Size(ChunkCache->ChunkStream);
         Insert(&StreamIt, RealBp, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
@@ -480,12 +457,12 @@ DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddres
     ChunkCache->Bricks[I] = Brick;
     idx2_Assert(Brk == (Brick >> L));
   }
-  Resize(&ChunkCache->BrickSzs, NBricks);
+  Resize(&ChunkCache->BrickSizes, NBricks);
 
   /* decompress and store the brick sizes */
   i32 BrickSize = 0;
   SeekToNextByte(ChunkStream);
-  idx2_ForEach (BrickSzIt, ChunkCache->BrickSzs)
+  idx2_ForEach (BrickSzIt, ChunkCache->BrickSizes)
     *BrickSzIt = BrickSize += (i32)ReadVarByte(ChunkStream);
   ChunkCache->ChunkStream = *ChunkStream;
 }
