@@ -52,8 +52,6 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
   //  "Provide --in_dir (input directory)\n"
   //  "For example, if the input file is C:/Data/MIRANDA/DENSITY.idx2, the --in_dir is C:/Data\n");
 
-  /* Parse the optional quality and decode levels */
-  OptVal(Argc, Argv, "--quality_level", &P->QualityLevel);
 }
 
 
@@ -168,8 +166,6 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
   //            "Provide --files_per_dir\n"
   //            "Example: --files_per_dir 4096\n");
 
-  // Parse the optional RDO levels (--quality_levels)
-  OptVal(Argc, Argv, "--quality_levels", &P->RdoLevels);
   // Parse the optional version (--version)
   OptVal(Argc, Argv, "--version", &P->Version);
   // Parse the optional output directory (--out_dir)

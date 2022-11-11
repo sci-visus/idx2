@@ -6,7 +6,6 @@
 #include "Statistics.h"
 #include "VarInt.h"
 
-#include <iostream>
 
 namespace idx2
 {
@@ -44,8 +43,8 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
 
   /* write to file */
   file_id FileId = ConstructFilePath(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
-  printf("file = %s\n", FileId.Name.ConstPtr);
-  printf("    level = %d subband = %d\n", Level, Subband);
+  //printf("file = %s\n", FileId.Name.ConstPtr);
+  //printf("    level = %d subband = %d\n", Level, Subband);
   // TODO: have one file emax buffer for each file
   //idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   //WriteBuffer(Fp, ToBuffer(E->ChunkEMaxesStream));
@@ -62,9 +61,10 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
   GrowToAccomodate(ChunkEMaxSzs, 4);
   // write the size of the exponent stream for current chunk
   WriteVarByte(ChunkEMaxSzs, Size(E->ChunkExpStream));
-  array<u8>* EMaxBuffer = &CemIt.Val->FileExpBuffer;
+  array<u8>* ExpBuffer = &CemIt.Val->FileExpBuffer;
   // write the exponents to the exponent buffer for the whole file
-  PushBack(EMaxBuffer, E->ChunkExpStream.Stream.Data, Size(E->ChunkExpStream));
+  PushBack(ExpBuffer, E->ChunkExpStream.Stream.Data, Size(E->ChunkExpStream));
+  //printf("%lld %lld\n", Size(E->ChunkExpStream), Size(*EMaxBuffer));
   Rewind(&E->ChunkExpStream);
 }
 
@@ -87,9 +87,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
   InsertionSort(Begin(E->SortedSubChannels), End(E->SortedSubChannels));
 
   idx2_ForEach (Sch, E->SortedSubChannels)
-  {
     WriteChunkExponents(Idx2, E, Sch->SubChannel, Sch->Level, Sch->Subband);
-  }
   // TODO: deallocate the file emax buffer after it is flushed to a file
   // TODO: need to "interleave" this with FlushChunk
   // TODO: detect that we are done with a file to flush it as soon as possible instead of at the end (maybe count the number of chunks in a file)
@@ -114,6 +112,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     // write the total number of bytes used for storing the exponents
     auto TotalExpBytes = ToBuffer(CeIt.Val->FileExpBuffer).Bytes + ToBuffer(*ChunkExpSizes).Bytes + sizeof(int);
     WritePOD(Fp, (int)TotalExpBytes);
+    Dealloc(&CeIt.Val->FileExpBuffer);
   }
 
   return idx2_Error(idx2_err_code::NoError);
@@ -208,8 +207,6 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     // write size of the compressed chunk addresses
     WritePOD(Fp, (int)Size(E->CompressedChunkAddresses));
     WritePOD(Fp, (int)Size(Cm->Addrs)); // number of chunks
-    std::cout << Size(Cm->Sizes) << " " << Size(E->CompressedChunkAddresses) << " " << Size(Cm->Addrs)
-              << "\n";
     ChunkAddrsStat.Add((f64)Size(Cm->Addrs) * sizeof(Cm->Addrs[0]));
     CpresChunkAddrsStat.Add((f64)Size(E->CompressedChunkAddresses));
   }

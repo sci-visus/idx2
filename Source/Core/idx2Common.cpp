@@ -38,7 +38,6 @@ free_list_allocator BrickAlloc_;
 void
 Dealloc(params* P)
 {
-  Dealloc(&P->RdoLevels);
 }
 
 

@@ -42,7 +42,7 @@ template <typename t> t* End(const array<t>& Array);
 template <typename t> void Clone(const array<t>& Src, array<t>* Dst);
 template <typename t> void Relocate(array<t>* Array, buffer Buf);
 
-template <typename t> void SetCapacity(array<t>* Array, i64 NewCapacity = 0);
+template <typename t> void GrowCapacity(array<t>* Array, i64 NewCapacity = 0);
 template <typename t> void Resize(array<t>* Array, i64 NewSize);
 template <typename t> void Reserve(array<t>* Array, i64 Capacity);
 template <typename t> void Clear(array<t>* Array);
@@ -164,7 +164,7 @@ Relocate(array<t>* Array, buffer Buf)
 
 
 template <typename t> void
-SetCapacity(array<t>* Array, i64 NewCapacity)
+GrowCapacity(array<t>* Array, i64 NewCapacity)
 {
   if (NewCapacity == 0) // default
     NewCapacity = Array->Capacity * 3 / 2 + 8;
@@ -183,7 +183,7 @@ template <typename t> idx2_Inline void
 PushBack(array<t>* Array, const t& Item)
 {
   if (Array->Size >= Array->Capacity)
-    SetCapacity(Array);
+    GrowCapacity(Array);
   (*Array)[Array->Size++] = Item;
 }
 
@@ -191,12 +191,15 @@ template <typename t> idx2_Inline void
 PushBack(array<t>* Array, const t* Items, i64 NItems)
 {
   i64 Size = Array->Size;
-  i64 NewCapacity = Max(Array->Capacity * 3 / 2 + 8, Size + NItems);
-  SetCapacity(Array, NewCapacity);
-  for (i64 I = 0; I < NItems; ++I)
-  {
-    Array->Buffer[I + Size] = Items[I];
-  }
+  i64 NewCapacity = Array->Capacity;
+  while (Size + NItems >= NewCapacity)
+    NewCapacity = NewCapacity * 3 / 2 + 8;
+  GrowCapacity(Array, NewCapacity);
+  memcpy(&Array->Buffer[Size], Items, NItems * sizeof(t));
+  //for (i64 I = 0; I < NItems; ++I)
+  //{
+  //  Array->Buffer[I + Size] = Items[I];
+  //}
   Array->Size = Size + NItems;
 }
 
@@ -205,7 +208,7 @@ template <typename t> idx2_Inline void
 PushBack(array<t>* Array)
 {
   if (Array->Size >= Array->Capacity)
-    SetCapacity(Array);
+    GrowCapacity(Array);
   ++Array->Size;
 }
 
@@ -235,8 +238,8 @@ Clear(array<t>* Array)
 template <typename t> void
 Resize(array<t>* Array, i64 NewSize)
 {
-  if (NewSize > Array->Capacity)
-    SetCapacity(Array, NewSize);
+  if (NewSize > Array->Capacity) // TODO: maybe grow the capacity until this is false
+    GrowCapacity(Array, NewSize);
   if (Array->Size < NewSize)
     Fill(Begin(*Array) + Array->Size, Begin(*Array) + NewSize, t{});
   Array->Size = NewSize;
@@ -246,7 +249,7 @@ Resize(array<t>* Array, i64 NewSize)
 template <typename t> idx2_Inline void
 Reserve(array<t>* Array, i64 Capacity)
 {
-  SetCapacity(Array, Capacity);
+  GrowCapacity(Array, Capacity);
 }
 
 

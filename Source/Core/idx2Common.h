@@ -79,14 +79,13 @@ struct params
   int NLevels = 1;
   f64 Accuracy = 1e-7;
   int BricksPerChunk = 512;
-  int ChunksPerFile = 512;
+  int ChunksPerFile = 64;
   int FilesPerDir = 512;
   /* decode exclusive */
   extent DecodeExtent;
   v3i DownsamplingFactor3; // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
   f64 DecodeAccuracy = 0;
   int DecodePrecision = 0;
-  int QualityLevel = -1;
   cstr OutDir = ".";      // TODO: change this to local storage
   stref InDir = ".";       // TODO: change this to local storage
   cstr OutFile = nullptr; // TODO: change this to local storage
@@ -101,7 +100,6 @@ struct params
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
   bool GroupSubLevels = true;
-  array<int> RdoLevels;
   bool WaveletOnly = false;
   bool ComputeMinMax = false;
   // either LLC_LatLon or LLC_Cap can be provided, not both
@@ -159,7 +157,7 @@ struct idx2_file
   i8 NLevels = 1;
   int FilesPerDir = 512; // maximum number of files (or sub-directories) per directory
   int BricksPerChunkIn = 512;
-  int ChunksPerFileIn = 512;
+  int ChunksPerFileIn = 64;
   stack_array<int, MaxLevels> BricksPerChunk = { { 512 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };

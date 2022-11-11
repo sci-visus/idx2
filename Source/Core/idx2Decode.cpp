@@ -390,6 +390,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           D.Level = Level;
           D.Bricks3[Level] = Top.BrickFrom3;
           D.Brick[Level] = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
+          //printf("level = %d brick = %llu\n", Level, D.Brick[Level]);
           u64 BrickKey = GetBrickKey(Level, D.Brick[Level]);
           Insert(&D.BrickPool, BrickKey, BVol);
           idx2_PropagateIfError(DecodeBrick(Idx2, P, &D, Accuracy));
