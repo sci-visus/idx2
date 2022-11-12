@@ -55,9 +55,6 @@ DecodeSubband(const idx2_file& Idx2,
               const grid& SbGrid,
               volume* BVol);
 
-static error<idx2_err_code>
-DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, u8 Mask, f64 Accuracy);
-
 
 void
 DecompressBufZstd(const buffer& Input, bitstream* Output)
@@ -224,16 +221,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
   idx2_Assert(BrickIt);
   volume& BVol = BrickIt.Val->Vol;
 
-  /* construct a list of subbands to decode */
   idx2_Assert(Size(Idx2.Subbands) <= 8);
-  //idx2_For (u8, Sb, 0, 8)
-  //{
-  //  if (!BitSet(Mask, Sb))
-  //    continue;
-  //  idx2_For (u8, S, 0, 8)
-  //    if ((Sb | S) <= Sb)
-  //      DecodeSbMask = SetBit(DecodeSbMask, S);
-  //} // end subband loop
 
   /* recursively decode the brick, one subband at a time */
   idx2_For (i8, Sb, 0, (i8)Size(Idx2.Subbands))
@@ -263,6 +251,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
         PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
       }
       ++PbIt.Val->NChildren;
+      /* copy data from the parent to the current brick */
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
       grid SbGridNonExt = S.Grid;
       SetDims(&SbGridNonExt, SbDimsNonExt3);
@@ -271,7 +260,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
       if (PbIt.Val->NChildren == PbIt.Val->NChildrenMax)
       { // last child
         Dealloc(&PbIt.Val->Vol);
-        Delete(&D->BrickPool, PKey);
+        Delete(&D->BrickPool, PKey); // TODO HASH: do not delete if the output mode is HashMap
       }
     }
     D->Subband = Sb;
@@ -284,10 +273,8 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
   // TODO: inverse transform only to the necessary level
   if (!P.WaveletOnly)
   {
-    if (Level + 1 < Idx2.NLevels)
-      InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, false);
-    else
-      InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, true);
+    bool CoarsestLevel = Level + 1 == Idx2.NLevels;
+    InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, CoarsestLevel);
   }
 
   return idx2_Error(err_code::NoError);
@@ -305,9 +292,9 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   //printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
   volume OutVolMem;
-  idx2_CleanUp(if (P.OutMode == params::out_mode::WriteToFile) { Unmap(&OutVol); });
+  idx2_CleanUp(if (P.OutMode == params::out_mode::RegularGridFile) { Unmap(&OutVol); });
 
-  if (P.OutMode == params::out_mode::WriteToFile)
+  if (P.OutMode == params::out_mode::RegularGridFile)
   {
     metadata Met;
     memcpy(Met.Name, Idx2.Name, sizeof(Met.Name));
@@ -321,7 +308,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);
   }
-  else if (P.OutMode == params::out_mode::KeepInMemory)
+  else if (P.OutMode == params::out_mode::RegularGridMem)
   {
     OutVolMem.Buffer = *OutBuf;
     SetDims(&OutVolMem, Dims(OutGrid));
@@ -332,7 +319,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   BrickAlloc_ = free_list_allocator(BrickBytes);
   // TODO: move the decode_data into idx2_file itself
   //idx2_RAII(decode_data, D, Init(&D, &BrickAlloc_));
-  idx2_RAII(decode_data, D, Init(&D, &Mallocator()));
+  idx2_RAII(decode_data, D, Init(&D, &Mallocator())); // for now the allocator seems not a bottleneck
   //  D.QualityLevel = Dw->GetQuality();
   f64 Accuracy = Max(Idx2.Accuracy, P.DecodeAccuracy);
   //  i64 CountZeroes = 0;
@@ -395,6 +382,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           Insert(&D.BrickPool, BrickKey, BVol);
           idx2_PropagateIfError(DecodeBrick(Idx2, P, &D, Accuracy));
           // Copy the samples out to the output buffer (or file)
+          // The Idx2.DecodeSubbandMasks[Level - 1] == 0 means that no subbands of the previous level
+          // was decoded, so we can now just copy the result out
           if (Level == 0 || Idx2.DecodeSubbandMasks[Level - 1] == 0)
           {
             grid BrickGrid(
@@ -403,12 +392,19 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
               v3i(1 << Level)); // TODO: the 1 << level is only true for 1 transform pass per level
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
-            auto OutputVol = P.OutMode == params::out_mode::WriteToFile ? &OutVol.Vol : &OutVolMem;
-            auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
-                                                              : (CopyGridGrid<f64, f64>);
-            CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
-            Dealloc(&BVol.Vol);
-            Delete(&D.BrickPool, BrickKey); // TODO: also delete the parent bricks once we are done
+            if (P.OutMode != params::out_mode::HashMap)
+            {
+              auto OutputVol = P.OutMode == params::out_mode::RegularGridFile ? &OutVol.Vol : &OutVolMem;
+              auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
+                                                                : (CopyGridGrid<f64, f64>);
+              CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
+              Dealloc(&BVol.Vol);
+              Delete(&D.BrickPool, BrickKey); // TODO: also delete the parent bricks once we are done
+            }
+            else
+            {
+              return idx2_Error(idx2_err_code::UnsupportedScheme);
+            }
           },
           64,
           Idx2.BricksOrderInChunk[Level],
@@ -425,7 +421,6 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
         VolExtentInChunks);
       , 64, Idx2.FilesOrder[Level], v3i(0), Idx2.NFiles3[Level], ExtentInFiles, VolExtentInFiles);
   } // end level loop
-    //  printf("count zeroes        = %lld\n", CountZeroes);
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
   printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
   printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));

@@ -224,7 +224,7 @@ ParseParams(int Argc, cstr* Argv)
 
   // Parse the dry run option (--dry): if enabled, skip writing the output file
   P.OutMode =
-    OptExists(Argc, Argv, "--dry") ? params::out_mode::NoOutput : params::out_mode::WriteToFile;
+    OptExists(Argc, Argv, "--dry") ? params::out_mode::NoOutput : params::out_mode::RegularGridFile;
 
   // Perform parsing depending on the action
   if (P.Action == action::Encode)

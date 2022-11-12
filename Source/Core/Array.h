@@ -197,10 +197,6 @@ PushBack(array<t>* Array, const t* Items, i64 NItems)
     NewCapacity = NewCapacity * 3 / 2 + 8;
   GrowCapacity(Array, NewCapacity);
   memcpy(&Array->Buffer[Size], Items, NItems * sizeof(t));
-  //for (i64 I = 0; I < NItems; ++I)
-  //{
-  //  Array->Buffer[I + Size] = Items[I];
-  //}
   Array->Size = Size + NItems;
 }
 

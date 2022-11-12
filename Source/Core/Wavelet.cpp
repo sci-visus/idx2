@@ -871,7 +871,7 @@ ForwardCdf53(const v3i& M3,
              const array<subband>& Subbands,
              const transform_details& Td,
              volume* Vol,
-             bool LastIter)
+             bool CoarsestLevel)
 {
   idx2_For (int, I, 0, Td.StackSize)
   {
@@ -900,7 +900,7 @@ ForwardCdf53(const v3i& M3,
   idx2_Assert(IsFloatingPoint(Vol->Type));
   for (int I = 0; I < Size(Subbands); ++I)
   {
-    if (I == 0 && !LastIter)
+    if (I == 0 && !CoarsestLevel)
       continue; // do not normalize subband 0
     subband& S = Subbands[I];
     f64 Wx = M3.X == 1
@@ -932,13 +932,13 @@ InverseCdf53(const v3i& M3,
              const array<subband>& Subbands,
              const transform_details& Td,
              volume* Vol,
-             bool LastIter)
+             bool CoarsestLevel)
 {
   /* inverse normalize if required */
   idx2_Assert(IsFloatingPoint(Vol->Type));
   for (int I = 0; I < Size(Subbands); ++I)
   {
-    if (I == 0 && !LastIter)
+    if (I == 0 && !CoarsestLevel)
       continue; // do not normalize subband 0
     subband& S = Subbands[I];
     f64 Wx = M3.X == 1

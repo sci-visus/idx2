@@ -85,18 +85,18 @@ struct params
   extent DecodeExtent;
   v3i DownsamplingFactor3; // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
   f64 DecodeAccuracy = 0;
-  int DecodePrecision = 0;
-  cstr OutDir = ".";      // TODO: change this to local storage
+  cstr OutDir = ".";       // TODO: change this to local storage
   stref InDir = ".";       // TODO: change this to local storage
-  cstr OutFile = nullptr; // TODO: change this to local storage
+  cstr OutFile = nullptr;  // TODO: change this to local storage
   bool Pause = false;
   enum class out_mode
   {
-    WriteToFile,
-    KeepInMemory,
+    RegularGridFile,// write a regular grid to a file (resolution decided by DownsamplingFactor3)
+    RegularGridMem, // output a regular grid in memory (resolution decided by DownsamplingFactor3)
+    HashMap,        // a hashmap where each element is a brick, at a potentially different resolution
     NoOutput
   };
-  out_mode OutMode = out_mode::KeepInMemory;
+  out_mode OutMode = out_mode::RegularGridMem;
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
   bool GroupSubLevels = true;
