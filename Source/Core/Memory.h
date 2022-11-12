@@ -38,6 +38,7 @@ Quickly declare a heap-allocated array (typed_buffer) which deallocates itself a
 #define idx2_CallocArray(Name, Type, Size) // initialize elements to 0
 #define idx2_ArrayOfMallocArrays(Name, Type, SizeOuter, SizeInner)
 #define idx2_MallocArrayOfArrays(Name, Type, SizeOuter, SizeInner)
+#define idx2_ScopeBuffer(Name, Size)
 
 
 struct buffer;
@@ -499,3 +500,9 @@ template <typename t> idx2_Inline buffer_t<t>::operator bool() const
       DeallocBufT(&Name[I]);                                                                       \
     DeallocBufT(&Name);                                                                            \
   })
+
+#undef idx2_ScopeBuffer
+#define idx2_ScopeBuffer(Name, Size) \
+  using namespace idx2; \
+  idx2_RAII(buffer, Name, AllocBuf(&Name, Size), DeallocBuf(&Name));
+

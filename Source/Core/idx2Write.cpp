@@ -57,14 +57,17 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
     //Init(&ChunkEMaxInfo.FileEMaxBuffer, 128);
     Insert(&CemIt, FileId.Id, ChunkExpInfo);
   }
-  bitstream* ChunkEMaxSzs = &CemIt.Val->ExpSizes;
+  chunk_exp_info* Ce = CemIt.Val;
+  bitstream* ChunkEMaxSzs = &Ce->ExpSizes;
   GrowToAccomodate(ChunkEMaxSzs, 4);
   // write the size of the exponent stream for current chunk
   WriteVarByte(ChunkEMaxSzs, Size(E->ChunkExpStream));
-  array<u8>* ExpBuffer = &CemIt.Val->FileExpBuffer;
+  array<u8>* ExpBuffer = &Ce->FileExpBuffer;
   // write the exponents to the exponent buffer for the whole file
   PushBack(ExpBuffer, E->ChunkExpStream.Stream.Data, Size(E->ChunkExpStream));
   //printf("%lld %lld\n", Size(E->ChunkExpStream), Size(*EMaxBuffer));
+  u64 ChunkExpAddress = GetChunkAddress(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
+  PushBack(&Ce->Addrs, ChunkExpAddress);
   Rewind(&E->ChunkExpStream);
 }
 
@@ -95,22 +98,35 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
   // (since we know that all files in the buffer cannot be traversed again in the spatial DFS order)
   idx2_ForEach (CeIt, E->ChunkExponents) // one CeIt for each file
   {
-    bitstream* ChunkExpSizes = &CeIt.Val->ExpSizes;
+    chunk_exp_info* Ce = CeIt.Val;
+    bitstream* ChunkExpSizes = &Ce->ExpSizes;
     file_id FileId = ConstructFilePath(Idx2, *CeIt.Key);
     idx2_Assert(FileId.Id == *CeIt.Key);
     /* write chunk emax sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
     Flush(ChunkExpSizes);
     ChunkExpSizeStat.Add((f64)Size(*ChunkExpSizes));
+    int TotalExpBytes = 0;
     // write the exponent buffer
-    WriteBuffer(Fp, ToBuffer(CeIt.Val->FileExpBuffer));
-    auto Offset = idx2_FTell(Fp);
+    buffer Buf = ToBuffer(Ce->FileExpBuffer);
+    WriteBuffer(Fp, Buf);
+    TotalExpBytes += int(Buf.Bytes);
     // write the (compressed) sizes of the exponents
-    WriteBuffer(Fp, ToBuffer(*ChunkExpSizes));
-    // write the size (in bytes) of the compressed exponent sizes
-    WritePOD(Fp, (int)Size(*ChunkExpSizes));
+    Buf = ToBuffer(*ChunkExpSizes);
+    WriteBuffer(Fp, Buf);
+    WritePOD(Fp, (int)Buf.Bytes);
+    TotalExpBytes += int(Buf.Bytes) + sizeof(int);
+    // write compressed chunk addresses
+    CompressBufZstd(ToBuffer(Ce->Addrs), &E->CompressedChunkAddresses);
+    Buf = ToBuffer(E->CompressedChunkAddresses);
+    WriteBuffer(Fp, Buf);
+    WritePOD(Fp, (int)Buf.Bytes);
+    TotalExpBytes += int(Buf.Bytes) + sizeof(int);
+    // write number of chunks
+    WritePOD(Fp, (int)Size(Ce->Addrs));
+    TotalExpBytes += sizeof(int);
     // write the total number of bytes used for storing the exponents
-    auto TotalExpBytes = ToBuffer(CeIt.Val->FileExpBuffer).Bytes + ToBuffer(*ChunkExpSizes).Bytes + sizeof(int);
+    TotalExpBytes += sizeof(int);
     WritePOD(Fp, (int)TotalExpBytes);
     Dealloc(&CeIt.Val->FileExpBuffer);
   }

@@ -30,7 +30,8 @@ struct chunk_meta_info
 struct chunk_exp_info
 {
   bitstream ExpSizes;
-  array<u8> FileExpBuffer;
+  array<u64> Addrs;
+  array<u8> FileExpBuffer; // buffer for a whole file
 };
 
 
@@ -191,6 +192,7 @@ Dealloc(chunk_meta_info* Cm)
 idx2_Inline void
 Dealloc(chunk_exp_info* Ce)
 {
+  Dealloc(&Ce->Addrs);
   Dealloc(&Ce->ExpSizes);
   Dealloc(&Ce->FileExpBuffer);
 }

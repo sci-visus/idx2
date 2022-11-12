@@ -68,13 +68,12 @@ ReadFile(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id&
   i64 FileSize = idx2_FTell(Fp);
   int S = 0; // total number of bytes used to store exponents info
   ReadBackwardPOD(Fp, &S);
-  idx2_FSeek(Fp, (FileSize - S - sizeof(S)), SEEK_SET); // skip the exponents info at the end
+  idx2_FSeek(Fp, (FileSize - S), SEEK_SET); // skip the exponents info at the end
   int NChunks = 0;
   ReadBackwardPOD(Fp, &NChunks);
   // TODO: check if there are too many NChunks
 
   /* read and decompress chunk addresses */
-  int IniChunkAddrsSz = NChunks * (int)sizeof(u64);
   int ChunkAddrsSz;
   ReadBackwardPOD(Fp, &ChunkAddrsSz);
   idx2_RAII(buffer,
@@ -85,7 +84,7 @@ ReadFile(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id&
   D->BytesData_ += ChunkAddrsSz;
   D->DecodeIOTime_ += ElapsedTime(&IOTimer);
   Rewind(&D->ChunkAddrsStream);
-  GrowToAccomodate(&D->ChunkAddrsStream, IniChunkAddrsSz - Size(D->ChunkAddrsStream));
+  GrowToAccomodate(&D->ChunkAddrsStream, NChunks * sizeof(u64) - Size(D->ChunkAddrsStream));
   DecompressBufZstd(CpresChunkAddrs, &D->ChunkAddrsStream);
 
   /* read chunk sizes */
@@ -195,6 +194,21 @@ ReadFileExponents(const idx2_file& Idx2,
   i64 FileSize = idx2_FTell(Fp);
   int ExponentSize = 0; // total bytes of the encoded chunk sizes
   ReadBackwardPOD(Fp, &ExponentSize); // total size of the exponent info
+
+
+  /* read addresses of the exponent chunks */
+  int NChunks = 0;
+  ReadBackwardPOD(Fp, &NChunks);
+  int ChunkAddrsSz;
+  ReadBackwardPOD(Fp, &ChunkAddrsSz);
+  idx2_ScopeBuffer(CpresChunkAddrs, ChunkAddrsSz);
+  ReadBackwardBuffer(Fp, &CpresChunkAddrs, ChunkAddrsSz);
+  D->BytesData_ += ChunkAddrsSz;
+  Rewind(&D->ChunkAddrsStream);
+  GrowToAccomodate(&D->ChunkAddrsStream, NChunks * sizeof(u64) - Size(D->ChunkAddrsStream));
+  DecompressBufZstd(CpresChunkAddrs, &D->ChunkAddrsStream);
+
+  // TODO: the exponent sizes can be compressed further
   int S = 0; // size (in bytes) of the compressed exponent sizes
   ReadBackwardPOD(Fp, &S);
   Rewind(&D->ChunkExpSizeStream);
@@ -207,27 +221,31 @@ ReadFileExponents(const idx2_file& Idx2,
 
   file_cache FileCache;
   Init(&FileCache.ChunkExpCaches, 10);
-  FileCache.ExponentBeginOffset = FileSize - ExponentSize - sizeof(ExponentSize);
+  FileCache.ExponentBeginOffset = FileSize - ExponentSize;
   Reserve(&FileCache.ChunkExpOffsets, S);
   i32 CeSz = 0;
   // we compute a "prefix sum" of the sizes to get the offsets
-  int NChunks = 0;
+  int NChunks2 = 0;
   while (Size(D->ChunkExpSizeStream) < S)
   {
     PushBack(&FileCache.ChunkExpOffsets, CeSz += (i32)ReadVarByte(&D->ChunkExpSizeStream));
+    u64 ChunkAddr = *((u64*)D->ChunkAddrsStream.Stream.Data + NChunks2);
     chunk_exp_cache ChunkExpCache;
-    ChunkExpCache.ChunkPos = NChunks;
+    ChunkExpCache.ChunkPos = NChunks2;
     // NOTE: here we rely on the fact that the exponent chunks are sorted by increasing subband in each file
-    u64 ChunkAddress = GetChunkAddress(Idx2, 0, Level, ChunkExpCache.ChunkPos, ExponentBitPlane_);
-    Insert(&FileCache.ChunkExpCaches, ChunkAddress, ChunkExpCache);
-    ++NChunks;
+    Insert(&FileCache.ChunkExpCaches, ChunkAddr, ChunkExpCache);
+    ++NChunks2;
   }
+
+  if (NChunks != NChunks2)
+    return idx2_Error(idx2_err_code::SizeMismatched,
+                      "number of chunks is either %d or %d\n", NChunks, NChunks2);
 
   // we expect each file (each level) to have NChunks = numbere of subbands
   // NOTE: this should no longer be true if a file stores more than one level
-  if (Size(Idx2.Subbands) != NChunks)
+  if (NChunks % Size(Idx2.Subbands) != 0)
     return idx2_Error(idx2_err_code::SizeMismatched,
-                      "number of chunks = %d is not the same as number of subbands which is %d\n", NChunks, (int)Size(Idx2.Subbands));
+                      "number of chunks = %d is not divisible by number of subbands which is %d\n", NChunks, (int)Size(Idx2.Subbands));
 
   //Resize(&FileCache.ChunkCaches, Size(FileCache.ChunkExpOffsets));
   idx2_Assert(Size(D->ChunkExpSizeStream) == S);
@@ -240,7 +258,7 @@ ReadFileExponents(const idx2_file& Idx2,
   {
     FileCacheIt->Val->ExponentBeginOffset = FileCache.ExponentBeginOffset;
     FileCacheIt->Val->ChunkExpOffsets = FileCache.ChunkExpOffsets;
-    FileCacheIt->Val->ChunkCaches = FileCache.ChunkCaches;
+    FileCacheIt->Val->ChunkExpCaches = FileCache.ChunkExpCaches;
   }
   FileCacheIt->Val->ExpCached = true;
 
