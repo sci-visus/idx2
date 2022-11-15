@@ -83,7 +83,7 @@ struct params
   int FilesPerDir = 512;
   /* decode exclusive */
   extent DecodeExtent;
-  v3i DownsamplingFactor3; // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
+  v3i DownsamplingFactor3 = v3i(0); // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
   f64 DecodeAccuracy = 0;
   cstr OutDir = ".";       // TODO: change this to local storage
   stref InDir = ".";       // TODO: change this to local storage
@@ -183,7 +183,8 @@ struct brick_volume
 {
   volume Vol;
   extent ExtentLocal;
-  i8 NChildren = 0;
+  i8 NChildrenDecoded = 0;
+  i8 NChildrenReturned = 0;
   i8 NChildrenMax = 0;
 };
 

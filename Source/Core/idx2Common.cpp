@@ -421,7 +421,7 @@ BuildSubbands(idx2_file* Idx2, const params& P)
       --Df3.Y;
       --Df3.Z;
       if (Df3.X == 0 && Df3.Y == 0 && Df3.Z == 0)
-        Idx2->DecodeSubbandMasks[I] = 1;
+        Idx2->DecodeSubbandMasks[I] = 1; // decode subband 0 of the next finer resolution level
       continue;
     }
     u8 Mask = 0xFF;
