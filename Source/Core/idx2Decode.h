@@ -50,6 +50,8 @@ struct decode_data
   u64 BytesData_ = 0;
   u64 BytesDecoded_ = 0;
   u64 DataMovementTime_ = 0;
+  i64 NSignificantBlocks = 0;
+  i64 NInsignificantSubbands = 0;
 };
 
 

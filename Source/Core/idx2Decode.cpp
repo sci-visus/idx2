@@ -134,7 +134,8 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
         break; // this bit plane is not needed to satisfy the input accuracy
 
       // if the subband is not 0 or if this is the last level, we count this block as decoded (significant), otherwise it is not significant
-      AnyBlockDecoded = D->Subband > 0 || D->Level + 1 == Idx2.NLevels;
+      AnyBlockDecoded = AnyBlockDecoded || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
+      ++D->NSignificantBlocks;
       auto StreamIt = Lookup(&Streams, RealBp);
       bitstream* Stream = nullptr;
       if (!StreamIt)
@@ -202,6 +203,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       D->DataMovementTime_ += ElapsedTime(&DataTimer);
     }
   }
+  D->NInsignificantSubbands += (AnyBlockDecoded == false);
 
   return AnyBlockDecoded;
 }
@@ -212,16 +214,6 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
 {
   i8 Level = D->Level;
   u64 Brick = D->Brick[Level];
-  //  if ((Brick >> Idx2.BricksPerChunks[Iter]) != D->LastTile) {
-  //    idx2_ForEach(It, D->RequestedChunks) {
-  //      auto& FileCache = D->FcTable.FileCaches[It->Second];
-  //      auto ChunkCacheIt = Lookup(&FileCache.ChunkCaches, It->First);
-  //      Dealloc(ChunkCacheIt.Val);
-  //      Delete(&FileCache.ChunkCaches, It->First); // TODO: write a delete that works on iterator
-  //    }
-  //    Clear(&D->RequestedChunks);
-  //    D->LastTile = Brick >> Idx2.BricksPerChunks[Iter];
-  //  }
   //  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
   auto BrickIt = Lookup(&D->BrickPool, GetBrickKey(Level, Brick));
   idx2_Assert(BrickIt);
@@ -282,7 +274,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
     auto Result = DecodeSubband(Idx2, D, Accuracy, S.Grid, &BVol);
     if (!Result)
       return Error(Result);
-    AnySubbandDecoded = AnySubbandDecoded && Value(Result);
+    AnySubbandDecoded = AnySubbandDecoded || Value(Result);
   } // end subband loop
   // TODO: HASH: check to see if the only subband significant is subband 0
   // if yes, delete this brick from the hash map right after it is done
@@ -423,6 +415,11 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             else if (P.OutMode == params::out_mode::HashMap)
             {
               // recursively copy data to parent, then delete myself if no subband is decoded
+              // TODO: we don't copy to the parent if there is any subband decoded?
+              // TODO: when no subband is decoded, it's really just the boundary that matters, so we
+              // just need to copy the boundary
+              // TODO: think about how the hierarchy is "skipped" (or not), by whether we let the parent
+              // know that the children have no subband decoded
               if (!AnySubbandDecoded)
               {
                 i8 Level = D.Level;
@@ -490,6 +487,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_ + D.BytesData_);
   printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_ / 8);
   printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool));
+  printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks);
+  printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands);
 
   return idx2_Error(err_code::NoError);
 }
