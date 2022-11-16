@@ -377,7 +377,7 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
     E.Level = 0;
     E.Bricks3[E.Level] = Top.BrickFrom3;
     E.Brick[E.Level] = GetLinearBrick(*Idx2, E.Level, E.Bricks3[E.Level]);
-    idx2_Assert(E.Brick[E.Iter] == Top.Address);
+    idx2_Assert(E.Brick[E.Level] == Top.Address);
     u64 BrickKey = GetBrickKey(E.Level, E.Brick[E.Level]);
     Insert(&E.BrickPool, BrickKey, BVol);
     EncodeBrick(Idx2, P, &E);
