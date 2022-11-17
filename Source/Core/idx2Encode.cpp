@@ -8,6 +8,7 @@
 #include "Zfp.h"
 #include "idx2Common.h"
 #include "idx2Lookup.h"
+#include "idx2SparseBricks.h"
 #include "idx2Write.h"
 #include "sexpr.h"
 #include "zstd/zstd.h"

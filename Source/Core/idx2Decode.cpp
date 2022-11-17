@@ -10,6 +10,7 @@
 #include "Zfp.h"
 #include "idx2Lookup.h"
 #include "idx2Read.h"
+#include "idx2SparseBricks.h"
 #include "sexpr.h"
 #include "zstd/zstd.h"
 
@@ -451,7 +452,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                   grid SbGridNonExt = S.Grid;
                   SetDims(&SbGridNonExt, SbDimsNonExt3);
                   extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
-                  // TODO: for bricks at the boundary, copy also the boundary?
+                  // TODO: for bricks at the boundary, copy also (or copy only) the boundary?
                   (CopyGridExtent<f64, f64>(SbGridNonExt, BrickVol, ToGrid, &PBrickVol));
                   ++PbIt.Val->NChildrenReturned;
                   // delete the child brick if no subbands decoded

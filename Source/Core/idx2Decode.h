@@ -4,6 +4,7 @@
 #include "Volume.h"
 #include "idx2Common.h"
 #include "idx2Read.h"
+#include "idx2SparseBricks.h"
 
 
 namespace idx2
@@ -26,7 +27,7 @@ struct decode_data
 {
   allocator* Alloc = nullptr;
   file_cache_table FileCacheTable;
-  hash_table<u64, brick_volume> BrickPool;
+  brick_table BrickPool;
   i8 Level  = 0; // current level being decoded
   i8 Subband = 0; // current subband being decoded
   stack_array<u64, idx2_file::MaxLevels> Brick;
@@ -56,16 +57,6 @@ struct decode_data
 
 
 /* ---------------------- FUNCTIONS ----------------------*/
-
-
-idx2_Inline i64
-SizeBrickPool(const decode_data& D)
-{
-  i64 Result = 0;
-  idx2_ForEach (It, D.BrickPool)
-    Result += Size(*It.Val);
-  return Result;
-}
 
 
 void

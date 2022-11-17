@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "BitStream.h"
 #include "HashTable.h"
 #include "Volume.h"
 
@@ -8,62 +9,58 @@ namespace idx2
 {
 
 
-template <typename t> struct brick
+struct brick_volume
 {
-  t* Samples = nullptr; // TODO: data should stay compressed
-  u8 LevelMask = 0;     // TODO: need to change if we support more than one transform pass per brick
-  //  stack_array<array<u8>, 8> BlockSigs; // TODO: to support more than one transform pass per
-  //  brick, we need a dynamic array
-  // friend v3i Dims(const brick<t>& Brick, const array<grid>& LevelGrids);
-  // friend t& At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3);
+  volume Vol;
+  extent ExtentLocal; // dimensions of the brick // TODO: we do not need full extent, just dims v3i
+  extent ExtentGlobal; // global extent of the brick
+  i8 NChildrenDecoded = 0;
+  i8 NChildrenReturned = 0;
+  i8 NChildrenMax = 0;
 };
 
 
-template <typename t> struct brick_table
+using brick_table = hash_table<u64, brick_volume>;
+
+struct brick_pool
 {
-  hash_table<u64, brick<t>> Bricks; // hash from BrickKey to Brick
-  allocator* Alloc = &Mallocator();
-  // TODO: let Enc->Alloc follow this allocator
+  brick_table BrickTable;
+  // We use 4 bits for each brick at the finest resolution to specify the finest resolution
+  // at the spatial location of the brick (this depends on how much the refinement is at that
+  // location)
+  bitstream Resolution;
+  v3i Dims3 = v3i(0);
+  v3i BrickDims3 = v3i(0); // dimensions of bricks, should be powers of 2
+  i8 NLevels = 0; // number of levels
 };
 
 
-template <typename t> void
-GetBrick(brick_table<t>* BrickTable, i8 Iter, u64 Brick)
+struct decode_data;
+struct idx2_file;
+void
+Init(brick_pool* Bp, idx2_file* Idx2, decode_data* D);
+
+
+/* Write all the finest bricks to a file */
+void
+WriteFinestBricks(const brick_pool* Bp);
+
+
+/* Given a position, return the grid encompassing the point */
+void
+PointQuery();
+
+
+/* Interpolate to get the value at a point */
+void
+Interpolate();
+
+
+idx2_Inline i64
+Size(const brick_volume& B)
 {
-  // auto
-  (void)BrickTable;
-  (void)Iter;
-  (void)Brick;
+  return Prod(Dims(B.Vol)) * SizeOf(B.Vol.Type);
 }
-
-
-template <typename t> void
-Dealloc(brick_table<t>* BrickTable);
-
-
-template <typename t> idx2_Inline v3i
-Dims(const brick<t>& Brick, const array<grid>& LevelGrids)
-{
-  return Dims(LevelGrids[Brick.Level]);
-}
-
-
-template <typename t> idx2_Inline t&
-At(const brick<t>& Brick, array<grid>& LevelGrids, const v3i& P3)
-{
-  v3i D3 = Dims(LevelGrids[Brick.Level]);
-  idx2_Assert(P3 < D3);
-  idx2_Assert(D3 == Dims(Brick));
-  i64 Idx = Row(D3, P3);
-  return const_cast<t&>(Brick.Samples[Idx]);
-}
-
-
-template <typename t> void
-Dealloc(brick<t>* Brick)
-{
-  free(Brick->Samples);
-} // TODO: check this
 
 
 } // namespace idx2
