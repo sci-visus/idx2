@@ -8,15 +8,15 @@ namespace idx2
 {
 
 
-
+/* Interleave the bits of the brick according to the indexing template */
 u64
-GetLinearBrick(const idx2_file& Idx2, int Iter, v3i Brick3)
+GetLinearBrick(const idx2_file& Idx2, int Level, v3i Brick3)
 {
   u64 LinearBrick = 0;
-  int Size = Idx2.BricksOrderStr[Iter].Len;
+  int Size = Idx2.BricksOrderStr[Level].Len;
   for (int I = Size - 1; I >= 0; --I)
   {
-    int D = Idx2.BricksOrderStr[Iter][I] - 'X';
+    int D = Idx2.BricksOrderStr[Level][I] - 'X';
     LinearBrick |= (Brick3[D] & u64(1)) << (Size - I - 1);
     Brick3[D] >>= 1;
   }

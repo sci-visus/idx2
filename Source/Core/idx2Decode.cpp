@@ -417,11 +417,9 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             {
               // recursively copy data to parent, then delete myself if no subband is decoded
               // TODO: we don't copy to the parent if there is any subband decoded?
-              // TODO: when no subband is decoded, it's really just the boundary that matters, so we
-              // just need to copy the boundary
               // TODO: think about how the hierarchy is "skipped" (or not), by whether we let the parent
               // know that the children have no subband decoded
-              if (!AnySubbandDecoded)
+              if (!AnySubbandDecoded) // brick is insignificant
               {
                 i8 Level = D.Level;
                 v3i Brick3 = D.Bricks3[Level];
@@ -433,6 +431,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                   auto BrickIt = Lookup(&D.BrickPool, BrickKey);
                   idx2_Assert(BrickIt);
                   volume& BrickVol = BrickIt.Val->Vol;
+                  // if the last child has not returned, stop the recursion
+                  // TODO: what about bricks on level 0?
                   if (BrickIt.Val->NChildrenReturned != BrickIt.Val->NChildrenMax)
                     break;
 
@@ -452,7 +452,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                   grid SbGridNonExt = S.Grid;
                   SetDims(&SbGridNonExt, SbDimsNonExt3);
                   extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
-                  // TODO: for bricks at the boundary, copy also (or copy only) the boundary?
+                  // TODO: for bricks at the boundary, copy also the boundary?
                   (CopyGridExtent<f64, f64>(SbGridNonExt, BrickVol, ToGrid, &PBrickVol));
                   ++PbIt.Val->NChildrenReturned;
                   // delete the child brick if no subbands decoded
@@ -462,6 +462,22 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                   Level = NextLevel;
                   Brick3 = PBrick3;
                 }
+              }
+              else // brick is significant
+              {
+                i8 Level = D.Level;
+                v3i Brick3 = D.Bricks3[Level];
+                u64 Brick = GetLinearBrick(Idx2, Level, Brick3);
+                u64 BrickKey = GetBrickKey(Level, Brick);
+                auto BrickIt = Lookup(&D.BrickPool, BrickKey);
+                BrickIt.Val->Significant = true;
+
+                i8 NextLevel = Level + 1;
+                v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
+                u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
+                u64 PKey = GetBrickKey(NextLevel, PBrick);
+                auto PbIt = Lookup(&D.BrickPool, PKey);
+                PbIt.Val->AnySignificantChildren = true;
               }
             }
           },

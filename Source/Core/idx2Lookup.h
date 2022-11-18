@@ -237,6 +237,7 @@ GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPl
 }
 
 
+/* Get the linear index of the input brick on the given level */
 u64
 GetLinearBrick(const idx2_file& Idx2, int Level, v3i Brick3);
 
