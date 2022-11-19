@@ -20,9 +20,9 @@ namespace idx2
 
 
 static void
-Init(decode_data* D, allocator* Alloc = nullptr)
+Init(decode_data* D, const idx2_file* Idx2, allocator* Alloc = nullptr)
 {
-  Init(&D->BrickPool, 5);
+  Init(&D->BrickPool, Idx2);
   D->Alloc = Alloc ? Alloc : &BrickAlloc_;
   Init(&D->FileCacheTable);
   Init(&D->Streams, 7);
@@ -33,11 +33,9 @@ static void
 Dealloc(decode_data* D)
 {
   D->Alloc->DeallocAll();
-  idx2_ForEach (BrickVolIt, D->BrickPool)
-    Dealloc(&BrickVolIt.Val->Vol);
+  Dealloc(&D->BrickPool);
   Dealloc(&D->BrickPool);
   DeallocFileCacheTable(&D->FileCacheTable);
-  Dealloc(&D->BlockStream);
   Dealloc(&D->Streams);
   DeallocBuf(&D->CompressedChunkExps);
   Dealloc(&D->ChunkExpSizeStream);
@@ -216,7 +214,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
   i8 Level = D->Level;
   u64 Brick = D->Brick[Level];
   //  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
-  auto BrickIt = Lookup(&D->BrickPool, GetBrickKey(Level, Brick));
+  auto BrickIt = Lookup(&D->BrickPool.BrickTable, GetBrickKey(Level, Brick));
   idx2_Assert(BrickIt);
   volume& BVol = BrickIt.Val->Vol;
 
@@ -241,7 +239,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
       v3i PBrick3 = (D->Bricks3[NextLevel] = Brick3 / Idx2.GroupBrick3);
       u64 PBrick = (D->Brick[NextLevel] = GetLinearBrick(Idx2, NextLevel, PBrick3));
       u64 PKey = GetBrickKey(NextLevel, PBrick);
-      auto PbIt = Lookup(&D->BrickPool, PKey);
+      auto PbIt = Lookup(&D->BrickPool.BrickTable, PKey);
       idx2_Assert(PbIt);
       // TODO: problem: here we will need access to D->LinearChunkInFile/D->LinearBrickInChunk for
       // the parent, which won't be computed correctly by the outside code, so for now we have to
@@ -265,7 +263,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
         if (P.OutMode != params::out_mode::HashMap)
         {
           Dealloc(&PbIt.Val->Vol);
-          Delete(&D->BrickPool, PKey);
+          Delete(&D->BrickPool.BrickTable, PKey);
         }
       }
     }
@@ -327,7 +325,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   BrickAlloc_ = free_list_allocator(BrickBytes);
   // TODO: move the decode_data into idx2_file itself
   //idx2_RAII(decode_data, D, Init(&D, &BrickAlloc_));
-  idx2_RAII(decode_data, D, Init(&D, &Mallocator())); // for now the allocator seems not a bottleneck
+  idx2_RAII(decode_data, D, Init(&D, &Idx2, &Mallocator())); // for now the allocator seems not a bottleneck
   //  D.QualityLevel = Dw->GetQuality();
   f64 Accuracy = Max(Idx2.Accuracy, P.DecodeAccuracy);
   //  i64 CountZeroes = 0;
@@ -373,7 +371,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
       idx2_ChunkTraverse(
         //        u64 ChunkAddr = (FileAddr * Idx2.ChunksPerFiles[Level]) + ChunkTop.Address;
         //        idx2_Assert(ChunkAddr == GetLinearChunk(Idx2, Level, ChunkTop.ChunkFrom3));
-        D.ChunkInFile = ChunkTop.ChunkInFile;
+        //D.ChunkInFile = ChunkTop.ChunkInFile;
         idx2_BrickTraverse(
           D.BrickInChunk = Top.BrickInChunk;
           //          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Level]) + Top.Address;
@@ -387,7 +385,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           D.Brick[Level] = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
           //printf("level = %d brick = %llu\n", Level, D.Brick[Level]);
           u64 BrickKey = GetBrickKey(Level, D.Brick[Level]);
-          Insert(&D.BrickPool, BrickKey, BVol);
+          Insert(&D.BrickPool.BrickTable, BrickKey, BVol);
           /* --------------- Decode the brick --------------- */
           auto Result = DecodeBrick(Idx2, P, &D, Accuracy);
           if (!Result) return Error(Result);
@@ -411,7 +409,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                                                                 : (CopyGridGrid<f64, f64>);
               CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
               Dealloc(&BVol.Vol);
-              Delete(&D.BrickPool, BrickKey); // TODO: also delete the parent bricks once we are done
+              Delete(&D.BrickPool.BrickTable, BrickKey); // TODO: also delete the parent bricks once we are done
             }
             else if (P.OutMode == params::out_mode::HashMap)
             {
@@ -428,7 +426,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                   // get the current brick
                   u64 Brick = GetLinearBrick(Idx2, Level, Brick3);
                   u64 BrickKey = GetBrickKey(Level, Brick);
-                  auto BrickIt = Lookup(&D.BrickPool, BrickKey);
+                  auto BrickIt = Lookup(&D.BrickPool.BrickTable, BrickKey);
                   idx2_Assert(BrickIt);
                   volume& BrickVol = BrickIt.Val->Vol;
                   // if the last child has not returned, stop the recursion
@@ -441,7 +439,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                   v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
                   u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
                   u64 PKey = GetBrickKey(NextLevel, PBrick);
-                  auto PbIt = Lookup(&D.BrickPool, PKey);
+                  auto PbIt = Lookup(&D.BrickPool.BrickTable, PKey);
                   idx2_Assert(PbIt);
                   volume& PBrickVol = PbIt.Val->Vol;
                   // copy data in subband 0 from the current to the parent
@@ -457,7 +455,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                   ++PbIt.Val->NChildrenReturned;
                   // delete the child brick if no subbands decoded
                   Dealloc(&BrickVol);
-                  Delete(&D.BrickPool, BrickKey);
+                  Delete(&D.BrickPool.BrickTable, BrickKey);
                   // only continue the recursion if this is the last brick
                   Level = NextLevel;
                   Brick3 = PBrick3;
@@ -469,15 +467,14 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                 v3i Brick3 = D.Bricks3[Level];
                 u64 Brick = GetLinearBrick(Idx2, Level, Brick3);
                 u64 BrickKey = GetBrickKey(Level, Brick);
-                auto BrickIt = Lookup(&D.BrickPool, BrickKey);
+                auto BrickIt = Lookup(&D.BrickPool.BrickTable, BrickKey);
                 BrickIt.Val->Significant = true;
 
                 i8 NextLevel = Level + 1;
                 v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
                 u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
                 u64 PKey = GetBrickKey(NextLevel, PBrick);
-                auto PbIt = Lookup(&D.BrickPool, PKey);
-                PbIt.Val->AnySignificantChildren = true;
+                auto PbIt = Lookup(&D.BrickPool.BrickTable, PKey);
               }
             }
           },
@@ -503,7 +500,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
   printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_ + D.BytesData_);
   printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_ / 8);
-  printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool));
+  printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool.BrickTable));
   printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks);
   printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands);
 

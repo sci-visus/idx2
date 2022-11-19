@@ -19,7 +19,6 @@ struct brick_volume
   i8 NChildrenReturned = 0;
   i8 NChildrenMax = 0;
   bool Significant = false; // if any (non 0) subband is decoded for this brick
-  bool AnySignificantChildren = false;
 };
 
 
@@ -43,7 +42,7 @@ struct brick_pool
 
 
 void
-Init(brick_pool* Bp, idx2_file* Idx2, decode_data* D);
+Init(brick_pool* Bp, const idx2_file* Idx2);
 
 
 void

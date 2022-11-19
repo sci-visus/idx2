@@ -8,12 +8,13 @@ namespace idx2
 
 
 void
-Init(brick_pool* Bp, idx2_file* Idx2, decode_data* D)
+Init(brick_pool* Bp, const idx2_file* Idx2)
 {
   Bp->Idx2 = Idx2;
   i64 NFinestBricks = GetLinearBrick(*Idx2, 0, Idx2->NBricks3[0] - 1);
   AllocBuf(&Bp->ResolutionStream.Stream, (NFinestBricks * 4 + 7) / 8);
   InitWrite(&Bp->ResolutionStream, Bp->ResolutionStream.Stream);
+  Init(&Bp->BrickTable, 10);
 }
 
 
@@ -29,8 +30,9 @@ Dealloc(brick_pool* Bp)
 
 struct stack_item
 {
-  i8 Level = 0;
   v3i Brick3 = v3i(0);
+  i8 Level = 0;
+  i8 ResolutionToSet = 0;
 };
 
 
@@ -38,17 +40,20 @@ struct stack_item
 // if a brick has the AnySignificantChildren flag set, we set the resolution of all its
 // descendants to its level (in brick_pool::Resolution)
 // and then move to its neighbor on the same level
+// TODO: the below isn't quite correct, we need to set the resolution not only when
+// the current brick is the first to be significant
 void
 ComputeBrickResolution(brick_pool* Bp)
 {
   const idx2_file* Idx2 = Bp->Idx2;
   stack_item Stack[32];
   i8 LastIndex = 0;
-  stack_item& First = Stack[LastIndex];
-  First.Level = Idx2->NLevels - 1; // coarsest level
-  First.Brick3 = v3i(0);
-  bool NeedToSetResolution = false;
-  i8 ResolutionToSet = -1; // if we get back to this level, reset (we have set all descendants)
+  // TODO: we also need to push all bricks at the lowest level in the beginning
+  /* push all bricks at the coarsest level */
+  v3i CurrCoarsestBrick = v3i(0);
+  stack_item& First = Stack[LastIndex++];
+  First.Brick3 = CurrCoarsestBrick;
+  First.Level = First.ResolutionToSet = Idx2->NLevels - 1;
   while (LastIndex >= 0)
   {
     // pop the stack
@@ -57,19 +62,8 @@ ComputeBrickResolution(brick_pool* Bp)
     u64 BrickIndex = GetLinearBrick(*Idx2, Current.Level, Current.Brick3);
     u64 BrickKey = GetBrickKey(Current.Level, BrickIndex);
     auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
-    // we have traversed all descendants and reached a neighbor brick, reset this
-    if (NeedToSetResolution && Current.Level == ResolutionToSet)
-    {
-      NeedToSetResolution = false;
-      ResolutionToSet = -1;
-    }
-    // if the current brick is the first to be significant in its subtree, set its descendants'
-    // level to its own
-    if (!BrickIt.Val->AnySignificantChildren && BrickIt.Val->Significant)
-    {
-      NeedToSetResolution = true;
-      ResolutionToSet = Current.Level;
-    }
+    if (BrickIt.Val->Significant)
+      Current.ResolutionToSet = Current.Level;
     // push the children if not at the finest level
     if (Current.Level > 0)
     {
@@ -82,9 +76,10 @@ ComputeBrickResolution(brick_pool* Bp)
         v3i ChildBrick3 = Current.Brick3 * Idx2->GroupBrick3 + v3i(X, Y, Z);
         if (ChildBrick3 < Idx2->NBricks3[NextLevel])
         {
-          stack_item& Next = Stack[++LastIndex];
-          Next.Level = Current.Level - 1;
-          Next.Brick3 = ChildBrick3;
+          stack_item& Child = Stack[++LastIndex];
+          Child.Brick3 = ChildBrick3;
+          Child.Level = Current.Level - 1;
+          Child.ResolutionToSet = Current.ResolutionToSet;
         }
       }
     }
@@ -92,7 +87,29 @@ ComputeBrickResolution(brick_pool* Bp)
     {
       bitstream* Bs = &Bp->ResolutionStream;
       SeekToBit(Bs, BrickIndex * 4); // we use 4 bits to indicate the resolution of the brick
-      Write(Bs, ResolutionToSet, 4);
+      Write(Bs, Current.ResolutionToSet, 4);
+    }
+
+    /* push the next brick at the coarsest resolution if stack is empty */
+    if (LastIndex < 0)
+    {
+      ++CurrCoarsestBrick.X;
+      if (CurrCoarsestBrick.X >= Idx2->NBricks3[Idx2->NLevels - 1].X)
+      {
+        CurrCoarsestBrick.X = 0;
+        ++CurrCoarsestBrick.Y;
+        if (CurrCoarsestBrick.Y >= Idx2->NBricks3[Idx2->NLevels - 1].Y)
+        {
+          CurrCoarsestBrick.Y = 0;
+          ++CurrCoarsestBrick.Z;
+          if (CurrCoarsestBrick.Z < Idx2->NBricks3[Idx2->NLevels - 1].Z)
+          {
+            stack_item& Next = Stack[++LastIndex];
+            Next.Brick3 = CurrCoarsestBrick;
+            Next.Level = Next.ResolutionToSet = 0;
+          }
+        }
+      }
     }
   }
 }
