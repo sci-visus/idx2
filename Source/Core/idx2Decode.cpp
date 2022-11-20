@@ -444,7 +444,6 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   if (P.OutMode == params::out_mode::HashMap)
   {
     PrintStatistics(&D.BrickPool);
-    exit(0);
     ComputeBrickResolution(&D.BrickPool);
   }
 

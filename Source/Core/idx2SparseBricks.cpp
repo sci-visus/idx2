@@ -68,7 +68,7 @@ void
 ComputeBrickResolution(brick_pool* Bp)
 {
   const idx2_file* Idx2 = Bp->Idx2;
-  stack_item Stack[idx2_file::MaxLevels];
+  stack_item Stack[idx2_file::MaxLevels * 8];
   i8 LastIndex = 0;
   /* push all bricks at the coarsest level */
   v3i CurrCoarsestBrick = v3i(0);
@@ -85,17 +85,10 @@ ComputeBrickResolution(brick_pool* Bp)
     u64 BrickKey = GetBrickKey(Current.Level, BrickIndex);
     auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
 
-    //if (!BrickIt)
-    //  printf("lookup failed\n");
-    // TODO: the lookup may fail
-    if (BrickIt.Val->Significant)
+    if (BrickIt)
     {
+      idx2_Assert(BrickIt.Val->Significant);
       Current.ResolutionToSet = Current.Level;
-      //printf("%d ", Current.Level);
-    }
-    else
-    {
-      //printf("%d ", Current.Level);
     }
     // push the children if not at the finest level
     if (Current.Level > 0)
