@@ -34,7 +34,6 @@ Dealloc(decode_data* D)
 {
   D->Alloc->DeallocAll();
   Dealloc(&D->BrickPool);
-  Dealloc(&D->BrickPool);
   DeallocFileCacheTable(&D->FileCacheTable);
   Dealloc(&D->Streams);
   DeallocBuf(&D->CompressedChunkExps);
@@ -133,7 +132,6 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
         break; // this bit plane is not needed to satisfy the input accuracy
 
       // if the subband is not 0 or if this is the last level, we count this block as decoded (significant), otherwise it is not significant
-      AnyBlockDecoded = AnyBlockDecoded || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
       ++D->NSignificantBlocks;
       auto StreamIt = Lookup(&Streams, RealBp);
       bitstream* Stream = nullptr;
@@ -185,6 +183,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     /* do inverse zfp transform but only if any bit plane is decoded */
     if (NBps > 0)
     {
+      AnyBlockDecoded = AnyBlockDecoded || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
       InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
       InverseZfp((i64*)BlockFloats, NDims);
       Dequantize(EMax, Prec, BufInts, &BufFloats);
@@ -203,6 +202,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     }
   }
   D->NInsignificantSubbands += (AnyBlockDecoded == false);
+  //printf("%d\n", AnyBlockDecoded);
 
   return AnyBlockDecoded;
 }
@@ -283,6 +283,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
     InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, CoarsestLevel);
   }
 
+  //printf("%d\n", AnySubbandDecoded);
   return AnySubbandDecoded;
 }
 
@@ -469,12 +470,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                 u64 BrickKey = GetBrickKey(Level, Brick);
                 auto BrickIt = Lookup(&D.BrickPool.BrickTable, BrickKey);
                 BrickIt.Val->Significant = true;
-
-                i8 NextLevel = Level + 1;
-                v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
-                u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
-                u64 PKey = GetBrickKey(NextLevel, PBrick);
-                auto PbIt = Lookup(&D.BrickPool.BrickTable, PKey);
+                //printf("significant\n");
               }
             }
           },
@@ -493,6 +489,12 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
         VolExtentInChunks);
       , 64, Idx2.FilesOrder[Level], v3i(0), Idx2.NFiles3[Level], ExtentInFiles, VolExtentInFiles);
   } // end level loop
+
+  if (P.OutMode == params::out_mode::HashMap)
+  {
+    ComputeBrickResolution(&D.BrickPool);
+  }
+
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
   printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
   printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));

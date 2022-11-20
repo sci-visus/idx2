@@ -13,6 +13,7 @@ Init(brick_pool* Bp, const idx2_file* Idx2)
   Bp->Idx2 = Idx2;
   i64 NFinestBricks = GetLinearBrick(*Idx2, 0, Idx2->NBricks3[0] - 1);
   AllocBuf(&Bp->ResolutionStream.Stream, (NFinestBricks * 4 + 7) / 8);
+  ZeroBuf(&Bp->ResolutionStream.Stream);
   InitWrite(&Bp->ResolutionStream, Bp->ResolutionStream.Stream);
   Init(&Bp->BrickTable, 10);
 }
@@ -54,6 +55,7 @@ ComputeBrickResolution(brick_pool* Bp)
   stack_item& First = Stack[LastIndex++];
   First.Brick3 = CurrCoarsestBrick;
   First.Level = First.ResolutionToSet = Idx2->NLevels - 1;
+  int Count = 0;
   while (LastIndex >= 0)
   {
     // pop the stack
@@ -62,8 +64,16 @@ ComputeBrickResolution(brick_pool* Bp)
     u64 BrickIndex = GetLinearBrick(*Idx2, Current.Level, Current.Brick3);
     u64 BrickKey = GetBrickKey(Current.Level, BrickIndex);
     auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+    // TODO: the lookup may fail
     if (BrickIt.Val->Significant)
+    {
       Current.ResolutionToSet = Current.Level;
+      //printf("%d ", Current.Level);
+    }
+    else
+    {
+      //printf("%d ", Current.Level);
+    }
     // push the children if not at the finest level
     if (Current.Level > 0)
     {
@@ -88,6 +98,7 @@ ComputeBrickResolution(brick_pool* Bp)
       bitstream* Bs = &Bp->ResolutionStream;
       SeekToBit(Bs, BrickIndex * 4); // we use 4 bits to indicate the resolution of the brick
       Write(Bs, Current.ResolutionToSet, 4);
+      //printf("level = %d\n", Current.ResolutionToSet);
     }
 
     /* push the next brick at the coarsest resolution if stack is empty */
@@ -102,13 +113,13 @@ ComputeBrickResolution(brick_pool* Bp)
         {
           CurrCoarsestBrick.Y = 0;
           ++CurrCoarsestBrick.Z;
-          if (CurrCoarsestBrick.Z < Idx2->NBricks3[Idx2->NLevels - 1].Z)
-          {
-            stack_item& Next = Stack[++LastIndex];
-            Next.Brick3 = CurrCoarsestBrick;
-            Next.Level = Next.ResolutionToSet = 0;
-          }
         }
+      }
+      if (CurrCoarsestBrick < Idx2->NBricks3[Idx2->NLevels - 1])
+      {
+        stack_item& Next = Stack[++LastIndex];
+        Next.Brick3 = CurrCoarsestBrick;
+        Next.Level = Next.ResolutionToSet = Idx2->NLevels - 1;
       }
     }
   }
