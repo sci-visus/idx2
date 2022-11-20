@@ -37,9 +37,24 @@ struct stack_item
 };
 
 
+/* Print the percentage of significant bricks on each level */
 void
-PrintStatistics(brick_pool* Bp)
+PrintStatistics(const brick_pool* Bp)
 {
+  const idx2_file* Idx2 = Bp->Idx2;
+  i64 Count[idx2_file::MaxLevels] = {};
+
+  idx2_ForEach (BIt, Bp->BrickTable)
+  {
+    i8 Level = GetLevelFromBrickKey(*BIt.Key);
+    ++Count[Level];
+  }
+  idx2_For (i8, L, 0, Idx2->NLevels)
+  {
+    i64 NBricks = Prod<i64>(Idx2->NBricks3[L]);
+    f64 Percent = f64(Count[L]) * 100 / f64(NBricks);
+    printf("level %d: %lld out of %lld bricks significant (%f percent)\n", L, Count[L], NBricks, Percent);
+  }
 }
 
 
@@ -53,7 +68,7 @@ void
 ComputeBrickResolution(brick_pool* Bp)
 {
   const idx2_file* Idx2 = Bp->Idx2;
-  stack_item Stack[32];
+  stack_item Stack[idx2_file::MaxLevels];
   i8 LastIndex = 0;
   /* push all bricks at the coarsest level */
   v3i CurrCoarsestBrick = v3i(0);

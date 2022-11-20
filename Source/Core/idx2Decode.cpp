@@ -416,6 +416,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             }
             else if (P.OutMode == params::out_mode::HashMap)
             {
+              //printf("deleting\n");
               if (!BrickIt.Val->Significant)
               {
                 Dealloc(&BVol.Vol);
@@ -442,6 +443,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 
   if (P.OutMode == params::out_mode::HashMap)
   {
+    PrintStatistics(&D.BrickPool);
+    exit(0);
     ComputeBrickResolution(&D.BrickPool);
   }
 

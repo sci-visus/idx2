@@ -260,10 +260,15 @@ GetBrickKey(i8 Level, u64 Brick)
 
 // Get the Brick from a Key composed of Brick + Level
 idx2_Inline u64
-BrickFromBrickKey(u64 BrickKey)
+GetBrickFromBrickKey(u64 BrickKey)
 {
   return BrickKey >> 4;
 }
+
+
+idx2_Inline i8
+GetLevelFromBrickKey(u64 BrickKey)
+{ return i8(BrickKey & 0xF); }
 
 
 // Compose a Key from Level + Subband + BitPlane

@@ -49,6 +49,10 @@ void
 Dealloc(brick_pool* Bp);
 
 
+void
+PrintStatistics(const brick_pool* Bp);
+
+
 /* For all finest-resolution bricks, output the actual resolution */
 void
 ComputeBrickResolution(brick_pool* Bp);
