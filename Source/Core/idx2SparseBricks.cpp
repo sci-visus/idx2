@@ -37,6 +37,12 @@ struct stack_item
 };
 
 
+void
+PrintStatistics(brick_pool* Bp)
+{
+}
+
+
 // we traverse the brick hierarchy in depth-first order
 // if a brick has the AnySignificantChildren flag set, we set the resolution of all its
 // descendants to its level (in brick_pool::Resolution)
@@ -49,7 +55,6 @@ ComputeBrickResolution(brick_pool* Bp)
   const idx2_file* Idx2 = Bp->Idx2;
   stack_item Stack[32];
   i8 LastIndex = 0;
-  // TODO: we also need to push all bricks at the lowest level in the beginning
   /* push all bricks at the coarsest level */
   v3i CurrCoarsestBrick = v3i(0);
   stack_item& First = Stack[LastIndex++];
@@ -64,6 +69,9 @@ ComputeBrickResolution(brick_pool* Bp)
     u64 BrickIndex = GetLinearBrick(*Idx2, Current.Level, Current.Brick3);
     u64 BrickKey = GetBrickKey(Current.Level, BrickIndex);
     auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+
+    //if (!BrickIt)
+    //  printf("lookup failed\n");
     // TODO: the lookup may fail
     if (BrickIt.Val->Significant)
     {

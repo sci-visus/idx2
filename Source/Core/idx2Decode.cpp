@@ -98,7 +98,8 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
   /* gather the streams (for the different bit planes) */
   auto& Streams = D->Streams;
   Clear(&Streams);
-  bool AnyBlockDecoded = false; // whether there is any sinificant block on this subband
+
+  bool SubbandSignificant = false; // whether there is any significant block on this subband
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
   { // zfp block loop
     v3i Z3(DecodeMorton3(Block));
@@ -113,10 +114,12 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     buffer_t BufInts((i64*)BlockFloats, NVals);
     u64 BlockUInts[4 * 4 * 4] = {};
     buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
+
     bool CodedInNextLevel =
       D->Subband == 0 && D->Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
     if (CodedInNextLevel)
-      continue; // CodedInNextIter just means that this block belongs to the LLL subband?
+      continue;
+
     // we read the exponent for the block
     i16 EMax = SizeOf(Idx2.DType) > 4
                  ? (i16)Read(&BrickExpsStream, 16) - traits<f64>::ExpBias
@@ -128,6 +131,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
+      // TODO: always decode extra 6 bit planes?
       if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1)
         break; // this bit plane is not needed to satisfy the input accuracy
 
@@ -160,30 +164,28 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       }
       /* zfp decode */
       ++NBps;
-      //      timer Timer; StartTimer(&Timer);
+      //timer Timer; StartTimer(&Timer);
       auto SizeBegin = BitSize(*Stream);
       if (NBitPlanesDecoded <= 8)
         Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
-      else
-        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp],
-                   NVals,
-                   N,
-                   Stream); // delay the transpose of bits to later
-                            //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+      else // delay the transpose of bits to later
+        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
+      //DecodeTime_ += Seconds(ElapsedTime(&Timer));
       auto SizeEnd = BitSize(*Stream);
       D->BytesDecoded_ += SizeEnd - SizeBegin;
-    }                       // end bit plane loop
+    } // end bit plane loop
 
     if (NBitPlanesDecoded > 8)
     {
-      //      timer Timer; StartTimer(&Timer);
-      TransposeRecursive(BlockUInts, NBps); // transpose using the recursive algorithm
-                                            //      DecodeTime_ += Seconds(ElapsedTime(&Timer));
+      //timer Timer; StartTimer(&Timer);
+       // transpose using the recursive algorithm
+      TransposeRecursive(BlockUInts, NBps);
+      //DecodeTime_ += Seconds(ElapsedTime(&Timer));
     }
     /* do inverse zfp transform but only if any bit plane is decoded */
     if (NBps > 0)
     {
-      AnyBlockDecoded = AnyBlockDecoded || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
+      SubbandSignificant = SubbandSignificant || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
       InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
       InverseZfp((i64*)BlockFloats, NDims);
       Dequantize(EMax, Prec, BufInts, &BufFloats);
@@ -201,14 +203,14 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       D->DataMovementTime_ += ElapsedTime(&DataTimer);
     }
   }
-  D->NInsignificantSubbands += (AnyBlockDecoded == false);
+  D->NInsignificantSubbands += (SubbandSignificant == false);
   //printf("%d\n", AnyBlockDecoded);
 
-  return AnyBlockDecoded;
+  return SubbandSignificant;
 }
 
 
-static expected<bool, idx2_err_code>
+static error<idx2_err_code>
 DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy)
 {
   i8 Level = D->Level;
@@ -221,7 +223,6 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
   idx2_Assert(Size(Idx2.Subbands) <= 8);
 
   /* recursively decode the brick, one subband at a time */
-  bool AnySubbandDecoded = false;
   idx2_For (i8, Sb, 0, (i8)Size(Idx2.Subbands))
   {
     if (!BitSet(Idx2.DecodeSubbandMasks[Level], Sb))
@@ -260,7 +261,10 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
       CopyExtentGrid<f64, f64>(ToGrid, PbIt.Val->Vol, SbGridNonExt, &BVol);
       if (PbIt.Val->NChildrenDecoded == PbIt.Val->NChildrenMax)
       { // last child
-        if (P.OutMode != params::out_mode::HashMap)
+        bool DeleteBrick = true;
+        if (P.OutMode == params::out_mode::HashMap)
+          DeleteBrick = !PbIt.Val->Significant;
+        if (DeleteBrick)
         {
           Dealloc(&PbIt.Val->Vol);
           Delete(&D->BrickPool.BrickTable, PKey);
@@ -273,10 +277,9 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
     auto Result = DecodeSubband(Idx2, D, Accuracy, S.Grid, &BVol);
     if (!Result)
       return Error(Result);
-    AnySubbandDecoded = AnySubbandDecoded || Value(Result);
+    BrickIt.Val->Significant = BrickIt.Val->Significant || Value(Result);
   } // end subband loop
-  // TODO: HASH: check to see if the only subband significant is subband 0
-  // if yes, delete this brick from the hash map right after it is done
+
   if (!P.WaveletOnly)
   {
     bool CoarsestLevel = Level + 1 == Idx2.NLevels;
@@ -284,7 +287,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
   }
 
   //printf("%d\n", AnySubbandDecoded);
-  return AnySubbandDecoded;
+  return idx2_Error(idx2_err_code::NoError);
 }
 
 
@@ -386,11 +389,10 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           D.Brick[Level] = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
           //printf("level = %d brick = %llu\n", Level, D.Brick[Level]);
           u64 BrickKey = GetBrickKey(Level, D.Brick[Level]);
-          Insert(&D.BrickPool.BrickTable, BrickKey, BVol);
+          auto BrickIt = Insert(&D.BrickPool.BrickTable, BrickKey, BVol);
+          // TODO: pass the brick iterator into the DecodeBrick function to avoid one extra lookup
           /* --------------- Decode the brick --------------- */
-          auto Result = DecodeBrick(Idx2, P, &D, Accuracy);
-          if (!Result) return Error(Result);
-          bool AnySubbandDecoded = Value(Result);
+          idx2_PropagateIfError(DecodeBrick(Idx2, P, &D, Accuracy));
           // Copy the samples out to the output buffer (or file)
           // The Idx2.DecodeSubbandMasks[Level - 1] == 0 means that no subbands on the next level
           // will be decoded, so we can now just copy the result out
@@ -410,67 +412,15 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                                                                 : (CopyGridGrid<f64, f64>);
               CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
               Dealloc(&BVol.Vol);
-              Delete(&D.BrickPool.BrickTable, BrickKey); // TODO: also delete the parent bricks once we are done
+              Delete(&D.BrickPool.BrickTable, BrickKey);
             }
             else if (P.OutMode == params::out_mode::HashMap)
             {
-              // recursively copy data to parent, then delete myself if no subband is decoded
-              // TODO: we don't copy to the parent if there is any subband decoded?
-              // TODO: think about how the hierarchy is "skipped" (or not), by whether we let the parent
-              // know that the children have no subband decoded
-              if (!AnySubbandDecoded) // brick is insignificant
+              if (!BrickIt.Val->Significant)
               {
-                i8 Level = D.Level;
-                v3i Brick3 = D.Bricks3[Level];
-                while (Level + 1 < Idx2.NLevels)
-                {
-                  // get the current brick
-                  u64 Brick = GetLinearBrick(Idx2, Level, Brick3);
-                  u64 BrickKey = GetBrickKey(Level, Brick);
-                  auto BrickIt = Lookup(&D.BrickPool.BrickTable, BrickKey);
-                  idx2_Assert(BrickIt);
-                  volume& BrickVol = BrickIt.Val->Vol;
-                  // if the last child has not returned, stop the recursion
-                  // TODO: what about bricks on level 0?
-                  if (BrickIt.Val->NChildrenReturned != BrickIt.Val->NChildrenMax)
-                    break;
-
-                  // get the parent brick
-                  i8 NextLevel = Level + 1;
-                  v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
-                  u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
-                  u64 PKey = GetBrickKey(NextLevel, PBrick);
-                  auto PbIt = Lookup(&D.BrickPool.BrickTable, PKey);
-                  idx2_Assert(PbIt);
-                  volume& PBrickVol = PbIt.Val->Vol;
-                  // copy data in subband 0 from the current to the parent
-                  // (every other sample in the parent corresponds to every sample in the child)
-                  const subband& S = Idx2.Subbands[0];
-                  v3i SbDimsNonExt3 = idx2_NonExtDims(Dims(S.Grid));
-                  v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
-                  grid SbGridNonExt = S.Grid;
-                  SetDims(&SbGridNonExt, SbDimsNonExt3);
-                  extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
-                  // TODO: for bricks at the boundary, copy also the boundary?
-                  (CopyGridExtent<f64, f64>(SbGridNonExt, BrickVol, ToGrid, &PBrickVol));
-                  ++PbIt.Val->NChildrenReturned;
-                  // delete the child brick if no subbands decoded
-                  Dealloc(&BrickVol);
-                  Delete(&D.BrickPool.BrickTable, BrickKey);
-                  // only continue the recursion if this is the last brick
-                  Level = NextLevel;
-                  Brick3 = PBrick3;
-                }
-              }
-              else // brick is significant
-              {
-                i8 Level = D.Level;
-                v3i Brick3 = D.Bricks3[Level];
-                u64 Brick = GetLinearBrick(Idx2, Level, Brick3);
-                u64 BrickKey = GetBrickKey(Level, Brick);
-                auto BrickIt = Lookup(&D.BrickPool.BrickTable, BrickKey);
-                BrickIt.Val->Significant = true;
-                //printf("significant\n");
+                Dealloc(&BVol.Vol);
+                // TODO: can we delete straight from the iterator?
+                Delete(&D.BrickPool.BrickTable, BrickKey);
               }
             }
           },
