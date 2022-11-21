@@ -106,9 +106,14 @@ ComputeBrickResolution(brick_pool* Bp)
     }
     else // finest level, set the level if necessary
     {
-      bitstream* Bs = &Bp->ResolutionStream;
-      SeekToBit(Bs, BrickIndex * 4); // we use 4 bits to indicate the resolution of the brick
-      Write(Bs, Current.ResolutionToSet, 4);
+      // TODO: we should just stuff 4 bits into the brick key instead of using a separate
+      // ResolutionStream
+      if (Current.ResolutionToSet > 0)
+      {// by default, the bit stream is init to 0 so no need to write if ResolutionToSet == 0
+        bitstream* Bs = &Bp->ResolutionStream;
+        SeekToBit(Bs, BrickIndex * 4); // we use 4 bits to indicate the resolution of the brick
+        Write(Bs, Current.ResolutionToSet, 4);
+      }
       //printf("level = %d\n", Current.ResolutionToSet);
       //v3i Brick3 = GetSpatialBrick(*Idx2, Current.Level, BrickIndex);
       //idx2_Assert(Brick3 == Current.Brick3);
@@ -142,11 +147,55 @@ ComputeBrickResolution(brick_pool* Bp)
 }
 
 
+/* If the brick exists, just return its brick_volume, else we compute the brick_volume from
+its ancestor (using the ResolutionStream). */
+brick_volume
+GetBrickVolume(brick_pool* Bp, const v3i& Brick3)
+{
+  const i8 Level = 0;
+  u64 BrickIndex = GetLinearBrick(*Bp->Idx2, Level, Brick3);
+  // check the bit stream
+  bitstream Bs = Bp->ResolutionStream; // make a copy to allow concurrent reads
+  SeekToBit(&Bs, BrickIndex * 4);
+  i8 Resolution = Read(&Bs, 4);
+
+  if (Resolution == 0)
+  {
+    u64 BrickKey = GetBrickKey(Level, BrickIndex);
+    auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+    return *BrickIt.Val;
+  }
+
+  /* if resolution > 0, we need to find the ancestor */
+  v3i GroupBrick3 = Bp->Idx2->GroupBrick3 * v3i(1 << Resolution);
+  v3i ABrick3 = Brick3 / GroupBrick3;
+  u64 ABrick = GetLinearBrick(*Bp->Idx2, Resolution, ABrick3);
+  u64 AKey = GetBrickKey(Resolution, ABrick);
+  auto AbIt = Lookup(&Bp->BrickTable, AKey);
+
+  v3i LocalBrickPos3 = Brick3 % GroupBrick3;
+  const subband& S = Bp->Idx2->Subbands[0]; // the subband is always 0 here
+  v3i SbDims3 = Dims(S.Grid);
+  v3i SbDimsNonExt3 = idx2_NonExtDims(SbDims3);
+  grid SbGridNonExt = S.Grid;
+  SetDims(&SbGridNonExt, SbDimsNonExt3);
+
+  brick_volume BrickVol = *AbIt.Val;
+  BrickVol.ExtentLocal = extent(LocalBrickPos3 * SbDimsNonExt3, SbDims3);
+  BrickVol.Significant = false;
+  // BrickVol.NChildrenMax or NChildrenDecoded?
+
+  return BrickVol;
+}
+
+
+// TODO
 grid
 PointQuery(const brick_pool& Bp, const v3i& P3)
 { return grid(); }
 
 
+// TODO
 f64
 Interpolate(const v3i& P3, const grid& Grid)
 {

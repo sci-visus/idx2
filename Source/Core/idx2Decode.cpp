@@ -257,8 +257,8 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
       grid SbGridNonExt = S.Grid;
       SetDims(&SbGridNonExt, SbDimsNonExt3);
-      extent ToGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3);
-      CopyExtentGrid<f64, f64>(ToGrid, PbIt.Val->Vol, SbGridNonExt, &BVol);
+      extent PGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3); // parent grid
+      CopyExtentGrid<f64, f64>(PGrid, PbIt.Val->Vol, SbGridNonExt, &BVol);
       if (PbIt.Val->NChildrenDecoded == PbIt.Val->NChildrenMax)
       { // last child
         bool DeleteBrick = true;

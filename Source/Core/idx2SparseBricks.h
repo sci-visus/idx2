@@ -12,11 +12,12 @@ namespace idx2
 // TODO: allow the bricks to have different resolutions depending on the subbands decoded
 struct brick_volume
 {
+  // TODO: volume and extent also contains lots of extra unnecessary bits
   volume Vol;
   extent ExtentLocal; // dimensions of the brick // TODO: we do not need full extent, just dims v3i
-  extent ExtentGlobal; // global extent of the brick
+  //extent ExtentGlobal; // global extent of the brick
+  // TODO: we just need one single i8 to encode NChildrenDecoded, NChildrenMax, and Significant
   i8 NChildrenDecoded = 0;
-  i8 NChildrenReturned = 0;
   i8 NChildrenMax = 0;
   bool Significant = false; // if any (non 0) subband is decoded for this brick
 };
@@ -33,6 +34,8 @@ struct brick_pool
   // We use 4 bits for each brick at the finest resolution to specify the finest resolution
   // at the spatial location of the brick (this depends on how much the refinement is at that
   // location)
+  // TODO: to avoid storing a separate ResolutionStream, we can also "stuff" the 4 bits into
+  // they key for BrickTable
   bitstream ResolutionStream;
   const idx2_file* Idx2 = nullptr;
   //v3i Dims3 = v3i(0);
@@ -56,6 +59,11 @@ PrintStatistics(const brick_pool* Bp);
 /* For all finest-resolution bricks, output the actual resolution */
 void
 ComputeBrickResolution(brick_pool* Bp);
+
+
+/* Given a finest resolution brick, return the corresponding brick volume */
+brick_volume
+GetBrickVolume(brick_pool* Bp, const v3i& Brick3);
 
 
 /* Given a position, return the grid encompassing the point */
