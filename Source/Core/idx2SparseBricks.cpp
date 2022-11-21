@@ -1,111 +1,156 @@
+#include "BitOps.h"
 #include "idx2SparseBricks.h"
 #include "idx2Common.h"
+#include "idx2Lookup.h"
+//#include <unordered_set>
 
 namespace idx2
 {
 
 
-struct index_key
+void
+Init(brick_pool* Bp, const idx2_file* Idx2)
 {
-  u64 LinearBrick;
-  u32 BitStreamKey; // key consisting of bit plane, level, and sub-level
-  idx2_Inline bool operator==(const index_key& Other) const
-  {
-    return LinearBrick == Other.LinearBrick && BitStreamKey == Other.BitStreamKey;
-  }
+  Bp->Idx2 = Idx2;
+  i64 NFinestBricks = GetLinearBrick(*Idx2, 0, Idx2->NBricks3[0] - 1);
+  AllocBuf(&Bp->ResolutionStream.Stream, (NFinestBricks * 4 + 7) / 8);
+  ZeroBuf(&Bp->ResolutionStream.Stream);
+  InitWrite(&Bp->ResolutionStream, Bp->ResolutionStream.Stream);
+  Init(&Bp->BrickTable, 10);
+}
+
+
+void
+Dealloc(brick_pool* Bp)
+{
+  Dealloc(&Bp->ResolutionStream);
+  idx2_ForEach (It, Bp->BrickTable)
+    Dealloc(&It.Val->Vol);
+  Dealloc(&Bp->BrickTable);
+}
+
+
+struct stack_item
+{
+  v3i Brick3 = v3i(0);
+  i8 Level = -1;
+  i8 ResolutionToSet = -1;
 };
 
 
-struct brick_index
+/* Print the percentage of significant bricks on each level */
+void
+PrintStatistics(const brick_pool* Bp)
 {
-  u64 LinearBrick = 0;
-  u64 Offset = 0;
-};
+  const idx2_file* Idx2 = Bp->Idx2;
+  i64 Count[idx2_file::MaxLevels] = {};
 
-
-idx2_Inline u64
-Hash(const index_key& IdxKey)
-{
-  return (IdxKey.LinearBrick + 1) * (1 + IdxKey.BitStreamKey);
-}
-
-
-template <typename t> void
-Dealloc(brick_table<t>* BrickTable)
-{
-  idx2_ForEach (BrickIt, BrickTable->Bricks)
-    BrickTable->Alloc->Dealloc(BrickIt.Val->Samples);
-  Dealloc(&BrickTable->Bricks);
-  idx2_ForEach (BlockSig, BrickTable->BlockSigs)
-    Dealloc(BlockSig);
-}
-
-
-/* Upscale a single brick to a given resolution level */
-// TODO: upscale across levels
-template <typename t> static void
-UpscaleBrick(const grid& Grid,
-             int TformOrder,
-             const brick<t>& Brick,
-             int Level,
-             const grid& OutGrid,
-             volume* OutBrickVol)
-{
-  idx2_Assert(Level >= Brick.Level);
-  idx2_Assert(OutBrickVol->Type == dtype::float64);
-  v3i Dims3 = Dims(Grid);
-  volume BrickVol(buffer((byte*)Brick.Samples, Prod(Dims3) * sizeof(f64)), Dims3, dtype::float64);
-  if (Level > Brick.Level)
-    *OutBrickVol = 0;
-  Copy(Relative(Grid, Grid), BrickVol, Relative(Grid, OutGrid), OutBrickVol);
-  if (Level > Brick.Level)
+  idx2_ForEach (BIt, Bp->BrickTable)
   {
-    InverseCdf53(
-      Dims(*OutBrickVol), Dims(*OutBrickVol), Level - Brick.Level, TformOrder, OutBrickVol, true);
+    i8 Level = GetLevelFromBrickKey(*BIt.Key);
+    ++Count[Level];
+  }
+  idx2_For (i8, L, 0, Idx2->NLevels)
+  {
+    i64 NBricks = Prod<i64>(Idx2->NBricks3[L]);
+    f64 Percent = f64(Count[L]) * 100 / f64(NBricks);
+    printf("level %d: %lld out of %lld bricks significant (%f percent)\n", L, Count[L], NBricks, Percent);
   }
 }
 
 
-/* Flatten a brick table. the function allocates memory for its output. */
-// TODO: upscale across levels
-template <typename t> static void
-FlattenBrickTable(const array<grid>& LevelGrids,
-                  int TformOrder,
-                  const brick_table<t>& BrickTable,
-                  volume* VolOut)
+void
+ComputeBrickResolution(brick_pool* Bp)
 {
-  idx2_Assert(Size(BrickTable.Bricks) > 0);
-  /* determine the maximum level of all bricks in the table */
-  int MaxLevel = 0;
-  auto ItEnd = End(BrickTable.Bricks);
-  for (auto It = Begin(BrickTable.Bricks); It != ItEnd; ++It)
+  const idx2_file* Idx2 = Bp->Idx2;
+  stack_item Stack[idx2_file::MaxLevels * 8];
+  i8 LastIndex = 0;
+  /* push all bricks at the coarsest level */
+  v3i CurrCoarsestBrick = v3i(0);
+  stack_item& First = Stack[LastIndex];
+  First.Brick3 = CurrCoarsestBrick;
+  First.Level = First.ResolutionToSet = Idx2->NLevels - 1;
+  //i64 Count = 0;
+  while (LastIndex >= 0)
   {
-    int Iteration = *(It.Key) & 0xF;
-    idx2_Assert(Iteration == 0); // TODO: for now we only support one level
-    MaxLevel = Max(MaxLevel, (int)It.Val->Level);
+    // pop the stack
+    stack_item Current = Stack[LastIndex--];
+    // get the current brick
+    u64 BrickIndex = GetLinearBrick(*Idx2, Current.Level, Current.Brick3);
+    u64 BrickKey = GetBrickKey(Current.Level, BrickIndex);
+    auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+
+    if (BrickIt)
+    {
+      idx2_Assert(BrickIt.Val->Significant);
+      Current.ResolutionToSet = Current.Level;
+    }
+    // push the children if not at the finest level
+    if (Current.Level > 0)
+    {
+      i8 NextLevel = Current.Level - 1;
+      for (int I = 0; I < 8; ++I)
+      {
+        int X = BitSet(I, 0);
+        int Y = BitSet(I, 1);
+        int Z = BitSet(I, 2);
+        v3i ChildBrick3 = Current.Brick3 * Idx2->GroupBrick3 + v3i(X, Y, Z);
+        if (ChildBrick3 < Idx2->NBricks3[NextLevel])
+        {
+          stack_item& Child = Stack[++LastIndex];
+          Child.Brick3 = ChildBrick3;
+          Child.Level = Current.Level - 1;
+          Child.ResolutionToSet = Current.ResolutionToSet;
+        }
+      }
+    }
+    else // finest level, set the level if necessary
+    {
+      bitstream* Bs = &Bp->ResolutionStream;
+      SeekToBit(Bs, BrickIndex * 4); // we use 4 bits to indicate the resolution of the brick
+      Write(Bs, Current.ResolutionToSet, 4);
+      //printf("level = %d\n", Current.ResolutionToSet);
+      //v3i Brick3 = GetSpatialBrick(*Idx2, Current.Level, BrickIndex);
+      //idx2_Assert(Brick3 == Current.Brick3);
+      //++Count;
+    }
+
+    /* push the next brick at the coarsest resolution if stack is empty */
+    if (LastIndex < 0)
+    {
+      ++CurrCoarsestBrick.X;
+      if (CurrCoarsestBrick.X >= Idx2->NBricks3[Idx2->NLevels - 1].X)
+      {
+        CurrCoarsestBrick.X = 0;
+        ++CurrCoarsestBrick.Y;
+        if (CurrCoarsestBrick.Y >= Idx2->NBricks3[Idx2->NLevels - 1].Y)
+        {
+          CurrCoarsestBrick.Y = 0;
+          ++CurrCoarsestBrick.Z;
+        }
+      }
+      if (CurrCoarsestBrick < Idx2->NBricks3[Idx2->NLevels - 1])
+      {
+        stack_item& Next = Stack[++LastIndex];
+        Next.Brick3 = CurrCoarsestBrick;
+        Next.Level = Next.ResolutionToSet = Idx2->NLevels - 1;
+      }
+    }
   }
-  /* allocate memory for VolOut */
-  v3i DimsExt3 = Dims(LevelGrids[MaxLevel]);
-  v3i Dims3 = idx2_NonExtDims(DimsExt3);
-  idx2_Assert(IsPow2(Dims3.X) && IsPow2(Dims3.Y) && IsPow2(Dims3.Z));
-  auto It = Begin(BrickTable.Bricks);
-  extent Ext(DecodeMorton3(*(It.Key) >> 4));
-  for (++It; It != ItEnd; ++It)
-  {
-    v3i P3 = DecodeMorton3(*(It.Key) >> 4);
-    Ext = BoundingBox(Ext, extent(P3 * Dims3, Dims3));
-  }
-  Resize(VolOut, Dims(Ext));
-  /* upscale every brick */
-  volume BrickVol(DimsExt3, dtype::float64);
-  idx2_CleanUp(Dealloc(&BrickVol));
-  for (auto It = Begin(BrickTable.Bricks); It != ItEnd; ++It)
-  {
-    v3i P3 = DecodeMorton3(*(It.Key) >> 4);
-    UpscaleBrick(
-      LevelGrids[It.Val->Level], TformOrder, *(It.Val), MaxLevel, LevelGrids[MaxLevel], &BrickVol);
-    Copy(extent(Dims3), BrickVol, extent(P3 * Dims3, Dims3), VolOut);
-  }
+
+  //printf("num finest bricks = %" PRIi64 "\n", Count);
+}
+
+
+grid
+PointQuery(const brick_pool& Bp, const v3i& P3)
+{ return grid(); }
+
+
+f64
+Interpolate(const v3i& P3, const grid& Grid)
+{
+  return 0;
 }
 
 

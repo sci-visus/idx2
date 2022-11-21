@@ -83,7 +83,7 @@ struct params
   int FilesPerDir = 512;
   /* decode exclusive */
   extent DecodeExtent;
-  v3i DownsamplingFactor3; // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
+  v3i DownsamplingFactor3 = v3i(0); // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
   f64 DecodeAccuracy = 0;
   cstr OutDir = ".";       // TODO: change this to local storage
   stref InDir = ".";       // TODO: change this to local storage
@@ -179,15 +179,6 @@ struct idx2_file
 };
 
 
-struct brick_volume
-{
-  volume Vol;
-  extent ExtentLocal;
-  i8 NChildren = 0;
-  i8 NChildrenMax = 0;
-};
-
-
 /* ---------------------- GLOBALS ----------------------*/
 extern free_list_allocator BrickAlloc_;
 
@@ -206,12 +197,6 @@ GetGrid(const idx2_file& Idx2, const extent& Ext);
 
 void
 Dealloc(params* P);
-
-idx2_Inline i64
-Size(const brick_volume& B)
-{
-  return Prod(Dims(B.Vol)) * SizeOf(B.Vol.Type);
-}
 
 void
 SetName(idx2_file* Idx2, cstr Name);
@@ -268,32 +253,5 @@ void
 Dealloc(idx2_file* Idx2);
 
 
-/* -------- VERSION 0 : UNUSED ---------*/
-idx2_Inline u64
-GetFileAddressV0_0(int BricksPerFile, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
-{
-  (void)BricksPerFile;
-  (void)Brick;
-  (void)Level;
-  (void)BitPlane;
-  return u64(Iter);
-}
-
-
-idx2_Inline file_id
-ConstructFilePathV0_0(const idx2_file& Idx2, u64 Brick, i8 Iter, i8 Level, i16 BitPlane)
-{
-#define idx2_PrintIteration idx2_Print(&Pr, "/I%02x", Iter);
-#define idx2_PrintExtension idx2_Print(&Pr, ".bin");
-  thread_local static char FilePath[256];
-  printer Pr(FilePath, sizeof(FilePath));
-  idx2_Print(&Pr, "%s/%s/", Idx2.Name, Idx2.Field);
-  idx2_PrintIteration;
-  idx2_PrintExtension;
-  u64 FileId = GetFileAddressV0_0(Idx2.BricksPerFile[Iter], Brick, Iter, Level, BitPlane);
-  return file_id{ stref{ FilePath, Pr.Size }, FileId };
-#undef idx2_PrintIteration
-#undef idx2_PrintExtension
-}
-
 } // namespace idx2
+

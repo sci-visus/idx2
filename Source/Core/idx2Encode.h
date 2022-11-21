@@ -5,6 +5,7 @@
 #include "HashTable.h"
 #include "Memory.h"
 #include "idx2Common.h"
+#include "idx2SparseBricks.h"
 
 
 namespace idx2
@@ -87,7 +88,7 @@ struct sub_channel_info
 struct encode_data
 {
   allocator* Alloc = nullptr;
-  hash_table<u64, brick_volume> BrickPool;
+  brick_table BrickPool;
   // each corresponds to (level, subband, bit plane)
   hash_table<u32, channel> Channels;
   // only consider level and subband
@@ -118,6 +119,7 @@ struct encode_data
 By default, copy brick data from a volume to a local brick buffer.
 Can be extended polymorphically to provide other ways of copying.
 */
+struct brick_volume;
 struct brick_copier
 {
   const volume* Volume = nullptr;

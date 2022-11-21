@@ -237,8 +237,13 @@ GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPl
 }
 
 
+/* Get the linear index of the input brick on the given level */
 u64
 GetLinearBrick(const idx2_file& Idx2, int Level, v3i Brick3);
+
+
+v3i
+GetSpatialBrick(const idx2_file& Idx2, int Level, u64 LinearBrick);
 
 
 file_id
@@ -259,10 +264,15 @@ GetBrickKey(i8 Level, u64 Brick)
 
 // Get the Brick from a Key composed of Brick + Level
 idx2_Inline u64
-BrickFromBrickKey(u64 BrickKey)
+GetBrickFromBrickKey(u64 BrickKey)
 {
   return BrickKey >> 4;
 }
+
+
+idx2_Inline i8
+GetLevelFromBrickKey(u64 BrickKey)
+{ return i8(BrickKey & 0xF); }
 
 
 // Compose a Key from Level + Subband + BitPlane

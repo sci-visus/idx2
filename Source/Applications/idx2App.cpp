@@ -31,7 +31,9 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
   }
 
   // Parse the downsampling factor
-  idx2_ExitIf(!OptVal(Argc, Argv, "--downsampling", &P->DownsamplingFactor3), "Provide --downsampling (0 0 0 means full resolution, 1 1 2 means half X, half Y, quarter Z)\n");
+  OptVal(Argc, Argv, "--downsampling", &P->DownsamplingFactor3);
+  //idx2_ExitIf(!OptVal(Argc, Argv, "--downsampling", &P->DownsamplingFactor3),
+  //            "Provide --downsampling (0 0 0 means full resolution, 1 1 2 means half X, half Y, quarter Z)\n");
 
   // Parse the decode accuracy (--accuracy)
   idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->DecodeAccuracy),
@@ -46,6 +48,11 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
     P->InDir = GetParentPath(Parent);
     if (P->InDir == Parent)
       P->InDir = "./";
+  }
+
+  if (OptExists(Argc, Argv, "--brick_map"))
+  {
+    P->OutMode = params::out_mode::HashMap;
   }
   //idx2_ExitIf(
   //  !OptVal(Argc, Argv, "--in_dir", &P->InDir),
