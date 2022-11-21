@@ -24,6 +24,22 @@ GetLinearBrick(const idx2_file& Idx2, int Level, v3i Brick3)
 }
 
 
+v3i
+GetSpatialBrick(const idx2_file& Idx2, int Level, u64 LinearBrick)
+{
+  int Size = Idx2.BricksOrderStr[Level].Len;
+  v3i Brick3(0);
+  for (int I = 0; I < Size; ++I)
+  {
+    int D = Idx2.BricksOrderStr[Level][I] - 'X';
+    int J = Size - I - 1;
+    Brick3[D] |= (LinearBrick & (u64(1) << J)) >> J;
+    Brick3[D] <<= 1;
+  }
+  return Brick3 >> 1;
+}
+
+
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
 {

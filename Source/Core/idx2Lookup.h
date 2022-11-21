@@ -242,6 +242,10 @@ u64
 GetLinearBrick(const idx2_file& Idx2, int Level, v3i Brick3);
 
 
+v3i
+GetSpatialBrick(const idx2_file& Idx2, int Level, u64 LinearBrick);
+
+
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPlane);
 

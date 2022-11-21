@@ -494,20 +494,6 @@ DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddres
 
 
 
-/* only used for debugging
-static v3i
-GetSpatialBrick(const idx2_file& Idx2, int Iter, u64 LinearBrick) {
-  int Size = Idx2.BrickOrderStrs[Iter].Len;
-  v3i Brick3(0);
-  for (int I = 0; I < Size; ++I) {
-    int D = Idx2.BrickOrderStrs[Iter][I] - 'X';
-    int J = Size - I - 1;
-    Brick3[D] |= (LinearBrick & (u64(1) << J)) >> J;
-    Brick3[D] <<= 1;
-  }
-  return Brick3 >> 1;
-}*/
-
 
 /* only used for debugging
 static u64

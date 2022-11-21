@@ -2,6 +2,7 @@
 #include "idx2SparseBricks.h"
 #include "idx2Common.h"
 #include "idx2Lookup.h"
+//#include <unordered_set>
 
 namespace idx2
 {
@@ -32,8 +33,8 @@ Dealloc(brick_pool* Bp)
 struct stack_item
 {
   v3i Brick3 = v3i(0);
-  i8 Level = 0;
-  i8 ResolutionToSet = 0;
+  i8 Level = -1;
+  i8 ResolutionToSet = -1;
 };
 
 
@@ -58,12 +59,6 @@ PrintStatistics(const brick_pool* Bp)
 }
 
 
-// we traverse the brick hierarchy in depth-first order
-// if a brick has the AnySignificantChildren flag set, we set the resolution of all its
-// descendants to its level (in brick_pool::Resolution)
-// and then move to its neighbor on the same level
-// TODO: the below isn't quite correct, we need to set the resolution not only when
-// the current brick is the first to be significant
 void
 ComputeBrickResolution(brick_pool* Bp)
 {
@@ -72,10 +67,10 @@ ComputeBrickResolution(brick_pool* Bp)
   i8 LastIndex = 0;
   /* push all bricks at the coarsest level */
   v3i CurrCoarsestBrick = v3i(0);
-  stack_item& First = Stack[LastIndex++];
+  stack_item& First = Stack[LastIndex];
   First.Brick3 = CurrCoarsestBrick;
   First.Level = First.ResolutionToSet = Idx2->NLevels - 1;
-  int Count = 0;
+  //i64 Count = 0;
   while (LastIndex >= 0)
   {
     // pop the stack
@@ -115,6 +110,9 @@ ComputeBrickResolution(brick_pool* Bp)
       SeekToBit(Bs, BrickIndex * 4); // we use 4 bits to indicate the resolution of the brick
       Write(Bs, Current.ResolutionToSet, 4);
       //printf("level = %d\n", Current.ResolutionToSet);
+      //v3i Brick3 = GetSpatialBrick(*Idx2, Current.Level, BrickIndex);
+      //idx2_Assert(Brick3 == Current.Brick3);
+      //++Count;
     }
 
     /* push the next brick at the coarsest resolution if stack is empty */
@@ -139,6 +137,8 @@ ComputeBrickResolution(brick_pool* Bp)
       }
     }
   }
+
+  //printf("num finest bricks = %" PRIi64 "\n", Count);
 }
 
 
