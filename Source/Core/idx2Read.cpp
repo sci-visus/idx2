@@ -126,7 +126,7 @@ ReadFile(const idx2_file& Idx2,
   }
   else // the file cache exists
   { // modify the chunk caches portion of the file cache
-    idx2_Assert(IsEmpty(FileCacheIt->Val->ChunkCaches));
+    idx2_Assert(Size(FileCacheIt->Val->ChunkCaches) == 0);
     FileCacheIt->Val->ChunkCaches = FileCache.ChunkCaches;
     FileCacheIt->Val->ChunkOffsets = FileCache.ChunkOffsets;
   }
@@ -302,7 +302,7 @@ ReadFileExponents(const idx2_file& Idx2,
   }
   else // file cache does not exist
   {
-    idx2_Assert(IsEmpty(FileCacheIt->Val->ChunkExpCaches));
+    idx2_Assert(Size(FileCacheIt->Val->ChunkExpCaches) == 0);
     FileCacheIt->Val->ExponentBeginOffset = FileCache.ExponentBeginOffset;
     FileCacheIt->Val->ChunkExpOffsets = FileCache.ChunkExpOffsets;
     FileCacheIt->Val->ChunkExpCaches = FileCache.ChunkExpCaches;
@@ -342,7 +342,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     if (!Idx2.external_read(Idx2, buff, ChunkAddress))
       throw "to handle this";
 
-    //decompress the block 
+    //decompress the block
     chunk_exp_cache ChunkExpCache;
     bitstream& ChunkExpStream = ChunkExpCache.ChunkExpStream;
     D->CompressedChunkExps = buff;

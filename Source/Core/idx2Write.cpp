@@ -94,6 +94,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
 error<idx2_err_code>
 FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
 {
+#if VISUS_IDX2
   if (Idx2.external_write)
   {
     Reserve(&E->SortedSubChannels, Size(E->SubChannels));
@@ -114,6 +115,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
 
     return idx2_Error(idx2_err_code::NoError);
   }
+#endif
 
   Reserve(&E->SortedSubChannels, Size(E->SubChannels));
   Clear(&E->SortedSubChannels);
