@@ -248,17 +248,8 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLeve
   ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TransformOrder, &BVol);
 
   /* do wavelet transform */
-  if (!P.WaveletOnly)
-  {
-    if (Level + 1 < Idx2->NLevels)
-      ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->Td, &BVol, false);
-    else
-      ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->Td, &BVol, true);
-  }
-  else
-  {
-    ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->Td, &BVol, false);
-  }
+  bool CoarsestLevel = Level + 1 == Idx2->NLevels; // only normalize
+  ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->Td, &BVol, CoarsestLevel);
 
   /* recursively encode the brick, one subband at a time */
   idx2_For (i8, Sb, 0, Size(Idx2->Subbands))

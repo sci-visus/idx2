@@ -1,9 +1,10 @@
 #pragma once
 
 
-#include "BitStream.h"
+#include "Array.h"
 #include "HashTable.h"
 #include "Volume.h"
+#include "idx2Common.h"
 
 namespace idx2
 {
@@ -34,9 +35,9 @@ struct brick_pool
   // We use 4 bits for each brick at the finest resolution to specify the finest resolution
   // at the spatial location of the brick (this depends on how much the refinement is at that
   // location)
-  // TODO: to avoid storing a separate ResolutionStream, we can also "stuff" the 4 bits into
+  // TODO: to avoid storing a separate ResolutionLevels array, we can also "stuff" the 4 bits into
   // they key for BrickTable
-  bitstream ResolutionStream;
+  array<i8> ResolutionLevels;
   const idx2_file* Idx2 = nullptr;
   //v3i Dims3 = v3i(0);
   //v3i BrickDims3 = v3i(0); // dimensions of bricks, should be powers of 2
@@ -66,14 +67,25 @@ brick_volume
 GetBrickVolume(brick_pool* Bp, const v3i& Brick3);
 
 
-/* Given a position, return the grid encompassing the point */
-grid
-PointQuery(const brick_pool& Bp, const v3i& P3);
+/* Upsample a brick to the finest resolution. The function may allocate new memory if the
+input brick is of coarser resolution. */
+brick_volume
+UpsampleToFinest(const brick_volume& BrickVol, i8 InputResLevel);
+
+
+error<idx2_err_code>
+WriteBricks(brick_pool* Bp, cstr FileName);
+
+
+/* Given a position, return the grid encompassing the point
+Also, transforming the input point into a local frame of the brick ready for interpolation */
+brick_volume
+PointQuery(const brick_pool& Bp, v3i* P3);
 
 
 /* Interpolate to get the value at a point */
 f64
-Interpolate(const v3i& P3, const grid& Grid);
+Interpolate(const v3i& P3, const brick_volume& Grid);
 
 
 idx2_Inline i64

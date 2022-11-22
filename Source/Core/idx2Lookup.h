@@ -307,4 +307,48 @@ BitPlaneFromChannelKey(u64 ChannelKey)
 }
 
 
+static u64
+GetLinearChunk(const idx2_file& Idx2, int Level, v3i Chunk3)
+{
+  u64 LinearChunk = 0;
+  int Size = Idx2.ChunksOrderStr[Level].Len;
+  for (int I = Size - 1; I >= 0; --I) {
+    int D = Idx2.ChunksOrderStr[Level][I] - 'X';
+    LinearChunk |= (Chunk3[D] & u64(1)) << (Size - I - 1);
+    Chunk3[D] >>= 1;
+  }
+  return LinearChunk;
+}
+
+
+static u64
+GetLinearFile(const idx2_file& Idx2, int Level, v3i File3)
+{
+  u64 LinearFile = 0;
+  int Size = Idx2.FilesOrderStr[Level].Len;
+  for (int I = Size - 1; I >= 0; --I) {
+    int D = Idx2.FilesOrderStr[Level][I] - 'X';
+    LinearFile |= (File3[D] & u64(1)) << (Size - I - 1);
+    File3[D] >>= 1;
+  }
+  return LinearFile;
+}
+
+
+/* not used for now
+static v3i
+GetPartialResolution(const v3i& Dims3, u8 Mask, const array<subband>& Subbands) {
+  v3i Div(0);
+  idx2_For(u8, Sb, 0, 8) {
+    if (!BitSet(Mask, Sb)) continue;
+    v3i Lh3 = Subbands[Sb].LowHigh3;
+    idx2_For(int, D, 0, 3) Div[D] = Max(Div[D], Lh3[D]);
+  }
+  v3i OutDims3 = Dims3;
+  idx2_For(int, D, 0, 3) if (Div[D] == 0) OutDims3[D] = (Dims3[D] + 1) >> 1;
+  return OutDims3;
+}*/
+
+
 } // namespace idx2
+

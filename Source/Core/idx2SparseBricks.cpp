@@ -1,4 +1,5 @@
 #include "BitOps.h"
+#include "InputOutput.h"
 #include "idx2SparseBricks.h"
 #include "idx2Common.h"
 #include "idx2Lookup.h"
@@ -12,18 +13,16 @@ void
 Init(brick_pool* Bp, const idx2_file* Idx2)
 {
   Bp->Idx2 = Idx2;
-  i64 NFinestBricks = GetLinearBrick(*Idx2, 0, Idx2->NBricks3[0] - 1);
-  AllocBuf(&Bp->ResolutionStream.Stream, (NFinestBricks * 4 + 7) / 8);
-  ZeroBuf(&Bp->ResolutionStream.Stream);
-  InitWrite(&Bp->ResolutionStream, Bp->ResolutionStream.Stream);
+  i64 NFinestBricks = 1 + GetLinearBrick(*Idx2, 0, Idx2->NBricks3[0] - 1);
   Init(&Bp->BrickTable, 10);
+  Resize(&Bp->ResolutionLevels, NFinestBricks);
 }
 
 
 void
 Dealloc(brick_pool* Bp)
 {
-  Dealloc(&Bp->ResolutionStream);
+  Dealloc(&Bp->ResolutionLevels);
   idx2_ForEach (It, Bp->BrickTable)
     Dealloc(&It.Val->Vol);
   Dealloc(&Bp->BrickTable);
@@ -110,9 +109,7 @@ ComputeBrickResolution(brick_pool* Bp)
       // ResolutionStream
       if (Current.ResolutionToSet > 0)
       {// by default, the bit stream is init to 0 so no need to write if ResolutionToSet == 0
-        bitstream* Bs = &Bp->ResolutionStream;
-        SeekToBit(Bs, BrickIndex * 4); // we use 4 bits to indicate the resolution of the brick
-        Write(Bs, Current.ResolutionToSet, 4);
+        Bp->ResolutionLevels[BrickIndex] = Current.ResolutionToSet;
       }
       //printf("level = %d\n", Current.ResolutionToSet);
       //v3i Brick3 = GetSpatialBrick(*Idx2, Current.Level, BrickIndex);
@@ -154,45 +151,120 @@ GetBrickVolume(brick_pool* Bp, const v3i& Brick3)
 {
   const i8 Level = 0;
   u64 BrickIndex = GetLinearBrick(*Bp->Idx2, Level, Brick3);
-  // check the bit stream
-  bitstream Bs = Bp->ResolutionStream; // make a copy to allow concurrent reads
-  SeekToBit(&Bs, BrickIndex * 4);
-  i8 Resolution = Read(&Bs, 4);
+  i8 Resolution = Bp->ResolutionLevels[BrickIndex];
 
+  if (Level == 0 && BrickIndex == 0)
+  {
+    u64 BrickKey = GetBrickKey(Level, BrickIndex);
+    auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+  }
   if (Resolution == 0)
   {
     u64 BrickKey = GetBrickKey(Level, BrickIndex);
     auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+    idx2_Assert(BrickIt);
     return *BrickIt.Val;
   }
 
   /* if resolution > 0, we need to find the ancestor */
-  v3i GroupBrick3 = Bp->Idx2->GroupBrick3 * v3i(1 << Resolution);
+  v3i GroupBrick3 = Pow(Bp->Idx2->GroupBrick3, Resolution);
   v3i ABrick3 = Brick3 / GroupBrick3;
   u64 ABrick = GetLinearBrick(*Bp->Idx2, Resolution, ABrick3);
   u64 AKey = GetBrickKey(Resolution, ABrick);
   auto AbIt = Lookup(&Bp->BrickTable, AKey);
+  idx2_Assert(AbIt);
+  v3i D3 = Dims(AbIt.Val->Vol);
+  v3i E3 = Dims(AbIt.Val->ExtentLocal);
 
   v3i LocalBrickPos3 = Brick3 % GroupBrick3;
-  const subband& S = Bp->Idx2->Subbands[0]; // the subband is always 0 here
-  v3i SbDims3 = Dims(S.Grid);
-  v3i SbDimsNonExt3 = idx2_NonExtDims(SbDims3);
-  grid SbGridNonExt = S.Grid;
-  SetDims(&SbGridNonExt, SbDimsNonExt3);
-
+  v3i BrickDims3 = (Bp->Idx2->BrickDims3 / (1 << Resolution));
+  v3i BrickDimsExt3 = idx2_ExtDims(BrickDims3);
   brick_volume BrickVol = *AbIt.Val;
-  BrickVol.ExtentLocal = extent(LocalBrickPos3 * SbDimsNonExt3, SbDims3);
+  BrickVol.ExtentLocal = extent(LocalBrickPos3 * BrickDims3, BrickDimsExt3);
   BrickVol.Significant = false;
   // BrickVol.NChildrenMax or NChildrenDecoded?
 
   return BrickVol;
 }
 
+/* File structure:
+* 3 int32s (Nx Ny Nz): dimensions of the full volume (e.g., 512 512 512)
+* 3 int32s (Bx By Bz): finest brick dimensions (e.g., 32 32 32)
+*   (these are always power of 2)
+* For each brick (in row major order):
+*   3 int32s (Bi Bj Bk): brick's indices (e.g., 1 0 1) (multiply this by the
+*     (Bx By Bz) above to get the brick's location in voxel)
+*   3 int32s (Dx Dy Dz): true dimensions of the brick (e.g., 9 9 9)
+*     (these are always power of 2 + 1 and are at most Bx+1 By+1 Bz+1)
+*   Dx x Dy x Dz float64s: brick sample values in row major order
+*     (for simplicity we use float64 regardless of the original type)
+*/
+error<idx2_err_code>
+WriteBricks(brick_pool* Bp, cstr FileName)
+{
+  idx2_RAII(FILE*, Fp = fopen(FileName, "wb"), , if (Fp) fclose(Fp));
+  if (!Fp)
+    return idx2_Error(idx2_err_code::FileCreateFailed);
 
-// TODO
-grid
-PointQuery(const brick_pool& Bp, const v3i& P3)
-{ return grid(); }
+  WritePOD(Fp, Bp->Idx2->Dims3);
+  WritePOD(Fp, Bp->Idx2->BrickDims3);
+  WritePOD(Fp, Bp->Idx2->NBricks3[0]);
+
+  v3i B3;
+  idx2_BeginFor3 (B3, v3i(0), Bp->Idx2->NBricks3[0], v3i(1))
+  {
+    //u64 BrickIndex = GetLinearBrick(*Bp->Idx2, 0, B3);
+    WritePOD(Fp, B3);
+    brick_volume BrickVol = GetBrickVolume(Bp, B3);
+    v3i D3 = Dims(BrickVol.ExtentLocal);
+    WritePOD(Fp, Dims(BrickVol.ExtentLocal));
+    v3i F3 = From(BrickVol.ExtentLocal);
+    WriteVolume(Fp, BrickVol.Vol, grid(BrickVol.ExtentLocal));
+  } idx2_EndFor3
+
+  return idx2_Error(idx2_err_code::NoError);
+}
+
+
+// NOTE: this should not be used in "production", it is very inefficient
+// in production, we simply do interpolation straight from coarse samples
+// This function is to just verify that the finest bricks we generate are correct
+//brick_volume
+//UpsampleToFinest(const idx2_file& Idx2, const brick_volume& BrickVol, i8 InputResLevel)
+//{
+//  if (InputResLevel == 0)
+//    return BrickVol;
+//
+//  // allocate new storage for the brick
+//  brick_volume BVolFrom = BrickVol;
+//  brick_volume BVolTo;
+//  i8 Level = InputResLevel;
+//  while (Level > 0)
+//  {
+//    Resize(&BVolTo.Vol, Idx2.BrickDimsExt3, dtype::float64);
+//    ZeroBuf(&BVolTo.Vol.Buffer);
+//    // copy the data over
+//    grid GridTo;
+//    SetFrom(&GridTo, v3i(0)); // TODO: this is wrong, we need to determine this from the extent local
+//    SetDims(&GridTo, Dims(BrickVol.ExtentLocal));
+//    SetStrd(&GridTo, v3i(1 << InputResLevel)); // TODO: should be dependent on the Idx2.BrickDims
+//    // TODO: what about other types?
+//    CopyExtentGrid<f64, f64>(BrickVol.ExtentLocal, BrickVol.Vol, GridTo, &BVol.Vol);
+//    bool CoarsestLevel = InputResLevel + 1 == Idx2.NLevels;
+//    // TODO: the following only inverse once
+//    InverseCdf53(Idx2.BrickDimsExt3, InputResLevel, Idx2.Subbands, Idx2.Td, &BVol.Vol, CoarsestLevel);
+//    --Level;
+//  }
+//
+//  return BVol;
+//}
+
+
+brick_volume
+PointQuery(const brick_pool& Bp, v3i* P3)
+{
+  return brick_volume();
+}
 
 
 // TODO
