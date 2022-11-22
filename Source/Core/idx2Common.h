@@ -100,13 +100,7 @@ struct params
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
   bool GroupSubLevels = true;
-  bool WaveletOnly = false;
   bool ComputeMinMax = false;
-  // either LLC_LatLon or LLC_Cap can be provided, not both
-  int LLC = -1; // one of 0, 1, 2 (the cap), 3, 4
-  v3<i64> Strides3 = v3<i64>(0);
-  i64 Offset = -1; // this can be used to specify the "depth"
-  i64 NSamplesInFile = 0;
 };
 
 

@@ -108,7 +108,7 @@ CheckFileSizes(params* P)
 
   int DTypeSize = SizeOf(P->Meta.DType);
   idx2_ExitIf(ConstantSize % DTypeSize != 0, "File size not multiple of dtype size\n");
-  P->NSamplesInFile = ConstantSize / DTypeSize;
+  //P->NSamplesInFile = ConstantSize / DTypeSize;
 
   return true;
 }
@@ -182,20 +182,6 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
   // P->GroupLevels = OptExists(Argc, Argv, "--group_levels");
   // P->GroupBitPlanes = OptExists(Argc, Argv, "--group_bit_planes");
   // P->GroupSubLevels = OptExists(Argc, Argv, "--group_sub_levels");
-
-  // Parse the optional strides and offset
-  OptVal(Argc, Argv, "--strides", &P->Strides3);
-  OptVal(Argc, Argv, "--offset", &P->Offset);
-
-  // Parse the --llc (for NASA datasets)
-  OptVal(Argc, Argv, "--llc", &P->LLC);
-  if (P->LLC >= 0)
-  {
-    idx2_ExitIf(Size(P->InputFiles) == 0,
-                "Provide a text file containing a list of data files with --input\n");
-    idx2_ExitIf(P->Strides3 == v3<i64>(0), "Provide --strides\n");
-    idx2_ExitIf(P->Offset == -1, "Provide --offset (in number of samples)\n");
-  }
 }
 
 

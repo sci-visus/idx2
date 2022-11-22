@@ -926,6 +926,8 @@ ForwardCdf53(const v3i& M3,
 }
 
 
+/* The reason we need to know if the input is on the coarsest level is because we do not want
+to normalize subband 0 otherwise */
 void
 InverseCdf53(const v3i& M3,
              int Iter,
@@ -1278,13 +1280,6 @@ ComputeWavGrids(int NDims, int Sb, const extent& ValExt, const grid& WavGrid, co
   return Output;
 }
 
-// copy the existing values
-// TODO: visualize to test this function
-// void CopyWavs(
-//  const grid& WavGrid, const volume& WavVol, const grid& WrkGrid, volume* WrkVol)
-//{
-//
-//}
 
 /* //TODO: this won't work for a general (sub)volume
 void
@@ -1608,8 +1603,8 @@ MergeSubbandGrids(const grid& Sb1, const grid& Sb2)
 {
   v3i Off3 = Abs(From(Sb2) - From(Sb1));
   v3i Strd3 = Min(Strd(Sb1), Strd(Sb2)) * Equals(Off3, v3i(0)) + Off3;
-  v3i Dims3 = Dims(Sb1) + NotEquals(From(Sb1), From(Sb2)) *
-                            Dims(Sb2); // TODO: works in case of subbands but not in general
+  // TODO: works in case of subbands but not in general
+  v3i Dims3 = Dims(Sb1) + NotEquals(From(Sb1), From(Sb2)) * Dims(Sb2);
   v3i From3 = Min(From(Sb2), From(Sb1));
   return grid(From3, Dims3, Strd3);
 }
