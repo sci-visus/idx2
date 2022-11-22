@@ -8,10 +8,8 @@
 #include "idx2Read.h"
 #include "idx2Decode.h"
 
-
 namespace idx2
 {
-
 
 static void
 Dealloc(chunk_cache* ChunkCache)
@@ -54,8 +52,16 @@ DeallocFileCacheTable(file_cache_table* FileCacheTable)
 
 /* Given a brick address, open the file associated with the brick and cache its chunk information */
 static error<idx2_err_code>
-ReadFile(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id& FileId)
+ReadFile(const idx2_file& Idx2,
+         decode_data* D,
+         file_cache_table::iterator* FileCacheIt,
+         const file_id& FileId)
 {
+#if VISUS_IDX2
+  if (Idx2.external_read)
+    return idx2_Error(idx2_err_code::NoError);
+#endif
+
   timer IOTimer;
   StartTimer(&IOTimer);
 
@@ -114,12 +120,13 @@ ReadFile(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id&
   }
   idx2_Assert(Size(D->ChunkSizeStream) == ChunkSizesSz);
 
-  if (!*FileCacheIt)
-  {
+  if (!*FileCacheIt) // the file cache does not exist
+  { // insert a new file cache
     Insert(FileCacheIt, FileId.Id, FileCache);
   }
-  else
-  {
+  else // the file cache exists
+  { // modify the chunk caches portion of the file cache
+    idx2_Assert(IsEmpty(FileCacheIt->Val->ChunkCaches));
     FileCacheIt->Val->ChunkCaches = FileCache.ChunkCaches;
     FileCacheIt->Val->ChunkOffsets = FileCache.ChunkOffsets;
   }
@@ -133,9 +140,43 @@ ReadFile(decode_data* D, file_cache_table::iterator* FileCacheIt, const file_id&
 expected<const chunk_cache*, idx2_err_code>
 ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BitPlane)
 {
+#if VISUS_IDX2
+  if (Idx2.external_read)
+  {
+    //this part handles with caching, in the long-term it should be disabled since OpenVisus can handle the caching itself
+    file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BitPlane);
+    auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
+    if (!FileCacheIt)
+    {
+      file_cache FileCache;
+      Init(&FileCache.ChunkExpCaches, 10);
+      Init(&FileCache.ChunkCaches, 10);
+      Insert(&FileCacheIt, FileId.Id, FileCache);
+    }
+    file_cache* FileCache = FileCacheIt.Val;
+    u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BitPlane);
+    auto ChunkCacheIt = Lookup(&FileCache->ChunkCaches, ChunkAddress);
+    if (ChunkCacheIt)
+      return ChunkCacheIt.Val;
+
+    buffer buff;
+    if (!Idx2.external_read(Idx2, buff, ChunkAddress))
+      throw "to handle this";
+
+    //decompress part
+    chunk_cache ChunkCache;
+    bitstream ChunkStream;
+    ChunkStream.Stream=buff;
+    // InitRead(&ChunkCache.ChunkStream, ChunkBuf);
+    DecompressChunk(&ChunkStream, &ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
+    Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
+    return ChunkCacheIt.Val;
+  }
+#endif
+
   file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BitPlane);
   auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
-  idx2_PropagateIfError(ReadFile(D, &FileCacheIt, FileId));
+  idx2_PropagateIfError(ReadFile(Idx2, D, &FileCacheIt, FileId));
   if (!FileCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
 
@@ -182,6 +223,11 @@ ReadFileExponents(const idx2_file& Idx2,
                   file_cache_table::iterator* FileCacheIt,
                   const file_id& FileId)
 {
+#if VISUS_IDX2
+  if (Idx2.external_read)
+    return idx2_Error(idx2_err_code::NoError);
+#endif
+
   timer IOTimer;
   StartTimer(&IOTimer);
 
@@ -250,12 +296,13 @@ ReadFileExponents(const idx2_file& Idx2,
   //Resize(&FileCache.ChunkCaches, Size(FileCache.ChunkExpOffsets));
   idx2_Assert(Size(D->ChunkExpSizeStream) == S);
 
-  if (!*FileCacheIt)
+  if (!*FileCacheIt) // file cache exists
   {
     Insert(FileCacheIt, FileId.Id, FileCache);
   }
-  else
+  else // file cache does not exist
   {
+    idx2_Assert(IsEmpty(FileCacheIt->Val->ChunkExpCaches));
     FileCacheIt->Val->ExponentBeginOffset = FileCache.ExponentBeginOffset;
     FileCacheIt->Val->ChunkExpOffsets = FileCache.ChunkExpOffsets;
     FileCacheIt->Val->ChunkExpCaches = FileCache.ChunkExpCaches;
@@ -271,6 +318,41 @@ ReadFileExponents(const idx2_file& Idx2,
 expected<const chunk_exp_cache*, idx2_err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband)
 {
+#if VISUS_IDX2
+  if (Idx2.external_read)
+  {
+    //this part handles with caching, in the long-term it should be disabled since OpenVisus can handle the caching itself
+    file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
+    auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
+    if (!FileCacheIt)
+    {
+      file_cache FileCache;
+      Init(&FileCache.ChunkExpCaches, 10);
+      Init(&FileCache.ChunkCaches, 10);
+      Insert(&FileCacheIt, FileId.Id, FileCache);
+    }
+    file_cache* FileCache = FileCacheIt.Val;
+    u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
+    auto ChunkExpCacheIt = Lookup(&FileCache->ChunkExpCaches, ChunkAddress);
+    if (ChunkExpCacheIt)
+      return ChunkExpCacheIt.Val;
+
+    //read the block
+    buffer buff;
+    if (!Idx2.external_read(Idx2, buff, ChunkAddress))
+      throw "to handle this";
+
+    //decompress the block 
+    chunk_exp_cache ChunkExpCache;
+    bitstream& ChunkExpStream = ChunkExpCache.ChunkExpStream;
+    D->CompressedChunkExps = buff;
+    DecompressBufZstd(D->CompressedChunkExps, &ChunkExpStream);
+    InitRead(&ChunkExpCache.ChunkExpStream, ChunkExpStream.Stream);
+    Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache);
+    return ChunkExpCacheIt.Val;
+  }
+#endif
+
   file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
   auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
   idx2_PropagateIfError(ReadFileExponents(Idx2, D, Level, &FileCacheIt, FileId));

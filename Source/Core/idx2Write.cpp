@@ -6,7 +6,6 @@
 #include "Statistics.h"
 #include "VarInt.h"
 
-
 namespace idx2
 {
 
@@ -26,10 +25,30 @@ static stat ChunkAddrsStat;
 static stat ChunkSzsStat;
 
 
-// Write once per chunk
+
 void
 WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 Level, i8 Subband)
 {
+#if VISUS_IDX2
+  if (Idx2.external_write){
+
+    /* brick exponents */
+    Flush(&Sc->BrickExpStream);
+    BrickEMaxesStat.Add((f64)Size(Sc->BrickExpStream));
+    Rewind(&E->ChunkExpStream);
+    CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
+    //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
+    ChunkEMaxesStat.Add((f64)Size(E->ChunkExpStream));
+    Rewind(&Sc->BrickExpStream);
+    u64 ChunkExpAddress = GetChunkAddress(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
+    buffer Buf = ToBuffer(E->ChunkExpStream);
+    if (!Idx2.external_write(Idx2, Buf, ChunkExpAddress))
+      throw "to handle this";
+    Rewind(&E->ChunkExpStream);
+    return;
+  }
+#endif
+
   /* brick exponents */
   Flush(&Sc->BrickExpStream);
   BrickEMaxesStat.Add((f64)Size(Sc->BrickExpStream));
@@ -71,11 +90,31 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
   Rewind(&E->ChunkExpStream);
 }
 
-
 // TODO: check the error path
 error<idx2_err_code>
 FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
 {
+  if (Idx2.external_write)
+  {
+    Reserve(&E->SortedSubChannels, Size(E->SubChannels));
+    Clear(&E->SortedSubChannels);
+    idx2_ForEach (Sch, E->SubChannels)
+    {
+      sub_channel_info ScInfo;
+      ScInfo.SubChannel = &*Sch;
+      u64 Brick;
+      i16 BitPlane;
+      UnpackAddress(Idx2, *Sch.Key, &Brick, &ScInfo.Level, &ScInfo.Subband, &BitPlane);
+      PushBack(&E->SortedSubChannels, ScInfo);
+    }
+    InsertionSort(Begin(E->SortedSubChannels), End(E->SortedSubChannels));
+
+    idx2_ForEach (Sch, E->SortedSubChannels)
+      WriteChunkExponents(Idx2, E, Sch->SubChannel, Sch->Level, Sch->Subband); //just call  WriteChunkExponents
+
+    return idx2_Error(idx2_err_code::NoError);
+  }
+
   Reserve(&E->SortedSubChannels, Size(E->SubChannels));
   Clear(&E->SortedSubChannels);
   idx2_ForEach (Sch, E->SubChannels)
@@ -139,6 +178,37 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
 void
 WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subband, i16 BitPlane)
 {
+#if VISUS_IDX2
+  if (Idx2.external_write)
+  {
+    BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
+    BrickSzsStat.Add((f64)Size(C->BrickSizeStream));      // brick sizes
+    BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
+    i64 ChunkSize =
+      Size(C->BrickDeltasStream) + Size(C->BrickSizeStream) + Size(C->BrickStream) + 64;
+    Rewind(&E->ChunkStream);
+    GrowToAccomodate(&E->ChunkStream, ChunkSize);
+    WriteVarByte(&E->ChunkStream, C->NBricks);
+    WriteStream(&E->ChunkStream, &C->BrickDeltasStream);
+    WriteStream(&E->ChunkStream, &C->BrickSizeStream);
+    WriteStream(&E->ChunkStream, &C->BrickStream);
+    Flush(&E->ChunkStream);
+    ChunkStreamStat.Add((f64)Size(E->ChunkStream));
+
+    /* we are done with these, rewind */
+    Rewind(&C->BrickDeltasStream);
+    Rewind(&C->BrickSizeStream);
+    Rewind(&C->BrickStream);
+
+    u64 ChunkAddress = GetChunkAddress(Idx2, C->LastBrick, Level, Subband, BitPlane);
+    buffer Buf = ToBuffer(E->ChunkStream);
+    if (!Idx2.external_write(Idx2, Buf, ChunkAddress))
+      throw "to handle this";
+    Rewind(&E->ChunkStream);
+    return;
+  }
+#endif
+
   BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
   BrickSzsStat.Add((f64)Size(C->BrickSizeStream));       // brick sizes
   BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
@@ -184,6 +254,28 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
 error<idx2_err_code>
 FlushChunks(const idx2_file& Idx2, encode_data* E)
 {
+#if VISUS_IDX2
+  if (Idx2.external_write)
+  {
+    Reserve(&E->SortedChannels, Size(E->Channels));
+    Clear(&E->SortedChannels);
+    idx2_ForEach (Ch, E->Channels)
+    {
+      PushBack(&E->SortedChannels, t2<u32, channel*>{ *Ch.Key, Ch.Val });
+    }
+    InsertionSort(Begin(E->SortedChannels), End(E->SortedChannels));
+    idx2_ForEach (Ch, E->SortedChannels)
+    {
+      i8 Level = GetLevelFromChannelKey(Ch->First);
+      i8 Subband = GetSubbandFromChannelKey(Ch->First);
+      i16 BitPlane = BitPlaneFromChannelKey(Ch->First);
+      // printf("key %llu level %d subband %d bitplane %d\n", Ch->First, Level, Subband, BitPlane);
+      WriteChunk(Idx2, E, Ch->Second, Level, Subband, BitPlane); //just call WriteChunk
+    }
+    return idx2_Error(idx2_err_code::NoError);
+  }
+#endif
+
   Reserve(&E->SortedChannels, Size(E->Channels));
   Clear(&E->SortedChannels);
   idx2_ForEach (Ch, E->Channels)
@@ -199,7 +291,6 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     //printf("key %llu level %d subband %d bitplane %d\n", Ch->First, Level, Subband, BitPlane);
     WriteChunk(Idx2, E, Ch->Second, Level, Subband, BitPlane);
   }
-
   /* write the chunk meta */
   idx2_ForEach (CmIt, E->ChunkMeta)
   {
@@ -228,7 +319,6 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
   }
   return idx2_Error(idx2_err_code::NoError);
 }
-
 
 void
 PrintStats()

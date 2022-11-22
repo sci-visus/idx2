@@ -6,6 +6,12 @@
 namespace idx2
 {
 
+/*
+Initialize IDX2 with given parameters.
+Call this function first.
+*/
+error<idx2_err_code>
+InitFromBuffer(idx2_file* Idx2, params& P, buffer& Buf);
 
 /*
 Initialize IDX2 with given parameters.
@@ -13,7 +19,6 @@ Call this function first.
 */
 error<idx2_err_code>
 Init(idx2_file* Idx2, params& P);
-
 
 struct brick_copier;
 

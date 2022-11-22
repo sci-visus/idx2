@@ -1,14 +1,12 @@
-//#define _CRTDBG_MAP_ALLOC
-//#include <stdlib.h>
-//#include <crtdbg.h>
+#if VISUS_IDX2
+#include <Visus/IdxDataset2.h>
+#include <Visus/Access.h>
+#include <Visus/File.h>
+#endif
 
-//#define idx2_Implementation
-//#include "../idx2.hpp"
 #include "../idx2.h"
 
-
 using namespace idx2;
-
 
 /* Parse the decode options */
 static void
@@ -255,14 +253,11 @@ SetParams(idx2_file* Idx2, const params& P)
   SetGroupLevels(Idx2, P.GroupLevels);
   SetGroupBitPlanes(Idx2, P.GroupBitPlanes);
   SetGroupSubLevels(Idx2, P.GroupSubLevels);
-
   return Finalize(Idx2, P);
 }
 
-
-/* Main function (entry point of the idx2 command) */
-int
-main(int Argc, cstr* Argv)
+int 
+Idx2App(int Argc, const char* Argv[])
 {
   SetHandleAbortSignals();
 
@@ -280,6 +275,34 @@ main(int Argc, cstr* Argv)
   {
     RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
     idx2_ExitIfError(SetParams(&Idx2, P));
+
+#if VISUS_IDX2
+    //make sure these instances are alive for encoding/decoding operations
+    Visus::SharedPtr<Visus::IdxDataset2> dataset;
+    Visus::SharedPtr<Visus::Access> access;
+    if (!Visus::cbool(Visus::Utils::getEnv("DISABLE_EXTERNAL_ACCESS", "0"))) //for debugging purpouse I can disable external access
+    {
+      // need to have the *.idx2 file written in advance (otherwise I cannot load the IdxDataset2 inside OpenVisus)
+      std::string url = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
+      {
+        auto Min = 0.0;
+        std::swap(Idx2.ValueRange.Min, Min);
+        auto Max = 1.0;
+        std::swap(Idx2.ValueRange.Max, Max);
+        Visus::FileUtils::createDirectory(Visus::Path(url).getParent());
+        WriteMetaFile(Idx2, P, url.c_str());
+        std::swap(Idx2.ValueRange.Min, Min);
+        std::swap(Idx2.ValueRange.Max, Max);
+      }
+
+      dataset = std::dynamic_pointer_cast<Visus::IdxDataset2>(Visus::LoadDataset(url));
+      access = dataset->createAccess();
+      access->setWritingMode();
+      dataset->enableExternalWrite(Idx2, access);
+      dataset->enableExternalRead(Idx2, access);
+    }
+#endif
+
     if (Size(P.InputFiles) > 0)
     { // the input contains multiple files
       idx2_ExitIf(true, "File list input not supported at the moment\n");
@@ -296,6 +319,20 @@ main(int Argc, cstr* Argv)
   else if (P.Action == action::Decode)
   {
     idx2_ExitIfError(Init(&Idx2, P));
+
+#if VISUS_IDX2
+    // make sure these instances are alive for encoding/decoding operations
+    Visus::SharedPtr<Visus::IdxDataset2> dataset;
+    Visus::SharedPtr<Visus::Access> access;
+    if (!Visus::cbool(Visus::Utils::getEnv("DISABLE_EXTERNAL_ACCESS", "0")))
+    {
+      std::string url = idx2_PrintScratch("%s%s/%s.idx2", Idx2.Dir.ConstPtr, Idx2.Name, Idx2.Field);
+      auto dataset = std::dynamic_pointer_cast<Visus::IdxDataset2>(Visus::LoadDataset(url));
+      auto access = dataset->createAccess();
+      dataset->enableExternalRead(Idx2, access);
+    }
+#endif
+
     idx2_ExitIfError(Decode(Idx2, P));
   }
 
@@ -308,3 +345,9 @@ main(int Argc, cstr* Argv)
   //_CrtDumpMemoryLeaks();
   return 0;
 }
+
+#if !VISUS_IDX2 // visus will have a different entry point
+int main(int Argc, const char* Argv[]) {
+  return Idx2App(Argc, Argv);
+}
+#endif
