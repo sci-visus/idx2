@@ -27,10 +27,8 @@
 #pragma GCC diagnostic pop
 #endif
 
-
 namespace idx2
 {
-
 
 free_list_allocator BrickAlloc_;
 
@@ -153,6 +151,7 @@ SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 }
 
 
+
 /* Write the metadata file (idx) */
 // TODO: return error type
 void
@@ -189,15 +188,10 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fclose(Fp);
 }
 
-
-
 // TODO: return error type
 error<idx2_err_code>
-ReadMetaFile(idx2_file* Idx2, cstr FileName)
+ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
 {
-  buffer Buf;
-  idx2_CleanUp(DeallocBuf(&Buf));
-  idx2_PropagateIfError(ReadFile(FileName, &Buf));
   SExprResult Result = ParseSExpr((cstr)Buf.Data, Size(Buf), nullptr);
   if (Result.type == SE_SYNTAX_ERROR)
   {
@@ -367,6 +361,15 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
     }
   }
   return idx2_Error(idx2_err_code::NoError);
+}
+
+error<idx2_err_code>
+ReadMetaFile(idx2_file* Idx2, cstr FileName)
+{
+  buffer Buf;
+  idx2_CleanUp(DeallocBuf(&Buf));
+  idx2_PropagateIfError(ReadFile(FileName, &Buf));
+  return ReadMetaFileFromBuffer(Idx2, Buf);
 }
 
 

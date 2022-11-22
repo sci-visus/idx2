@@ -10,6 +10,9 @@
 #include "Volume.h"
 #include "Wavelet.h"
 
+#if VISUS_IDX2
+#include <functional>
+#endif
 
 /* ---------------------- MACROS ----------------------*/
 // Get non-extrapolated dims
@@ -170,6 +173,11 @@ struct idx2_file
   bool GroupLevels = false;
   bool GroupBitPlanes = true;
   bool GroupSubbands = true;
+
+#if VISUS_IDX2
+  std::function<bool(const idx2_file&, buffer&, u64)> external_read;
+  std::function<bool(const idx2_file&, buffer&, u64)> external_write;
+#endif
 };
 
 
@@ -184,6 +192,9 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName);
 
 error<idx2_err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName);
+
+error<idx2_err_code>
+ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf);
 
 /* Compute the output grid (from, dims, strides) */
 grid

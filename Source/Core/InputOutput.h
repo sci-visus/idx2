@@ -76,9 +76,9 @@ DumpText(cstr FileName, i Begin, i End, cstr Format)
   for (i It = Begin; It != End; ++It)
   {
     if (fprintf(Fp, Format, *It) < 0)
-      return idx2_Error(err_code::FileWriteFailed);
+      return idx2_Error(err_code::FileWriteFailed, "");
   }
-  return idx2_Error(err_code::NoError);
+  return idx2_Error(err_code::NoError, "");
 }
 
 
