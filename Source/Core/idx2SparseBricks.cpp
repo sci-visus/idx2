@@ -191,6 +191,7 @@ GetBrickVolume(brick_pool* Bp, const v3i& Brick3)
 * 3 int32s (Nx Ny Nz): dimensions of the full volume (e.g., 512 512 512)
 * 3 int32s (Bx By Bz): finest brick dimensions (e.g., 32 32 32)
 *   (these are always power of 2)
+* 3 ints32 (NBx, NBy, NBz): number of bricks in each dimension
 * For each brick (in row major order):
 *   3 int32s (Bi Bj Bk): brick's indices (e.g., 1 0 1) (multiply this by the
 *     (Bx By Bz) above to get the brick's location in voxel)
