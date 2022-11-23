@@ -222,7 +222,7 @@ void
 SetBrickSize(idx2_file* Idx2, const v3i& BrickDims3);
 
 void
-SetNumIterations(idx2_file* Idx2, i8 NIterations);
+SetNumLevels(idx2_file* Idx2, i8 NIterations);
 
 void
 SetAccuracy(idx2_file* Idx2, f64 Accuracy);

@@ -420,8 +420,6 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
                 Dealloc(&BVol.Vol);
                 // TODO: can we delete straight from the iterator?
                 Delete(&D.BrickPool.BrickTable, BrickKey);
-                if (BrickKey == 0)
-                  printf("brick 0 deleted\n");
               }
             }
           },

@@ -102,10 +102,7 @@ ReadFile(const idx2_file& Idx2,
   /* read and decompress chunk addresses */
   int ChunkAddrsSz;
   ReadBackwardPOD(Fp, &ChunkAddrsSz);
-  idx2_RAII(buffer,
-            CpresChunkAddrs,
-            AllocBuf(&CpresChunkAddrs, ChunkAddrsSz),
-            DeallocBuf(&CpresChunkAddrs)); // TODO: move to decode_data
+  idx2_ScopeBuffer(CpresChunkAddrs, ChunkAddrsSz);
   ReadBackwardBuffer(Fp, &CpresChunkAddrs, ChunkAddrsSz);
   D->BytesData_ += ChunkAddrsSz;
   D->DecodeIOTime_ += ElapsedTime(&IOTimer);
@@ -225,10 +222,8 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
     ReadBuffer(Fp, &ChunkStream.Stream);
     D->BytesData_ += Size(ChunkStream.Stream);
     D->DecodeIOTime_ += ElapsedTime(&IOTimer);
-    DecompressChunk(&ChunkStream,
-                    ChunkCache,
-                    ChunkAddress,
-                    Log2Ceil(Idx2.BricksPerChunk[Level])); // TODO: check for error
+    // TODO: check for error
+    DecompressChunk(&ChunkStream, ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
   }
 
   return ChunkCacheIt.Val;

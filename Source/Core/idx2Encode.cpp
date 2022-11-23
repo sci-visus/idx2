@@ -44,22 +44,15 @@ CompressBufZstd(const buffer& Input, bitstream* Output)
 }
 
 
-// TODO: return an error code
 static void
-EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol)
+EncodeBrickSubbandExponents(idx2_file* Idx2,
+                            encode_data* E,
+                            const v3i& NBlocks3,
+                            const u64 Brick)
 {
-  u64 Brick = E->Brick[E->Level];
-  v3i SbDims3 = Dims(SbGrid);
-  v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
-  u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  const i8 NBitPlanes = idx2_BitSizeOf(u64);
-  Clear(&E->BlockSigs);
-  Reserve(&E->BlockSigs, NBitPlanes);
-  Clear(&E->SubbandExps);
-  Reserve(&E->SubbandExps, Prod(NBlocks3));
 
   /* query the right sub channel for the block exponents */
-  u64 SubChanKey = GetAddress(0, 0, E->Level, E->Subband, ExponentBitPlane_);
+  const u64 SubChanKey = GetAddress(0, 0, E->Level, E->Subband, ExponentBitPlane_);
   auto ScIt = Lookup(&E->SubChannels, SubChanKey);
   if (!ScIt)
   {
@@ -70,96 +63,6 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
   idx2_Assert(ScIt);
   sub_channel* Sc = ScIt.Val;
 
-  /* pass 1: compress the blocks */
-  idx2_InclusiveFor (u32, Block, 0, LastBlock)
-  { // zfp block loop
-    v3i Z3(DecodeMorton3(Block));
-    idx2_NextMorton(Block, Z3, NBlocks3);
-    v3i D3 = Z3 * Idx2->BlockDims3;
-    v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-    const i8 NDims = (i8)NumDims(BlockDims3);
-    const int NVals = 1 << (2 * NDims);
-    const i8 Prec = NBitPlanes - 1 - NDims;
-    f64 BlockFloats[4 * 4 * 4];
-    buffer_t BufFloats(BlockFloats, NVals);
-    buffer_t BufInts((i64*)BlockFloats, NVals);
-    u64 BlockUInts[4 * 4 * 4];
-    buffer_t BufUInts(BlockUInts, NVals);
-    bool CodedInNextIter =
-      E->Subband == 0 && E->Level + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
-    if (CodedInNextIter)
-      continue;
-    /* copy the samples to the local buffer */
-    v3i S3;
-    int J = 0;
-    v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
-    idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
-    { // sample loop
-      idx2_Assert(D3 + S3 < SbDims3);
-      BlockFloats[J++] = BrickVol->At<f64>(From3, Strd3, D3 + S3);
-    }
-    idx2_EndFor3; // end sample loop
-    /* zfp transform and shuffle */
-    const i16 EMax = SizeOf(Idx2->DType) > 4 ? (i16)QuantizeF64(Prec, BufFloats, &BufInts)
-                                             : (i16)QuantizeF32(Prec, BufFloats, &BufInts);
-    PushBack(&E->SubbandExps, EMax);
-    ForwardZfp((i64*)BlockFloats, NDims);
-    ForwardShuffle((i64*)BlockFloats, BlockUInts, NDims);
-    /* zfp encode */
-    i8 N = 0; // number of significant coefficients in the block so far
-    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType)), NBitPlanes);
-    idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
-    { // bit plane loop
-      i16 RealBp = Bp + EMax;
-      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
-      if (TooHighPrecision)
-        break;
-      u32 ChannelKey = GetChannelKey(RealBp, E->Level, E->Subband);
-      auto ChannelIt = Lookup(&E->Channels, ChannelKey);
-      if (!ChannelIt)
-      {
-        channel Channel;
-        Init(&Channel);
-        Insert(&ChannelIt, ChannelKey, Channel);
-      }
-      idx2_Assert(ChannelIt);
-      channel* C = ChannelIt.Val;
-      /* write block id */
-      // u32 BlockDelta = Block;
-      int I = 0;
-      for (; I < Size(E->BlockSigs); ++I)
-      {
-        if (E->BlockSigs[I].BitPlane == RealBp)
-        {
-          idx2_Assert(Block > E->BlockSigs[I].Block);
-          // BlockDelta = Block - E->BlockSigs[I].Block - 1;
-          E->BlockSigs[I].Block = Block;
-          break;
-        }
-      }
-      /* write chunk if this brick is after the last chunk */
-      bool FirstSigBlock =
-        I == Size(E->BlockSigs); // first block that becomes significant on this bit plane
-      bool BrickNotEmpty = Size(C->BrickStream) > 0;
-      bool NewChunk =
-        Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunk[E->Level]; // TODO: multiplier?
-      if (FirstSigBlock)
-      {
-        if (NewChunk)
-        {
-          if (BrickNotEmpty)
-            WriteChunk(*Idx2, E, C, E->Level, E->Subband, RealBp);
-          C->NBricks = 0;
-          C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
-        }
-        PushBack(&E->BlockSigs, block_sig{ Block, RealBp });
-      }
-      /* encode the block */
-      GrowIfTooFull(&C->BlockStream);
-      Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
-    } // end bit plane loop
-  }   // end zfp block loop
-
   /* write the last chunk exponents if this is the first brick of the new chunk */
   bool NewChunk = Brick >= (Sc->LastChunk + 1) * Idx2->BricksPerChunk[E->Level];
   if (NewChunk)
@@ -167,7 +70,7 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
     WriteChunkExponents(*Idx2, E, Sc, E->Level, E->Subband);
     Sc->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
   }
-  /* write the min emax */
+  /* write the min exponent */
   GrowToAccomodate(&Sc->BlockExpStream, 2 * Size(E->SubbandExps));
   idx2_For (int, I, 0, Size(E->SubbandExps))
   {
@@ -175,13 +78,23 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
     // we use 16 bits for f64 exponents (instead of 11) so that zstd compression works later
     Write(&Sc->BlockExpStream, S, SizeOf(Idx2->DType) > 4 ? 16 : traits<f32>::ExpBits);
   }
-  /* write brick emax size */
+  /* write brick exponent size */
   GrowToAccomodate(&Sc->BrickExpStream, Size(Sc->BlockExpStream));
   WriteStream(&Sc->BrickExpStream, &Sc->BlockExpStream);
   //BlockEMaxStat.Add((f64)Size(Sc->BlockEMaxesStream));
   Rewind(&Sc->BlockExpStream);
   Sc->LastBrick = Brick;
+}
 
+
+static void
+EncodeBrickSubbandMetadata(idx2_file* Idx2,
+                           encode_data* E,
+                           const v3i& NBlocks3,
+                           const v3i& SbDims3,
+                           const u64 Brick,
+                           const u32 LastBlock)
+{
   /* pass 2: encode the brick meta info */
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
   {
@@ -189,15 +102,15 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2->BlockDims3;
     v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-    bool CodedInNextIter =
+    bool CodedInNextLevel =
       E->Subband == 0 && E->Level + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
-    if (CodedInNextIter)
+    if (CodedInNextLevel)
       continue;
-    /* done at most once per brick */
-    idx2_For (int, I, 0, Size(E->BlockSigs))
-    { // bit plane loop
-      i16 RealBp = E->BlockSigs[I].BitPlane;
-      if (Block != E->BlockSigs[I].Block)
+    /* done at most once per brick, by the last significant block */
+    idx2_For (int, I, 0, Size(E->LastSigBlock))
+    {
+      i16 RealBp = E->LastSigBlock[I].BitPlane;
+      if (Block != E->LastSigBlock[I].Block)
         continue;
       u32 ChannelKey = GetChannelKey(RealBp, E->Level, E->Subband);
       auto ChannelIt = Lookup(&E->Channels, ChannelKey);
@@ -227,6 +140,129 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
       C->LastBrick = Brick;
     } // end bit plane loop
   }   // end zfp block loop
+}
+
+static void
+EncodeSubbandBlocks(idx2_file* Idx2,
+                    encode_data* E,
+                    const grid& SbGrid,
+                    const v3i& SbDims3,
+                    const v3i& NBlocks3,
+                    const u64 Brick,
+                    const u32 LastBlock,
+                    volume* BrickVol)
+{
+  const i8 NBitPlanes = idx2_BitSizeOf(u64);
+  Clear(&E->LastSigBlock);
+  Reserve(&E->LastSigBlock, NBitPlanes);
+  Clear(&E->SubbandExps);
+  Reserve(&E->SubbandExps, Prod(NBlocks3));
+
+  /* pass 1: compress the blocks */
+  idx2_InclusiveFor (u32, Block, 0, LastBlock)
+  { // zfp block loop
+    v3i Z3(DecodeMorton3(Block));
+    idx2_NextMorton(Block, Z3, NBlocks3);
+    v3i D3 = Z3 * Idx2->BlockDims3;
+    v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
+    const i8 NDims = (i8)NumDims(BlockDims3);
+    const int NVals = 1 << (2 * NDims);
+    const i8 Prec = NBitPlanes - 1 - NDims;
+    f64 BlockFloats[4 * 4 * 4];
+    buffer_t BufFloats(BlockFloats, NVals);
+    buffer_t BufInts((i64*)BlockFloats, NVals);
+    u64 BlockUInts[4 * 4 * 4];
+    buffer_t BufUInts(BlockUInts, NVals);
+    bool CodedInNextLevel =
+      E->Subband == 0 && E->Level + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
+    if (CodedInNextLevel)
+      continue;
+    /* copy the samples to the local buffer */
+    v3i S3;
+    int J = 0;
+    v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
+    idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
+    { // sample loop
+      idx2_Assert(D3 + S3 < SbDims3);
+      BlockFloats[J++] = BrickVol->At<f64>(From3, Strd3, D3 + S3);
+    }
+    idx2_EndFor3; // end sample loop
+    /* zfp transform and shuffle */
+    const i16 EMax = SizeOf(Idx2->DType) > 4 ? (i16)QuantizeF64(Prec, BufFloats, &BufInts)
+                                             : (i16)QuantizeF32(Prec, BufFloats, &BufInts);
+    PushBack(&E->SubbandExps, EMax);
+    ForwardZfp((i64*)BlockFloats, NDims);
+    ForwardShuffle((i64*)BlockFloats, BlockUInts, NDims);
+    /* zfp encode */
+    i8 N = 0; // number of significant coefficients in the block so far
+    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType)), NBitPlanes);
+    idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
+    { // bit plane loop
+      i16 RealBp = Bp + EMax;
+      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
+      if (TooHighPrecision)
+        break;
+      // TODO: divide the REalbp by 4
+      u32 ChannelKey = GetChannelKey(RealBp, E->Level, E->Subband);
+      auto ChannelIt = Lookup(&E->Channels, ChannelKey);
+      if (!ChannelIt)
+      {
+        channel Channel;
+        Init(&Channel);
+        Insert(&ChannelIt, ChannelKey, Channel);
+      }
+      idx2_Assert(ChannelIt);
+      channel* C = ChannelIt.Val;
+      /* write block id */
+      // u32 BlockDelta = Block;
+      int I = 0;
+      for (; I < Size(E->LastSigBlock); ++I)
+      {
+        if (E->LastSigBlock[I].BitPlane == RealBp)
+        {
+          idx2_Assert(Block > E->LastSigBlock[I].Block);
+          // BlockDelta = Block - E->BlockSigs[I].Block - 1;
+          E->LastSigBlock[I].Block = Block;
+          break;
+        }
+      }
+      /* write chunk if this brick is after the last chunk */
+      // first block that becomes significant on this bit plane
+      bool FirstSigBlock = (I == Size(E->LastSigBlock));
+      bool BrickNotEmpty = Size(C->BrickStream) > 0;
+      bool NewChunk = Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunk[E->Level];
+      if (FirstSigBlock)
+      {
+        if (NewChunk)
+        {
+          if (BrickNotEmpty)
+            WriteChunk(*Idx2, E, C, E->Level, E->Subband, RealBp);
+          C->NBricks = 0;
+          C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
+        }
+        PushBack(&E->LastSigBlock, block_sig{ Block, RealBp });
+      }
+      /* encode the block */
+      GrowIfTooFull(&C->BlockStream);
+      Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
+    } // end bit plane loop
+  } // end zfp block loop
+}
+
+
+  // TODO: return an error code
+static void
+EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol)
+{
+  const u64 Brick = E->Brick[E->Level];
+  const v3i SbDims3 = Dims(SbGrid);
+  const v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
+  const u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
+
+  EncodeSubbandBlocks(Idx2, E, SbGrid, SbDims3, NBlocks3, Brick, LastBlock, BrickVol);
+  EncodeBrickSubbandExponents(Idx2, E, NBlocks3, Brick);
+  EncodeBrickSubbandMetadata(Idx2, E, NBlocks3, SbDims3, Brick, LastBlock);
+
 }
 
 
@@ -445,7 +481,7 @@ Dealloc(encode_data* E)
   Dealloc(&E->CompressedChunkAddresses);
   Dealloc(&E->ChunkStream);
   Dealloc(&E->ChunkExpStream);
-  Dealloc(&E->BlockSigs);
+  Dealloc(&E->LastSigBlock);
   Dealloc(&E->SubbandExps);
   //Dealloc(&E->BlockStream);
 }

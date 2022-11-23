@@ -239,7 +239,7 @@ SetParams(idx2_file* Idx2, const params& P)
   SetBrickSize(Idx2, P.BrickDims3);
   SetBricksPerChunk(Idx2, P.BricksPerChunk);
   SetChunksPerFile(Idx2, P.ChunksPerFile);
-  SetNumIterations(Idx2, (i8)P.NLevels);
+  SetNumLevels(Idx2, (i8)P.NLevels);
   SetAccuracy(Idx2, P.Accuracy);
   SetFilesPerDirectory(Idx2, P.FilesPerDir);
   SetDir(Idx2, P.OutDir);

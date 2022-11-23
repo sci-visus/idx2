@@ -82,7 +82,7 @@ SetBrickSize(idx2_file* Idx2, const v3i& BrickDims3)
 
 
 void
-SetNumIterations(idx2_file* Idx2, i8 NLevels)
+SetNumLevels(idx2_file* Idx2, i8 NLevels)
 {
   Idx2->NLevels = NLevels;
 }
@@ -186,6 +186,7 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, ")\n");   // end )
   fclose(Fp);
 }
+
 
 // TODO: return error type
 error<idx2_err_code>

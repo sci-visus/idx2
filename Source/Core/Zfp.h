@@ -1020,6 +1020,7 @@ Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */ i8& N, bitstream* i
 //      Block[I] += (t)((X >> I) & 1u) << B;
 //  }
 #if defined(idx2_Avx2) && defined(__AVX2__)
+  //printf("avx\n");
   __m256i Minus1 = _mm256_set1_epi64x(-1);
   __m256i Add = _mm256_set1_epi64x(t(1) << B);
   __m256i Mask = _mm256_set_epi64x(
