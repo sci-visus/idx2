@@ -13,19 +13,27 @@ namespace idx2
 /* book-keeping stuffs */
 static stat BlockStat;
 static stat BlockEMaxStat;
-static stat BrickEMaxesStat;
-static stat ChunkEMaxesStat;
-static stat ChunkExpSizeStat;
+static stat UncompressedExpChunksStat;
+static stat CompressedExpChunksStat;
+static stat ExpChunkSizesStat;
+static stat CompressedExpChunkAddressesStat;
+static stat UncompressedExpChunkAddressesStat;
 static stat BrickDeltasStat;
-static stat BrickSzsStat;
-static stat BrickStreamStat;
-static stat ChunkStreamStat;
-static stat CpresChunkAddrsStat;
-static stat ChunkAddrsStat;
-static stat ChunkSzsStat;
+static stat BrickSizesStat;
+//static stat BrickStreamStat;
+static stat BitPlaneChunksStat;
+static stat CompressedChunkAddressesStat;
+static stat UncompressedChunkAddressesStat;
+static stat ChunkSizesStat;
 
 
-
+/* Write an exponent chunk to a file (we actually write to a buffer then later flush to a file).
+* The structure of a chunk:
+* A = (zstd compressed) exponents for each brick
+* (we don't need to encode which bricks are present since all bricks are present)
+* (also, since the exponents are written originally with fixed number of bytes, we don't need
+* to encode the size for each brick)
+*/
 void
 WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 Level, i8 Subband)
 {
@@ -38,7 +46,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
     Rewind(&E->ChunkExpStream);
     CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
     //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
-    ChunkEMaxesStat.Add((f64)Size(E->ChunkExpStream));
+    CompressedExpChunksStat.Add((f64)Size(E->ChunkExpStream));
     Rewind(&Sc->BrickExpStream);
     u64 ChunkExpAddress = GetChunkAddress(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
     buffer Buf = ToBuffer(E->ChunkExpStream);
@@ -51,22 +59,17 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
 
   /* brick exponents */
   Flush(&Sc->BrickExpStream);
-  BrickEMaxesStat.Add((f64)Size(Sc->BrickExpStream));
+  UncompressedExpChunksStat.Add((f64)Size(Sc->BrickExpStream));
   Rewind(&E->ChunkExpStream);
   CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
   //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
-  ChunkEMaxesStat.Add((f64)Size(E->ChunkExpStream));
+  CompressedExpChunksStat.Add((f64)Size(E->ChunkExpStream));
 
   /* rewind */
   Rewind(&Sc->BrickExpStream);
 
   /* write to file */
   file_id FileId = ConstructFilePath(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
-  //printf("file = %s\n", FileId.Name.ConstPtr);
-  //printf("    level = %d subband = %d\n", Level, Subband);
-  // TODO: have one file emax buffer for each file
-  //idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
-  //WriteBuffer(Fp, ToBuffer(E->ChunkEMaxesStream));
   /* keep track of the chunk sizes */
   auto CemIt = Lookup(&E->ChunkExponents, FileId.Id);
   if (!CemIt)
@@ -90,7 +93,32 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
   Rewind(&E->ChunkExpStream);
 }
 
+
 // TODO: check the error path
+/* Write the buffered exponent chunks for each file.
+Write also the metadata for the exponent chunks at the end of each file. */
+/* Structure of a file
+* -------- beginning of file --------
+* bit plane information (see function ReadFile)
+* -------- exponent information --------
+* G
+* F
+* E
+* D
+* C
+* B
+* A
+* -------- end of file --------
+*
+* A : int32     = number of bytes for the exponent information
+*               = A + B + C + D + E + F + G
+* B : int32     = number of exponent chunks
+* C : int32     = size (in bytes) of D
+* D : buffer    = (zstd compressed) exponent chunk addresses
+* E : int32     = size (in bytes) of F
+* F : buffer    = (varint compressed) sizes of the exponent chunks
+* G : B buffers, whose sizes are encoded in F, each being one exponent chunk
+*/
 error<idx2_err_code>
 FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
 {
@@ -146,7 +174,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     /* write chunk emax sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
     Flush(ChunkExpSizes);
-    ChunkExpSizeStat.Add((f64)Size(*ChunkExpSizes));
+    ExpChunkSizesStat.Add((f64)Size(*ChunkExpSizes));
     int TotalExpBytes = 0;
     // write the exponent buffer
     buffer Buf = ToBuffer(Ce->FileExpBuffer);
@@ -158,7 +186,9 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     WritePOD(Fp, (int)Buf.Bytes);
     TotalExpBytes += int(Buf.Bytes) + sizeof(int);
     // write compressed chunk addresses
+    UncompressedExpChunkAddressesStat.Add((f64)Size(ToBuffer(Ce->Addrs)));
     CompressBufZstd(ToBuffer(Ce->Addrs), &E->CompressedChunkAddresses);
+    CompressedExpChunkAddressesStat.Add((f64)Size(E->CompressedChunkAddresses));
     Buf = ToBuffer(E->CompressedChunkAddresses);
     WriteBuffer(Fp, Buf);
     WritePOD(Fp, (int)Buf.Bytes);
@@ -177,6 +207,18 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
 
 
 // TODO: return error
+/* Write a chunk to disk.
+* The structure of a chunk:
+* A
+* B
+* C
+* D
+*
+* A : varint = number of bricks in the chunk
+* B : buffer = (unary encoded) delta stream that encodes which bricks are present
+* C : buffer = (varint encoded) size (in bytes) of each brick
+* D : buffer = (compressed) data for each brick
+*/
 void
 WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subband, i16 BitPlane)
 {
@@ -184,7 +226,7 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
   if (Idx2.external_write)
   {
     BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
-    BrickSzsStat.Add((f64)Size(C->BrickSizeStream));      // brick sizes
+    BrickSizesStat.Add((f64)Size(C->BrickSizeStream));      // brick sizes
     BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
     i64 ChunkSize =
       Size(C->BrickDeltasStream) + Size(C->BrickSizeStream) + Size(C->BrickStream) + 64;
@@ -195,7 +237,7 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
     WriteStream(&E->ChunkStream, &C->BrickSizeStream);
     WriteStream(&E->ChunkStream, &C->BrickStream);
     Flush(&E->ChunkStream);
-    ChunkStreamStat.Add((f64)Size(E->ChunkStream));
+    BitPlaneChunksStat.Add((f64)Size(E->ChunkStream));
 
     /* we are done with these, rewind */
     Rewind(&C->BrickDeltasStream);
@@ -212,8 +254,8 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
 #endif
 
   BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
-  BrickSzsStat.Add((f64)Size(C->BrickSizeStream));       // brick sizes
-  BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
+  BrickSizesStat.Add((f64)Size(C->BrickSizeStream));       // brick sizes
+  //BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
   i64 ChunkSize = Size(C->BrickDeltasStream) + Size(C->BrickSizeStream) + Size(C->BrickStream) + 64;
   Rewind(&E->ChunkStream);
   GrowToAccomodate(&E->ChunkStream, ChunkSize);
@@ -222,7 +264,7 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
   WriteStream(&E->ChunkStream, &C->BrickSizeStream);
   WriteStream(&E->ChunkStream, &C->BrickStream);
   Flush(&E->ChunkStream);
-  ChunkStreamStat.Add((f64)Size(E->ChunkStream));
+  BitPlaneChunksStat.Add((f64)Size(E->ChunkStream));
 
   /* we are done with these, rewind */
   Rewind(&C->BrickDeltasStream);
@@ -253,6 +295,28 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
 
 
 // TODO: check the error path
+/* We need to "flush" chunks because each chunk is written to disk when a new chunk is encountered,
+however, at the end of the volume, there is no new chunk, so we write the last few chunks by "flushing"
+them. Also, for each file, the FlushChunks function writes the metadata for all chunks in the file. */
+/* Structure of a file
+* -------- beginning of file --------
+* M
+* L
+* K
+* J
+* I
+* H
+* -------- exponent information ---------
+* see function ReadFileExponents
+* -------- end of file --------
+*
+* H : int32  = number of bit plane chunks
+* I : int32  = size of J
+* J : buffer = (zstd compressed) bit plane chunk addresses
+* K : int32  = size (in bytes) of L
+* L : buffer = (varint compressed) sizes of the bit plane chunks
+* M : H buffers, whose sizes are encoded in L, each being one bit plane chunk
+*/
 error<idx2_err_code>
 FlushChunks(const idx2_file& Idx2, encode_data* E)
 {
@@ -277,7 +341,7 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     return idx2_Error(idx2_err_code::NoError);
   }
 #endif
-
+  /* write the chunks */
   Reserve(&E->SortedChannels, Size(E->Channels));
   Clear(&E->SortedChannels);
   idx2_ForEach (Ch, E->Channels)
@@ -293,7 +357,8 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     //printf("key %llu level %d subband %d bitplane %d\n", Ch->First, Level, Subband, BitPlane);
     WriteChunk(Idx2, E, Ch->Second, Level, Subband, BitPlane);
   }
-  /* write the chunk meta */
+
+  /* write the chunk metadata */
   idx2_ForEach (CmIt, E->ChunkMeta)
   {
     chunk_meta_info* Cm = CmIt.Val;
@@ -308,7 +373,7 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
     Flush(&Cm->Sizes);
     WriteBuffer(Fp, ToBuffer(Cm->Sizes));
-    ChunkSzsStat.Add((f64)Size(Cm->Sizes));
+    ChunkSizesStat.Add((f64)Size(Cm->Sizes));
     WritePOD(Fp, (int)Size(Cm->Sizes));
     /* compress and write chunk addresses */
     CompressBufZstd(ToBuffer(Cm->Addrs), &E->CompressedChunkAddresses);
@@ -316,64 +381,39 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     // write size of the compressed chunk addresses
     WritePOD(Fp, (int)Size(E->CompressedChunkAddresses));
     WritePOD(Fp, (int)Size(Cm->Addrs)); // number of chunks
-    ChunkAddrsStat.Add((f64)Size(Cm->Addrs) * sizeof(Cm->Addrs[0]));
-    CpresChunkAddrsStat.Add((f64)Size(E->CompressedChunkAddresses));
+    UncompressedChunkAddressesStat.Add((f64)Size(Cm->Addrs) * sizeof(Cm->Addrs[0]));
+    CompressedChunkAddressesStat.Add((f64)Size(E->CompressedChunkAddresses));
   }
+
   return idx2_Error(idx2_err_code::NoError);
 }
 
+
 void
-PrintStats()
+PrintStats(cstr MetaFileName)
 {
-  printf("num chunks              = %" PRIi64 "\n", ChunkStreamStat.Count());
-  printf("brick deltas      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickDeltasStat.Sum(),
-         BrickDeltasStat.Avg(),
-         BrickDeltasStat.StdDev());
-  printf("brick sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickSzsStat.Sum(),
-         BrickSzsStat.Avg(),
-         BrickSzsStat.StdDev());
-  printf("brick stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickStreamStat.Sum(),
-         BrickStreamStat.Avg(),
-         BrickStreamStat.StdDev());
-  //printf("block stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-  //       BlockStat.Sum(),
-  //       BlockStat.Avg(),
-  //       BlockStat.StdDev());
-  printf("chunk sizes       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkSzsStat.Sum(),
-         ChunkSzsStat.Avg(),
-         ChunkSzsStat.StdDev());
-  printf("chunk addrs       total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkAddrsStat.Sum(),
-         ChunkAddrsStat.Avg(),
-         ChunkAddrsStat.StdDev());
-  printf("cpres chunk addrs total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         CpresChunkAddrsStat.Sum(),
-         CpresChunkAddrsStat.Avg(),
-         CpresChunkAddrsStat.StdDev());
-  printf("chunk stream      total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkStreamStat.Sum(),
-         ChunkStreamStat.Avg(),
-         ChunkStreamStat.StdDev());
-  printf("brick exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         BrickEMaxesStat.Sum(),
-         BrickEMaxesStat.Avg(),
-         BrickEMaxesStat.StdDev());
-  //printf("block exps        total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-  //       BlockEMaxStat.Sum(),
-  //       BlockEMaxStat.Avg(),
-  //       BlockEMaxStat.StdDev());
-  printf("chunk exp sizes   total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkExpSizeStat.Sum(),
-         ChunkExpSizeStat.Avg(),
-         ChunkExpSizeStat.StdDev());
-  printf("chunk exps stream total = %12.0f avg = %12.1f stddev = %12.1f bytes\n",
-         ChunkEMaxesStat.Sum(),
-         ChunkEMaxesStat.Avg(),
-         ChunkEMaxesStat.StdDev());
+  FILE* Fp = fopen(MetaFileName, "a");
+  fprintf(Fp, "\n\n---------------- Statistics ----------------\n\n");
+  fprintf(Fp, "num chunks = %" PRIi64 " (bit plane) and %" PRIi64 " (exponent) \n", BitPlaneChunksStat.Count(), CompressedExpChunksStat.Count());
+  fprintf(Fp, "bit plane chunk: total = %d avg = %d stddev = %d bytes\n",
+         (int)BitPlaneChunksStat.Sum(),
+         (int)BitPlaneChunksStat.Avg(),
+         (int)BitPlaneChunksStat.StdDev());
+  fprintf(Fp, "  (metadata) brick deltas = %d bytes\n", (int)BrickDeltasStat.Sum());
+  fprintf(Fp, "  (metadata) brick sizes = %d bytes\n", (int)BrickSizesStat.Sum());
+  fprintf(Fp, "  (metadata) chunk sizes = %d bytes\n", (int)ChunkSizesStat.Sum());
+  fprintf(Fp, "  (metadata) chunk addresses: uncompressed = %d, compressed = %d bytes\n",
+         (int)UncompressedChunkAddressesStat.Sum(), (int)CompressedChunkAddressesStat.Sum());
+  fprintf(Fp, "exponent chunk:\n");
+  fprintf(Fp, "  uncompressed: total = %d bytes\n", (int)UncompressedExpChunksStat.Sum());
+  fprintf(Fp, "  compressed: total = %d avg = %d stddev = %d bytes\n",
+         (int) CompressedExpChunksStat.Sum(),
+         (int) CompressedExpChunksStat.Avg(),
+         (int) CompressedExpChunksStat.StdDev());
+  fprintf(Fp, "  (metadata) chunk sizes = %d bytes\n", (int)ExpChunkSizesStat.Sum());
+  fprintf(Fp, "  (metadata) chunk addresses: uncompressed = %d, compressed = %d bytes\n",
+         (int)UncompressedExpChunkAddressesStat.Sum(), (int)CompressedExpChunkAddressesStat.Sum());
+  fclose(Fp);
 }
 
 

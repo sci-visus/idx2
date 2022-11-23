@@ -249,7 +249,7 @@ SetParams(idx2_file* Idx2, const params& P)
   return Finalize(Idx2, P);
 }
 
-int 
+int
 Idx2App(int Argc, const char* Argv[])
 {
   SetHandleAbortSignals();

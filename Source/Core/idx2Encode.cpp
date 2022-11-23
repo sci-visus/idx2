@@ -172,6 +172,7 @@ EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* Brick
   idx2_For (int, I, 0, Size(E->SubbandExps))
   {
     i16 S = E->SubbandExps[I] + (SizeOf(Idx2->DType) > 4 ? traits<f64>::ExpBias : traits<f32>::ExpBias);
+    // we use 16 bits for f64 exponents (instead of 11) so that zstd compression works later
     Write(&Sc->BlockExpStream, S, SizeOf(Idx2->DType) > 4 ? 16 : traits<f32>::ExpBits);
   }
   /* write brick emax size */
@@ -388,16 +389,14 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
   StartTimer(&Timer);
   idx2_PropagateIfError(FlushChunks(*Idx2, &E));
   idx2_PropagateIfError(FlushChunkExponents(*Idx2, &E));
-  //timer RdoTimer;
-  //StartTimer(&RdoTimer);
-  //RateDistortionOpt(*Idx2, &E);
   TotalTime_ += Seconds(ElapsedTime(&Timer));
-  //printf("rdo time                = %f\n", Seconds(ElapsedTime(&RdoTimer)));
 
-  WriteMetaFile(*Idx2, P, idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field));
+  cstr MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
+  WriteMetaFile(*Idx2, P, MetaFileName);
   printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
   printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
-  PrintStats();
+  MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
+  PrintStats(MetaFileName);
   printf("total time              = %f seconds\n", TotalTime_);
   //  _ASSERTE( _CrtCheckMemory( ) );
   return idx2_Error(idx2_err_code::NoError);
@@ -405,7 +404,6 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
 
 
 // TODO: make sure the wavelet normalization works across levels
-// TODO: progressive decoding (maintaning a buffer (something like a FIFO queue) for the bricks)
 // TODO: add a mode that treats the chunks like a row in a table
 
 
@@ -453,93 +451,5 @@ Dealloc(encode_data* E)
 }
 
 
-/* ----------- UNUSED: VERSION 0 ----------*/
-
-/* V0_0
-- only do wavelet transform (no compression)
-- write each iteration to one file
-- only support linear decoding of each file */
-// void
-// EncodeSubbandV0_0(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
-//   u64 Brick = E->Brick[E->Iter];
-//   v3i SbDims3 = Dims(SbGrid);
-//   v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
-//   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-//   file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
-//   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
-//   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
-//     v3i Z3(DecodeMorton3(Block));
-//     idx2_NextMorton(Block, Z3, NBlocks3);
-//     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(Idx2->BlockDims3));
-//     v3i D3 = Z3 * Idx2->BlockDims3;
-//     v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-//     bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 ==
-//     Idx2->BlockDims3; if (CodedInNextIter) continue;
-//     /* copy the samples to the local buffer */
-//     v3i S3;
-//     idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-//       idx2_Assert(D3 + S3 < SbDims3);
-//       BlockFloats[Row(BlockDims3, S3)] = BrickVol->At<f64>(SbGrid, D3 + S3);
-//     } idx2_EndFor3 // end sample loop
-//       WriteBuffer(Fp, BufFloats);
-//   }
-// }
-
-
-/* V0_1:
-- do wavelet transform and compression
-- write each iteration to one file
-- only support linear decoding of each file */
-// void
-// EncodeSubbandV0_1(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol) {
-//   u64 Brick = E->Brick[E->Iter];
-//   v3i SbDims3 = Dims(SbGrid);
-//   const i8 NBitPlanes = idx2_BitSizeOf(f64);
-//   v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
-//   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-//   file_id FileId = ConstructFilePathV0_0(*Idx2, Brick, E->Iter, 0, 0);
-//   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
-//   Rewind(&E->BlockStream);
-//   GrowToAccomodate(&E->BlockStream, 8 * 1024 * 1024); // 8MB
-//   InitWrite(&E->BlockStream, E->BlockStream.Stream);
-//   idx2_InclusiveFor(u32, Block, 0, LastBlock) { // zfp block loop
-//     v3i Z3(DecodeMorton3(Block));
-//     idx2_NextMorton(Block, Z3, NBlocks3);
-//     v3i D3 = Z3 * Idx2->BlockDims3;
-//     v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-//     f64 BlockFloats[4 * 4 * 4] = {}; buffer_t BufFloats(BlockFloats, Prod(BlockDims3));
-//     i64 BlockInts[4 * 4 * 4] = {}; buffer_t BufInts(BlockInts, Prod(BlockDims3));
-//     u64 BlockUInts[4 * 4 * 4] = {}; buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
-//     bool CodedInNextIter = E->Level == 0 && E->Iter + 1 < Idx2->NLevels && BlockDims3 ==
-//     Idx2->BlockDims3; if (CodedInNextIter) continue;
-//     /* copy the samples to the local buffer */
-//     v3i S3;
-//     int J = 0;
-//     idx2_BeginFor3(S3, v3i(0), BlockDims3, v3i(1)) { // sample loop
-//       idx2_Assert(D3 + S3 < SbDims3);
-//       BlockFloats[J++] = BrickVol->At<f64>(SbGrid, D3 + S3);
-//     } idx2_EndFor3 // end sample loop
-//       i8 NDims = (i8)NumDims(BlockDims3);
-//     const int NVals = 1 << (2 * NDims);
-//     const i8 Prec = idx2_BitSizeOf(f64) - 1 - NDims;
-//     // TODO: deal with Float32
-//     const i16 EMax = (i16)Quantize(Prec, BufFloats, &BufInts);
-//     ForwardZfp(BlockInts, NDims);
-//     ForwardShuffle(BlockInts, BlockUInts, NDims);
-//     i8 N = 0; // number of significant coefficients in the block so far
-//     Write(&E->BlockStream, EMax + traits<f64>::ExpBias, traits<f64>::ExpBits);
-//     idx2_InclusiveForBackward(i8, Bp, NBitPlanes - 1, 0) { // bit plane loop
-//       i16 RealBp = Bp + EMax;
-//       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
-//       if (TooHighPrecision) break;
-//       GrowIfTooFull(&E->BlockStream);
-//       Encode(BlockUInts, NVals, Bp, N, &E->BlockStream);
-//     }
-//   }
-//   Flush(&E->BlockStream);
-//   WritePOD(Fp, (int)Size(E->BlockStream));
-//   WriteBuffer(Fp, ToBuffer(E->BlockStream));
-// }
-
-
 } // namespace idx2
+

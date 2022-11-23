@@ -29,14 +29,14 @@ FlushChunks(const idx2_file& Idx2, encode_data* E);
 void
 WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Iter, i8 Level, i16 BitPlane);
 
-void
-WriteMetaFile(const idx2_file& Idx2, cstr FileName);
+//void
+//WriteMetaFile(const idx2_file& Idx2, cstr FileName);
 
 void
 WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName);
 
 void
-PrintStats();
+PrintStats(cstr MetaFileName);
 
 
 } // namespace idx2

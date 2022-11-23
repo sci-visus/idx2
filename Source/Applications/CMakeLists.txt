@@ -9,3 +9,6 @@ target_link_libraries(idx2App idx2 Threads::Threads)
 
 add_executable(idx2Samples idx2Samples.cpp)
 target_link_libraries(idx2Samples idx2 Threads::Threads)
+
+add_executable(idx2CompareVolumes idx2CompareVolumes.cpp)
+target_link_libraries(idx2App idx2 Threads::Threads)

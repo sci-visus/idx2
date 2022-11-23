@@ -462,7 +462,18 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   return idx2_Error(err_code::NoError);
 }
 
-
+/*
+* The structure of a chunk:
+* A
+* B
+* C
+* D
+*
+* A : varint = number of bricks in the chunk
+* B : buffer = (unary encoded) delta stream that encodes which bricks are present
+* C : buffer = size (in bytes) of each brick
+* D : buffer = compressed data for each brick
+*/
 void
 DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddress, int L)
 {
