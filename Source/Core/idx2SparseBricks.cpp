@@ -153,11 +153,6 @@ GetBrickVolume(brick_pool* Bp, const v3i& Brick3)
   u64 BrickIndex = GetLinearBrick(*Bp->Idx2, Level, Brick3);
   i8 Resolution = Bp->ResolutionLevels[BrickIndex];
 
-  if (Level == 0 && BrickIndex == 0)
-  {
-    u64 BrickKey = GetBrickKey(Level, BrickIndex);
-    auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
-  }
   if (Resolution == 0)
   {
     u64 BrickKey = GetBrickKey(Level, BrickIndex);
