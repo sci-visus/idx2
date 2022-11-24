@@ -133,7 +133,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
       ScInfo.SubChannel = &*Sch;
       u64 Brick;
       i16 BitPlane;
-      UnpackAddress(Idx2, *Sch.Key, &Brick, &ScInfo.Level, &ScInfo.Subband, &BitPlane);
+      UnpackFileAddress(Idx2, *Sch.Key, &Brick, &ScInfo.Level, &ScInfo.Subband, &BitPlane);
       PushBack(&E->SortedSubChannels, ScInfo);
     }
     InsertionSort(Begin(E->SortedSubChannels), End(E->SortedSubChannels));
@@ -153,7 +153,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     ScInfo.SubChannel = &*Sch;
     u64 Brick;
     i16 BitPlane;
-    UnpackAddress(Idx2, *Sch.Key, &Brick, &ScInfo.Level, &ScInfo.Subband, &BitPlane);
+    UnpackFileAddress(Idx2, *Sch.Key, &Brick, &ScInfo.Level, &ScInfo.Subband, &BitPlane);
     PushBack(&E->SortedSubChannels, ScInfo);
   }
   InsertionSort(Begin(E->SortedSubChannels), End(E->SortedSubChannels));

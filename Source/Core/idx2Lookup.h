@@ -209,12 +209,22 @@ GetAddress(u64 Brick, int BrickShift, i8 Level, i8 Subband, i16 BitPlane)
 
 
 idx2_Inline void
-UnpackAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8* Subband, i16* BitPlane)
+UnpackFileAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8* Subband, i16* BitPlane)
 {
   *BitPlane = i16((i32(Address & 0xFFF) << 20) >> 20); // this convoluted double shifts is to keep the sign of BitPlane
   *Subband = (Address >> 12) & 0x3F;
   *Level = (Address >> 60) & 0xF;
   *Brick = ((Address >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[*Level]);
+}
+
+
+idx2_Inline void
+UnpackChunkAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8* Subband, i16* BitPlane)
+{
+  *BitPlane = i16((i32(Address & 0xFFF) << 20) >> 20); // this convoluted double shifts is to keep the sign of BitPlane
+  *Subband = (Address >> 12) & 0x3F;
+  *Level = (Address >> 60) & 0xF;
+  *Brick = ((Address >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerChunk[*Level]);
 }
 
 
@@ -246,6 +256,10 @@ GetLinearBrick(const idx2_file& Idx2, int Level, v3i Brick3);
 
 v3i
 GetSpatialBrick(const idx2_file& Idx2, int Level, u64 LinearBrick);
+
+
+extent
+ChunkAddressToSpatial(const idx2_file& Idx2, int Level, u64 LinearBrick);
 
 
 file_id

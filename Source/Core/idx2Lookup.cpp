@@ -40,6 +40,28 @@ GetSpatialBrick(const idx2_file& Idx2, int Level, u64 LinearBrick)
 }
 
 
+/* From a chunk address, return its spatial extent.
+The extent can be "decoded" using From(extent) and Dims(extent), which returns
+the coordinates of the first sample, and the size of the extent in each dimension.
+*/
+extent
+ChunkAddressToSpatial(const idx2_file& Idx2, u64 ChunkAddress)
+{
+  u64 Brick;
+  i8 Level;
+  i8 Subband;
+  i16 BitPlane;
+  UnpackChunkAddress(Idx2, ChunkAddress, &Brick, &Level, &Subband, &BitPlane);
+  v3i GroupBrick3 = Pow(Idx2.GroupBrick3, Level);
+  v3i BrickDims3 = Idx2.BrickDims3 * GroupBrick3;
+  v3i Brick3 = GetSpatialBrick(Idx2, Level, Brick);
+  v3i ChunkFrom3 = Brick3 * BrickDims3;
+  v3i ChunkDims3 = BrickDims3 * Idx2.BricksPerChunk3s[Level];
+  extent ChunkExtent = extent(ChunkFrom3, ChunkDims3);
+  return extent(Crop(ChunkExtent, extent(Idx2.Dims3)));
+}
+
+
 file_id
 ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
 {
@@ -47,7 +69,7 @@ ConstructFilePath(const idx2_file& Idx2, u64 BrickAddress)
   i16 BitPlane;
   i8 Level;
   i8 Subband;
-  UnpackAddress(Idx2, BrickAddress, &Brick, &Level, &Subband, &BitPlane);
+  UnpackFileAddress(Idx2, BrickAddress, &Brick, &Level, &Subband, &BitPlane);
   return ConstructFilePath(Idx2, Brick, Level, Subband, BitPlane);
 }
 
