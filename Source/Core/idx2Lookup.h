@@ -159,7 +159,8 @@ namespace idx2
 {
 
 
-static constexpr i16 ExponentBitPlane_ = -1024;
+static constexpr i16 BitPlaneKeyBias_ = 1024;
+static constexpr i16 ExponentBitPlane_ = -1024 + BitPlaneKeyBias_;
 
 /* ---------------------- TYPES ----------------------*/
 struct brick_traverse
@@ -217,23 +218,24 @@ UnpackAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8* Sub
 }
 
 
+// BpKey is (bit plane + BitPlaneKeyBias) / BitPlanesPerChunk
 idx2_Inline u64
-GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPlane)
+GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BpKey)
 {
-  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerChunk[Level]), Level, Subband, BitPlane);
+  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerChunk[Level]), Level, Subband, BpKey);
 }
 
 
 idx2_Inline u64
-GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BitPlane)
+GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BpFileKey)
 {
   if (Idx2.GroupSubbands)
     Subband = 0;
   if (Idx2.GroupLevels)
     Level = 0;
   if (Idx2.GroupBitPlanes)
-    BitPlane = 0;
-  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, Subband, BitPlane);
+    BpFileKey = 0;
+  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, Subband, BpFileKey);
 }
 
 

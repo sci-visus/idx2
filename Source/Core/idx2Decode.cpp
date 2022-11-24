@@ -132,12 +132,12 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
-      i16 BpKey = (RealBp + 1023) / Bpc; // make it so that the BpKey is positive
+      i16 BpKey = (RealBp + BitPlaneKeyBias_) / Bpc; // make it so that the BpKey is positive
       // TODO: always decode extra 6 bit planes?
       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1;
       if (TooHighPrecision)
       {
-        if ((RealBp + 1023) % Bpc == 0) // make sure we encode full "block" of BpKey
+        if ((RealBp + BitPlaneKeyBias_) % Bpc == 0) // make sure we encode full "block" of BpKey
           break;
       }
 

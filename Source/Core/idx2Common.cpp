@@ -124,6 +124,13 @@ SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk)
 
 
 void
+SetBitPlanesPerFile(idx2_file* Idx2, int BitPlanesPerFile)
+{
+  Idx2->BitPlanesPerFile = BitPlanesPerFile;
+}
+
+
+void
 SetDir(idx2_file* Idx2, stref Dir)
 {
   Idx2->Dir = Dir;
@@ -664,6 +671,10 @@ Finalize(idx2_file* Idx2, const params& P)
 
   if (!(Idx2->NLevels <= idx2_file::MaxLevels))
     return idx2_Error(idx2_err_code::TooManyLevels, "Max # of levels = %d\n", Idx2->MaxLevels);
+  if ((Idx2->BitPlanesPerChunk > Idx2->BitPlanesPerFile) ||
+      (Idx2->BitPlanesPerFile % Idx2->BitPlanesPerChunk) != 0)
+    return idx2_Error(idx2_err_code::SizeMismatched, "BitPlanesPerFile not multiple of BitPlanesPerChunk\n");
+
 
   char TformOrder[8] = {};
   ComputeTransformOrder(Idx2, P, TformOrder);

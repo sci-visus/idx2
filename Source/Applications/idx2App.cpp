@@ -154,6 +154,7 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
               "Example: --tolerance 1e-9\n");
 
   OptVal(Argc, Argv, "--bit_planes_per_chunk", &P->BitPlanesPerChunk);
+  OptVal(Argc, Argv, "--bit_planes_per_file", &P->BitPlanesPerFile);
   OptVal(Argc, Argv, "--bricks_per_chunk", &P->BricksPerChunk);
   OptVal(Argc, Argv, "--chunks_per_file", &P->ChunksPerFile);
   OptVal(Argc, Argv, "--files_per_dir", &P->FilesPerDir);

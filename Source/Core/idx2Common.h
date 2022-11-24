@@ -154,6 +154,7 @@ struct idx2_file
   int BricksPerChunkIn = 512;
   int ChunksPerFileIn = 64;
   int BitPlanesPerChunk = 4;
+  int BitPlanesPerFile = 16;
   stack_array<int, MaxLevels> BricksPerChunk = { { 512 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
@@ -237,6 +238,9 @@ SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
 
 void
 SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk);
+
+void
+SetBitPlanesPerFile(idx2_file* Idx2, int BitPlanesPerFile);
 
 void
 SetDir(idx2_file* Idx2, stref Dir);

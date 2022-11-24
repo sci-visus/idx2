@@ -155,13 +155,13 @@ ReadFile(const idx2_file& Idx2,
 
 /* Given a brick address, read the chunk associated with the brick and cache the chunk */
 expected<const chunk_cache*, idx2_err_code>
-ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BitPlane)
+ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BpKey)
 {
 #if VISUS_IDX2
   if (Idx2.external_read)
   {
     //this part handles with caching, in the long-term it should be disabled since OpenVisus can handle the caching itself
-    file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BitPlane);
+    file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
     auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
     if (!FileCacheIt)
     {
@@ -171,7 +171,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
       Insert(&FileCacheIt, FileId.Id, FileCache);
     }
     file_cache* FileCache = FileCacheIt.Val;
-    u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BitPlane);
+    u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
     auto ChunkCacheIt = Lookup(&FileCache->ChunkCaches, ChunkAddress);
     if (ChunkCacheIt)
       return ChunkCacheIt.Val;
@@ -191,14 +191,14 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
   }
 #endif
 
-  file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BitPlane);
+  file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
   auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
   idx2_PropagateIfError(ReadFile(Idx2, D, &FileCacheIt, FileId));
   if (!FileCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
 
   /* find the appropriate chunk */
-  u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BitPlane);
+  u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
   file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
   ChunkCacheIt = Lookup(&FileCache->ChunkCaches, ChunkAddress);
