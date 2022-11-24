@@ -28,7 +28,7 @@ DecodeExtent3f32(const std::string& InputFile,
   P.InputFile = InputFile.c_str(); // name of data set and field
   P.InDir = InputPath.c_str();     // the directory containing the InputFile
   P.DownsamplingFactor3 = v3i(get<0>(DownsamplingFactor3), get<1>(DownsamplingFactor3), get<2>(DownsamplingFactor3));
-  P.DecodeAccuracy = Accuracy;
+  P.DecodeTolerance = Accuracy;
   P.DecodeExtent = idx2::extent(From3, To3);
 
   idx2_file Idx2;
@@ -66,7 +66,7 @@ Decode3f32(const std::string& InputFile,
   P.InputFile = InputFile.c_str(); // name of data set and field
   P.InDir = InputPath.c_str();     // the directory containing the InputFile
   P.DownsamplingFactor3 = v3i(get<0>(DownsamplingFactor3), get<1>(DownsamplingFactor3), get<2>(DownsamplingFactor3));
-  P.DecodeAccuracy = Accuracy;
+  P.DecodeTolerance = Accuracy;
 
   idx2_file Idx2;
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
@@ -103,7 +103,7 @@ Decode3f64(const std::string& InputFile,
   P.InputFile = InputFile.c_str(); // name of data set and field
   P.InDir = InputPath.c_str();     // the directory containing the InputFile
   P.DownsamplingFactor3 = v3i(get<0>(DownsamplingFactor3), get<1>(DownsamplingFactor3), get<2>(DownsamplingFactor3));
-  P.DecodeAccuracy = Accuracy;
+  P.DecodeTolerance = Accuracy;
 
   idx2_file Idx2;
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
@@ -142,7 +142,7 @@ Decode2f32(const std::string& InputFile,
   P.InputFile = InputFile.c_str(); // name of data set and field
   P.InDir = InputPath.c_str();     // the directory containing the InputFile
   P.DownsamplingFactor3 = v3i(get<0>(DownsamplingFactor2), get<1>(DownsamplingFactor2), 0);
-  P.DecodeAccuracy = Accuracy;
+  P.DecodeTolerance = Accuracy;
 
   idx2_file Idx2;
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error
@@ -180,7 +180,7 @@ Decode2f64(const std::string& InputFile,
   P.InputFile = InputFile.c_str(); // name of data set and field
   P.InDir = InputPath.c_str();     // the directory containing the InputFile
   P.DownsamplingFactor3 = v3i(get<0>(DownsamplingFactor2), get<1>(DownsamplingFactor2), 0);
-  P.DecodeAccuracy = Accuracy;
+  P.DecodeTolerance = Accuracy;
 
   idx2_file Idx2;
   idx2_CleanUp(Dealloc(&Idx2)); // clean up Idx2 automatically in case of error

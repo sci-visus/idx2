@@ -128,20 +128,24 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType)), NBitPlanes);
     int NBitPlanesDecoded = Exponent(Accuracy) - 6 - EMax + 1;
     i8 NBps = 0;
+    int Bpc = Idx2.BitPlanesPerChunk;
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
+      i16 BpKey = (RealBp + 1023) / Bpc; // make it so that the BpKey is positive
       // TODO: always decode extra 6 bit planes?
-      if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1)
-        break; // this bit plane is not needed to satisfy the input accuracy
+      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1;
+      if (TooHighPrecision)
+      {
+        if ((RealBp + 1023) % Bpc == 0) // make sure we encode full "block" of BpKey
+          break;
+      }
 
-      // if the subband is not 0 or if this is the last level, we count this block as decoded (significant), otherwise it is not significant
-      ++D->NSignificantBlocks;
-      auto StreamIt = Lookup(&Streams, RealBp);
+      auto StreamIt = Lookup(&Streams, BpKey);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
-        auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Level, D->Subband, RealBp);
+        auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Level, D->Subband, BpKey);
         if (!ReadChunkResult)
           return Error(ReadChunkResult);
 
@@ -153,39 +157,38 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
         idx2_Assert(BrickInChunk < Size(ChunkCache->BrickSizes));
         i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSizes[BrickInChunk - 1];
         BrickOffset += Size(ChunkCache->ChunkStream);
-        Insert(&StreamIt, RealBp, ChunkCache->ChunkStream);
+        Insert(&StreamIt, BpKey, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
         // seek to the correct byte offset of the brick in the chunk
         SeekToByte(Stream, BrickOffset);
       }
-      else
+      else // if the stream already exists
       {
         Stream = StreamIt.Val;
       }
       /* zfp decode */
-      ++NBps;
-      //timer Timer; StartTimer(&Timer);
+      if (!TooHighPrecision)
+        ++NBps;
       auto SizeBegin = BitSize(*Stream);
       if (NBitPlanesDecoded <= 8)
         Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
       else // delay the transpose of bits to later
         DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
-      //DecodeTime_ += Seconds(ElapsedTime(&Timer));
       auto SizeEnd = BitSize(*Stream);
       D->BytesDecoded_ += SizeEnd - SizeBegin;
     } // end bit plane loop
 
-    if (NBitPlanesDecoded > 8)
-    {
-      //timer Timer; StartTimer(&Timer);
-       // transpose using the recursive algorithm
-      TransposeRecursive(BlockUInts, NBps);
-      //DecodeTime_ += Seconds(ElapsedTime(&Timer));
-    }
     /* do inverse zfp transform but only if any bit plane is decoded */
     if (NBps > 0)
     {
-      SubbandSignificant = SubbandSignificant || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
+      if (NBitPlanesDecoded > 8)
+        TransposeRecursive(BlockUInts, NBps);
+
+      // if the subband is not 0 or if this is the last level, we count this block
+      // as significant, otherwise it is not significant
+      bool CurrBlockSignificant = (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
+      SubbandSignificant = SubbandSignificant || CurrBlockSignificant;
+      ++D->NSignificantBlocks;
       InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
       InverseZfp((i64*)BlockFloats, NDims);
       Dequantize(EMax, Prec, BufInts, &BufFloats);
@@ -281,7 +284,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
   } // end subband loop
 
   bool CoarsestLevel = Level + 1 == Idx2.NLevels;
-  InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, CoarsestLevel);
+  InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.TransformDetails, &BVol, CoarsestLevel);
 
   //printf("%d\n", AnySubbandDecoded);
   return idx2_Error(idx2_err_code::NoError);
@@ -310,7 +313,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     Met.DType = Idx2.DType;
     //  printf("zfp decode time = %f\n", DecodeTime_);
     cstr OutFile = P.OutFile ? idx2_PrintScratch("%s/%s", P.OutDir, P.OutFile)
-                             : idx2_PrintScratch("%s/%s-accuracy-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeAccuracy);
+                             : idx2_PrintScratch("%s/%s-accuracy-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeTolerance);
     //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);
@@ -329,7 +332,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   //idx2_RAII(decode_data, D, Init(&D, &BrickAlloc_));
   idx2_RAII(decode_data, D, Init(&D, &Idx2, &Mallocator())); // for now the allocator seems not a bottleneck
   //  D.QualityLevel = Dw->GetQuality();
-  f64 Accuracy = Max(Idx2.Accuracy, P.DecodeAccuracy);
+  f64 Accuracy = Max(Idx2.Tolerance, P.DecodeTolerance);
   //  i64 CountZeroes = 0;
 
   idx2_InclusiveForBackward (i8, Level, Idx2.NLevels - 1, 0)

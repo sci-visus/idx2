@@ -89,9 +89,9 @@ SetNumLevels(idx2_file* Idx2, i8 NLevels)
 
 
 void
-SetAccuracy(idx2_file* Idx2, f64 Accuracy)
+SetTolerance(idx2_file* Idx2, f64 Tolerance)
 {
-  Idx2->Accuracy = Accuracy;
+  Idx2->Tolerance = Tolerance;
 }
 
 
@@ -113,6 +113,13 @@ void
 SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir)
 {
   Idx2->FilesPerDir = FilesPerDir;
+}
+
+
+void
+SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk)
+{
+  Idx2->BitPlanesPerChunk = BitPlanesPerChunk;
 }
 
 
@@ -166,7 +173,7 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   stref DType = ToString(Idx2.DType);
   fprintf(Fp, "    (data-type \"%s\")\n", idx2_PrintScratchN(Size(DType), "%s", DType.ConstPtr));
   fprintf(Fp, "    (min-max %.20f %.20f)\n", Idx2.ValueRange.Min, Idx2.ValueRange.Max);
-  fprintf(Fp, "    (accuracy %.20f)\n", Idx2.Accuracy);
+  fprintf(Fp, "    (accuracy %.20f)\n", Idx2.Tolerance);
   fprintf(Fp, "  )\n"); // end common)
   fprintf(Fp, "  (format\n");
   fprintf(Fp, "    (version %d %d)\n", Idx2.Version[0], Idx2.Version[1]);
@@ -179,6 +186,7 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "    (bricks-per-tile %d)\n", Idx2.BricksPerChunkIn);
   fprintf(Fp, "    (tiles-per-file %d)\n", Idx2.ChunksPerFileIn);
   fprintf(Fp, "    (files-per-directory %d)\n", Idx2.FilesPerDir);
+  fprintf(Fp, "    (bit-planes-per-chunk %d)\n", Idx2.BitPlanesPerChunk);
   fprintf(Fp, "    (group-levels %s)\n", Idx2.GroupLevels ? "true" : "false");
   fprintf(Fp, "    (group-sub-levels %s)\n", Idx2.GroupSubbands ? "true" : "false");
   fprintf(Fp, "    (group-bit-planes %s)\n", Idx2.GroupBitPlanes ? "true" : "false");
@@ -260,7 +268,7 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
         if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "accuracy"))
         {
           idx2_Assert(Expr->type == SE_FLOAT);
-          Idx2->Accuracy = Expr->f;
+          Idx2->Tolerance = Expr->f;
           //          printf("Accuracy = %.17g\n", Idx2->Accuracy);
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "data-type"))
@@ -327,6 +335,11 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
           idx2_Assert(Expr->type == SE_INT);
           Idx2->FilesPerDir = Expr->i;
           //          printf("Files per directory = %d\n", Idx2->FilesPerDir);
+        }
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bit-planes-per-chunk"))
+        {
+          idx2_Assert(Expr->type == SE_INT);
+          Idx2->BitPlanesPerChunk = Expr->i;
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-levels"))
         {
@@ -638,9 +651,9 @@ ComputeFileDirDepths(idx2_file* Idx2, const params& P)
 static void
 ComputeWaveletTransformDetails(idx2_file* Idx2)
 {
-  ComputeTransformDetails(&Idx2->Td, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder);
+  ComputeTransformDetails(&Idx2->TransformDetails, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder);
   int NLevels = Log2Floor(Max(Max(Idx2->BrickDims3.X, Idx2->BrickDims3.Y), Idx2->BrickDims3.Z));
-  ComputeTransformDetails(&Idx2->TdExtrpolate, Idx2->BrickDims3, NLevels, Idx2->TransformOrder);
+  ComputeTransformDetails(&Idx2->TransformDetailsExtrapolate, Idx2->BrickDims3, NLevels, Idx2->TransformOrder);
 }
 
 

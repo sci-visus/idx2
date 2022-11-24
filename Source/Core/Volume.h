@@ -1141,7 +1141,7 @@ CopyExtentExtentMinMax(const extent& SGrid, const volume& SVol, const extent& DG
     f64 V = (f64)SrcPtr[Row(SrcDims3, S3)];
     DstPtr[Row(DstDims3, D3)] = (dtype)V;
     MinMax.Min = Min(MinMax.Min, V);
-    MinMax.Max = Max(MinMax.Min, V);
+    MinMax.Max = Max(MinMax.Max, V);
   }
   idx2_EndFor3;
 

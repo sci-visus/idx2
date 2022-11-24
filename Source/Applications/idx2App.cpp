@@ -34,7 +34,7 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
   //            "Provide --downsampling (0 0 0 means full resolution, 1 1 2 means half X, half Y, quarter Z)\n");
 
   // Parse the decode accuracy (--accuracy)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->DecodeAccuracy),
+  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->DecodeTolerance),
               "Provide --tolerance\n"
               "Example: --tolerance 0.01\n");
 
@@ -149,10 +149,11 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
               "Example: --num_levels 2\n");
 
   // Parse the tolerance (--tolerance)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->Accuracy),
+  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->Tolerance),
               "Provide --tolerance for absolute error tolerance\n"
               "Example: --tolerance 1e-9\n");
 
+  OptVal(Argc, Argv, "--bit_planes_per_chunk", &P->BitPlanesPerChunk);
   OptVal(Argc, Argv, "--bricks_per_tile", &P->BricksPerChunk);
   OptVal(Argc, Argv, "--tiles_per_file", &P->ChunksPerFile);
   OptVal(Argc, Argv, "--files_per_dir", &P->FilesPerDir);
@@ -239,13 +240,11 @@ SetParams(idx2_file* Idx2, const params& P)
   SetBrickSize(Idx2, P.BrickDims3);
   SetBricksPerChunk(Idx2, P.BricksPerChunk);
   SetChunksPerFile(Idx2, P.ChunksPerFile);
+  SetBitPlanesPerChunk(Idx2, P.BitPlanesPerChunk);
   SetNumLevels(Idx2, (i8)P.NLevels);
-  SetAccuracy(Idx2, P.Accuracy);
+  SetTolerance(Idx2, P.Tolerance);
   SetFilesPerDirectory(Idx2, P.FilesPerDir);
   SetDir(Idx2, P.OutDir);
-  SetGroupLevels(Idx2, P.GroupLevels);
-  SetGroupBitPlanes(Idx2, P.GroupBitPlanes);
-  SetGroupSubLevels(Idx2, P.GroupSubLevels);
   return Finalize(Idx2, P);
 }
 
@@ -344,3 +343,4 @@ int main(int Argc, const char* Argv[]) {
   return Idx2App(Argc, Argv);
 }
 #endif
+
