@@ -183,8 +183,8 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "    (transform-order \"%s\")\n", TransformOrder);
   fprintf(Fp, "    (num-levels %d)\n", Idx2.NLevels);
   fprintf(Fp, "    (transform-passes-per-levels %d)\n", Idx2.NTformPasses);
-  fprintf(Fp, "    (bricks-per-tile %d)\n", Idx2.BricksPerChunkIn);
-  fprintf(Fp, "    (tiles-per-file %d)\n", Idx2.ChunksPerFileIn);
+  fprintf(Fp, "    (bricks-per-chunk %d)\n", Idx2.BricksPerChunkIn);
+  fprintf(Fp, "    (chunks-per-file %d)\n", Idx2.ChunksPerFileIn);
   fprintf(Fp, "    (files-per-directory %d)\n", Idx2.FilesPerDir);
   fprintf(Fp, "    (bit-planes-per-chunk %d)\n", Idx2.BitPlanesPerChunk);
   fprintf(Fp, "    (group-levels %s)\n", Idx2.GroupLevels ? "true" : "false");
@@ -318,13 +318,13 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
           Idx2->NLevels = i8(Expr->i);
           //          printf("Num levels = %d\n", Idx2->NLevels);
         }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bricks-per-tile"))
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bricks-per-chunk"))
         {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->BricksPerChunkIn = Expr->i;
           //          printf("Bricks per chunk = %d\n", Idx2->BricksPerChunks[0]);
         }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "tiles-per-file"))
+        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "chunks-per-file"))
         {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->ChunksPerFileIn = Expr->i;

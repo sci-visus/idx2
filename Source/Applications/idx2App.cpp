@@ -154,23 +154,9 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
               "Example: --tolerance 1e-9\n");
 
   OptVal(Argc, Argv, "--bit_planes_per_chunk", &P->BitPlanesPerChunk);
-  OptVal(Argc, Argv, "--bricks_per_tile", &P->BricksPerChunk);
-  OptVal(Argc, Argv, "--tiles_per_file", &P->ChunksPerFile);
+  OptVal(Argc, Argv, "--bricks_per_chunk", &P->BricksPerChunk);
+  OptVal(Argc, Argv, "--chunks_per_file", &P->ChunksPerFile);
   OptVal(Argc, Argv, "--files_per_dir", &P->FilesPerDir);
-  //// Parse the number of bricks per tile (--bricks_per_tile)
-  //idx2_ExitIf(!OptVal(Argc, Argv, "--bricks_per_tile", &P->BricksPerChunk),
-  //            "Provide --bricks_per_tile\n"
-  //            "Example: --bricks_per_tile 512\n");
-
-  //// Parse the number of tiles per file (--tiles_per_file)
-  //idx2_ExitIf(!OptVal(Argc, Argv, "--tiles_per_file", &P->ChunksPerFile),
-  //            "Provide --tiles_per_file\n"
-  //            "Example: --tiles_per_file 4096\n");
-
-  //// Parse the number of files per directory (--files_per_dir)
-  //idx2_ExitIf(!OptVal(Argc, Argv, "--files_per_dir", &P->FilesPerDir),
-  //            "Provide --files_per_dir\n"
-  //            "Example: --files_per_dir 4096\n");
 
   // Parse the optional version (--version)
   OptVal(Argc, Argv, "--version", &P->Version);
