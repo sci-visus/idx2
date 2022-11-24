@@ -158,6 +158,7 @@ GetBrickVolume(brick_pool* Bp, const v3i& Brick3)
     u64 BrickKey = GetBrickKey(Level, BrickIndex);
     auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
     idx2_Assert(BrickIt);
+    BrickIt.Val->ExtentLocal = extent(Bp->Idx2->BrickDimsExt3);
     return *BrickIt.Val;
   }
 
