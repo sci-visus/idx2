@@ -36,10 +36,10 @@ Dealloc(decode_data* D)
   Dealloc(&D->BrickPool);
   DeallocFileCacheTable(&D->FileCacheTable);
   Dealloc(&D->Streams);
-  DeallocBuf(&D->CompressedChunkExps);
-  Dealloc(&D->ChunkExpSizeStream);
-  Dealloc(&D->ChunkAddrsStream);
-  Dealloc(&D->ChunkSizeStream);
+  //DeallocBuf(&D->CompressedChunkExps);
+  //Dealloc(&D->ChunkExpSizeStream);
+  //Dealloc(&D->ChunkAddrsStream);
+  //Dealloc(&D->ChunkSizeStream);
 }
 
 
@@ -54,6 +54,23 @@ DecodeSubband(const idx2_file& Idx2,
               volume* BVol);
 
 
+// assume that Output has the right size already
+// TODO: return an error
+void
+DecompressBufZstd(const buffer& Input, buffer* Output)
+{
+  unsigned long long const OutputSize = ZSTD_getFrameContentSize(Input.Data, Size(Input));
+  idx2_Assert(Size(*Output) >= OutputSize);
+  size_t const Result = ZSTD_decompress(Output->Data, OutputSize, Input.Data, Size(Input));
+  if (Result != OutputSize)
+  {
+    fprintf(stderr, "Zstd decompression failed\n");
+    exit(1);
+  }
+}
+
+
+// TODO: return an error
 void
 DecompressBufZstd(const buffer& Input, bitstream* Output)
 {
@@ -313,7 +330,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     Met.DType = Idx2.DType;
     //  printf("zfp decode time = %f\n", DecodeTime_);
     cstr OutFile = P.OutFile ? idx2_PrintScratch("%s/%s", P.OutDir, P.OutFile)
-                             : idx2_PrintScratch("%s/%s-accuracy-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeTolerance);
+                             : idx2_PrintScratch("%s/%s-tolerance-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeTolerance);
     //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);

@@ -106,20 +106,19 @@ ReadFile(const idx2_file& Idx2,
   ReadBackwardBuffer(Fp, &CpresChunkAddrs, ChunkAddrsSz);
   D->BytesData_ += ChunkAddrsSz;
   D->DecodeIOTime_ += ElapsedTime(&IOTimer);
-  Rewind(&D->ChunkAddrsStream);
-  GrowToAccomodate(&D->ChunkAddrsStream, NChunks * sizeof(u64) - Size(D->ChunkAddrsStream));
-  DecompressBufZstd(CpresChunkAddrs, &D->ChunkAddrsStream);
+  idx2_ScopeBuffer(ChunkAddrsBuf, NChunks * sizeof(u64));
+  DecompressBufZstd(CpresChunkAddrs, &ChunkAddrsBuf);
 
   /* read chunk sizes */
   ResetTimer(&IOTimer);
   int ChunkSizesSz = 0;
   ReadBackwardPOD(Fp, &ChunkSizesSz);
-  Rewind(&D->ChunkSizeStream);
-  GrowToAccomodate(&D->ChunkSizeStream, ChunkSizesSz - Size(D->ChunkSizeStream));
-  ReadBackwardBuffer(Fp, &D->ChunkSizeStream.Stream, ChunkSizesSz);
+  idx2_ScopeBuffer(ChunkSizesBuf, ChunkSizesSz);
+  bitstream ChunkSizeStream;
+  ReadBackwardBuffer(Fp, &ChunkSizesBuf, ChunkSizesSz);
   D->BytesData_ += ChunkSizesSz;
   D->DecodeIOTime_ += ElapsedTime(&IOTimer);
-  InitRead(&D->ChunkSizeStream, D->ChunkSizeStream.Stream);
+  InitRead(&ChunkSizeStream, ChunkSizesBuf);
 
   /* parse the chunk addresses and cache in memory */
   file_cache FileCache;
@@ -127,15 +126,15 @@ ReadFile(const idx2_file& Idx2,
   Init(&FileCache.ChunkCaches, 10);
   idx2_For (int, I, 0, NChunks)
   {
-    i64 ChunkSize = ReadVarByte(&D->ChunkSizeStream); // TODO: use i32 for chunk size
-    u64 ChunkAddr = *((u64*)D->ChunkAddrsStream.Stream.Data + I);
+    i64 ChunkSize = ReadVarByte(&ChunkSizeStream); // TODO: use i32 for chunk size
+    u64 ChunkAddr = *((u64*)ChunkAddrsBuf.Data + I);
     chunk_cache ChunkCache;
     ChunkCache.ChunkPos = I;
     Insert(&FileCache.ChunkCaches, ChunkAddr, ChunkCache);
     //printf("chunk %llu size = %lld\n", ChunkAddr, ChunkSize);
     PushBack(&FileCache.ChunkOffsets, AccumSize += ChunkSize);
   }
-  idx2_Assert(Size(D->ChunkSizeStream) == ChunkSizesSz);
+  idx2_Assert(Size(ChunkSizeStream) == ChunkSizesSz);
 
   if (!*FileCacheIt) // the file cache does not exist
   { // insert a new file cache
@@ -289,20 +288,18 @@ ReadFileExponents(const idx2_file& Idx2,
   idx2_ScopeBuffer(CpresChunkAddrs, ChunkAddrsSz);
   ReadBackwardBuffer(Fp, &CpresChunkAddrs, ChunkAddrsSz);
   D->BytesData_ += ChunkAddrsSz;
-  Rewind(&D->ChunkAddrsStream);
-  GrowToAccomodate(&D->ChunkAddrsStream, NChunks * sizeof(u64) - Size(D->ChunkAddrsStream));
-  DecompressBufZstd(CpresChunkAddrs, &D->ChunkAddrsStream);
+  idx2_ScopeBuffer(ChunkAddrsBuf, NChunks * sizeof(u64));
+  DecompressBufZstd(CpresChunkAddrs, &ChunkAddrsBuf);
 
   // TODO: the exponent sizes can be compressed further
   int S = 0; // size (in bytes) of the compressed exponent sizes
   ReadBackwardPOD(Fp, &S);
-  Rewind(&D->ChunkExpSizeStream);
-  GrowToAccomodate(&D->ChunkExpSizeStream, S - Size(D->ChunkExpSizeStream));
-  // Read the emax sizes
-  ReadBackwardBuffer(Fp, &D->ChunkExpSizeStream.Stream, S);
+  idx2_ScopeBuffer(ChunkExpSizesBuf, S);
+  ReadBackwardBuffer(Fp, &ChunkExpSizesBuf, S);
   D->BytesExps_ += sizeof(int) + S;
   D->DecodeIOTime_ += ElapsedTime(&IOTimer);
-  InitRead(&D->ChunkExpSizeStream, D->ChunkExpSizeStream.Stream);
+  bitstream ChunkExpSizesStream;
+  InitRead(&ChunkExpSizesStream, ChunkExpSizesBuf);
 
   file_cache FileCache;
   Init(&FileCache.ChunkExpCaches, 10);
@@ -311,10 +308,10 @@ ReadFileExponents(const idx2_file& Idx2,
   i32 CeSz = 0;
   // we compute a "prefix sum" of the sizes to get the offsets
   int NChunks2 = 0;
-  while (Size(D->ChunkExpSizeStream) < S)
+  while (Size(ChunkExpSizesStream) < S)
   {
-    PushBack(&FileCache.ChunkExpOffsets, CeSz += (i32)ReadVarByte(&D->ChunkExpSizeStream));
-    u64 ChunkAddr = *((u64*)D->ChunkAddrsStream.Stream.Data + NChunks2);
+    PushBack(&FileCache.ChunkExpOffsets, CeSz += (i32)ReadVarByte(&ChunkExpSizesStream));
+    u64 ChunkAddr = *((u64*)ChunkAddrsBuf.Data + NChunks2);
     chunk_exp_cache ChunkExpCache;
     ChunkExpCache.ChunkPos = NChunks2;
     // NOTE: here we rely on the fact that the exponent chunks are sorted by increasing subband in each file
@@ -326,14 +323,13 @@ ReadFileExponents(const idx2_file& Idx2,
     return idx2_Error(idx2_err_code::SizeMismatched,
                       "number of chunks is either %d or %d\n", NChunks, NChunks2);
 
-  // we expect each file (each level) to have NChunks = numbere of subbands
   // NOTE: this should no longer be true if a file stores more than one level
   if (NChunks % Size(Idx2.Subbands) != 0)
     return idx2_Error(idx2_err_code::SizeMismatched,
                       "number of chunks = %d is not divisible by number of subbands which is %d\n", NChunks, (int)Size(Idx2.Subbands));
 
   //Resize(&FileCache.ChunkCaches, Size(FileCache.ChunkExpOffsets));
-  idx2_Assert(Size(D->ChunkExpSizeStream) == S);
+  idx2_Assert(Size(ChunkExpSizesStream) == S);
 
   if (!*FileCacheIt) // file cache exists
   {
@@ -377,6 +373,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
       return ChunkExpCacheIt.Val;
 
     //read the block
+    // TOOD: who manages the memory for buff? (when do I deallocate it?)
     buffer buff;
     if (!Idx2.external_read(Idx2, buff, ChunkAddress))
       throw "to handle this";
@@ -384,8 +381,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     //decompress the block
     chunk_exp_cache ChunkExpCache;
     bitstream& ChunkExpStream = ChunkExpCache.ChunkExpStream;
-    D->CompressedChunkExps = buff;
-    DecompressBufZstd(D->CompressedChunkExps, &ChunkExpStream);
+    DecompressBufZstd(buff, &ChunkExpStream);
     InitRead(&ChunkExpCache.ChunkExpStream, ChunkExpStream.Stream);
     Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache);
     return ChunkExpCacheIt.Val;
@@ -425,10 +421,9 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     }
     idx2_FSeek(Fp, ChunkExpOffset, SEEK_SET);
     bitstream& ChunkExpStream = ChunkExpCache->ChunkExpStream;
-    // TODO: calculate the number of bricks in this chunk in a different way to verify correctness
-    Resize(&D->CompressedChunkExps, ChunkExpSize);
-    ReadBuffer(Fp, &D->CompressedChunkExps, ChunkExpSize);
-    DecompressBufZstd(buffer{ D->CompressedChunkExps.Data, ChunkExpSize }, &ChunkExpStream);
+    idx2_ScopeBuffer(CompressedChunkExpsBuf, ChunkExpSize);
+    ReadBuffer(Fp, &CompressedChunkExpsBuf, ChunkExpSize);
+    DecompressBufZstd(CompressedChunkExpsBuf, &ChunkExpStream);
     D->BytesDecoded_ += ChunkExpSize;
     D->BytesExps_ += ChunkExpSize;
     D->DecodeIOTime_ += ElapsedTime(&IOTimer);
