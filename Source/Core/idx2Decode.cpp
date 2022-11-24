@@ -136,7 +136,7 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1;
       if (TooHighPrecision)
       {
-        if (BpKey % 4 == 0) // make sure we encode full "block" of BpKey
+        if ((RealBp + 1023) % 4 == 0) // make sure we encode full "block" of BpKey
           break;
       }
 
@@ -166,30 +166,27 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
         Stream = StreamIt.Val;
       }
       /* zfp decode */
-      ++NBps;
-      //timer Timer; StartTimer(&Timer);
+      if (!TooHighPrecision)
+        ++NBps;
       auto SizeBegin = BitSize(*Stream);
       if (NBitPlanesDecoded <= 8)
         Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
       else // delay the transpose of bits to later
         DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
-      //DecodeTime_ += Seconds(ElapsedTime(&Timer));
       auto SizeEnd = BitSize(*Stream);
       D->BytesDecoded_ += SizeEnd - SizeBegin;
     } // end bit plane loop
 
-    if (NBitPlanesDecoded > 8)
-    {
-      //timer Timer; StartTimer(&Timer);
-       // transpose using the recursive algorithm
-      TransposeRecursive(BlockUInts, NBps);
-      //DecodeTime_ += Seconds(ElapsedTime(&Timer));
-    }
     /* do inverse zfp transform but only if any bit plane is decoded */
     if (NBps > 0)
     {
-      // if the subband is not 0 or if this is the last level, we count this block as decoded (significant), otherwise it is not significant
-      SubbandSignificant = SubbandSignificant || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
+      if (NBitPlanesDecoded > 8)
+        TransposeRecursive(BlockUInts, NBps);
+
+      // if the subband is not 0 or if this is the last level, we count this block
+      // as significant, otherwise it is not significant
+      bool CurrBlockSignificant = (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
+      SubbandSignificant = SubbandSignificant || CurrBlockSignificant;
       ++D->NSignificantBlocks;
       InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
       InverseZfp((i64*)BlockFloats, NDims);

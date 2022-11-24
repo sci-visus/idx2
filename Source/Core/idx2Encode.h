@@ -107,7 +107,9 @@ struct encode_data
   bitstream ChunkStream;
   /* block emaxes related */
   bitstream ChunkExpStream;
-  array<block_sig> LastSigBlock; // last significant block on each bit plane
+  // last significant block on each bit plane on the current subband
+  // can be used to do certain things only *once* per bit plane
+  array<block_sig> LastSigBlock;
   array<i16> SubbandExps;
   //bitstream BlockStream; // only used by v0.1
   array<t2<u32, channel*>> SortedChannels;

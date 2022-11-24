@@ -109,10 +109,11 @@ EncodeBrickSubbandMetadata(idx2_file* Idx2,
     /* done at most once per brick, by the last significant block */
     idx2_For (int, I, 0, Size(E->LastSigBlock))
     {
-      i16 RealBp = E->LastSigBlock[I].BitPlane;
+      i16 BpKey = E->LastSigBlock[I].BitPlane;
       if (Block != E->LastSigBlock[I].Block)
         continue;
-      u32 ChannelKey = GetChannelKey(RealBp, E->Level, E->Subband);
+
+      u32 ChannelKey = GetChannelKey(BpKey, E->Level, E->Subband);
       auto ChannelIt = Lookup(&E->Channels, ChannelKey);
       idx2_Assert(ChannelIt);
       channel* C = ChannelIt.Val;
@@ -206,7 +207,7 @@ EncodeSubbandBlocks(idx2_file* Idx2,
       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
       if (TooHighPrecision)
       {
-        if (BpKey % 4 == 0) // make sure we encode full "block" of BpKey
+        if ((RealBp + 1023) % 4 == 0) // make sure we encode full "block" of BpKey
           break;
       }
 
@@ -226,7 +227,7 @@ EncodeSubbandBlocks(idx2_file* Idx2,
       int I = 0;
       for (; I < Size(E->LastSigBlock); ++I)
       {
-        if (E->LastSigBlock[I].BitPlane == RealBp)
+        if (E->LastSigBlock[I].BitPlane == BpKey)
         {
           idx2_Assert(Block > E->LastSigBlock[I].Block);
           // BlockDelta = Block - E->BlockSigs[I].Block - 1;
@@ -250,7 +251,7 @@ EncodeSubbandBlocks(idx2_file* Idx2,
           C->NBricks = 0;
           C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
         }
-        PushBack(&E->LastSigBlock, block_sig{ Block, RealBp });
+        PushBack(&E->LastSigBlock, block_sig{ Block, BpKey });
       }
 
       /* encode the block */
