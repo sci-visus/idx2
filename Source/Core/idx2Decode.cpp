@@ -131,17 +131,20 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
+      i16 BpKey = (RealBp + 1023) / 4; // make it so that the BpKey is positive
       // TODO: always decode extra 6 bit planes?
-      if (NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1)
-        break; // this bit plane is not needed to satisfy the input accuracy
+      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1;
+      if (TooHighPrecision)
+      {
+        if (BpKey % 4 == 0) // make sure we encode full "block" of BpKey
+          break;
+      }
 
-      // if the subband is not 0 or if this is the last level, we count this block as decoded (significant), otherwise it is not significant
-      ++D->NSignificantBlocks;
-      auto StreamIt = Lookup(&Streams, RealBp);
+      auto StreamIt = Lookup(&Streams, BpKey);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
-        auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Level, D->Subband, RealBp);
+        auto ReadChunkResult = ReadChunk(Idx2, D, Brick, D->Level, D->Subband, BpKey);
         if (!ReadChunkResult)
           return Error(ReadChunkResult);
 
@@ -153,12 +156,12 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
         idx2_Assert(BrickInChunk < Size(ChunkCache->BrickSizes));
         i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSizes[BrickInChunk - 1];
         BrickOffset += Size(ChunkCache->ChunkStream);
-        Insert(&StreamIt, RealBp, ChunkCache->ChunkStream);
+        Insert(&StreamIt, BpKey, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
         // seek to the correct byte offset of the brick in the chunk
         SeekToByte(Stream, BrickOffset);
       }
-      else
+      else // if the stream already exists
       {
         Stream = StreamIt.Val;
       }
@@ -185,7 +188,9 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     /* do inverse zfp transform but only if any bit plane is decoded */
     if (NBps > 0)
     {
+      // if the subband is not 0 or if this is the last level, we count this block as decoded (significant), otherwise it is not significant
       SubbandSignificant = SubbandSignificant || (D->Subband > 0 || D->Level + 1 == Idx2.NLevels);
+      ++D->NSignificantBlocks;
       InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
       InverseZfp((i64*)BlockFloats, NDims);
       Dequantize(EMax, Prec, BufInts, &BufFloats);

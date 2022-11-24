@@ -142,6 +142,7 @@ EncodeBrickSubbandMetadata(idx2_file* Idx2,
   }   // end zfp block loop
 }
 
+
 static void
 EncodeSubbandBlocks(idx2_file* Idx2,
                     encode_data* E,
@@ -177,7 +178,8 @@ EncodeSubbandBlocks(idx2_file* Idx2,
       E->Subband == 0 && E->Level + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
     if (CodedInNextLevel)
       continue;
-    /* copy the samples to the local buffer */
+
+    /* copy the samples to the local buffer and zfp transform them */
     v3i S3;
     int J = 0;
     v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
@@ -193,17 +195,22 @@ EncodeSubbandBlocks(idx2_file* Idx2,
     PushBack(&E->SubbandExps, EMax);
     ForwardZfp((i64*)BlockFloats, NDims);
     ForwardShuffle((i64*)BlockFloats, BlockUInts, NDims);
+
     /* zfp encode */
     i8 N = 0; // number of significant coefficients in the block so far
     i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType)), NBitPlanes);
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
+      i16 BpKey = (RealBp + 1023) / 4; // make it so that the BpKey is positive
       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
       if (TooHighPrecision)
-        break;
-      // TODO: divide the REalbp by 4
-      u32 ChannelKey = GetChannelKey(RealBp, E->Level, E->Subband);
+      {
+        if (BpKey % 4 == 0) // make sure we encode full "block" of BpKey
+          break;
+      }
+
+      u32 ChannelKey = GetChannelKey(BpKey, E->Level, E->Subband);
       auto ChannelIt = Lookup(&E->Channels, ChannelKey);
       if (!ChannelIt)
       {
@@ -213,7 +220,8 @@ EncodeSubbandBlocks(idx2_file* Idx2,
       }
       idx2_Assert(ChannelIt);
       channel* C = ChannelIt.Val;
-      /* write block id */
+
+      /* record the last significant block on this bit plane */
       // u32 BlockDelta = Block;
       int I = 0;
       for (; I < Size(E->LastSigBlock); ++I)
@@ -226,8 +234,10 @@ EncodeSubbandBlocks(idx2_file* Idx2,
           break;
         }
       }
+
       /* write chunk if this brick is after the last chunk */
       // first block that becomes significant on this bit plane
+      // TODO: need to think about the logic of LastSigBlock in conjunction with BpKey
       bool FirstSigBlock = (I == Size(E->LastSigBlock));
       bool BrickNotEmpty = Size(C->BrickStream) > 0;
       bool NewChunk = Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunk[E->Level];
@@ -236,12 +246,13 @@ EncodeSubbandBlocks(idx2_file* Idx2,
         if (NewChunk)
         {
           if (BrickNotEmpty)
-            WriteChunk(*Idx2, E, C, E->Level, E->Subband, RealBp);
+            WriteChunk(*Idx2, E, C, E->Level, E->Subband, BpKey);
           C->NBricks = 0;
           C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
         }
         PushBack(&E->LastSigBlock, block_sig{ Block, RealBp });
       }
+
       /* encode the block */
       GrowIfTooFull(&C->BlockStream);
       Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);

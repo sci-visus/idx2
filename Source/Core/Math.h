@@ -392,9 +392,8 @@ template <typename t, int N> struct power
 
 
 /*
-For double-precision, the returned exponent is between [-1023, 1024] (-1023 if 0, -1022 if denormal,
-the bias is 1023) For single-precision, the returned exponent is between [-127, 128] (-127 if 0,
--126 if denormal, the bias is 127) */
+For double-precision, the returned exponent is between [-1023, 1024] (-1023 if 0, -1022 if denormal, the bias is 1023).
+For single-precision, the returned exponent is between [-127, 128] (-127 if 0, -126 if denormal, the bias is 127) */
 template <typename t> idx2_Inline int
 Exponent(t Val)
 {
