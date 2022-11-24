@@ -698,22 +698,22 @@ ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol)
 
 
 void
-ForwardCdf53(const v3i& M3, const transform_details& Td, volume* Vol)
+ForwardCdf53(const v3i& M3, const transform_details& TransformDetails, volume* Vol)
 {
-  idx2_For (int, I, 0, Td.StackSize)
+  idx2_For (int, I, 0, TransformDetails.StackSize)
   {
-    int D = Td.StackAxes[I];
+    int D = TransformDetails.StackAxes[I];
 #define Body(type)                                                                                 \
   switch (D)                                                                                       \
   {                                                                                                \
     case 0:                                                                                        \
-      FLiftCdf53X<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      FLiftCdf53X<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
       break;                                                                                       \
     case 1:                                                                                        \
-      FLiftCdf53Y<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      FLiftCdf53Y<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
       break;                                                                                       \
     case 2:                                                                                        \
-      FLiftCdf53Z<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      FLiftCdf53Z<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
       break;                                                                                       \
     default:                                                                                       \
       idx2_Assert(false);                                                                          \
@@ -726,23 +726,23 @@ ForwardCdf53(const v3i& M3, const transform_details& Td, volume* Vol)
 
 
 void
-InverseCdf53(const v3i& M3, const transform_details& Td, volume* Vol)
+InverseCdf53(const v3i& M3, const transform_details& TransformDetails, volume* Vol)
 {
-  int I = Td.StackSize;
+  int I = TransformDetails.StackSize;
   while (I-- > 0)
   {
-    int D = Td.StackAxes[I];
+    int D = TransformDetails.StackAxes[I];
 #define Body(type)                                                                                 \
   switch (D)                                                                                       \
   {                                                                                                \
     case 0:                                                                                        \
-      ILiftCdf53X<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53X<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
       break;                                                                                       \
     case 1:                                                                                        \
-      ILiftCdf53Y<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53Y<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
       break;                                                                                       \
     case 2:                                                                                        \
-      ILiftCdf53Z<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53Z<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
       break;                                                                                       \
     default:                                                                                       \
       idx2_Assert(false);                                                                          \
@@ -869,24 +869,24 @@ void
 ForwardCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
-             const transform_details& Td,
+             const transform_details& TransformDetails,
              volume* Vol,
              bool CoarsestLevel)
 {
-  idx2_For (int, I, 0, Td.StackSize)
+  idx2_For (int, I, 0, TransformDetails.StackSize)
   {
-    int D = Td.StackAxes[I];
+    int D = TransformDetails.StackAxes[I];
 #define Body(type)                                                                                 \
   switch (D)                                                                                       \
   {                                                                                                \
     case 0:                                                                                        \
-      FLiftCdf53X<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      FLiftCdf53X<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
       break;                                                                                       \
     case 1:                                                                                        \
-      FLiftCdf53Y<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      FLiftCdf53Y<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
       break;                                                                                       \
     case 2:                                                                                        \
-      FLiftCdf53Z<type>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                           \
+      FLiftCdf53Z<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
       break;                                                                                       \
     default:                                                                                       \
       idx2_Assert(false);                                                                          \
@@ -905,16 +905,16 @@ ForwardCdf53(const v3i& M3,
     subband& S = Subbands[I];
     f64 Wx = M3.X == 1
                ? 1
-               : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1]
-                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
+               : (S.LowHigh3.X == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X - 1]
+                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X]);
     f64 Wy = M3.Y == 1
                ? 1
-               : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1]
-                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
+               : (S.LowHigh3.Y == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y - 1]
+                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y]);
     f64 Idx2 = M3.Z == 1 ? 1
                          : (S.LowHigh3.Z == 0
-                              ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1]
-                              : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
+                              ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z - 1]
+                              : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z]);
     f64 W = Wx * Wy * Idx2;
 #define Body(type)                                                                                 \
   auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
@@ -932,7 +932,7 @@ void
 InverseCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
-             const transform_details& Td,
+             const transform_details& TransformDetails,
              volume* Vol,
              bool CoarsestLevel)
 {
@@ -945,16 +945,16 @@ InverseCdf53(const v3i& M3,
     subband& S = Subbands[I];
     f64 Wx = M3.X == 1
                ? 1
-               : (S.LowHigh3.X == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.X - 1]
-                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.X]);
+               : (S.LowHigh3.X == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X - 1]
+                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X]);
     f64 Wy = M3.Y == 1
                ? 1
-               : (S.LowHigh3.Y == 0 ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Y - 1]
-                                    : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Y]);
+               : (S.LowHigh3.Y == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y - 1]
+                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y]);
     f64 Idx2 = M3.Z == 1 ? 1
                          : (S.LowHigh3.Z == 0
-                              ? Td.BasisNorms.ScalNorms[Iter * Td.NPasses + S.Level3Rev.Z - 1]
-                              : Td.BasisNorms.WaveNorms[Iter * Td.NPasses + S.Level3Rev.Z]);
+                              ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z - 1]
+                              : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z]);
     f64 W = 1.0 / (Wx * Wy * Idx2);
 #define Body(type)                                                                                 \
   auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
@@ -965,21 +965,21 @@ InverseCdf53(const v3i& M3,
   }
 
   /* perform the inverse transform */
-  int I = Td.StackSize;
+  int I = TransformDetails.StackSize;
   while (I-- > 0)
   {
-    int D = Td.StackAxes[I];
+    int D = TransformDetails.StackAxes[I];
 #define Body(type)                                                                                 \
   switch (D)                                                                                       \
   {                                                                                                \
     case 0:                                                                                        \
-      ILiftCdf53X<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53X<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
       break;                                                                                       \
     case 1:                                                                                        \
-      ILiftCdf53Y<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53Y<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
       break;                                                                                       \
     case 2:                                                                                        \
-      ILiftCdf53Z<f64>(Td.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53Z<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
       break;                                                                                       \
     default:                                                                                       \
       idx2_Assert(false);                                                                          \

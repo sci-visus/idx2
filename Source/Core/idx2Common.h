@@ -80,14 +80,16 @@ struct params
   array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
   int NLevels = 1;
-  f64 Accuracy = 1e-7;
+  f64 Tolerance = 1e-7;
   int BricksPerChunk = 512;
   int ChunksPerFile = 64;
   int FilesPerDir = 512;
+  int BitPlanesPerChunk = 4;
+  int BitPlanesPerFile = 16;
   /* decode exclusive */
   extent DecodeExtent;
   v3i DownsamplingFactor3 = v3i(0); // DownsamplingFactor = [1, 1, 2] means half X, half Y, quarter Z
-  f64 DecodeAccuracy = 0;
+  f64 DecodeTolerance = 0;
   cstr OutDir = ".";       // TODO: change this to local storage
   stref InDir = ".";       // TODO: change this to local storage
   cstr OutFile = nullptr;  // TODO: change this to local storage
@@ -100,10 +102,6 @@ struct params
     NoOutput
   };
   out_mode OutMode = out_mode::RegularGridMem;
-  bool GroupLevels = false;
-  bool GroupBitPlanes = true;
-  bool GroupSubLevels = true;
-  bool ComputeMinMax = false;
 };
 
 
@@ -150,11 +148,12 @@ struct idx2_file
   stack_array<u64, MaxLevels> ChunksOrderInFile;
   stack_array<u64, MaxLevels> ChunksOrder;
   stack_array<u64, MaxLevels> FilesOrder;
-  f64 Accuracy = 0;
+  f64 Tolerance = 0;
   i8 NLevels = 1;
   int FilesPerDir = 512; // maximum number of files (or sub-directories) per directory
   int BricksPerChunkIn = 512;
   int ChunksPerFileIn = 64;
+  int BitPlanesPerChunk = 4;
   stack_array<int, MaxLevels> BricksPerChunk = { { 512 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
@@ -166,13 +165,13 @@ struct idx2_file
   v3i GroupBrick3; // how many bricks in the current level form a brick in the next level
   stack_array<v3i, MaxLevels> BricksPerChunk3s = { { v3i(8) } };
   stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
-  transform_details Td;           // used for normal transform
-  transform_details TdExtrpolate; // used only for extrapolation
+  transform_details TransformDetails;           // used for normal transform
+  transform_details TransformDetailsExtrapolate; // used only for extrapolation
   stref Dir; // the directory containing the idx2 dataset
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
-  bool GroupLevels = false;
-  bool GroupBitPlanes = true;
-  bool GroupSubbands = true;
+  bool GroupLevels = false; // TODO: remove
+  bool GroupBitPlanes = true; // TODO: remove
+  bool GroupSubbands = true; // TODO: remove
 
 #if VISUS_IDX2
   std::function<bool(const idx2_file&, buffer&, u64)> external_read;
@@ -225,7 +224,7 @@ void
 SetNumLevels(idx2_file* Idx2, i8 NIterations);
 
 void
-SetAccuracy(idx2_file* Idx2, f64 Accuracy);
+SetTolerance(idx2_file* Idx2, f64 Accuracy);
 
 void
 SetChunksPerFile(idx2_file* Idx2, int ChunksPerFile);
@@ -235,6 +234,9 @@ SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk);
 
 void
 SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
+
+void
+SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk);
 
 void
 SetDir(idx2_file* Idx2, stref Dir);

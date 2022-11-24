@@ -128,15 +128,16 @@ DecodeSubband(const idx2_file& Idx2, decode_data* D, f64 Accuracy, const grid& S
     i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType)), NBitPlanes);
     int NBitPlanesDecoded = Exponent(Accuracy) - 6 - EMax + 1;
     i8 NBps = 0;
+    int Bpc = Idx2.BitPlanesPerChunk;
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
-      i16 BpKey = (RealBp + 1023) / 4; // make it so that the BpKey is positive
+      i16 BpKey = (RealBp + 1023) / Bpc; // make it so that the BpKey is positive
       // TODO: always decode extra 6 bit planes?
       bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Accuracy) + 1;
       if (TooHighPrecision)
       {
-        if ((RealBp + 1023) % 4 == 0) // make sure we encode full "block" of BpKey
+        if ((RealBp + 1023) % Bpc == 0) // make sure we encode full "block" of BpKey
           break;
       }
 
@@ -283,7 +284,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, f64 Accuracy
   } // end subband loop
 
   bool CoarsestLevel = Level + 1 == Idx2.NLevels;
-  InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.Td, &BVol, CoarsestLevel);
+  InverseCdf53(Idx2.BrickDimsExt3, D->Level, Idx2.Subbands, Idx2.TransformDetails, &BVol, CoarsestLevel);
 
   //printf("%d\n", AnySubbandDecoded);
   return idx2_Error(idx2_err_code::NoError);
@@ -312,7 +313,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     Met.DType = Idx2.DType;
     //  printf("zfp decode time = %f\n", DecodeTime_);
     cstr OutFile = P.OutFile ? idx2_PrintScratch("%s/%s", P.OutDir, P.OutFile)
-                             : idx2_PrintScratch("%s/%s-accuracy-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeAccuracy);
+                             : idx2_PrintScratch("%s/%s-accuracy-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeTolerance);
     //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
     MapVolume(OutFile, Met.Dims3, Met.DType, &OutVol, map_mode::Write);
     printf("writing output volume to %s\n", OutFile);
@@ -331,7 +332,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   //idx2_RAII(decode_data, D, Init(&D, &BrickAlloc_));
   idx2_RAII(decode_data, D, Init(&D, &Idx2, &Mallocator())); // for now the allocator seems not a bottleneck
   //  D.QualityLevel = Dw->GetQuality();
-  f64 Accuracy = Max(Idx2.Accuracy, P.DecodeAccuracy);
+  f64 Accuracy = Max(Idx2.Tolerance, P.DecodeTolerance);
   //  i64 CountZeroes = 0;
 
   idx2_InclusiveForBackward (i8, Level, Idx2.NLevels - 1, 0)

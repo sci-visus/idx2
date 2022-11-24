@@ -200,14 +200,15 @@ EncodeSubbandBlocks(idx2_file* Idx2,
     /* zfp encode */
     i8 N = 0; // number of significant coefficients in the block so far
     i8 EndBitPlane = Min(i8(BitSizeOf(Idx2->DType)), NBitPlanes);
+    int Bpc = Idx2->BitPlanesPerChunk;
     idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
     { // bit plane loop
       i16 RealBp = Bp + EMax;
-      i16 BpKey = (RealBp + 1023) / 4; // make it so that the BpKey is positive
-      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Accuracy) + 1;
+      i16 BpKey = (RealBp + 1023) / Bpc; // make it so that the BpKey is positive
+      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Idx2->Tolerance) + 1;
       if (TooHighPrecision)
       {
-        if ((RealBp + 1023) % 4 == 0) // make sure we encode full "block" of BpKey
+        if ((RealBp + 1023) % Bpc == 0) // make sure we encode full "block" of BpKey
           break;
       }
 
@@ -298,7 +299,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLeve
 
   /* do wavelet transform */
   bool CoarsestLevel = Level + 1 == Idx2->NLevels; // only normalize
-  ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->Td, &BVol, CoarsestLevel);
+  ForwardCdf53(Idx2->BrickDimsExt3, E->Level, Idx2->Subbands, Idx2->TransformDetails, &BVol, CoarsestLevel);
 
   /* recursively encode the brick, one subband at a time */
   idx2_For (i8, Sb, 0, Size(Idx2->Subbands))
