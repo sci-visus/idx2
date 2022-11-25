@@ -247,9 +247,9 @@ Hash(const buffer& Buf)
 
 
 template <typename k, typename v> idx2_Inline u64
-Index(hash_table<k, v>* Ht, u64 Key)
+Index(const hash_table<k, v>& Ht, u64 Key)
 { // Fibonacci hashing
-  return (Key * 11400714819323198485llu) >> (64 - Ht->LogCapacity);
+  return (Key * 11400714819323198485llu) >> (64 - Ht.LogCapacity);
 }
 
 
@@ -290,7 +290,7 @@ Insert(hash_table<k, v>* Ht, const k& Key, const v& Val)
   if (Size(*Ht) * 10 >= Capacity(*Ht) * 7)
     IncreaseCapacity(Ht);
 
-  i64 H = Index(Ht, Hash(Key));
+  i64 H = Index(*Ht, Hash(Key));
   while (Ht->Stats[H] == hash_table<k, v>::Occupied && !(Ht->Keys[H] == Key))
   {
     ++H;
@@ -327,31 +327,31 @@ Insert(typename hash_table<k, v>::iterator* It, const k& Key, const v& Val)
 
 
 template <typename k, typename v> typename hash_table<k, v>::iterator
-Lookup(hash_table<k, v>* Ht, const k& Key)
+Lookup(const hash_table<k, v>& Ht, const k& Key)
 {
   i64 H = Index(Ht, Hash(Key));
   i64 Start = H;
   bool Found = false;
-  while (Ht->Stats[H] != hash_table<k, v>::Empty)
+  while (Ht.Stats[H] != hash_table<k, v>::Empty)
   { // either Occupied or Tombstone
-    if (Ht->Keys[H] == Key)
+    if (Ht.Keys[H] == Key)
     {
       Found = true;
       break;
     }
     ++H;
-    if ((H &= Capacity(*Ht) - 1) == Start)
+    if ((H &= Capacity(Ht) - 1) == Start)
       break;
   }
   if (!Found)
   {
-    while (Ht->Stats[H] == hash_table<k, v>::Occupied)
+    while (Ht.Stats[H] == hash_table<k, v>::Occupied)
     {
       ++H;
-      H &= Capacity(*Ht) - 1;
+      H &= Capacity(Ht) - 1;
     }
   }
-  auto Result = IterAt(*Ht, H);
+  auto Result = IterAt(Ht, H);
   if (Found)
   {
     idx2_Assert(*Result.Key == Key);
@@ -383,7 +383,7 @@ Probe(hash_table<k, v>* Ht, const k& Key)
 template <typename k, typename v> typename hash_table<k, v>::iterator
 Delete(hash_table<k, v>* Ht, const k& Key)
 {
-  i64 H = Index(Ht, Hash(Key));
+  i64 H = Index(*Ht, Hash(Key));
   i64 Start = H;
   bool Found = false;
   while (Ht->Stats[H] != hash_table<k, v>::Empty)

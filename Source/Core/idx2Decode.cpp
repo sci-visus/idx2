@@ -19,8 +19,8 @@ namespace idx2
 {
 
 
-static void
-Init(decode_data* D, const idx2_file* Idx2, allocator* Alloc = nullptr)
+void
+Init(decode_data* D, const idx2_file* Idx2, allocator* Alloc)
 {
   Init(&D->BrickPool, Idx2);
   D->Alloc = Alloc ? Alloc : &BrickAlloc_;
@@ -28,7 +28,7 @@ Init(decode_data* D, const idx2_file* Idx2, allocator* Alloc = nullptr)
 }
 
 
-static void
+void
 Dealloc(decode_data* D)
 {
   D->Alloc->DeallocAll();
@@ -39,14 +39,6 @@ Dealloc(decode_data* D)
 
 error<idx2_err_code>
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf);
-
-static expected<bool, idx2_err_code>
-DecodeSubband(const idx2_file& Idx2,
-              decode_data* D,
-              decode_state Ds,
-              f64 Tolerance,
-              const grid& SbGrid,
-              volume* BVol);
 
 
 // assume that Output has the right size already
@@ -159,7 +151,7 @@ DecodeSubband(const idx2_file& Idx2,
           break;
       }
 
-      auto StreamIt = Lookup(Ds.Streams, BpKey);
+      auto StreamIt = Lookup(*Ds.Streams, BpKey);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
@@ -237,7 +229,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
   i8 Level = Ds.Level;
   u64 Brick = Ds.Brick;
   //  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
-  auto BrickIt = Lookup(&D->BrickPool.BrickTable, GetBrickKey(Level, Brick));
+  auto BrickIt = Lookup(D->BrickPool.BrickTable, GetBrickKey(Level, Brick));
   idx2_Assert(BrickIt);
   volume& BVol = BrickIt.Val->Vol;
   Ds.Streams = &BrickIt.Val->Streams;
@@ -265,7 +257,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
       u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
       // TODO: move the following outside the subband loop
       u64 PKey = GetBrickKey(NextLevel, PBrick);
-      auto PbIt = Lookup(&D->BrickPool.BrickTable, PKey);
+      auto PbIt = Lookup(D->BrickPool.BrickTable, PKey);
       idx2_Assert(PbIt);
       // TODO: problem: here we will need access to D->LinearChunkInFile/D->LinearBrickInChunk for
       // the parent, which won't be computed correctly by the outside code, so for now we have to

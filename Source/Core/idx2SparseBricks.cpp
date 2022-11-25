@@ -92,7 +92,7 @@ ComputeBrickResolution(brick_pool* Bp)
     // get the current brick
     u64 BrickIndex = GetLinearBrick(*Idx2, Current.Level, Current.Brick3);
     u64 BrickKey = GetBrickKey(Current.Level, BrickIndex);
-    auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+    auto BrickIt = Lookup(Bp->BrickTable, BrickKey);
 
     if (BrickIt)
     {
@@ -171,7 +171,7 @@ GetBrickVolume(brick_pool* Bp, const v3i& Brick3)
   if (Resolution == 0)
   {
     u64 BrickKey = GetBrickKey(Level, BrickIndex);
-    auto BrickIt = Lookup(&Bp->BrickTable, BrickKey);
+    auto BrickIt = Lookup(Bp->BrickTable, BrickKey);
     idx2_Assert(BrickIt);
     BrickIt.Val->ExtentLocal = extent(Bp->Idx2->BrickDimsExt3);
     return *BrickIt.Val;
@@ -182,7 +182,7 @@ GetBrickVolume(brick_pool* Bp, const v3i& Brick3)
   v3i ABrick3 = Brick3 / GroupBrick3;
   u64 ABrick = GetLinearBrick(*Bp->Idx2, Resolution, ABrick3);
   u64 AKey = GetBrickKey(Resolution, ABrick);
-  auto AbIt = Lookup(&Bp->BrickTable, AKey);
+  auto AbIt = Lookup(Bp->BrickTable, AKey);
   idx2_Assert(AbIt);
   v3i D3 = Dims(AbIt.Val->Vol);
   v3i E3 = Dims(AbIt.Val->ExtentLocal);

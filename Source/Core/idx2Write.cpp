@@ -71,7 +71,7 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
   /* write to file */
   file_id FileId = ConstructFilePath(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
   /* keep track of the chunk sizes */
-  auto CemIt = Lookup(&E->ChunkExponents, FileId.Id);
+  auto CemIt = Lookup(E->ChunkExponents, FileId.Id);
   if (!CemIt)
   {
     chunk_exp_info ChunkExpInfo;
@@ -276,7 +276,7 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   WriteBuffer(Fp, ToBuffer(E->ChunkStream));
   /* keep track of the chunk addresses and sizes */
-  auto ChunkMetaIt = Lookup(&E->ChunkMeta, FileId.Id);
+  auto ChunkMetaIt = Lookup(E->ChunkMeta, FileId.Id);
   if (!ChunkMetaIt)
   {
     chunk_meta_info Cm;

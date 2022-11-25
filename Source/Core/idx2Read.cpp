@@ -191,7 +191,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 #endif
 
   file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
-  auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
+  auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
   idx2_PropagateIfError(ReadFile(Idx2, D, &FileCacheIt, FileId));
   if (!FileCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
@@ -200,7 +200,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
   file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
-  ChunkCacheIt = Lookup(&FileCache->ChunkCaches, ChunkAddress);
+  ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
   if (!ChunkCacheIt)
     return idx2_Error(idx2_err_code::ChunkNotFound);
   chunk_cache* ChunkCache = ChunkCacheIt.Val;
@@ -389,7 +389,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
 #endif
 
   file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
-  auto FileCacheIt = Lookup(&D->FileCacheTable, FileId.Id);
+  auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
   idx2_PropagateIfError(ReadFileExponents(Idx2, D, Level, &FileCacheIt, FileId));
   if (!FileCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
@@ -398,7 +398,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
   file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkExpCaches)::iterator ChunkCacheIt;
-  ChunkCacheIt = Lookup(&FileCache->ChunkExpCaches, ChunkAddress);
+  ChunkCacheIt = Lookup(FileCache->ChunkExpCaches, ChunkAddress);
   if (!ChunkCacheIt)
     return idx2_Error(idx2_err_code::ChunkNotFound);
 

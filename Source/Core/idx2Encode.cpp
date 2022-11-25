@@ -53,7 +53,7 @@ EncodeBrickSubbandExponents(idx2_file* Idx2,
 
   /* query the right sub channel for the block exponents */
   const u64 SubChanKey = GetAddress(0, 0, E->Level, E->Subband, ExponentBitPlane_);
-  auto ScIt = Lookup(&E->SubChannels, SubChanKey);
+  auto ScIt = Lookup(E->SubChannels, SubChanKey);
   if (!ScIt)
   {
     sub_channel SubChan;
@@ -114,7 +114,7 @@ EncodeBrickSubbandMetadata(idx2_file* Idx2,
         continue;
 
       u32 ChannelKey = GetChannelKey(BpKey, E->Level, E->Subband);
-      auto ChannelIt = Lookup(&E->Channels, ChannelKey);
+      auto ChannelIt = Lookup(E->Channels, ChannelKey);
       idx2_Assert(ChannelIt);
       channel* C = ChannelIt.Val;
       /* write brick delta */
@@ -213,7 +213,7 @@ EncodeSubbandBlocks(idx2_file* Idx2,
       }
 
       u32 ChannelKey = GetChannelKey(BpKey, E->Level, E->Subband);
-      auto ChannelIt = Lookup(&E->Channels, ChannelKey);
+      auto ChannelIt = Lookup(E->Channels, ChannelKey);
       if (!ChannelIt)
       {
         channel Channel;
@@ -289,7 +289,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLeve
   u64 Brick = E->Brick[Level];
   //printf(
   //  "level %d brick " idx2_PrStrV3i " %" PRIu64 "\n", Iter, idx2_PrV3i(E->Bricks3[Iter]), Brick);
-  auto BIt = Lookup(&E->BrickPool, GetBrickKey(Level, Brick));
+  auto BIt = Lookup(E->BrickPool, GetBrickKey(Level, Brick));
   idx2_Assert(BIt);
   volume& BVol = BIt.Val->Vol;
   idx2_Assert(BVol.Buffer);
@@ -314,7 +314,7 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLeve
       v3i PBrick3 = (E->Bricks3[NextLevel] = Brick3 / Idx2->GroupBrick3);
       u64 PBrick = (E->Brick[NextLevel] = GetLinearBrick(*Idx2, NextLevel, PBrick3));
       u64 PKey = GetBrickKey(NextLevel, PBrick);
-      auto PbIt = Lookup(&E->BrickPool, PKey);
+      auto PbIt = Lookup(E->BrickPool, PKey);
       if (!PbIt)
       { // instantiate the parent brick in the hash table
         brick_volume PBrickVol;

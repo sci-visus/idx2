@@ -62,6 +62,7 @@ set(IDX2_CORE_SOURCE_FILES
   Format.cpp
   idx2Common.cpp
   idx2Decode.cpp
+  idx2ParallelDecode.cpp
   idx2Encode.cpp
   idx2Lookup.cpp
   idx2Read.cpp
@@ -80,6 +81,10 @@ set(IDX2_CORE_SOURCE_FILES
   Zfp.cpp
 )
 
+if (PARALLEL_DECODE)
+  add_subdirectory(stlab)
+endif()
+
 add_library(idx2Core ${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_SOURCE_FILES})
 set_target_properties(idx2Core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
@@ -87,6 +92,11 @@ set_target_properties(idx2Core PROPERTIES
 target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 target_compile_definitions(idx2Core PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow>")
+
+if (PARALLEL_DECODE)
+  target_compile_definitions(idx2Core PUBLIC -Didx2_Parallel_Decode)
+  target_link_libraries(idx2Core stlab)
+endif()
 
 if (MSVC)
   target_compile_definitions(idx2Core PUBLIC -D_CRT_SECURE_NO_WARNINGS)

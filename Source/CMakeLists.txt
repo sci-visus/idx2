@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.8)
 project(idx2 CXX)
 
 option(BUILD_IDX2PY "Build the Python interface for idx2" OFF)
+option(PARALLEL_DECODE "Enable parallel decoding" OFF)
 
 add_subdirectory(Core)
 set(IDX2_LIB_SOURCE_FILES idx2.h idx2.cpp)
 
 add_library(idx2 ${IDX2_LIB_SOURCE_FILES})
 
-set_target_properties(idx2 PROPERTIES 
+set_target_properties(idx2 PROPERTIES
   PUBLIC_HEADER "idx2.h"
   POSITION_INDEPENDENT_CODE ON)
 
@@ -29,5 +30,5 @@ install(TARGETS idx2
 install(EXPORT idx2Targets
   FILE idx2Targets.cmake
   DESTINATION lib/cmake/idx2)
-  
+
 install(FILES idx2Config.cmake DESTINATION lib/cmake/idx2)

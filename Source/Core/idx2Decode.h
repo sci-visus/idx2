@@ -52,6 +52,11 @@ struct decode_data
 
 /* ---------------------- FUNCTIONS ----------------------*/
 
+void
+Init(decode_data* D, const idx2_file* Idx2, allocator* Alloc = nullptr);
+
+void
+Dealloc(decode_data* D);
 
 void
 DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddress, int L);
