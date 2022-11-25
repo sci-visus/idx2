@@ -23,6 +23,16 @@ struct decode_params
 };
 
 
+struct decode_state
+{
+  i8 Level;
+  i8 Subband;
+  u64 Brick;
+  v3i Brick3;
+  i32 BrickInChunk = 0;
+};
+
+
 /* TODO: multithreading:
 * TODO: make FileCacheTable threadsafe
 * TODO: make BrickPool threadsafe
@@ -34,12 +44,12 @@ struct decode_data
   allocator* Alloc = nullptr;
   file_cache_table FileCacheTable;
   brick_pool BrickPool;
-  i8 Level  = 0; // current level being decoded
-  i8 Subband = 0; // current subband being decoded
-  stack_array<u64, idx2_file::MaxLevels> Brick; // current brick index being decoded on each level
-  stack_array<v3i, idx2_file::MaxLevels> Bricks3; // current brick being decoded on each level
+  //i8 Level  = 0; // current level being decoded
+  //i8 Subband = 0; // current subband being decoded
+  //stack_array<u64, idx2_file::MaxLevels> Brick; // current brick index being decoded on each level
+  //stack_array<v3i, idx2_file::MaxLevels> Bricks3; // current brick being decoded on each level
   //i32 ChunkInFile = 0;
-  i32 BrickInChunk = 0;
+  //i32 BrickInChunk = 0;
   hash_table<i16, bitstream> Streams;
   //buffer CompressedChunkExps; // used in ReadChunkExponents
   //bitstream ChunkExpSizeStream; // used in ReadFileExponents
