@@ -1,3 +1,0 @@
-[submodule "Source/Python/nanobind"]
-	path = Source/Python/nanobind
-	url = https://github.com/wjakob/nanobind.git

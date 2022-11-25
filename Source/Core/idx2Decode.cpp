@@ -422,11 +422,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           // will be decoded, so we can now just copy the result out
           /* -------------------- Copy wavelet inverse transform samples to the output --------------- */
           if (Level == 0 || Idx2.DecodeSubbandMasks[Level - 1] == 0)
-          {
-            grid BrickGrid(
-              Top.BrickFrom3 * B3,
-              Idx2.BrickDims3,
-              v3i(1 << Level)); // TODO: the 1 << level is only true for 1 transform pass per level
+          {// TODO: the 1 << level is only true for 1 transform pass per level
+            grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Level));
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
             if (P.OutMode != params::out_mode::HashMap)

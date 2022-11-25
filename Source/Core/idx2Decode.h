@@ -34,11 +34,6 @@ struct decode_state
 };
 
 
-/* TODO: multithreading:
-* TODO: make FileCacheTable threadsafe
-* TODO: make BrickPool threadsafe
-* TODO: get rid of Level, Subband, Brick, Bricks3, BrickInChunk (move to a struct to pass around)
-*/
 struct decode_data
 {
   allocator* Alloc = nullptr;
