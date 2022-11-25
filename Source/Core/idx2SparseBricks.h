@@ -13,6 +13,7 @@ namespace idx2
 // TODO: allow the bricks to have different resolutions depending on the subbands decoded
 struct brick_volume
 {
+  hash_table<i16, bitstream> Streams; // map from bit plane to bitstream
   // TODO: volume and extent also contains lots of extra unnecessary bits
   volume Vol;
   extent ExtentLocal; // dimensions of the brick // TODO: we do not need full extent, just dims v3i
@@ -22,6 +23,13 @@ struct brick_volume
   i8 NChildrenMax = 0;
   bool Significant = false; // if any (non 0) subband is decoded for this brick
 };
+
+
+void
+Init(brick_volume* BrickVol);
+
+void
+Dealloc(brick_volume* BrickVol);
 
 
 using brick_table = hash_table<u64, brick_volume>;
@@ -39,9 +47,6 @@ struct brick_pool
   // they key for BrickTable
   array<i8> ResolutionLevels;
   const idx2_file* Idx2 = nullptr;
-  //v3i Dims3 = v3i(0);
-  //v3i BrickDims3 = v3i(0); // dimensions of bricks, should be powers of 2
-  //i8 NLevels = 0; // number of levels, level 0 is the finest, NLevels - 1 is the coarsest
 };
 
 

@@ -25,7 +25,6 @@ Init(decode_data* D, const idx2_file* Idx2, allocator* Alloc = nullptr)
   Init(&D->BrickPool, Idx2);
   D->Alloc = Alloc ? Alloc : &BrickAlloc_;
   Init(&D->FileCacheTable);
-  Init(&D->Streams, 7);
 }
 
 
@@ -35,11 +34,6 @@ Dealloc(decode_data* D)
   D->Alloc->DeallocAll();
   Dealloc(&D->BrickPool);
   DeallocFileCacheTable(&D->FileCacheTable);
-  Dealloc(&D->Streams);
-  //DeallocBuf(&D->CompressedChunkExps);
-  //Dealloc(&D->ChunkExpSizeStream);
-  //Dealloc(&D->ChunkAddrsStream);
-  //Dealloc(&D->ChunkSizeStream);
 }
 
 
@@ -94,9 +88,9 @@ static expected<bool, idx2_err_code>
 DecodeSubband(const idx2_file& Idx2,
               decode_data* D,
               decode_state Ds,
-              f64 Tolerance,
-              const grid& SbGrid,
-              volume* BVol)
+              f64 Tolerance, // TODO: move to decode_state
+              const grid& SbGrid, // TODO: move to decode_state
+              volume* BVol) // TODO: move to decode_states
 {
   u64 Brick = Ds.Brick;
   v3i SbDims3 = Dims(SbGrid);
@@ -118,9 +112,10 @@ DecodeSubband(const idx2_file& Idx2,
   SeekToByte(&BrickExpsStream, BrickExpOffset);
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
-  /* gather the streams (for the different bit planes) */
-  auto& Streams = D->Streams;
-  Clear(&Streams);
+  auto Streams = Ds.Streams;
+  if (!*Streams)
+    Init(Streams, 7);
+  Clear(Streams);
 
   bool SubbandSignificant = false; // whether there is any significant block on this subband
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
@@ -164,7 +159,7 @@ DecodeSubband(const idx2_file& Idx2,
           break;
       }
 
-      auto StreamIt = Lookup(&Streams, BpKey);
+      auto StreamIt = Lookup(Ds.Streams, BpKey);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
@@ -245,6 +240,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
   auto BrickIt = Lookup(&D->BrickPool.BrickTable, GetBrickKey(Level, Brick));
   idx2_Assert(BrickIt);
   volume& BVol = BrickIt.Val->Vol;
+  Ds.Streams = &BrickIt.Val->Streams;
 
   idx2_Assert(Size(Idx2.Subbands) <= 8);
 
@@ -295,7 +291,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
           DeleteBrick = !PbIt.Val->Significant;
         if (DeleteBrick)
         {
-          Dealloc(&PbIt.Val->Vol);
+          Dealloc(PbIt.Val);
           Delete(&D->BrickPool.BrickTable, PKey);
         }
       }
@@ -439,7 +435,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
               auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
                                                                 : (CopyGridGrid<f64, f64>);
               CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
-              Dealloc(&BVol.Vol);
+              Dealloc(&BVol);
               Delete(&D.BrickPool.BrickTable, BrickKey);
             }
             else if (P.OutMode == params::out_mode::HashMap)
@@ -447,7 +443,7 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
               //printf("deleting\n");
               if (!BrickIt.Val->Significant)
               {
-                Dealloc(&BVol.Vol);
+                Dealloc(&BVol);
                 // TODO: can we delete straight from the iterator?
                 Delete(&D.BrickPool.BrickTable, BrickKey);
               }

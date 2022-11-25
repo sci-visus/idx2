@@ -10,6 +10,21 @@ namespace idx2
 
 
 void
+Init(brick_volume* BrickVol)
+{
+  Init(&BrickVol->Streams, 7);
+}
+
+
+void
+Dealloc(brick_volume* BrickVol)
+{
+  Dealloc(&BrickVol->Streams);
+  Dealloc(&BrickVol->Vol);
+}
+
+
+void
 Init(brick_pool* Bp, const idx2_file* Idx2)
 {
   Bp->Idx2 = Idx2;
