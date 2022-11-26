@@ -5,6 +5,9 @@
 #include "idx2Common.h"
 #include "idx2Read.h"
 #include "idx2SparseBricks.h"
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 
 
 namespace idx2
@@ -12,16 +15,6 @@ namespace idx2
 
 
 /* ---------------------- TYPES ----------------------*/
-
-// By default, decode everything
-struct decode_params
-{
-  bool Decode = false;
-  f64 Accuracy = 0;
-  u8 Mask = 0xFF;    // for now just a mask TODO: to generalize this we need an array of subbands
-  i8 Precision = 64; // number of bit planes to decode
-};
-
 
 struct decode_state
 {
@@ -39,6 +32,11 @@ struct decode_data
   allocator* Alloc = nullptr;
   file_cache_table FileCacheTable;
   brick_pool BrickPool;
+  std::mutex FileCacheMutex;
+  std::mutex BrickPoolMutex;
+  std::mutex Mutex;
+  std::condition_variable AllTasksDone;
+  i64 NTasks = 0;
 
   u64 DecodeIOTime_ = 0;
   u64 BytesExps_ = 0;

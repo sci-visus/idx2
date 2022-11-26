@@ -160,6 +160,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
   if (Idx2.external_read)
   {
     //this part handles with caching, in the long-term it should be disabled since OpenVisus can handle the caching itself
+    // TODO: how to handle locking for multithreading here
     file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
     auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
     if (!FileCacheIt)
@@ -191,8 +192,12 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 #endif
 
   file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
+  // TODO: lock and be careful about invalidated pointer
   auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
-  idx2_PropagateIfError(ReadFile(Idx2, D, &FileCacheIt, FileId));
+  { // TODO: this lock is kinda coarse
+    std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
+    idx2_PropagateIfError(ReadFile(Idx2, D, &FileCacheIt, FileId));
+  }
   if (!FileCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
 
@@ -200,6 +205,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
   file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
+  // TODO: lock and be careful about invalidated pointer
   ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
   if (!ChunkCacheIt)
     return idx2_Error(idx2_err_code::ChunkNotFound);
@@ -216,7 +222,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
     i64 ChunkSize = FileCache->ChunkOffsets[ChunkPos] - ChunkOffset;
     idx2_FSeek(Fp, ChunkOffset, SEEK_SET);
     bitstream ChunkStream;
-  // NOTE: not a memory leak since we will keep track of this in ChunkCache
+    // NOTE: not a memory leak since we will keep track of this in ChunkCache
     InitWrite(&ChunkStream, ChunkSize);
     ReadBuffer(Fp, &ChunkStream.Stream);
     D->BytesData_ += Size(ChunkStream.Stream);
@@ -357,6 +363,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
   if (Idx2.external_read)
   {
     //this part handles with caching, in the long-term it should be disabled since OpenVisus can handle the caching itself
+    // TODO: how should locking (multithreading) be handled here?
     file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
     auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
     if (!FileCacheIt)
@@ -389,8 +396,12 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
 #endif
 
   file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
+  // TODO: lock and be careful about invalidated pointer
   auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
-  idx2_PropagateIfError(ReadFileExponents(Idx2, D, Level, &FileCacheIt, FileId));
+  { // TODO: this lock is kinda coarse
+    std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
+    idx2_PropagateIfError(ReadFileExponents(Idx2, D, Level, &FileCacheIt, FileId));
+  }
   if (!FileCacheIt)
     return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
 
@@ -398,6 +409,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
   file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkExpCaches)::iterator ChunkCacheIt;
+  // TODO: lock and be careful about invalidated pointer
   ChunkCacheIt = Lookup(FileCache->ChunkExpCaches, ChunkAddress);
   if (!ChunkCacheIt)
     return idx2_Error(idx2_err_code::ChunkNotFound);
