@@ -203,7 +203,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 
   /* find the appropriate chunk */
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
-  file_cache* FileCache = FileCacheIt.Val;
+  const file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
   // TODO: lock and be careful about invalidated pointer
   ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
