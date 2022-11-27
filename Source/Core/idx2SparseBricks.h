@@ -13,7 +13,7 @@ namespace idx2
 // TODO: allow the bricks to have different resolutions depending on the subbands decoded
 struct brick_volume
 {
-  hash_table<i16, bitstream> Streams; // map from bit plane to bitstream
+  hash_table<i16, bitstream> Streams; // map from bit plane to bitstream (cleared for each subband)
   // TODO: volume and extent also contains lots of extra unnecessary bits
   volume Vol;
   extent ExtentLocal; // dimensions of the brick // TODO: we do not need full extent, just dims v3i
