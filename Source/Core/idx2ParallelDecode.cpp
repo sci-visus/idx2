@@ -53,13 +53,13 @@ ParallelDecodeSubband(const idx2_file& Idx2,
     BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
 
   /* first, read the block exponents */
-  auto ReadChunkExpResult = ReadChunkExponents(Idx2, D, Brick, Ds.Level, Ds.Subband);
+  auto ReadChunkExpResult = ParallelReadChunkExponents(Idx2, D, Brick, Ds.Level, Ds.Subband);
   if (!ReadChunkExpResult)
     return Error(ReadChunkExpResult);
 
-  const chunk_exp_cache* ChunkExpCache = Value(ReadChunkExpResult);
+  chunk_exp_cache ChunkExpCache = Value(ReadChunkExpResult); // make a copy to avoid data race
   i32 BrickExpOffset = (Ds.BrickInChunk * BlockCount) * (SizeOf(Idx2.DType) > 4 ? 2 : 1);
-  bitstream BrickExpsStream = ChunkExpCache->ChunkExpStream;
+  bitstream BrickExpsStream = ChunkExpCache.ChunkExpStream;
   SeekToByte(&BrickExpsStream, BrickExpOffset);
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
@@ -111,19 +111,19 @@ ParallelDecodeSubband(const idx2_file& Idx2,
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
-        auto ReadChunkResult = ReadChunk(Idx2, D, Brick, Ds.Level, Ds.Subband, BpKey);
+        auto ReadChunkResult = ParallelReadChunk(Idx2, D, Brick, Ds.Level, Ds.Subband, BpKey);
         if (!ReadChunkResult)
           return Error(ReadChunkResult);
 
-        const chunk_cache* ChunkCache = Value(ReadChunkResult);
-        u64* BrickPos = BinarySearch(idx2_Range(ChunkCache->Bricks), Brick);
-        idx2_Assert(BrickPos != End(ChunkCache->Bricks));
+        chunk_cache ChunkCache = Value(ReadChunkResult); // making a copy to avoid data race
+        u64* BrickPos = BinarySearch(idx2_Range(ChunkCache.Bricks), Brick);
+        idx2_Assert(BrickPos != End(ChunkCache.Bricks));
         idx2_Assert(*BrickPos == Brick);
-        i64 BrickInChunk = BrickPos - Begin(ChunkCache->Bricks);
-        idx2_Assert(BrickInChunk < Size(ChunkCache->BrickSizes));
-        i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSizes[BrickInChunk - 1];
-        BrickOffset += Size(ChunkCache->ChunkStream);
-        Insert(&StreamIt, BpKey, ChunkCache->ChunkStream);
+        i64 BrickInChunk = BrickPos - Begin(ChunkCache.Bricks);
+        idx2_Assert(BrickInChunk < Size(ChunkCache.BrickSizes));
+        i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache.BrickSizes[BrickInChunk - 1];
+        BrickOffset += Size(ChunkCache.ChunkStream);
+        Insert(&StreamIt, BpKey, ChunkCache.ChunkStream);
         Stream = StreamIt.Val;
         // seek to the correct byte offset of the brick in the chunk
         SeekToByte(Stream, BrickOffset);
@@ -190,13 +190,11 @@ ParallelDecodeBrick(const idx2_file& Idx2,
   i8 Level = Ds.Level;
   u64 Brick = Ds.Brick;
   //  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
-  // TODO: lock
-  // TODO: seems like we need to lock very Lookup call as well
-  // TODO: consider making a copy to avoid the pointer being invalidated
+  D->BrickPoolMutex.lock();
   // NOTE: we make a copy to avoid the pointer being invalidated by another thread modifying BrickTable
   brick_volume BrickVol = *Lookup(D->BrickPool.BrickTable, GetBrickKey(Level, Brick)).Val;
-  //idx2_Assert(BrickIt);
   volume& Vol = BrickVol.Vol;
+  D->BrickPoolMutex.unlock();
 
   idx2_Assert(Size(Idx2.Subbands) <= 8);
 
@@ -331,10 +329,8 @@ DecodeTask(const idx2_file& Idx2,
       else
       {
         if (BrickIt.Ht->LogCapacity != CachedLogCapacity)
-        {
           BrickIt = Lookup(D->BrickPool.BrickTable, BrickKey);
-          BrickIt.Val->Significant = true;
-        }
+        BrickIt.Val->Significant = true;
       }
     }
   }
@@ -342,9 +338,9 @@ DecodeTask(const idx2_file& Idx2,
   {
     std::unique_lock<std::mutex> Lock(D->Mutex);
     --D->NTasks;
-    if (D->NTasks == 0)
-      D->AllTasksDone.notify_all();
   }
+  if (D->NTasks == 0)
+    D->AllTasksDone.notify_all();
 
   return idx2_Error(idx2_err_code::NoError);
 }
@@ -441,8 +437,10 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
           Ds.Level = Level;
           Ds.Brick3 = Top.BrickFrom3;
           Ds.Brick = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
-          // TODO: check for error
-          ++D.NTasks;
+          {
+            std::unique_lock<std::mutex> Lock(D.Mutex);
+            ++D.NTasks;
+          }
           auto Task = stlab::async(stlab::default_executor, [&, Ds, Top, OutGrid, B3, Tolerance] {
             DecodeTask(Idx2, P, &D, Ds, Top, OutGrid, B3, Tolerance, &OutVol, &OutVolMem);
           });

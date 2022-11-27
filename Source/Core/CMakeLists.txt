@@ -66,6 +66,7 @@ set(IDX2_CORE_SOURCE_FILES
   idx2Encode.cpp
   idx2Lookup.cpp
   idx2Read.cpp
+  idx2ParallelRead.cpp
   idx2Write.cpp
   idx2SparseBricks.cpp
   InputOutput.cpp

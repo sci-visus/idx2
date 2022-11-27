@@ -18,6 +18,9 @@ struct chunk_cache
   bitstream ChunkStream;
 };
 
+void
+Dealloc(chunk_cache* ChunkCache);
+
 
 struct chunk_exp_cache
 {
@@ -26,6 +29,8 @@ struct chunk_exp_cache
   // TODO: should we also have brick ids and brick sizes?
 };
 
+void
+Dealloc(chunk_exp_cache* ChunkExpCache);
 
 // TODO: we just need a single cache table addressed by chunk id
 struct file_cache
@@ -39,6 +44,8 @@ struct file_cache
   bool DataCached = false;
 };
 
+void
+Dealloc(file_cache* FileCache);
 
 // [file address] -> file cache
 using file_cache_table = hash_table<u64, file_cache>;
@@ -87,6 +94,11 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
 expected<const chunk_cache*, idx2_err_code>
 ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BitPlane);
 
+expected<chunk_cache, idx2_err_code>
+ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BpKey);
+
+expected<chunk_exp_cache, idx2_err_code>
+ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband);
 
 } // namespace idx2
 
