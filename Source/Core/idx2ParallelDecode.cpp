@@ -40,6 +40,7 @@ ParallelDecodeSubband(const idx2_file& Idx2,
                       decode_state Ds,
                       f64 Tolerance,      // TODO: move to decode_state
                       const grid& SbGrid, // TODO: move to decode_state
+                      hash_table<i16, bitstream>* StreamsPtr,
                       brick_volume* BrickVol)       // TODO: move to decode_states
 {
   u64 Brick = Ds.Brick;
@@ -62,10 +63,7 @@ ParallelDecodeSubband(const idx2_file& Idx2,
   SeekToByte(&BrickExpsStream, BrickExpOffset);
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
-  auto Streams = &BrickVol->Streams;
-  if (!*Streams)
-    Init(Streams, 7);
-  Clear(Streams);
+  Clear(StreamsPtr);
 
   bool SubbandSignificant = false; // whether there is any significant block on this subband
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
@@ -109,7 +107,7 @@ ParallelDecodeSubband(const idx2_file& Idx2,
           break;
       }
 
-      auto StreamIt = Lookup(*Streams, BpKey);
+      auto StreamIt = Lookup(*StreamsPtr, BpKey);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
@@ -203,6 +201,8 @@ ParallelDecodeBrick(const idx2_file& Idx2,
   idx2_Assert(Size(Idx2.Subbands) <= 8);
 
   bool Significant = false;
+  using stream_cache = hash_table<i16, bitstream>;
+  idx2_RAII(stream_cache, Streams, Init(&Streams, 7), Dealloc(&Streams));
   idx2_For (i8, Sb, 0, (i8)Size(Idx2.Subbands))
   {
     if (!BitSet(Idx2.DecodeSubbandMasks[Level], Sb))
@@ -251,7 +251,7 @@ ParallelDecodeBrick(const idx2_file& Idx2,
 
     /* now we decode the subband */
     Ds.Subband = Sb;
-    auto Result = ParallelDecodeSubband(Idx2, D, Ds, Tolerance, S.Grid, &BrickVol);
+    auto Result = ParallelDecodeSubband(Idx2, D, Ds, Tolerance, S.Grid, &Streams, &BrickVol);
     if (!Result)
       return Error(Result);
     Significant = Significant || Value(Result);

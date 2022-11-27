@@ -10,16 +10,8 @@ namespace idx2
 
 
 void
-Init(brick_volume* BrickVol)
-{
-  Init(&BrickVol->Streams, 7);
-}
-
-
-void
 Dealloc(brick_volume* BrickVol)
 {
-  Dealloc(&BrickVol->Streams);
   Dealloc(&BrickVol->Vol);
 }
 
