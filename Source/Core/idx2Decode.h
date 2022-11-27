@@ -23,7 +23,6 @@ struct decode_state
   u64 Brick;
   v3i Brick3;
   i32 BrickInChunk;
-  hash_table<i16, bitstream>* Streams = nullptr;
 };
 
 

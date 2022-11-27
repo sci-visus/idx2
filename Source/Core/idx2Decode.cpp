@@ -82,7 +82,8 @@ DecodeSubband(const idx2_file& Idx2,
               decode_state Ds,
               f64 Tolerance, // TODO: move to decode_state
               const grid& SbGrid, // TODO: move to decode_state
-              volume* BVol) // TODO: move to decode_states
+              hash_table<i16, bitstream> *StreamsPtr,
+              brick_volume* BrickVol) // TODO: move to decode_states
 {
   u64 Brick = Ds.Brick;
   v3i SbDims3 = Dims(SbGrid);
@@ -104,10 +105,7 @@ DecodeSubband(const idx2_file& Idx2,
   SeekToByte(&BrickExpsStream, BrickExpOffset);
   u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
-  auto Streams = Ds.Streams;
-  if (!*Streams)
-    Init(Streams, 7);
-  Clear(Streams);
+  Clear(StreamsPtr);
 
   bool SubbandSignificant = false; // whether there is any significant block on this subband
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
@@ -151,7 +149,7 @@ DecodeSubband(const idx2_file& Idx2,
           break;
       }
 
-      auto StreamIt = Lookup(*Ds.Streams, BpKey);
+      auto StreamIt = Lookup(*StreamsPtr, BpKey);
       bitstream* Stream = nullptr;
       if (!StreamIt)
       { // first block in the brick
@@ -207,10 +205,11 @@ DecodeSubband(const idx2_file& Idx2,
       v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
       timer DataTimer;
       StartTimer(&DataTimer);
+      volume& BVol = BrickVol->Vol;
       idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
       { // sample loop
         idx2_Assert(D3 + S3 < SbDims3);
-        BVol->At<f64>(From3, Strd3, D3 + S3) = BlockFloats[J++];
+        BVol.At<f64>(From3, Strd3, D3 + S3) = BlockFloats[J++];
       }
       idx2_EndFor3; // end sample loop
       D->DataMovementTime_ += ElapsedTime(&DataTimer);
@@ -232,11 +231,11 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
   auto BrickIt = Lookup(D->BrickPool.BrickTable, GetBrickKey(Level, Brick));
   idx2_Assert(BrickIt);
   volume& BVol = BrickIt.Val->Vol;
-  Ds.Streams = &BrickIt.Val->Streams;
 
   idx2_Assert(Size(Idx2.Subbands) <= 8);
 
-  /* recursively decode the brick, one subband at a time */
+  using stream_cache = hash_table<i16, bitstream>;
+  idx2_RAII(stream_cache, Streams, Init(&Streams, 7), Dealloc(&Streams));
   idx2_For (i8, Sb, 0, (i8)Size(Idx2.Subbands))
   {
     if (!BitSet(Idx2.DecodeSubbandMasks[Level], Sb))
@@ -291,7 +290,7 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
 
     /* now we decode the subband */
     Ds.Subband = Sb;
-    auto Result = DecodeSubband(Idx2, D, Ds, Tolerance, S.Grid, &BVol);
+    auto Result = DecodeSubband(Idx2, D, Ds, Tolerance, S.Grid, &Streams, BrickIt.Val);
     if (!Result)
       return Error(Result);
     BrickIt.Val->Significant = BrickIt.Val->Significant || Value(Result);
@@ -313,7 +312,6 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   StartTimer(&DecodeTimer);
   // TODO: we should add a --effective-mask
   grid OutGrid = GetGrid(Idx2, P.DecodeExtent);
-  //printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
   mmap_volume OutVol;
   volume OutVolMem;
   idx2_CleanUp(if (P.OutMode == params::out_mode::RegularGridFile) { Unmap(&OutVol); });
