@@ -191,11 +191,13 @@ ParallelDecodeBrick(const idx2_file& Idx2,
                     f64 Tolerance)
 {
   i8 Level = Ds.Level;
-  u64 Brick = Ds.Brick;
+  u64 BrickKey = Ds.Brick;
   //  printf("level %d brick " idx2_PrStrV3i " %llu\n", Iter, idx2_PrV3i(D->Bricks3[Iter]), Brick);
   D->BrickPoolMutex.lock();
+  auto BrickIt = Lookup(D->BrickPool.BrickTable, GetBrickKey(Level, BrickKey));
   // NOTE: we make a copy to avoid the pointer being invalidated by another thread modifying BrickTable
-  brick_volume BrickVol = *Lookup(D->BrickPool.BrickTable, GetBrickKey(Level, Brick)).Val;
+  brick_volume BrickVol = *BrickIt.Val;
+  auto CachedLogCapacity = BrickIt.Ht->LogCapacity;
   volume& Vol = BrickVol.Vol;
   D->BrickPoolMutex.unlock();
 
@@ -216,36 +218,43 @@ ParallelDecodeBrick(const idx2_file& Idx2,
     /* we first copy data from the parent brick to the current brick if subband is 0 */
     if (Sb == 0 && NextLevel < Idx2.NLevels)
     {
-      std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
       /* find the parent */
       v3i Brick3 = Ds.Brick3;
       v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
       u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
       u64 PKey = GetBrickKey(NextLevel, PBrick);
-      brick_volume* Pb = Lookup(D->BrickPool.BrickTable, PKey).Val;
-      /* copy data from the parent's to my buffer */
-      if (Pb->NChildrenDecoded == 0)
+      // wait for parent to finish decoding
+      brick_volume Pb;
+      while (true)
       {
-        v3i From3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
-        v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3[Level])));
-        Pb->NChildrenMax = (i8)Prod(NChildren3);
+        D->BrickPoolMutex.lock();
+        Pb = *Lookup(D->BrickPool.BrickTable, PKey).Val;
+        D->BrickPoolMutex.unlock();
+        if (Pb.DoneDecoding)
+          break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
-      ++Pb->NChildrenDecoded;
       /* copy data from the parent to the current brick for subband 0 */
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
       grid SbGridNonExt = S.Grid;
       SetDims(&SbGridNonExt, SbDimsNonExt3);
       extent PGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3); // parent grid
-      CopyExtentGrid<f64, f64>(PGrid, Pb->Vol, SbGridNonExt, &Vol);
-      if (Pb->NChildrenDecoded == Pb->NChildrenMax)
-      { // last child
+      CopyExtentGrid<f64, f64>(PGrid, Pb.Vol, SbGridNonExt, &Vol);
+      v3i First3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
+      extent E = Crop(extent(First3, Idx2.GroupBrick3), extent(Idx2.NBricks3[Level]));
+      v3i Last3 = Last(E);
+      // if last child, delete the parent if needed
+      if (Brick3 == Last3) // last child
+      {
         bool DeleteBrick = true;
         if (P.OutMode == params::out_mode::HashMap)
-          DeleteBrick = !Pb->Significant;
+          DeleteBrick = !Pb.Significant;
         if (DeleteBrick)
-        {
-          //Dealloc(Pb);
-          Delete(&D->BrickPool.BrickTable, PKey);
+        { // TODO: cannot delete the brick because we don't know if the last child is run last
+          // need a "cleanup" function to delete the brick later
+          //std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
+          //Dealloc(&Pb.Vol);
+          //Delete(&D->BrickPool.BrickTable, PKey);
         }
       } // end last child
     } // end subband 0
@@ -262,6 +271,12 @@ ParallelDecodeBrick(const idx2_file& Idx2,
   InverseCdf53(Idx2.BrickDimsExt3, Ds.Level, Idx2.Subbands, Idx2.TransformDetails, &Vol, CoarsestLevel);
 
   // printf("%d\n", AnySubbandDecoded);
+  std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
+  if (BrickIt.Ht->LogCapacity != CachedLogCapacity)
+    BrickIt = Lookup(D->BrickPool.BrickTable, BrickKey);
+  BrickIt.Val->DoneDecoding = true;
+  BrickIt.Val->Significant = Significant;
+
   return Significant;
 }
 
@@ -313,7 +328,7 @@ DecodeTask(const idx2_file& Idx2,
         P.OutMode == params::out_mode::RegularGridFile ? &OutVol->Vol : OutVolMem;
       auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
                                                         : (CopyGridGrid<f64, f64>);
-      // TODO: maybe lock this?
+      // TODO: lock (maybe) this?
       CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
       Dealloc(&BVol);
       std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
@@ -322,18 +337,12 @@ DecodeTask(const idx2_file& Idx2,
     else if (P.OutMode == params::out_mode::HashMap)
     {
       bool BrickSignificant = Value(Result);
-      std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
       if (!BrickSignificant)
       {
         Dealloc(&BVol);
         // TODO: can we delete straight from the iterator?
+        std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
         Delete(&D->BrickPool.BrickTable, BrickKey);
-      }
-      else
-      {
-        if (BrickIt.Ht->LogCapacity != CachedLogCapacity)
-          BrickIt = Lookup(D->BrickPool.BrickTable, BrickKey);
-        BrickIt.Val->Significant = true;
       }
     }
   }

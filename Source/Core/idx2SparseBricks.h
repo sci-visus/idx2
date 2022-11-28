@@ -5,9 +5,7 @@
 #include "HashTable.h"
 #include "Volume.h"
 #include "idx2Common.h"
-#if defined(idx2_Parallel_Decode)
-#include <condition_variable>
-#endif
+
 
 namespace idx2
 {
@@ -17,9 +15,6 @@ namespace idx2
 struct brick_volume
 {
   // TODO: volume and extent also contains lots of extra unnecessary bits
-#if defined(idx2_Parallel_Decode)
-
-#endif
   volume Vol;
   extent ExtentLocal; // dimensions of the brick // TODO: we do not need full extent, just dims v3i
   //extent ExtentGlobal; // global extent of the brick
@@ -27,6 +22,7 @@ struct brick_volume
   i8 NChildrenDecoded = 0;
   i8 NChildrenMax = 0;
   bool Significant = false; // if any (non 0) subband is decoded for this brick
+  bool DoneDecoding = false;
 };
 
 

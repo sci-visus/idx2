@@ -262,20 +262,23 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
       // the parent, which won't be computed correctly by the outside code, so for now we have to
       // stick to decoding from higher level down
       /* copy data from the parent's to my buffer */
-      if (PbIt.Val->NChildrenDecoded == 0)
-      {
-        v3i From3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
-        v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3[Level])));
-        PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
-      }
-      ++PbIt.Val->NChildrenDecoded;
+      //if (PbIt.Val->NChildrenDecoded == 0)
+      //{
+      //  v3i From3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
+      //  v3i NChildren3 = Dims(Crop(extent(From3, Idx2.GroupBrick3), extent(Idx2.NBricks3[Level])));
+      //  PbIt.Val->NChildrenMax = (i8)Prod(NChildren3);
+      //}
+      //++PbIt.Val->NChildrenDecoded;
+      v3i First3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
+      extent E = Crop(extent(First3, Idx2.GroupBrick3), extent(Idx2.NBricks3[Level]));
+      v3i Last3 = Last(E);
       /* copy data from the parent to the current brick for subband 0 */
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
       grid SbGridNonExt = S.Grid;
       SetDims(&SbGridNonExt, SbDimsNonExt3);
       extent PGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3); // parent grid
       CopyExtentGrid<f64, f64>(PGrid, PbIt.Val->Vol, SbGridNonExt, &BVol);
-      if (PbIt.Val->NChildrenDecoded == PbIt.Val->NChildrenMax)
+      if (Last3 == Brick3)
       { // last child
         bool DeleteBrick = true;
         if (P.OutMode == params::out_mode::HashMap)
