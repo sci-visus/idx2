@@ -166,6 +166,7 @@ ParallelDecodeSubband(const idx2_file& Idx2,
       timer DataTimer;
       StartTimer(&DataTimer);
       volume& Vol = BrickVol->Vol;
+      idx2_Assert(Vol.Buffer);
       idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
       { // sample loop
         idx2_Assert(D3 + S3 < SbDims3);
@@ -342,11 +343,8 @@ DecodeTask(const idx2_file& Idx2,
     //printf("ntasks = %d\n", D->NTasks);
     --D->NTasks;
   }
-    if (D->NTasks == 0)
-    {
-      printf("notifying\n");
-      D->AllTasksDone.notify_all();
-    }
+  if (D->NTasks == 0)
+    D->AllTasksDone.notify_all();
 
   return idx2_Error(idx2_err_code::NoError);
 }
@@ -470,8 +468,7 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 
   std::unique_lock<std::mutex> Lock(D.Mutex);
   D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
-  std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-  printf("------------done--------------\n");
+  stlab::pre_exit();
 
   if (P.OutMode == params::out_mode::HashMap)
   {
@@ -481,15 +478,15 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   }
 
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
-  printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
-  printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));
-  printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_);
-  printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
-  printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_ + D.BytesData_);
-  printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_ / 8);
+  printf("io time             = %f\n", Seconds(D.DecodeIOTime_.load()));
+  printf("data movement time  = %f\n", Seconds(D.DataMovementTime_.load()));
+  printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_.load());
+  printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_.load());
+  printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_.load() + D.BytesData_.load());
+  printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_.load() / 8);
   printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool.BrickTable));
-  printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks);
-  printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands);
+  printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks.load());
+  printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands.load());
 
   return idx2_Error(err_code::NoError);
 }

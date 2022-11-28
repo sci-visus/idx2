@@ -249,13 +249,15 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "name"))
         {
           idx2_Assert(Expr->type == SE_STRING);
-          snprintf(Idx2->Name, Expr->s.len + 1, "%s", (cstr)Buf.Data + Expr->s.start);
+          memcpy(Idx2->Name, Buf.Data + Expr->s.start, Expr->s.len);
+          Idx2->Name[Expr->s.len] = 0;
           //          printf("Name = %s\n", Idx2->Name);
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "field"))
         {
           idx2_Assert(Expr->type == SE_STRING);
-          snprintf(Idx2->Field, Expr->s.len + 1, "%s", (cstr)Buf.Data + Expr->s.start);
+          memcpy(Idx2->Field, Buf.Data + Expr->s.start, Expr->s.len);
+          Idx2->Name[Expr->s.len] = 0;
           //          printf("Field = %s\n", Idx2->Field);
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "dimensions"))
