@@ -102,6 +102,7 @@ struct params
     NoOutput
   };
   out_mode OutMode = out_mode::RegularGridMem;
+  bool ParallelDecode = false;
 };
 
 

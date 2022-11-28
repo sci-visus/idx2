@@ -18,8 +18,10 @@
 #include "stlab/concurrency/future.hpp"
 #include "stlab/concurrency/default_executor.hpp"
 #include "stlab/concurrency/immediate_executor.hpp"
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 
 
 namespace idx2
@@ -214,7 +216,7 @@ ParallelDecodeBrick(const idx2_file& Idx2,
     if (Sb == 0 && NextLevel < Idx2.NLevels)
     {
       std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
-      /* find and decode the parent */
+      /* find the parent */
       v3i Brick3 = Ds.Brick3;
       v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
       u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
@@ -241,7 +243,7 @@ ParallelDecodeBrick(const idx2_file& Idx2,
           DeleteBrick = !Pb->Significant;
         if (DeleteBrick)
         {
-          Dealloc(Pb);
+          //Dealloc(Pb);
           Delete(&D->BrickPool.BrickTable, PKey);
         }
       } // end last child
@@ -337,10 +339,14 @@ DecodeTask(const idx2_file& Idx2,
 
   {
     std::unique_lock<std::mutex> Lock(D->Mutex);
+    //printf("ntasks = %d\n", D->NTasks);
     --D->NTasks;
   }
-  if (D->NTasks == 0)
-    D->AllTasksDone.notify_all();
+    if (D->NTasks == 0)
+    {
+      printf("notifying\n");
+      D->AllTasksDone.notify_all();
+    }
 
   return idx2_Error(idx2_err_code::NoError);
 }
@@ -441,7 +447,7 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             std::unique_lock<std::mutex> Lock(D.Mutex);
             ++D.NTasks;
           }
-          auto Task = stlab::async(stlab::default_executor, [&, Ds, Top, OutGrid, B3, Tolerance] {
+          auto Task = stlab::async(stlab::default_executor, [&, Ds, Top, OutGrid, B3, Tolerance]()  mutable {
             DecodeTask(Idx2, P, &D, Ds, Top, OutGrid, B3, Tolerance, &OutVol, &OutVolMem);
           });
           Task.detach();
@@ -462,10 +468,10 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
       , 64, Idx2.FilesOrder[Level], v3i(0), Idx2.NFiles3[Level], ExtentInFiles, VolExtentInFiles);
   } // end level loop
 
-  {
-    std::unique_lock<std::mutex> Lock(D.Mutex);
-    D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
-  }
+  std::unique_lock<std::mutex> Lock(D.Mutex);
+  D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
+  std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+  printf("------------done--------------\n");
 
   if (P.OutMode == params::out_mode::HashMap)
   {

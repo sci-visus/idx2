@@ -52,11 +52,8 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
   {
     P->OutMode = params::out_mode::HashMap;
   }
-  //idx2_ExitIf(
-  //  !OptVal(Argc, Argv, "--in_dir", &P->InDir),
-  //  "Provide --in_dir (input directory)\n"
-  //  "For example, if the input file is C:/Data/MIRANDA/DENSITY.idx2, the --in_dir is C:/Data\n");
 
+  P->ParallelDecode = OptExists(Argc, Argv, "--parallel");
 }
 
 
@@ -312,7 +309,14 @@ Idx2App(int Argc, const char* Argv[])
     }
 #endif
 
-    idx2_ExitIfError(Decode(Idx2, P));
+    if (P.ParallelDecode)
+    {
+      idx2_ExitIfError(ParallelDecode(Idx2, P));
+    }
+    else
+    {
+      idx2_ExitIfError(Decode(Idx2, P));
+    }
   }
 
   if (P.Pause)
