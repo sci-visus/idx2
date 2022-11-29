@@ -47570,7 +47570,7 @@ Destroy(idx2_file* Idx2)
 namespace idx2
 {
 
-static void
+void
 Dealloc(chunk_cache* ChunkCache)
 {
   Dealloc(&ChunkCache->Bricks);
@@ -47578,13 +47578,13 @@ Dealloc(chunk_cache* ChunkCache)
   Dealloc(&ChunkCache->ChunkStream);
 }
 
-static void
+void
 Dealloc(chunk_exp_cache* ChunkExpCache)
 {
   Dealloc(&ChunkExpCache->ChunkExpStream);
 }
 
-static void
+void
 Dealloc(file_cache* FileCache)
 {
   Dealloc(&FileCache->ChunkOffsets);

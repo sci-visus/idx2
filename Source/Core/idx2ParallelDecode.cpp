@@ -1,4 +1,19 @@
-#if defined(idx2_Parallel_Decode)
+#if !defined(idx2_Parallel_Decode)
+
+#include "idx2Decode.h"
+namespace idx2
+{
+
+error<idx2_err_code>
+ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
+{
+  return idx2_Error(idx2_err_code::OptionNotSupported);
+}
+
+}
+
+
+#else
 
 #include "Array.h"
 #include "BitStream.h"
@@ -26,7 +41,6 @@
 
 namespace idx2
 {
-
 
 error<idx2_err_code>
 ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf);
