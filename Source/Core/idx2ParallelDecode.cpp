@@ -373,6 +373,49 @@ DecodeTask(const idx2_file& Idx2,
 }
 
 
+static void
+ComputeExtentsForTraversal(const idx2_file& Idx2,
+                           const params& P,
+                           i8 Level,
+                           extent* ExtentInBricks,
+                           extent* ExtentInChunks,
+                           extent* ExtentInFiles,
+                           extent* VolExtentInBricks,
+                           extent* VolExtentInChunks,
+                           extent* VolExtentInFiles)
+{
+  extent Ext = P.DecodeExtent;                  // this is in unit of samples
+  v3i B3, Bf3, Bl3, C3, Cf3, Cl3, F3, Ff3, Fl3; // Brick dimensions, brick first, brick last
+  B3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Level);
+  C3 = Idx2.BricksPerChunk3s[Level] * B3;
+  F3 = C3 * Idx2.ChunksPerFile3s[Level];
+
+  Bf3 = From(Ext) / B3;
+  Bl3 = Last(Ext) / B3;
+  Cf3 = From(Ext) / C3;
+  Cl3 = Last(Ext) / C3;
+  Ff3 = From(Ext) / F3;
+  Fl3 = Last(Ext) / F3;
+
+  *ExtentInBricks = extent(Bf3, Bl3 - Bf3 + 1);
+  *ExtentInChunks = extent(Cf3, Cl3 - Cf3 + 1);
+  *ExtentInFiles  = extent(Ff3, Fl3 - Ff3 + 1);
+
+  extent VolExt(Idx2.Dims3);
+  v3i Vbf3, Vbl3, Vcf3, Vcl3, Vff3, Vfl3; // VolBrickFirst, VolBrickLast
+  Vbf3 = From(VolExt) / B3;
+  Vbl3 = Last(VolExt) / B3;
+  Vcf3 = From(VolExt) / C3;
+  Vcl3 = Last(VolExt) / C3;
+  Vff3 = From(VolExt) / F3;
+  Vfl3 = Last(VolExt) / F3;
+
+  *VolExtentInBricks = extent(Vbf3, Vbl3 - Vbf3 + 1);
+  *VolExtentInChunks = extent(Vcf3, Vcl3 - Vcf3 + 1);
+  *VolExtentInFiles  = extent(Vff3, Vfl3 - Vff3 + 1);
+}
+
+
 /* TODO: dealloc chunks after we are done with them */
 error<idx2_err_code>
 ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
@@ -420,35 +463,10 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     if (Idx2.DecodeSubbandMasks[Level] == 0)
       break;
 
-    extent Ext = P.DecodeExtent;                  // this is in unit of samples
-    v3i B3, Bf3, Bl3, C3, Cf3, Cl3, F3, Ff3, Fl3; // Brick dimensions, brick first, brick last
-    B3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Level);
-    C3 = Idx2.BricksPerChunk3s[Level] * B3;
-    F3 = C3 * Idx2.ChunksPerFile3s[Level];
-
-    Bf3 = From(Ext) / B3;
-    Bl3 = Last(Ext) / B3;
-    Cf3 = From(Ext) / C3;
-    Cl3 = Last(Ext) / C3;
-    Ff3 = From(Ext) / F3;
-    Fl3 = Last(Ext) / F3;
-
-    extent ExtentInBricks(Bf3, Bl3 - Bf3 + 1);
-    extent ExtentInChunks(Cf3, Cl3 - Cf3 + 1);
-    extent ExtentInFiles(Ff3, Fl3 - Ff3 + 1);
-
-    extent VolExt(Idx2.Dims3);
-    v3i Vbf3, Vbl3, Vcf3, Vcl3, Vff3, Vfl3; // VolBrickFirst, VolBrickLast
-    Vbf3 = From(VolExt) / B3;
-    Vbl3 = Last(VolExt) / B3;
-    Vcf3 = From(VolExt) / C3;
-    Vcl3 = Last(VolExt) / C3;
-    Vff3 = From(VolExt) / F3;
-    Vfl3 = Last(VolExt) / F3;
-
-    extent VolExtentInBricks(Vbf3, Vbl3 - Vbf3 + 1);
-    extent VolExtentInChunks(Vcf3, Vcl3 - Vcf3 + 1);
-    extent VolExtentInFiles(Vff3, Vfl3 - Vff3 + 1);
+    extent ExtentInBricks, ExtentInChunks, ExtentInFiles;
+    extent VolExtentInBricks, VolExtentInChunks, VolExtentInFiles;
+    ComputeExtentsForTraversal(Idx2, P, Level, &ExtentInBricks, &ExtentInChunks, &ExtentInFiles, &VolExtentInBricks, &VolExtentInChunks, &VolExtentInFiles);
+    v3i B3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Level);
 
     idx2_FileTraverse(
       //      u64 FileAddr = FileTop.Address;
@@ -468,6 +486,7 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             std::unique_lock<std::mutex> Lock(D.Mutex);
             ++D.NTasks;
           }
+
           auto Task = stlab::async(stlab::default_executor, [&, Ds, Top, OutGrid, B3, Tolerance]()  mutable {
             DecodeTask(Idx2, P, &D, Ds, Top, OutGrid, B3, Tolerance, &OutVol, &OutVolMem);
           });
