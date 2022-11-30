@@ -81,10 +81,10 @@ struct params
   cstr InputFile = nullptr; // TODO: change this to local storage
   int NLevels = 1;
   f64 Tolerance = 1e-7;
-  int BricksPerChunk = 512;
+  int BricksPerChunk = 4096;
   int ChunksPerFile = 64;
   int FilesPerDir = 512;
-  int BitPlanesPerChunk = 4;
+  int BitPlanesPerChunk = 1;
   int BitPlanesPerFile = 16;
   /* decode exclusive */
   extent DecodeExtent;
@@ -152,11 +152,11 @@ struct idx2_file
   f64 Tolerance = 0;
   i8 NLevels = 1;
   int FilesPerDir = 512; // maximum number of files (or sub-directories) per directory
-  int BricksPerChunkIn = 512;
+  int BricksPerChunkIn = 4096;
   int ChunksPerFileIn = 64;
-  int BitPlanesPerChunk = 4;
+  int BitPlanesPerChunk = 1;
   int BitPlanesPerFile = 16;
-  stack_array<int, MaxLevels> BricksPerChunk = { { 512 } };
+  stack_array<int, MaxLevels> BricksPerChunk = { { 4096 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
   stack_array<int, MaxLevels> FilesPerVol = { { 4096 } };         // power of two
