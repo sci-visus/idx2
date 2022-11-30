@@ -238,16 +238,18 @@ ParallelDecodeBrick(const idx2_file& Idx2,
       u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
       u64 PKey = GetBrickKey(NextLevel, PBrick);
       // wait for parent to finish decoding
-      brick_volume Pb;
-      while (true)
-      {
-        D->BrickPoolMutex.lock();
-        Pb = *Lookup(D->BrickPool.BrickTable, PKey).Val;
-        D->BrickPoolMutex.unlock();
-        if (Pb.DoneDecoding)
-          break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
+      D->BrickPoolMutex.lock();
+      brick_volume Pb = *Lookup(D->BrickPool.BrickTable, PKey).Val;
+      D->BrickPoolMutex.unlock();
+      //while (true)
+      //{
+      //  D->BrickPoolMutex.lock();
+      //  Pb = *Lookup(D->BrickPool.BrickTable, PKey).Val;
+      //  D->BrickPoolMutex.unlock();
+      //  if (Pb.DoneDecoding)
+      //    break;
+      //  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      //}
       /* copy data from the parent to the current brick for subband 0 */
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
       grid SbGridNonExt = S.Grid;
@@ -360,13 +362,6 @@ DecodeTask(const idx2_file& Idx2,
     }
   }
 
-  {
-    std::unique_lock<std::mutex> Lock(D->Mutex);
-    //printf("ntasks = %d\n", D->NTasks);
-    --D->NTasks;
-  }
-  if (D->NTasks == 0)
-    D->AllTasksDone.notify_all();
 
   return idx2_Error(idx2_err_code::NoError);
 }
@@ -428,6 +423,8 @@ TraverseSecondLevel(const idx2_file& Idx2,
   f64 Tolerance = Max(Idx2.Tolerance, P.DecodeTolerance);
   idx2_InclusiveForBackward (i8, Level, Idx2.NLevels - 1, 0)
   {
+    if (Idx2.DecodeSubbandMasks[Level] == 0)
+      break;
     extent ExtentInBricks, ExtentInChunks, ExtentInFiles;
     extent VolExtentInBricks, VolExtentInChunks, VolExtentInFiles;
     ComputeExtentsForTraversal(Idx2,
@@ -448,11 +445,6 @@ TraverseSecondLevel(const idx2_file& Idx2,
           Ds.Level = Level;
           Ds.Brick3 = Top.BrickFrom3;
           Ds.Brick = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
-          {
-            std::unique_lock<std::mutex> Lock(D->Mutex);
-            ++D->NTasks;
-          }
-
           DecodeTask(Idx2, P, D, Ds, Top, OutGrid, B3, Tolerance, OutVolFile, OutVolMem);
           ,
           64,
@@ -470,6 +462,14 @@ TraverseSecondLevel(const idx2_file& Idx2,
         VolExtentInChunks);
       , 64, Idx2.FilesOrder[Level], v3i(0), Idx2.NFiles3[Level], ExtentInFiles, VolExtentInFiles);
   }
+
+  {
+    std::unique_lock<std::mutex> Lock(D->Mutex);
+    //printf("ntasks = %d\n", D->NTasks);
+    --D->NTasks;
+  }
+  if (D->NTasks == 0)
+    D->AllTasksDone.notify_all();
 
   return idx2_Error(idx2_err_code::NoError);
 }
@@ -500,13 +500,17 @@ TraverseFirstLevel(const idx2_file& Idx2,
   idx2_FileTraverse(
     idx2_ChunkTraverse(
       idx2_BrickTraverse(
+        extent BrickExtent = extent(Top.BrickFrom3 * B3, B3);
         {
           std::unique_lock<std::mutex> Lock(D->Mutex);
           ++D->NTasks;
         }
-        extent BrickExtent = extent(Top.BrickFrom3 * B3, B3);
-        // TODO: launch the second level traversal in task
-        TraverseSecondLevel(Idx2, P, D, BrickExtent, OutGrid, OutVolFile, OutVolMem);
+        auto Task = stlab::async(stlab::default_executor,
+          [&, BrickExtent]() mutable
+          {
+            TraverseSecondLevel(Idx2, P, D, BrickExtent, OutGrid, OutVolFile, OutVolMem);
+          });
+        Task.detach();
         ,
         64,
         Idx2.BricksOrderInChunk[Level],
@@ -569,13 +573,9 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 
   TraverseFirstLevel(Idx2, P, &D, OutGrid, &OutVolFile, &OutVolMem);
 
-  //if (Idx2.DecodeSubbandMasks[Level] == 0)
-  //  break;
-
-
-  //std::unique_lock<std::mutex> Lock(D.Mutex);
-  //D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
-  //stlab::pre_exit();
+  std::unique_lock<std::mutex> Lock(D.Mutex);
+  D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
+  stlab::pre_exit();
 
   if (P.OutMode == params::out_mode::HashMap)
   {
