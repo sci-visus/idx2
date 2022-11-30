@@ -419,7 +419,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Level));
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
-            if (P.OutMode != params::out_mode::HashMap)
+            if (P.OutMode == params::out_mode::RegularGridFile ||
+                P.OutMode == params::out_mode::RegularGridMem)
             {
               auto OutputVol = P.OutMode == params::out_mode::RegularGridFile ? &OutVol.Vol : &OutVolMem;
               auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)

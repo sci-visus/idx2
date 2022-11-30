@@ -134,7 +134,7 @@ ParallelDecodeSubband(const idx2_file& Idx2,
         chunk_cache ChunkCache = Value(ReadChunkResult); // making a copy to avoid data race
         u64* BrickPos = BinarySearch(idx2_Range(ChunkCache.Bricks), Brick);
         idx2_Assert(BrickPos != End(ChunkCache.Bricks));
-        idx2_Assert(*BrickPos == Brick);
+        //idx2_Assert(*BrickPos == Brick);
         i64 BrickInChunk = BrickPos - Begin(ChunkCache.Bricks);
         idx2_Assert(BrickInChunk < Size(ChunkCache.BrickSizes));
         i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache.BrickSizes[BrickInChunk - 1];
@@ -241,15 +241,6 @@ ParallelDecodeBrick(const idx2_file& Idx2,
       D->BrickPoolMutex.lock();
       brick_volume Pb = *Lookup(D->BrickPool.BrickTable, PKey).Val;
       D->BrickPoolMutex.unlock();
-      //while (true)
-      //{
-      //  D->BrickPoolMutex.lock();
-      //  Pb = *Lookup(D->BrickPool.BrickTable, PKey).Val;
-      //  D->BrickPoolMutex.unlock();
-      //  if (Pb.DoneDecoding)
-      //    break;
-      //  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      //}
       /* copy data from the parent to the current brick for subband 0 */
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
       grid SbGridNonExt = S.Grid;
@@ -268,9 +259,9 @@ ParallelDecodeBrick(const idx2_file& Idx2,
         if (DeleteBrick)
         { // TODO: cannot delete the brick because we don't know if the last child is run last
           // need a "cleanup" function to delete the brick later
-          //std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
-          //Dealloc(&Pb.Vol);
-          //Delete(&D->BrickPool.BrickTable, PKey);
+          std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
+          Dealloc(&Pb.Vol);
+          Delete(&D->BrickPool.BrickTable, PKey);
         }
       } // end last child
     } // end subband 0
@@ -337,7 +328,8 @@ DecodeTask(const idx2_file& Idx2,
     grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Ds.Level));
     grid OutBrickGrid = Crop(OutGrid, BrickGrid);
     grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
-    if (P.OutMode != params::out_mode::HashMap)
+    if (P.OutMode == params::out_mode::RegularGridFile ||
+        P.OutMode == params::out_mode::RegularGridMem)
     {
       auto OutputVol =
         P.OutMode == params::out_mode::RegularGridFile ? &OutVol->Vol : OutVolMem;
@@ -501,14 +493,15 @@ TraverseFirstLevel(const idx2_file& Idx2,
     idx2_ChunkTraverse(
       idx2_BrickTraverse(
         extent BrickExtent = extent(Top.BrickFrom3 * B3, B3);
+        extent BrickExtentCrop = Crop(BrickExtent, P.DecodeExtent);
         {
           std::unique_lock<std::mutex> Lock(D->Mutex);
           ++D->NTasks;
         }
         auto Task = stlab::async(stlab::default_executor,
-          [&, BrickExtent]() mutable
+          [&, BrickExtentCrop]()
           {
-            TraverseSecondLevel(Idx2, P, D, BrickExtent, OutGrid, OutVolFile, OutVolMem);
+            TraverseSecondLevel(Idx2, P, D, BrickExtentCrop, OutGrid, OutVolFile, OutVolMem);
           });
         Task.detach();
         ,
