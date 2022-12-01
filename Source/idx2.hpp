@@ -9154,10 +9154,10 @@ struct params
   cstr InputFile = nullptr; // TODO: change this to local storage
   int NLevels = 1;
   f64 Tolerance = 1e-7;
-  int BricksPerChunk = 512;
+  int BricksPerChunk = 4096;
   int ChunksPerFile = 64;
   int FilesPerDir = 512;
-  int BitPlanesPerChunk = 4;
+  int BitPlanesPerChunk = 1;
   int BitPlanesPerFile = 16;
   /* decode exclusive */
   extent DecodeExtent;
@@ -9224,11 +9224,11 @@ struct idx2_file
   f64 Tolerance = 0;
   i8 NLevels = 1;
   int FilesPerDir = 512; // maximum number of files (or sub-directories) per directory
-  int BricksPerChunkIn = 512;
+  int BricksPerChunkIn = 4096;
   int ChunksPerFileIn = 64;
-  int BitPlanesPerChunk = 4;
+  int BitPlanesPerChunk = 1;
   int BitPlanesPerFile = 16;
-  stack_array<int, MaxLevels> BricksPerChunk = { { 512 } };
+  stack_array<int, MaxLevels> BricksPerChunk = { { 4096 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
   stack_array<int, MaxLevels> FilesPerVol = { { 4096 } };         // power of two
@@ -43207,7 +43207,7 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
         {
           idx2_Assert(Expr->type == SE_STRING);
           memcpy(Idx2->Field, Buf.Data + Expr->s.start, Expr->s.len);
-          Idx2->Name[Expr->s.len] = 0;
+          Idx2->Field[Expr->s.len] = 0;
           //          printf("Field = %s\n", Idx2->Field);
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "dimensions"))
@@ -44496,7 +44496,8 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
             grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Level));
             grid OutBrickGrid = Crop(OutGrid, BrickGrid);
             grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
-            if (P.OutMode != params::out_mode::HashMap)
+            if (P.OutMode == params::out_mode::RegularGridFile ||
+                P.OutMode == params::out_mode::RegularGridMem)
             {
               auto OutputVol = P.OutMode == params::out_mode::RegularGridFile ? &OutVol.Vol : &OutVolMem;
               auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)

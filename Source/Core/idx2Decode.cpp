@@ -162,12 +162,15 @@ DecodeSubband(const idx2_file& Idx2,
         idx2_Assert(BrickIt != End(ChunkCache->Bricks));
         idx2_Assert(*BrickIt == Brick);
         i64 BrickInChunk = BrickIt - Begin(ChunkCache->Bricks);
-        idx2_Assert(BrickInChunk < Size(ChunkCache->BrickSizes));
-        i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSizes[BrickInChunk - 1];
-        BrickOffset += Size(ChunkCache->ChunkStream);
+        idx2_Assert(BrickInChunk < Size(ChunkCache->BrickOffsets));
+        i64 BrickOffset = ChunkCache->BrickOffsets[BrickInChunk];
+        // TODO: this addition is to bypass the part of the chunk stream that stores the brick offsets
+        // but this is only correct if the first brick to decode is also first in the chunk stream
+        //BrickOffset += Size(ChunkCache->ChunkStream);
         Insert(&StreamIt, BpKey, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
         // seek to the correct byte offset of the brick in the chunk
+        printf("stream end %llu  brick offset %llu\n", Size(Stream->Stream), BrickOffset);
         SeekToByte(Stream, BrickOffset);
       }
       else // if the stream already exists
@@ -522,13 +525,19 @@ DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddres
     ChunkCache->Bricks[I] = Brick;
     idx2_Assert(Brk == (Brick >> L));
   }
-  Resize(&ChunkCache->BrickSizes, NBricks);
 
+  Resize(&ChunkCache->BrickOffsets, NBricks);
   /* decompress and store the brick sizes */
   i32 BrickSize = 0;
   SeekToNextByte(ChunkStream);
-  idx2_ForEach (BrickSzIt, ChunkCache->BrickSizes)
-    *BrickSzIt = BrickSize += (i32)ReadVarByte(ChunkStream);
+  ChunkCache->BrickOffsets[0] = 0;
+  idx2_For (int, I, 1, Size(ChunkCache->BrickOffsets))
+  {
+    ChunkCache->BrickOffsets[I] = (BrickSize += (i32)ReadVarByte(ChunkStream));
+  }
+  ReadVarByte(ChunkStream); // the size of the last brick (ignored here)
+  idx2_ForEach (BrickSzIt, ChunkCache->BrickOffsets)
+    *BrickSzIt += Size(*ChunkStream);
   ChunkCache->ChunkStream = *ChunkStream;
 }
 

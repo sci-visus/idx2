@@ -20,11 +20,12 @@ namespace idx2
 
 struct decode_state
 {
+  brick_volume ParentBrick;
+  v3i Brick3;
+  u64 Brick;
+  i32 BrickInChunk;
   i8 Level;
   i8 Subband;
-  u64 Brick;
-  v3i Brick3;
-  i32 BrickInChunk;
 };
 
 

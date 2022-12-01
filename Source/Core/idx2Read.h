@@ -14,7 +14,7 @@ struct chunk_cache
 {
   i32 ChunkPos; // chunk position in the offset array (also chunk order in the file)
   array<u64> Bricks;
-  array<i32> BrickSizes;
+  array<i32> BrickOffsets;
   bitstream ChunkStream;
 };
 
@@ -62,7 +62,7 @@ DeallocFileCacheTable(file_cache_table* FileCacheTable);
 idx2_Inline i64
 Size(const chunk_cache& C)
 {
-  return Size(C.Bricks) * sizeof(C.Bricks[0]) + Size(C.BrickSizes) * sizeof(C.BrickSizes[0]) +
+  return Size(C.Bricks) * sizeof(C.Bricks[0]) + Size(C.BrickOffsets) * sizeof(C.BrickOffsets[0]) +
          sizeof(C.ChunkPos) +
          Size(C.ChunkStream.Stream);
 }

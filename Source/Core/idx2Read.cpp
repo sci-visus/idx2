@@ -15,7 +15,7 @@ void
 Dealloc(chunk_cache* ChunkCache)
 {
   Dealloc(&ChunkCache->Bricks);
-  Dealloc(&ChunkCache->BrickSizes);
+  Dealloc(&ChunkCache->BrickOffsets);
   Dealloc(&ChunkCache->ChunkStream);
 }
 
@@ -217,7 +217,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
     idx2_FSeek(Fp, ChunkOffset, SEEK_SET);
     bitstream ChunkStream;
     // NOTE: not a memory leak since we will keep track of this in ChunkCache
-    InitWrite(&ChunkStream, ChunkSize);
+    InitWrite(&ChunkStream, ChunkSize + 8);
     ReadBuffer(Fp, &ChunkStream.Stream);
     D->BytesData_ += Size(ChunkStream.Stream);
     D->DecodeIOTime_ += ElapsedTime(&IOTimer);
