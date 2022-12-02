@@ -9343,7 +9343,7 @@ struct chunk_cache
 {
   i32 ChunkPos; // chunk position in the offset array (also chunk order in the file)
   array<u64> Bricks;
-  array<i32> BrickSizes;
+  array<i32> BrickOffsets;
   bitstream ChunkStream;
 };
 
@@ -9387,7 +9387,7 @@ DeallocFileCacheTable(file_cache_table* FileCacheTable);
 idx2_Inline i64
 Size(const chunk_cache& C)
 {
-  return Size(C.Bricks) * sizeof(C.Bricks[0]) + Size(C.BrickSizes) * sizeof(C.BrickSizes[0]) +
+  return Size(C.Bricks) * sizeof(C.Bricks[0]) + Size(C.BrickOffsets) * sizeof(C.BrickOffsets[0]) +
          sizeof(C.ChunkPos) +
          Size(C.ChunkStream.Stream);
 }
@@ -9517,11 +9517,12 @@ namespace idx2
 
 struct decode_state
 {
+  brick_volume ParentBrick;
+  v3i Brick3;
+  u64 Brick;
+  i32 BrickInChunk;
   i8 Level;
   i8 Subband;
-  u64 Brick;
-  v3i Brick3;
-  i32 BrickInChunk;
 };
 
 struct decode_data
@@ -44213,6 +44214,13 @@ DecodeSubband(const idx2_file& Idx2,
                  : (i16)Read(&BrickExpsStream, traits<f32>::ExpBits) - traits<f32>::ExpBias;
     i8 N = 0;
     i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType)), NBitPlanes);
+    static int BreakCount = 0;
+    ++BreakCount;
+    if (BreakCount == 616142)
+    {
+      int Stop = 0;
+    }
+    auto E = Exponent(Tolerance);
     int NBitPlanesDecoded = Exponent(Tolerance) - 6 - EMax + 1;
     i8 NBps = 0;
     int Bpc = Idx2.BitPlanesPerChunk;
@@ -44241,12 +44249,15 @@ DecodeSubband(const idx2_file& Idx2,
         idx2_Assert(BrickIt != End(ChunkCache->Bricks));
         idx2_Assert(*BrickIt == Brick);
         i64 BrickInChunk = BrickIt - Begin(ChunkCache->Bricks);
-        idx2_Assert(BrickInChunk < Size(ChunkCache->BrickSizes));
-        i64 BrickOffset = BrickInChunk == 0 ? 0 : ChunkCache->BrickSizes[BrickInChunk - 1];
-        BrickOffset += Size(ChunkCache->ChunkStream);
+        idx2_Assert(BrickInChunk < Size(ChunkCache->BrickOffsets));
+        i64 BrickOffset = ChunkCache->BrickOffsets[BrickInChunk];
+        // TODO: this addition is to bypass the part of the chunk stream that stores the brick offsets
+        // but this is only correct if the first brick to decode is also first in the chunk stream
+        //BrickOffset += Size(ChunkCache->ChunkStream);
         Insert(&StreamIt, BpKey, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
         // seek to the correct byte offset of the brick in the chunk
+        //printf("stream end %llu  brick offset %llu\n", Size(Stream->Stream), BrickOffset);
         SeekToByte(Stream, BrickOffset);
       }
       else // if the stream already exists
@@ -44257,12 +44268,15 @@ DecodeSubband(const idx2_file& Idx2,
       if (!TooHighPrecision)
         ++NBps;
       auto SizeBegin = BitSize(*Stream);
-      if (NBitPlanesDecoded <= 8)
-        Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
-      else // delay the transpose of bits to later
-        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
-      auto SizeEnd = BitSize(*Stream);
-      D->BytesDecoded_ += SizeEnd - SizeBegin;
+      if (SizeBegin < Size(Stream->Stream) * 8)
+      {
+        if (NBitPlanesDecoded <= 8)
+          Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
+        else // delay the transpose of bits to later
+          DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
+        auto SizeEnd = BitSize(*Stream);
+        D->BytesDecoded_ += SizeEnd - SizeBegin;
+      }
     } // end bit plane loop
 
     /* do inverse zfp transform but only if any bit plane is decoded */
@@ -44599,13 +44613,19 @@ DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddres
     ChunkCache->Bricks[I] = Brick;
     idx2_Assert(Brk == (Brick >> L));
   }
-  Resize(&ChunkCache->BrickSizes, NBricks);
 
+  Resize(&ChunkCache->BrickOffsets, NBricks);
   /* decompress and store the brick sizes */
   i32 BrickSize = 0;
   SeekToNextByte(ChunkStream);
-  idx2_ForEach (BrickSzIt, ChunkCache->BrickSizes)
-    *BrickSzIt = BrickSize += (i32)ReadVarByte(ChunkStream);
+  ChunkCache->BrickOffsets[0] = 0;
+  idx2_For (int, I, 1, Size(ChunkCache->BrickOffsets))
+  {
+    ChunkCache->BrickOffsets[I] = (BrickSize += (i32)ReadVarByte(ChunkStream));
+  }
+  ReadVarByte(ChunkStream); // the size of the last brick (ignored here)
+  idx2_ForEach (BrickSzIt, ChunkCache->BrickOffsets)
+    *BrickSzIt += Size(*ChunkStream);
   ChunkCache->ChunkStream = *ChunkStream;
 }
 
@@ -44785,9 +44805,14 @@ EncodeSubbandBlocks(idx2_file* Idx2,
   Clear(&E->SubbandExps);
   Reserve(&E->SubbandExps, Prod(NBlocks3));
 
+  v3i Brick3 = E->Bricks3[E->Level];
+  bool Verify = (E->Subband == 7 && E->Level == 2 && E->Bricks3[E->Level] == v3i(15, 8, 2));
+
   /* pass 1: compress the blocks */
+  int NBps = 0;
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
   { // zfp block loop
+    NBps = 0;
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2->BlockDims3;
@@ -44878,12 +44903,19 @@ EncodeSubbandBlocks(idx2_file* Idx2,
           C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
         }
         PushBack(&E->LastSigBlock, block_sig{ Block, BpKey });
+        if (Block == 64)
+          int Stop = 0;
       }
 
       /* encode the block */
       GrowIfTooFull(&C->BlockStream);
       Encode(BlockUInts, NVals, Bp, N, &C->BlockStream);
+      ++NBps;
     } // end bit plane loop
+    if (Verify)
+    {
+      printf("block %d nbps %d\n", Block, NBps);
+    }
   } // end zfp block loop
 }
 
@@ -47575,7 +47607,7 @@ void
 Dealloc(chunk_cache* ChunkCache)
 {
   Dealloc(&ChunkCache->Bricks);
-  Dealloc(&ChunkCache->BrickSizes);
+  Dealloc(&ChunkCache->BrickOffsets);
   Dealloc(&ChunkCache->ChunkStream);
 }
 
@@ -47753,6 +47785,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 
   /* find the appropriate chunk */
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
+  //printf("chunk %llu\n", ChunkAddress);
   const file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
   ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
