@@ -170,7 +170,7 @@ DecodeSubband(const idx2_file& Idx2,
         Insert(&StreamIt, BpKey, ChunkCache->ChunkStream);
         Stream = StreamIt.Val;
         // seek to the correct byte offset of the brick in the chunk
-        printf("stream end %llu  brick offset %llu\n", Size(Stream->Stream), BrickOffset);
+        //printf("stream end %llu  brick offset %llu\n", Size(Stream->Stream), BrickOffset);
         SeekToByte(Stream, BrickOffset);
       }
       else // if the stream already exists

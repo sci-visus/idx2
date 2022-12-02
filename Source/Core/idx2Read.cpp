@@ -198,6 +198,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 
   /* find the appropriate chunk */
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
+  //printf("chunk %llu\n", ChunkAddress);
   const file_cache* FileCache = FileCacheIt.Val;
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
   ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
@@ -217,7 +218,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
     idx2_FSeek(Fp, ChunkOffset, SEEK_SET);
     bitstream ChunkStream;
     // NOTE: not a memory leak since we will keep track of this in ChunkCache
-    InitWrite(&ChunkStream, ChunkSize + 8);
+    InitWrite(&ChunkStream, ChunkSize);
     ReadBuffer(Fp, &ChunkStream.Stream);
     D->BytesData_ += Size(ChunkStream.Stream);
     D->DecodeIOTime_ += ElapsedTime(&IOTimer);

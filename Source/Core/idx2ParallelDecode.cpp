@@ -209,23 +209,6 @@ ParallelDecodeBrick(const idx2_file& Idx2,
                     f64 Tolerance)
 {
   i8 Level = Ds.Level;
-  u64 Brick = Ds.Brick;
-  printf("level %d brick " idx2_PrStrV3i " %llu\n", Level, idx2_PrV3i(Ds.Brick3), Brick);
-  u64 BrickKey = GetBrickKey(Level, Brick);
-  if (SeenBricks.find(BrickKey) == SeenBricks.end())
-  {
-    SeenBricks.insert(BrickKey);
-  }
-  else
-  {
-    int Stop = 0;
-  }
-  //D->BrickPoolMutex.lock();
-  //auto BrickIt = Lookup(D->BrickPool.BrickTable, GetBrickKey(Level, BrickKey));
-  // NOTE: we make a copy to avoid the pointer being invalidated by another thread modifying BrickTable
-  //brick_volume BrickVol = *BrickIt.Val;
-  //auto CachedLogCapacity = BrickIt.Ht->LogCapacity;
-  //D->BrickPoolMutex.unlock();
   brick_volume BrickVol;
   volume& Vol = BrickVol.Vol;
   Resize(&Vol, Idx2.BrickDimsExt3, dtype::float64, D->Alloc);
@@ -253,10 +236,6 @@ ParallelDecodeBrick(const idx2_file& Idx2,
       v3i PBrick3 = Brick3 / Idx2.GroupBrick3;
       u64 PBrick = GetLinearBrick(Idx2, NextLevel, PBrick3);
       u64 PKey = GetBrickKey(NextLevel, PBrick);
-      // wait for parent to finish decoding
-     // D->BrickPoolMutex.lock();
-      //brick_volume Pb = *Lookup(D->BrickPool.BrickTable, PKey).Val;
-      //D->BrickPoolMutex.unlock();
       brick_volume& Pb = Ds.ParentBrick;
       /* copy data from the parent to the current brick for subband 0 */
       v3i LocalBrickPos3 = Brick3 % Idx2.GroupBrick3;
@@ -264,11 +243,6 @@ ParallelDecodeBrick(const idx2_file& Idx2,
       SetDims(&SbGridNonExt, SbDimsNonExt3);
       extent PGrid(LocalBrickPos3 * SbDimsNonExt3, SbDimsNonExt3); // parent grid
       CopyExtentGrid<f64, f64>(PGrid, Pb.Vol, SbGridNonExt, &Vol);
-      v3i First3 = (Brick3 / Idx2.GroupBrick3) * Idx2.GroupBrick3;
-      // TODO: need to crop against the decode extent
-      extent E = Crop(extent(First3, Idx2.GroupBrick3), extent(Idx2.NBricks3[Level]));
-      // TODO: we can delete bricks in the outter loop
-      v3i Last3 = Last(E);
       // if last child, delete the parent if needed
       if (Brick3 == v3i(0)) // last child (the stack traversal goes backward)
       {
@@ -278,9 +252,7 @@ ParallelDecodeBrick(const idx2_file& Idx2,
         if (DeleteBrick)
         { // TODO: cannot delete the brick because we don't know if the last child is run last
           // need a "cleanup" function to delete the brick later
-          std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
           Dealloc(&Pb.Vol);
-          //Delete(&D->BrickPool.BrickTable, PKey);
         }
       } // end last child
     } // end subband 0
@@ -296,13 +268,8 @@ ParallelDecodeBrick(const idx2_file& Idx2,
   bool CoarsestLevel = Level + 1 == Idx2.NLevels;
   InverseCdf53(Idx2.BrickDimsExt3, Ds.Level, Idx2.Subbands, Idx2.TransformDetails, &Vol, CoarsestLevel);
 
-  // printf("%d\n", AnySubbandDecoded);
-  //std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
-  //if (BrickIt.Ht->LogCapacity != CachedLogCapacity)
-  //  BrickIt = Lookup(D->BrickPool.BrickTable, BrickKey);
   BrickVol.DoneDecoding = true;
   BrickVol.Significant = Significant;
-  // TODO: if output is HashMap, need to add to the hash map
 
   return BrickVol;
 }
@@ -326,6 +293,7 @@ DecodeTask(const idx2_file& Idx2,
   // Copy the samples out to the output buffer (or file)
   // The Idx2.DecodeSubbandMasks[Level - 1] == 0 means that no subbands on the next level
   // will be decoded, so we can now just copy the result out
+  brick_volume& BVol = Value(Result);
   if (Ds.Level == 0 || Idx2.DecodeSubbandMasks[Ds.Level - 1] == 0)
   {
     grid BrickGrid(Ds.Brick3 * B3, Idx2.BrickDims3, v3i(1 << Ds.Level));
@@ -338,19 +306,32 @@ DecodeTask(const idx2_file& Idx2,
         P.OutMode == params::out_mode::RegularGridFile ? &OutVol->Vol : OutVolMem;
       auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
                                                         : (CopyGridGrid<f64, f64>);
-      // TODO: lock (maybe) this?
-      brick_volume& BVol = Value(Result);
       CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
       Dealloc(&BVol); // TODO: dealloc here or outside?
     }
     else if (P.OutMode == params::out_mode::HashMap)
     {
-      brick_volume& BVol = Value(Result);
       if (!BVol.Significant)
       {
         Dealloc(&BVol);
       }
       else
+      {
+        u64 BrickKey = GetBrickKey(Ds.Level, Ds.Brick);
+        std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
+        Insert(&D->BrickPool.BrickTable, BrickKey, BVol);
+      }
+    }
+    else if (P.OutMode == params::out_mode::NoOutput)
+    {
+      Dealloc(&BVol);
+    }
+  }
+  else // not the finest level
+  {
+    if (P.OutMode == params::out_mode::HashMap)
+    {
+      if (BVol.Significant)
       {
         u64 BrickKey = GetBrickKey(Ds.Level, Ds.Brick);
         std::unique_lock<std::mutex> Lock(D->BrickPoolMutex);
@@ -421,26 +402,32 @@ TraverseSecondLevel(const idx2_file& Idx2,
   int LastIndex = 0;
   idx2_RAII(array<decode_state>, BrickStack, Reserve(&BrickStack, 128), Dealloc(&BrickStack));
   PushBack(&BrickStack, First);
+  expected<brick_volume, idx2_err_code> Result;
   while (Size(BrickStack) > 0)
   {
     decode_state Current = Back(BrickStack);
+    //printf("level %d current " idx2_PrStrV3i "\n", Current.Level, idx2_PrV3i(Current.Brick3));
     PopBack(&BrickStack);
     i8 NextLevel = Current.Level - 1;
     // TODO: check for error
-    auto Result = DecodeTask(Idx2, P, D, Current, OutGrid, Tolerance, OutVolFile, OutVolMem);
-    if (!Result)
-      return Error(Result);
-
-    if (NextLevel < 0 || Idx2.DecodeSubbandMasks[NextLevel] == 0)
-      continue;
-
     v3i B3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Current.Level);
     extent ExtentInBricks, ExtentInChunks, ExtentInFiles;
     extent VolExtentInBricks, VolExtentInChunks, VolExtentInFiles;
     extent CurrentExtent = extent(Current.Brick3 * B3, B3);
     extent CurrentExtentCrop = Crop(CurrentExtent, P.DecodeExtent);
+    //printf("  extent     " idx2_PrStrExt "\n", idx2_PrExt(CurrentExtent));
+    //printf("  extent crop" idx2_PrStrExt "\n", idx2_PrExt(CurrentExtentCrop));
+    if (Prod<i64>(Dims(CurrentExtentCrop)) == 0)
+      continue;
+    Result = DecodeTask(Idx2, P, D, Current, OutGrid, Tolerance, OutVolFile, OutVolMem);
+    if (!Result)
+      goto EXIT;
+
+    if (NextLevel < 0 || Idx2.DecodeSubbandMasks[NextLevel] == 0)
+      continue;
+
     ComputeExtentsForTraversal(Idx2,
-                               CurrentExtentCrop,
+                               CurrentExtent,
                                NextLevel,
                                &ExtentInBricks,
                                &ExtentInChunks,
@@ -476,14 +463,17 @@ TraverseSecondLevel(const idx2_file& Idx2,
 
 
   }
-  Dealloc(&BrickStack);
 
+  EXIT:
   {
     std::unique_lock<std::mutex> Lock(D->Mutex);
     --D->NTasks;
   }
   if (D->NTasks == 0)
     D->AllTasksDone.notify_all();
+
+  if (!Result)
+    return Error(Result);
 
   return idx2_Error(idx2_err_code::NoError);
 }
@@ -525,8 +515,8 @@ TraverseFirstLevel(const idx2_file& Idx2,
         First.Level = Level;
         First.Brick3 = Top.BrickFrom3;
         First.Brick = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
-        auto Task = stlab::async(stlab::immediate_executor,
-          [&, BrickExtentCrop]()
+        auto Task = stlab::async(stlab::default_executor,
+          [&, First, BrickExtentCrop]()
           {
             TraverseSecondLevel(Idx2, P, D, First, BrickExtentCrop, OutGrid, OutVolFile, OutVolMem);
           });
