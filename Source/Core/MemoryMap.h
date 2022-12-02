@@ -14,6 +14,10 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <Windows.h>
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
 #include <fcntl.h>
