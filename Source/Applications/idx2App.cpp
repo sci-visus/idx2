@@ -150,9 +150,15 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
               "Example: --num_levels 2\n");
 
   // Parse the tolerance (--tolerance)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->Tolerance),
-              "Provide --tolerance for absolute error tolerance\n"
-              "Example: --tolerance 1e-9\n");
+  OptVal(Argc, Argv, "--tolerance", &P->Tolerance);
+  if (P->Tolerance == 0)
+  {
+    if (P->Meta.DType == dtype::float32)
+      P->Tolerance = GetMachineEpsilon<f32>();
+    else if (P->Meta.DType == dtype::float64)
+      P->Tolerance = GetMachineEpsilon<f64>();
+    printf("tolerance = %.16f (machine epsilon)\n", P->Tolerance);
+  }
 
   OptVal(Argc, Argv, "--bit_planes_per_chunk", &P->BitPlanesPerChunk);
   OptVal(Argc, Argv, "--bit_planes_per_file", &P->BitPlanesPerFile);

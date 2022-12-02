@@ -80,7 +80,7 @@ struct params
   array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
   int NLevels = 1;
-  f64 Tolerance = 1e-7;
+  f64 Tolerance = 0;
   int BricksPerChunk = 4096;
   int ChunksPerFile = 64;
   int FilesPerDir = 512;

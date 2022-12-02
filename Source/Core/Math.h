@@ -915,4 +915,18 @@ TriLerp(t V000, t V100, t V010, t V110, t V001, t V101, t V011, t V111, const v3
 }
 
 
+template <typename t>
+constexpr t GetMachineEpsilon()
+{
+  t Eps = t(0.5);
+  t PrevEps;
+  while ((1 + Eps) != 1)
+  {
+    PrevEps = Eps;
+    Eps /= 2;
+  }
+  return Eps;
+}
+
+
 } // namespace idx2
