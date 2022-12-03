@@ -18,7 +18,7 @@ The optional dependencies are only needed if `BUILD_IDX2PY` is set to `ON` in CM
 
 # Using the `idx2App` command line tool to encode raw to idx2
 ```
-idx2App --encode Miranda-Viscosity-[384-384-256]-Float64.raw --tolerance 1e-16 --num_levels 2 --out_dir .
+idx2App --encode Miranda-Viscosity-[384-384-256]-Float64.raw
 ```
 
 For convenience, the dimensions of the input are automatically parsed if the input file is named in the `Name-Field-[DimX-DimY-DimZ]-Type.raw` format.

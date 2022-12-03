@@ -285,5 +285,33 @@ FlushChunks_v2(const idx2_file& Idx2, encode_data* E)
 }
 
 
+void
+PrintStats_v2(cstr MetaFileName)
+{
+  FILE* Fp = fopen(MetaFileName, "a");
+  fprintf(Fp, "\n\n---------------- Statistics ----------------\n\n");
+  fprintf(Fp, "num chunks = %" PRIi64 " (bit plane) and %" PRIi64 " (exponent) \n", BitPlaneChunksStat.Count(), CompressedExpChunksStat.Count());
+  fprintf(Fp, "bit plane chunk: total = %d avg = %d stddev = %d bytes\n",
+         (int)BitPlaneChunksStat.Sum(),
+         (int)BitPlaneChunksStat.Avg(),
+         (int)BitPlaneChunksStat.StdDev());
+  fprintf(Fp, "  (metadata) brick deltas = %d bytes\n", (int)BrickDeltasStat.Sum());
+  fprintf(Fp, "  (metadata) brick sizes = %d bytes\n", (int)BrickSizesStat.Sum());
+  fprintf(Fp, "  (metadata) chunk sizes = %d bytes\n", (int)ChunkSizesStat.Sum());
+  fprintf(Fp, "  (metadata) chunk addresses: uncompressed = %d, compressed = %d bytes\n",
+         (int)UncompressedChunkAddressesStat.Sum(), (int)CompressedChunkAddressesStat.Sum());
+  fprintf(Fp, "exponent chunk:\n");
+  fprintf(Fp, "  uncompressed: total = %d bytes\n", (int)UncompressedExpChunksStat.Sum());
+  fprintf(Fp, "  compressed: total = %d avg = %d stddev = %d bytes\n",
+         (int) CompressedExpChunksStat.Sum(),
+         (int) CompressedExpChunksStat.Avg(),
+         (int) CompressedExpChunksStat.StdDev());
+  fprintf(Fp, "  (metadata) chunk sizes = %d bytes\n", (int)ExpChunkSizesStat.Sum());
+  fprintf(Fp, "  (metadata) chunk addresses: uncompressed = %d, compressed = %d bytes\n",
+         (int)UncompressedExpChunkAddressesStat.Sum(), (int)CompressedExpChunkAddressesStat.Sum());
+  fclose(Fp);
+}
+
+
 } // namespace idx2
 

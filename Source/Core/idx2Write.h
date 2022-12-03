@@ -50,6 +50,8 @@ FlushChunks_v2(const idx2_file& Idx2, encode_data* E);
 void
 PrintStats(cstr MetaFileName);
 
+void
+PrintStats_v2(cstr MetaFileName);
 
 } // namespace idx2
 

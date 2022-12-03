@@ -391,7 +391,7 @@ Encode_v2(idx2_file* Idx2, const params& P, brick_copier& Copier)
   printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
   printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
   MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
-  PrintStats(MetaFileName);
+  PrintStats_v2(MetaFileName);
   //  _ASSERTE( _CrtCheckMemory( ) );
   return idx2_Error(idx2_err_code::NoError);
 }
