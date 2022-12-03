@@ -47,7 +47,7 @@ void
 DecompressBufZstd(const buffer& Input, buffer* Output)
 {
   unsigned long long const OutputSize = ZSTD_getFrameContentSize(Input.Data, Size(Input));
-  idx2_Assert(Size(*Output) >= OutputSize);
+  idx2_Assert(Size(*Output) >= (i64)OutputSize);
   size_t const Result = ZSTD_decompress(Output->Data, OutputSize, Input.Data, Size(Input));
   if (Result != OutputSize)
   {
@@ -537,7 +537,7 @@ DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddres
   }
   ReadVarByte(ChunkStream); // the size of the last brick (ignored here)
   idx2_ForEach (BrickSzIt, ChunkCache->BrickOffsets)
-    *BrickSzIt += Size(*ChunkStream);
+    *BrickSzIt += (i32)Size(*ChunkStream);
   ChunkCache->ChunkStream = *ChunkStream;
 }
 

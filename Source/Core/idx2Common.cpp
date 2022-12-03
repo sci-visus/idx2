@@ -138,27 +138,6 @@ SetDir(idx2_file* Idx2, stref Dir)
 
 
 void
-SetGroupLevels(idx2_file* Idx2, bool GroupLevels)
-{
-  Idx2->GroupLevels = GroupLevels;
-}
-
-
-void
-SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels)
-{
-  Idx2->GroupSubbands = GroupSubLevels;
-}
-
-
-void
-SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes)
-{
-  Idx2->GroupBitPlanes = GroupBitPlanes;
-}
-
-
-void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 {
   Idx2->DownsamplingFactor3 = DownsamplingFactor3;
@@ -194,9 +173,6 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "    (chunks-per-file %d)\n", Idx2.ChunksPerFileIn);
   fprintf(Fp, "    (files-per-directory %d)\n", Idx2.FilesPerDir);
   fprintf(Fp, "    (bit-planes-per-chunk %d)\n", Idx2.BitPlanesPerChunk);
-  fprintf(Fp, "    (group-levels %s)\n", Idx2.GroupLevels ? "true" : "false");
-  fprintf(Fp, "    (group-sub-levels %s)\n", Idx2.GroupSubbands ? "true" : "false");
-  fprintf(Fp, "    (group-bit-planes %s)\n", Idx2.GroupBitPlanes ? "true" : "false");
   fprintf(Fp, "  )\n"); // end format)
   fprintf(Fp, ")\n");   // end )
   fclose(Fp);
@@ -349,21 +325,6 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
         {
           idx2_Assert(Expr->type == SE_INT);
           Idx2->BitPlanesPerChunk = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-levels"))
-        {
-          idx2_Assert(Expr->type == SE_BOOL);
-          Idx2->GroupLevels = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-sub-levels"))
-        {
-          idx2_Assert(Expr->type == SE_BOOL);
-          Idx2->GroupSubbands = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "group-bit-planes"))
-        {
-          idx2_Assert(Expr->type == SE_BOOL);
-          Idx2->GroupBitPlanes = Expr->i;
         }
       }
       if (Expr->type == SE_ID)

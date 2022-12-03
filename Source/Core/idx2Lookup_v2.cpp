@@ -9,21 +9,25 @@ namespace idx2
 
 
 file_id
-ConstructFilePath_v2(const idx2_file& Idx2, u64 BrickAddress)
+ConstructFilePath_v2(const idx2_file& Idx2, u64 BrickAddress, file_type Type)
 {
   u64 Brick;
   i16 BitPlane;
   i8 Level;
   i8 Subband;
   UnpackFileAddress(Idx2, BrickAddress, &Brick, &Level, &Subband, &BitPlane);
-  return ConstructFilePath(Idx2, Brick, Level, Subband, BitPlane);
+  return ConstructFilePath_v2(Idx2, Brick, Level, Subband, BitPlane, Type);
 }
 
 
 file_id
-ConstructFilePath_v2(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BpKey)
+ConstructFilePath_v2(const idx2_file& Idx2,
+                     u64 Brick,
+                     i8 Level,
+                     i8 Subband,
+                     i16 BpKey,
+                     file_type Type)
 {
-  //i16 BpFileKey = (BpKey * Idx2.BitPlanesPerChunk) / Idx2.BitPlanesPerFile;
 #define idx2_PrintLevel idx2_Print(&Pr, "/L%02x", Level);
 #define idx2_PrintBrick                                                                            \
   for (int Depth = 0; Depth + 1 < Idx2.FilesDirsDepth[Level].Len; ++Depth)                         \
@@ -35,7 +39,7 @@ ConstructFilePath_v2(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16
     Shift += Idx2.FilesDirsDepth[Level][Depth];                                                    \
   }
 #define idx2_PrintBitPlane idx2_Print(&Pr, "/P%04hx", BpKey);
-#define idx2_PrintExtension idx2_Print(&Pr, ".bin");
+#define idx2_PrintExtension idx2_Print(&Pr, "_");
   u64 BrickBackup = Brick;
   int Shift = 0;
   thread_local static char FilePath[256];
@@ -44,7 +48,8 @@ ConstructFilePath_v2(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16
   idx2_PrintBitPlane;
   idx2_PrintLevel;
   idx2_PrintBrick;
-  idx2_PrintExtension;
+  if (Type == file_type::MetadataFile)
+    idx2_PrintExtension;
   u64 FileId = GetFileAddress(Idx2, BrickBackup, Level, Subband, BpKey);
   return file_id{ stref{ FilePath, Pr.Size }, FileId };
 #undef idx2_PrintLevel

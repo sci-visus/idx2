@@ -20,10 +20,10 @@ namespace idx2
 
 
 static void
-EncodeBrickSubbandExponents(idx2_file* Idx2,
-                            encode_data* E,
-                            const v3i& NBlocks3,
-                            const u64 Brick)
+EncodeBrickSubbandExponents_v2(idx2_file* Idx2,
+                               encode_data* E,
+                               const v3i& NBlocks3,
+                               const u64 Brick)
 {
 
   /* query the right sub channel for the block exponents */
@@ -42,7 +42,7 @@ EncodeBrickSubbandExponents(idx2_file* Idx2,
   bool NewChunk = Brick >= (Sc->LastChunk + 1) * Idx2->BricksPerChunk[E->Level];
   if (NewChunk)
   {
-    WriteChunkExponents(*Idx2, E, Sc, E->Level, E->Subband);
+    WriteChunkExponents_v2(*Idx2, E, Sc, E->Level, E->Subband);
     Sc->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
   }
   /* write the min exponent */
@@ -63,12 +63,12 @@ EncodeBrickSubbandExponents(idx2_file* Idx2,
 
 
 static void
-EncodeBrickSubbandMetadata(idx2_file* Idx2,
-                           encode_data* E,
-                           const v3i& NBlocks3,
-                           const v3i& SbDims3,
-                           const u64 Brick,
-                           const u32 LastBlock)
+EncodeBrickSubbandMetadata_v2(idx2_file* Idx2,
+                              encode_data* E,
+                              const v3i& NBlocks3,
+                              const v3i& SbDims3,
+                              const u64 Brick,
+                              const u32 LastBlock)
 {
   /* pass 2: encode the brick meta info */
   idx2_InclusiveFor (u32, Block, 0, LastBlock)
@@ -120,14 +120,14 @@ EncodeBrickSubbandMetadata(idx2_file* Idx2,
 
 
 static void
-EncodeSubbandBlocks(idx2_file* Idx2,
-                    encode_data* E,
-                    const grid& SbGrid,
-                    const v3i& SbDims3,
-                    const v3i& NBlocks3,
-                    const u64 Brick,
-                    const u32 LastBlock,
-                    volume* BrickVol)
+EncodeSubbandBlocks_v2(idx2_file* Idx2,
+                       encode_data* E,
+                       const grid& SbGrid,
+                       const v3i& SbDims3,
+                       const v3i& NBlocks3,
+                       const u64 Brick,
+                       const u32 LastBlock,
+                       volume* BrickVol)
 {
   const i8 NBitPlanes = idx2_BitSizeOf(u64);
   Clear(&E->LastSigBlock);
@@ -223,7 +223,7 @@ EncodeSubbandBlocks(idx2_file* Idx2,
         if (NewChunk)
         {
           if (BrickNotEmpty)
-            WriteChunk(*Idx2, E, C, E->Level, E->Subband, BpKey);
+            WriteChunk_v2(*Idx2, E, C, E->Level, E->Subband, BpKey);
           C->NBricks = 0;
           C->LastChunk = Brick >> Log2Ceil(Idx2->BricksPerChunk[E->Level]);
         }
@@ -240,22 +240,21 @@ EncodeSubbandBlocks(idx2_file* Idx2,
 
   // TODO: return an error code
 static void
-EncodeSubband(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol)
+EncodeSubband_v2(idx2_file* Idx2, encode_data* E, const grid& SbGrid, volume* BrickVol)
 {
   const u64 Brick = E->Brick[E->Level];
   const v3i SbDims3 = Dims(SbGrid);
   const v3i NBlocks3 = (SbDims3 + Idx2->BlockDims3 - 1) / Idx2->BlockDims3;
   const u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
 
-  EncodeSubbandBlocks(Idx2, E, SbGrid, SbDims3, NBlocks3, Brick, LastBlock, BrickVol);
-  EncodeBrickSubbandExponents(Idx2, E, NBlocks3, Brick);
-  EncodeBrickSubbandMetadata(Idx2, E, NBlocks3, SbDims3, Brick, LastBlock);
-
+  EncodeSubbandBlocks_v2(Idx2, E, SbGrid, SbDims3, NBlocks3, Brick, LastBlock, BrickVol);
+  EncodeBrickSubbandExponents_v2(Idx2, E, NBlocks3, Brick);
+  EncodeBrickSubbandMetadata_v2(Idx2, E, NBlocks3, SbDims3, Brick, LastBlock);
 }
 
 
 static void
-EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLevel = false)
+EncodeBrick_v2(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLevel = false)
 {
   idx2_Assert(Idx2->NLevels <= idx2_file::MaxLevels);
 
@@ -311,11 +310,11 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLeve
       //      Copy(SbGridNonExt, BVol, ToGrid, &PbIt.Val->Vol);
       bool LastChild = ++PbIt.Val->NChildrenDecoded == PbIt.Val->NChildrenMax;
       if (LastChild)
-        EncodeBrick(Idx2, P, E, true);
+        EncodeBrick_v2(Idx2, P, E, true);
     } // end Sb == 0 && NextIteration < Idx2->NLevels
     E->Subband = Sb;
     if (Idx2->Version == v2i(1, 0))
-      EncodeSubband(Idx2, E, S.Grid, &BVol);
+      EncodeSubband_v2(Idx2, E, S.Grid, &BVol);
   } // end subband loop
   Dealloc(&BVol);
   Delete(&E->BrickPool, GetBrickKey(Level, Brick));
@@ -372,7 +371,7 @@ Encode_v2(idx2_file* Idx2, const params& P, brick_copier& Copier)
     idx2_Assert(E.Brick[E.Level] == Top.Address);
     u64 BrickKey = GetBrickKey(E.Level, E.Brick[E.Level]);
     Insert(&E.BrickPool, BrickKey, BVol);
-    EncodeBrick(Idx2, P, &E);
+    EncodeBrick_v2(Idx2, P, &E);
     ,
     128,
     Idx2->BricksOrder[E.Level],
@@ -385,8 +384,8 @@ Encode_v2(idx2_file* Idx2, const params& P, brick_copier& Copier)
   /* dump the bit streams to files */
   timer Timer;
   StartTimer(&Timer);
-  idx2_PropagateIfError(FlushChunks(*Idx2, &E));
-  idx2_PropagateIfError(FlushChunkExponents(*Idx2, &E));
+  idx2_PropagateIfError(FlushChunks_v2(*Idx2, &E));
+  idx2_PropagateIfError(FlushChunkExponents_v2(*Idx2, &E));
 
   cstr MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
   WriteMetaFile(*Idx2, P, MetaFileName);

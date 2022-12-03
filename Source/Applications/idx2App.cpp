@@ -167,10 +167,8 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
   // Parse the optional output directory (--out_dir)
   OptVal(Argc, Argv, "--out_dir", &P->OutDir);
 
-  // Parse various grouping options (levels, bit planes, sub levels)
-  // P->GroupLevels = OptExists(Argc, Argv, "--group_levels");
-  // P->GroupBitPlanes = OptExists(Argc, Argv, "--group_bit_planes");
-  // P->GroupSubLevels = OptExists(Argc, Argv, "--group_sub_levels");
+  if (OptExists(Argc, Argv, "--v2"))
+    P->Version = v2i(2, 0);
 }
 
 

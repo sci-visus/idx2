@@ -155,7 +155,7 @@ struct idx2_file
   int BricksPerChunkIn = 4096;
   int ChunksPerFileIn = 64;
   int BitPlanesPerChunk = 1;
-  int BitPlanesPerFile = 16;
+  int BitPlanesPerFile = 32;
   stack_array<int, MaxLevels> BricksPerChunk = { { 4096 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
@@ -171,9 +171,6 @@ struct idx2_file
   transform_details TransformDetailsExtrapolate; // used only for extrapolation
   stref Dir; // the directory containing the idx2 dataset
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
-  bool GroupLevels = false; // TODO: remove
-  bool GroupBitPlanes = true; // TODO: remove
-  bool GroupSubbands = true; // TODO: remove
 
 #if VISUS_IDX2
   std::function<bool(const idx2_file&, buffer&, u64)> external_read;
@@ -264,6 +261,153 @@ Finalize(idx2_file* Idx2, const params& P);
 void
 Dealloc(idx2_file* Idx2);
 
+
+#if !defined(idx2_FileTraverse)
+#define idx2_FileTraverse(                                                                         \
+  Body, StackSize, FileOrderIn, FileFrom3In, FileDims3In, ExtentInFiles, Extent2)                  \
+  {                                                                                                \
+    file_traverse FileStack[StackSize];                                                            \
+    int FileTopIdx = 0;                                                                            \
+    v3i FileDims3Ext(                                                                              \
+      (int)NextPow2(FileDims3In.X), (int)NextPow2(FileDims3In.Y), (int)NextPow2(FileDims3In.Z));   \
+    FileStack[FileTopIdx] =                                                                        \
+      file_traverse{ FileOrderIn, FileOrderIn, FileFrom3In, FileFrom3In + FileDims3Ext, u64(0) };  \
+    while (FileTopIdx >= 0)                                                                        \
+    {                                                                                              \
+      file_traverse& FileTop = FileStack[FileTopIdx];                                              \
+      int FD = FileTop.FileOrder & 0x3;                                                            \
+      FileTop.FileOrder >>= 2;                                                                     \
+      if (FD == 3)                                                                                 \
+      {                                                                                            \
+        if (FileTop.FileOrder == 3)                                                                \
+          FileTop.FileOrder = FileTop.PrevOrder;                                                   \
+        else                                                                                       \
+          FileTop.PrevOrder = FileTop.FileOrder;                                                   \
+        continue;                                                                                  \
+      }                                                                                            \
+      --FileTopIdx;                                                                                \
+      if (FileTop.FileTo3 - FileTop.FileFrom3 == 1)                                                \
+      {                                                                                            \
+        {                                                                                          \
+          Body                                                                                     \
+        }                                                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      file_traverse First = FileTop, Second = FileTop;                                             \
+      First.FileTo3[FD] =                                                                          \
+        FileTop.FileFrom3[FD] + (FileTop.FileTo3[FD] - FileTop.FileFrom3[FD]) / 2;                 \
+      Second.FileFrom3[FD] =                                                                       \
+        FileTop.FileFrom3[FD] + (FileTop.FileTo3[FD] - FileTop.FileFrom3[FD]) / 2;                 \
+      extent Skip(First.FileFrom3, First.FileTo3 - First.FileFrom3);                               \
+      First.Address = FileTop.Address;                                                             \
+      Second.Address = FileTop.Address + Prod<u64>(First.FileTo3 - First.FileFrom3);               \
+      if (Second.FileFrom3 < To(ExtentInFiles) && From(ExtentInFiles) < Second.FileTo3)            \
+        FileStack[++FileTopIdx] = Second;                                                          \
+      if (First.FileFrom3 < To(ExtentInFiles) && From(ExtentInFiles) < First.FileTo3)              \
+        FileStack[++FileTopIdx] = First;                                                           \
+    }                                                                                              \
+  }
+#endif
+
+#if !defined(idx2ChunkTraverse)
+#define idx2_ChunkTraverse(                                                                        \
+  Body, StackSize, ChunkOrderIn, ChunkFrom3In, ChunkDims3In, ExtentInChunks, Extent2)              \
+  {                                                                                                \
+    chunk_traverse ChunkStack[StackSize];                                                          \
+    int ChunkTopIdx = 0;                                                                           \
+    v3i ChunkDims3Ext((int)NextPow2(ChunkDims3In.X),                                               \
+                      (int)NextPow2(ChunkDims3In.Y),                                               \
+                      (int)NextPow2(ChunkDims3In.Z));                                              \
+    ChunkStack[ChunkTopIdx] = chunk_traverse{                                                      \
+      ChunkOrderIn, ChunkOrderIn, ChunkFrom3In, ChunkFrom3In + ChunkDims3Ext, u64(0)               \
+    };                                                                                             \
+    while (ChunkTopIdx >= 0)                                                                       \
+    {                                                                                              \
+      chunk_traverse& ChunkTop = ChunkStack[ChunkTopIdx];                                          \
+      int CD = ChunkTop.ChunkOrder & 0x3;                                                          \
+      ChunkTop.ChunkOrder >>= 2;                                                                   \
+      if (CD == 3)                                                                                 \
+      {                                                                                            \
+        if (ChunkTop.ChunkOrder == 3)                                                              \
+          ChunkTop.ChunkOrder = ChunkTop.PrevOrder;                                                \
+        else                                                                                       \
+          ChunkTop.PrevOrder = ChunkTop.ChunkOrder;                                                \
+        continue;                                                                                  \
+      }                                                                                            \
+      --ChunkTopIdx;                                                                               \
+      if (ChunkTop.ChunkTo3 - ChunkTop.ChunkFrom3 == 1)                                            \
+      {                                                                                            \
+        {                                                                                          \
+          Body                                                                                     \
+        }                                                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      chunk_traverse First = ChunkTop, Second = ChunkTop;                                          \
+      First.ChunkTo3[CD] =                                                                         \
+        ChunkTop.ChunkFrom3[CD] + (ChunkTop.ChunkTo3[CD] - ChunkTop.ChunkFrom3[CD]) / 2;           \
+      Second.ChunkFrom3[CD] =                                                                      \
+        ChunkTop.ChunkFrom3[CD] + (ChunkTop.ChunkTo3[CD] - ChunkTop.ChunkFrom3[CD]) / 2;           \
+      extent Skip(First.ChunkFrom3, First.ChunkTo3 - First.ChunkFrom3);                            \
+      Second.NChunksBefore = First.NChunksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInChunks)));    \
+      Second.ChunkInFile = First.ChunkInFile + Prod<i32>(Dims(Crop(Skip, Extent2)));               \
+      First.Address = ChunkTop.Address;                                                            \
+      Second.Address = ChunkTop.Address + Prod<u64>(First.ChunkTo3 - First.ChunkFrom3);            \
+      if (Second.ChunkFrom3 < To(ExtentInChunks) && From(ExtentInChunks) < Second.ChunkTo3)        \
+        ChunkStack[++ChunkTopIdx] = Second;                                                        \
+      if (First.ChunkFrom3 < To(ExtentInChunks) && From(ExtentInChunks) < First.ChunkTo3)          \
+        ChunkStack[++ChunkTopIdx] = First;                                                         \
+    }                                                                                              \
+  }
+#endif
+
+#if !defined(idx2_BrickTraverse)
+#define idx2_BrickTraverse(                                                                        \
+  Body, StackSize, BrickOrderIn, BrickFrom3In, BrickDims3In, ExtentInBricks, Extent2)              \
+  {                                                                                                \
+    brick_traverse Stack[StackSize];                                                               \
+    int TopIdx = 0;                                                                                \
+    v3i BrickDims3Ext((int)NextPow2(BrickDims3In.X),                                               \
+                      (int)NextPow2(BrickDims3In.Y),                                               \
+                      (int)NextPow2(BrickDims3In.Z));                                              \
+    Stack[TopIdx] = brick_traverse{                                                                \
+      BrickOrderIn, BrickOrderIn, BrickFrom3In, BrickFrom3In + BrickDims3Ext, u64(0)               \
+    };                                                                                             \
+    while (TopIdx >= 0)                                                                            \
+    {                                                                                              \
+      brick_traverse& Top = Stack[TopIdx];                                                         \
+      int DD = Top.BrickOrder & 0x3;                                                               \
+      Top.BrickOrder >>= 2;                                                                        \
+      if (DD == 3)                                                                                 \
+      {                                                                                            \
+        if (Top.BrickOrder == 3)                                                                   \
+          Top.BrickOrder = Top.PrevOrder;                                                          \
+        else                                                                                       \
+          Top.PrevOrder = Top.BrickOrder;                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      --TopIdx;                                                                                    \
+      if (Top.BrickTo3 - Top.BrickFrom3 == 1)                                                      \
+      {                                                                                            \
+        {                                                                                          \
+          Body                                                                                     \
+        }                                                                                          \
+        continue;                                                                                  \
+      }                                                                                            \
+      brick_traverse First = Top, Second = Top;                                                    \
+      First.BrickTo3[DD] = Top.BrickFrom3[DD] + (Top.BrickTo3[DD] - Top.BrickFrom3[DD]) / 2;       \
+      Second.BrickFrom3[DD] = Top.BrickFrom3[DD] + (Top.BrickTo3[DD] - Top.BrickFrom3[DD]) / 2;    \
+      extent Skip(First.BrickFrom3, First.BrickTo3 - First.BrickFrom3);                            \
+      Second.NBricksBefore = First.NBricksBefore + Prod<u64>(Dims(Crop(Skip, ExtentInBricks)));    \
+      Second.BrickInChunk = First.BrickInChunk + Prod<i32>(Dims(Crop(Skip, Extent2)));             \
+      First.Address = Top.Address;                                                                 \
+      Second.Address = Top.Address + Prod<u64>(First.BrickTo3 - First.BrickFrom3);                 \
+      if (Second.BrickFrom3 < To(ExtentInBricks) && From(ExtentInBricks) < Second.BrickTo3)        \
+        Stack[++TopIdx] = Second;                                                                  \
+      if (First.BrickFrom3 < To(ExtentInBricks) && From(ExtentInBricks) < First.BrickTo3)          \
+        Stack[++TopIdx] = First;                                                                   \
+    }                                                                                              \
+  }
+#endif
 
 } // namespace idx2
 

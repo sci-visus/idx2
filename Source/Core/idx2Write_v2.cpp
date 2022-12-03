@@ -28,7 +28,7 @@ static stat ChunkSizesStat;
 
 
 /* Write an exponent chunk to a file (we actually write to a buffer then later flush to a file).
-* The structure of a chunk:
+* The structure of an exponent chunk:
 * A = (zstd compressed) exponents for each brick
 * (we don't need to encode which bricks are present since all bricks are present)
 * (also, since the exponents are written originally with fixed number of bytes, we don't need
@@ -42,14 +42,13 @@ WriteChunkExponents_v2(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i
   UncompressedExpChunksStat.Add((f64)Size(Sc->BrickExpStream));
   Rewind(&E->ChunkExpStream);
   CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
-  //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
   CompressedExpChunksStat.Add((f64)Size(E->ChunkExpStream));
 
   /* rewind */
   Rewind(&Sc->BrickExpStream);
 
   /* write to file */
-  file_id FileId = ConstructFilePath(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
+  file_id FileId = ConstructFilePath_v2(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_, file_type::MetadataFile);
   /* keep track of the chunk sizes */
   auto CemIt = Lookup(E->ChunkExponents, FileId.Id);
   if (!CemIt)
@@ -79,7 +78,7 @@ WriteChunkExponents_v2(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i
 Write also the metadata for the exponent chunks at the end of each file. */
 /* Structure of a file
 * -------- beginning of file --------
-* bit plane information (see function ReadFile)
+* metadata for the bit plane chunks
 * -------- exponent information --------
 * G
 * F
@@ -102,6 +101,7 @@ Write also the metadata for the exponent chunks at the end of each file. */
 error<idx2_err_code>
 FlushChunkExponents_v2(const idx2_file& Idx2, encode_data* E)
 {
+  /* write the exponent chunks */
   Reserve(&E->SortedSubChannels, Size(E->SubChannels));
   Clear(&E->SortedSubChannels);
   idx2_ForEach (Sch, E->SubChannels)
@@ -114,14 +114,15 @@ FlushChunkExponents_v2(const idx2_file& Idx2, encode_data* E)
     PushBack(&E->SortedSubChannels, ScInfo);
   }
   InsertionSort(Begin(E->SortedSubChannels), End(E->SortedSubChannels));
-
   idx2_ForEach (Sch, E->SortedSubChannels)
     WriteChunkExponents_v2(Idx2, E, Sch->SubChannel, Sch->Level, Sch->Subband);
+
+  /* write the metadata for the exponents */
   idx2_ForEach (CeIt, E->ChunkExponents) // one CeIt for each file
   {
     chunk_exp_info* Ce = CeIt.Val;
     bitstream* ChunkExpSizes = &Ce->ExpSizes;
-    file_id FileId = ConstructFilePath(Idx2, *CeIt.Key);
+    file_id FileId = ConstructFilePath_v2(Idx2, *CeIt.Key, file_type::MetadataFile);
     idx2_Assert(FileId.Id == *CeIt.Key);
     /* write chunk emax sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
@@ -176,7 +177,6 @@ WriteChunk_v2(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Su
 {
   BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
   BrickSizesStat.Add((f64)Size(C->BrickSizeStream));       // brick sizes
-  //BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
   i64 ChunkSize = Size(C->BrickDeltasStream) + Size(C->BrickSizeStream) + Size(C->BrickStream) + 64;
   Rewind(&E->ChunkStream);
   GrowToAccomodate(&E->ChunkStream, ChunkSize);
@@ -193,7 +193,7 @@ WriteChunk_v2(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Su
   Rewind(&C->BrickStream);
 
   /* write to file */
-  file_id FileId = ConstructFilePath(Idx2, C->LastBrick, Level, Subband, BitPlane);
+  file_id FileId = ConstructFilePath_v2(Idx2, C->LastBrick, Level, Subband, BitPlane, file_type::MainDataFile);
   idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
   WriteBuffer(Fp, ToBuffer(E->ChunkStream));
   /* keep track of the chunk addresses and sizes */
@@ -254,7 +254,6 @@ FlushChunks_v2(const idx2_file& Idx2, encode_data* E)
     i8 Level = GetLevelFromChannelKey(Ch->First);
     i8 Subband = GetSubbandFromChannelKey(Ch->First);
     i16 BitPlane = BitPlaneFromChannelKey(Ch->First);
-    //printf("key %llu level %d subband %d bitplane %d\n", Ch->First, Level, Subband, BitPlane);
     WriteChunk_v2(Idx2, E, Ch->Second, Level, Subband, BitPlane);
   }
 
@@ -262,10 +261,9 @@ FlushChunks_v2(const idx2_file& Idx2, encode_data* E)
   idx2_ForEach (CmIt, E->ChunkMeta)
   {
     chunk_meta_info* Cm = CmIt.Val;
-    file_id FileId = ConstructFilePath(Idx2, *CmIt.Key);
+    file_id FileId = ConstructFilePath_v2(Idx2, *CmIt.Key, file_type::MetadataFile);
     if (FileId.Id != *CmIt.Key)
-      FileId = ConstructFilePath(Idx2, *CmIt.Key);
-    //printf("%llu %s\n", FileId.Id, FileId.Name.ConstPtr);
+      FileId = ConstructFilePath_v2(Idx2, *CmIt.Key, file_type::MetadataFile);
     idx2_Assert(FileId.Id == *CmIt.Key);
     /* compress and write chunk sizes */
     idx2_OpenMaybeExistingFile(Fp, FileId.Name.ConstPtr, "ab");
