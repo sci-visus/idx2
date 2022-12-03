@@ -79,7 +79,7 @@ struct params
   v3i BrickDims3 = v3i(32);
   array<stack_array<char, 256>> InputFiles;
   cstr InputFile = nullptr; // TODO: change this to local storage
-  int NLevels = 1;
+  int NLevels = 0;
   f64 Tolerance = 0;
   int BricksPerChunk = 4096;
   int ChunksPerFile = 64;

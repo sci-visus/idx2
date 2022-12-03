@@ -666,11 +666,30 @@ ComputeWaveletTransformDetails(idx2_file* Idx2)
 }
 
 
+static void
+GuessNumLevelsIfNeeded(idx2_file* Idx2)
+{
+  if (Idx2->NLevels == 0)
+  {
+    v3i BrickDims3 = Idx2->BrickDims3;
+    while (BrickDims3 <= Idx2->Dims3)
+    {
+      BrickDims3.X = BrickDims3.X == 1 ? BrickDims3.X : BrickDims3.X * 2;
+      BrickDims3.Y = BrickDims3.Y == 1 ? BrickDims3.Y : BrickDims3.Y * 2;
+      BrickDims3.Z = BrickDims3.Z == 1 ? BrickDims3.Z : BrickDims3.Z * 2;
+      ++Idx2->NLevels;
+      if (BrickDims3 >= Idx2->Dims3)
+        break;
+    }
+  }
+}
+
+
 error<idx2_err_code>
 Finalize(idx2_file* Idx2, const params& P)
 {
   idx2_PropagateIfError(CheckBrickSize(Idx2, P));
-
+  GuessNumLevelsIfNeeded(Idx2);
   if (!(Idx2->NLevels <= idx2_file::MaxLevels))
     return idx2_Error(idx2_err_code::TooManyLevels, "Max # of levels = %d\n", Idx2->MaxLevels);
   if ((Idx2->BitPlanesPerChunk > Idx2->BitPlanesPerFile) ||
