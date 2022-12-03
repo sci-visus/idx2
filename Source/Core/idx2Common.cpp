@@ -677,9 +677,8 @@ GuessNumLevelsIfNeeded(idx2_file* Idx2)
       BrickDims3.X = BrickDims3.X == 1 ? BrickDims3.X : BrickDims3.X * 2;
       BrickDims3.Y = BrickDims3.Y == 1 ? BrickDims3.Y : BrickDims3.Y * 2;
       BrickDims3.Z = BrickDims3.Z == 1 ? BrickDims3.Z : BrickDims3.Z * 2;
-      ++Idx2->NLevels;
-      if (BrickDims3 >= Idx2->Dims3)
-        break;
+      if (BrickDims3 <= Idx2->Dims3)
+        ++Idx2->NLevels;
     }
   }
 }
