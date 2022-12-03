@@ -64,6 +64,7 @@ set(IDX2_CORE_SOURCE_FILES
   idx2Decode.cpp
   idx2ParallelDecode.cpp
   idx2Encode.cpp
+  idx2Encode_v2.cpp
   idx2Lookup.cpp
   idx2Read.cpp
   idx2ParallelRead.cpp

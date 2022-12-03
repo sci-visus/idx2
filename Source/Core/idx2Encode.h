@@ -148,58 +148,29 @@ error<idx2_err_code>
 EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3);
 
 
-/* INLINE FUNCTIONS */
+void
+Init(encode_data* E, allocator* Alloc = nullptr);
 
-idx2_Inline void
-Init(channel* C)
-{
-  InitWrite(&C->BrickStream, 16384);
-  InitWrite(&C->BrickDeltasStream, 32);
-  InitWrite(&C->BrickSizeStream, 256);
-  InitWrite(&C->BlockStream, 256);
-}
+void
+Dealloc(encode_data* E);
 
+void
+Init(channel* C);
 
-idx2_Inline void
-Dealloc(channel* C)
-{
-  Dealloc(&C->BrickDeltasStream);
-  Dealloc(&C->BrickSizeStream);
-  Dealloc(&C->BrickStream);
-  Dealloc(&C->BlockStream);
-}
+void
+Dealloc(channel* C);
 
+void
+Init(sub_channel* Sc);
 
-idx2_Inline void
-Init(sub_channel* Sc)
-{
-  InitWrite(&Sc->BlockExpStream, 64);
-  InitWrite(&Sc->BrickExpStream, 8192);
-}
+void
+Dealloc(sub_channel* Sc);
 
+void
+Dealloc(chunk_meta_info* Cm);
 
-idx2_Inline void
-Dealloc(sub_channel* Sc)
-{
-  Dealloc(&Sc->BlockExpStream);
-  Dealloc(&Sc->BrickExpStream);
-}
-
-
-idx2_Inline void
-Dealloc(chunk_meta_info* Cm)
-{
-  Dealloc(&Cm->Addrs);
-  Dealloc(&Cm->Sizes);
-}
-
-idx2_Inline void
-Dealloc(chunk_exp_info* Ce)
-{
-  Dealloc(&Ce->Addrs);
-  Dealloc(&Ce->ExpSizes);
-  Dealloc(&Ce->FileExpBuffer);
-}
+void
+Dealloc(chunk_exp_info* Ce);
 
 
 } // namespace idx2

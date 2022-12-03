@@ -19,24 +19,6 @@ namespace idx2
 {
 
 
-void
-CompressBufZstd(const buffer& Input, bitstream* Output)
-{
-  if (Size(Input) == 0)
-    return;
-  size_t const MaxDstSize = ZSTD_compressBound(Size(Input));
-  GrowToAccomodate(Output, MaxDstSize - Size(*Output));
-  size_t const CpresSize =
-    ZSTD_compress(Output->Stream.Data, MaxDstSize, Input.Data, Size(Input), 1);
-  if (CpresSize <= 0)
-  {
-    fprintf(stderr, "CompressBufZstd failed\n");
-    exit(1);
-  }
-  Output->BitPtr = CpresSize + Output->Stream.Data;
-}
-
-
 static void
 EncodeBrickSubbandExponents(idx2_file* Idx2,
                             encode_data* E,
@@ -361,34 +343,9 @@ struct channel_ptr
 };
 
 
-f64 TotalTime_ = 0; // TODO: move to somewhere
-
-
-/*
-By default, copy brick data from a volume to a local brick buffer.
-Can be extended polymorphically to provide other ways of copying.
-*/
-brick_copier::brick_copier(const volume* InputVolume)
-{
-  Volume = InputVolume;
-}
-
-
-v2d
-brick_copier::Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_volume* Brick)
-{
-  v2d MinMax;
-  if (Volume->Type == dtype::float32)
-    MinMax = (CopyExtentExtentMinMax<f32, f64>(ExtentGlobal, *Volume, ExtentLocal, &Brick->Vol));
-  else if (Volume->Type == dtype::float64)
-    MinMax = (CopyExtentExtentMinMax<f64, f64>(ExtentGlobal, *Volume, ExtentLocal, &Brick->Vol));
-
-  return MinMax;
-}
-
 
 error<idx2_err_code>
-Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
+Encode_v2(idx2_file* Idx2, const params& P, brick_copier& Copier)
 {
   const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
   BrickAlloc_ = free_list_allocator(BrickBytes);
@@ -416,7 +373,6 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
     u64 BrickKey = GetBrickKey(E.Level, E.Brick[E.Level]);
     Insert(&E.BrickPool, BrickKey, BVol);
     EncodeBrick(Idx2, P, &E);
-    TotalTime_ += Seconds(ElapsedTime(&Timer));
     ,
     128,
     Idx2->BricksOrder[E.Level],
@@ -431,7 +387,6 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
   StartTimer(&Timer);
   idx2_PropagateIfError(FlushChunks(*Idx2, &E));
   idx2_PropagateIfError(FlushChunkExponents(*Idx2, &E));
-  TotalTime_ += Seconds(ElapsedTime(&Timer));
 
   cstr MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
   WriteMetaFile(*Idx2, P, MetaFileName);
@@ -439,109 +394,8 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
   printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
   MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
   PrintStats(MetaFileName);
-  printf("total time              = %f seconds\n", TotalTime_);
   //  _ASSERTE( _CrtCheckMemory( ) );
   return idx2_Error(idx2_err_code::NoError);
-}
-
-
-// TODO: make sure the wavelet normalization works across levels
-// TODO: add a mode that treats the chunks like a row in a table
-
-
-void
-Init(encode_data* E, allocator* Alloc)
-{
-  Init(&E->BrickPool, 9);
-  Init(&E->Channels, 10);
-  Init(&E->SubChannels, 5);
-  E->Alloc = Alloc ? Alloc : &BrickAlloc_;
-  Init(&E->ChunkMeta, 8);
-  Init(&E->ChunkExponents, 5);
-  //InitWrite(&E->CompressedExps, 32768);
-  InitWrite(&E->CompressedChunkAddresses, 16384);
-  InitWrite(&E->ChunkStream, 16384);
-  InitWrite(&E->ChunkExpStream, 32768);
-}
-
-
-void
-Dealloc(encode_data* E)
-{
-  E->Alloc->DeallocAll();
-  Dealloc(&E->BrickPool);
-  idx2_ForEach (ChannelIt, E->Channels)
-    Dealloc(ChannelIt.Val);
-  Dealloc(&E->Channels);
-  idx2_ForEach (SubChannelIt, E->SubChannels)
-    Dealloc(SubChannelIt.Val);
-  Dealloc(&E->SubChannels);
-  Dealloc(&E->SortedChannels);
-  Dealloc(&E->SortedSubChannels);
-  idx2_ForEach (ChunkMetaIt, E->ChunkMeta)
-    Dealloc(ChunkMetaIt.Val);
-  idx2_ForEach (ChunkExpIt, E->ChunkExponents)
-    Dealloc(ChunkExpIt.Val);
-  Dealloc(&E->ChunkMeta);
-  //Dealloc(&E->CompressedExps);
-  Dealloc(&E->CompressedChunkAddresses);
-  Dealloc(&E->ChunkStream);
-  Dealloc(&E->ChunkExpStream);
-  Dealloc(&E->LastSigBlock);
-  Dealloc(&E->SubbandExps);
-  //Dealloc(&E->BlockStream);
-}
-
-
-void
-Init(channel* C)
-{
-  InitWrite(&C->BrickStream, 16384);
-  InitWrite(&C->BrickDeltasStream, 32);
-  InitWrite(&C->BrickSizeStream, 256);
-  InitWrite(&C->BlockStream, 256);
-}
-
-
-void
-Dealloc(channel* C)
-{
-  Dealloc(&C->BrickDeltasStream);
-  Dealloc(&C->BrickSizeStream);
-  Dealloc(&C->BrickStream);
-  Dealloc(&C->BlockStream);
-}
-
-
-void
-Init(sub_channel* Sc)
-{
-  InitWrite(&Sc->BlockExpStream, 64);
-  InitWrite(&Sc->BrickExpStream, 8192);
-}
-
-
-void
-Dealloc(sub_channel* Sc)
-{
-  Dealloc(&Sc->BlockExpStream);
-  Dealloc(&Sc->BrickExpStream);
-}
-
-
-void
-Dealloc(chunk_meta_info* Cm)
-{
-  Dealloc(&Cm->Addrs);
-  Dealloc(&Cm->Sizes);
-}
-
-void
-Dealloc(chunk_exp_info* Ce)
-{
-  Dealloc(&Ce->Addrs);
-  Dealloc(&Ce->ExpSizes);
-  Dealloc(&Ce->FileExpBuffer);
 }
 
 
