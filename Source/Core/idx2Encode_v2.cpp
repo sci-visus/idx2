@@ -313,8 +313,7 @@ EncodeBrick_v2(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementL
         EncodeBrick_v2(Idx2, P, E, true);
     } // end Sb == 0 && NextIteration < Idx2->NLevels
     E->Subband = Sb;
-    if (Idx2->Version == v2i(1, 0))
-      EncodeSubband_v2(Idx2, E, S.Grid, &BVol);
+    EncodeSubband_v2(Idx2, E, S.Grid, &BVol);
   } // end subband loop
   Dealloc(&BVol);
   Delete(&E->BrickPool, GetBrickKey(Level, Brick));

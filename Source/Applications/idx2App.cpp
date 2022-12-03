@@ -167,8 +167,6 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
   // Parse the optional output directory (--out_dir)
   OptVal(Argc, Argv, "--out_dir", &P->OutDir);
 
-  if (OptExists(Argc, Argv, "--v2"))
-    P->Version = v2i(2, 0);
 }
 
 
@@ -293,7 +291,14 @@ Idx2App(int Argc, const char* Argv[])
       //      error Result = ReadVolume(P.Meta.File, P.Meta.Dims3, P.Meta.DType, &Vol.Vol);
       idx2_ExitIfError(MapVolume(P.InputFile, P.Meta.Dims3, P.Meta.DType, &Vol, map_mode::Read));
       brick_copier Copier(&Vol.Vol);
-      idx2_ExitIfError(Encode(&Idx2, P, Copier));
+      if (P.Version == v2i(1, 0))
+      {
+        idx2_ExitIfError(Encode(&Idx2, P, Copier));
+      }
+      else if (P.Version == v2i(2, 0))
+      {
+        idx2_ExitIfError(Encode_v2(&Idx2, P, Copier));
+      }
     }
   }
   else if (P.Action == action::Decode)
