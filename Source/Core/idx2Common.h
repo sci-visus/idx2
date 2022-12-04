@@ -83,7 +83,7 @@ struct params
   f64 Tolerance = 0;
   int BricksPerChunk = 4096;
   int ChunksPerFile = 64;
-  int FilesPerDir = 512;
+  int FilesPerDir = 64;
   int BitPlanesPerChunk = 1;
   int BitPlanesPerFile = 16;
   /* decode exclusive */
@@ -159,8 +159,6 @@ struct idx2_file
   stack_array<int, MaxLevels> BricksPerChunk = { { 4096 } };
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
-  stack_array<int, MaxLevels> FilesPerVol = { { 4096 } };         // power of two
-  stack_array<int, MaxLevels> ChunksPerVol = { { 4096 * 4096 } }; // power of two
   v2i Version = v2i(1, 0);
   array<subband> Subbands;       // based on BrickDimsExt3
   array<subband> SubbandsNonExt; // based on BrickDims3
@@ -258,6 +256,16 @@ SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);
 error<idx2_err_code>
 Finalize(idx2_file* Idx2, const params& P);
 
+void
+ComputeExtentsForTraversal(const idx2_file& Idx2,
+                           const extent& Ext,
+                           i8 Level,
+                           extent* ExtentInBricks,
+                           extent* ExtentInChunks,
+                           extent* ExtentInFiles,
+                           extent* VolExtentInBricks,
+                           extent* VolExtentInChunks,
+                           extent* VolExtentInFiles);
 void
 Dealloc(idx2_file* Idx2);
 

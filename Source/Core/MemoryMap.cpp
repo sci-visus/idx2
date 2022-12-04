@@ -19,11 +19,11 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode)
                            FILE_ATTRIBUTE_NORMAL,
                            NULL);
   if (MMap->File == INVALID_HANDLE_VALUE)
-    return idx2_Error(mmap_err_code::FileCreateFailed);
+    return idx2_Error(mmap_err_code::FileCreateFailed, "file: %s\n", Name);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   MMap->File = open(Name, Mode == map_mode::Read ? O_RDONLY : O_RDWR | O_CREAT | O_TRUNC, 0600);
   if (MMap->File == -1)
-    return idx2_Error(mmap_err_code::FileCreateFailed);
+    return idx2_Error(mmap_err_code::FileCreateFailed, "file: %s\n", Name);
 #endif
   MMap->Mode = Mode;
   return idx2_Error(mmap_err_code::NoError);

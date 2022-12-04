@@ -345,55 +345,39 @@ struct channel_ptr
 error<idx2_err_code>
 Encode_v2(idx2_file* Idx2, const params& P, brick_copier& Copier)
 {
-  const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
-  BrickAlloc_ = free_list_allocator(BrickBytes);
+  i8 Level = Idx2->NLevels - 1; // coarsest level
+  extent ExtentInBricks, ExtentInChunks, ExtentInFiles;
+  extent VolExtentInBricks, VolExtentInChunks, VolExtentInFiles;
+  ComputeExtentsForTraversal(*Idx2,
+                             extent(Idx2->Dims3),
+                             Level,
+                             &ExtentInBricks,
+                             &ExtentInChunks,
+                             &ExtentInFiles,
+                             &VolExtentInBricks,
+                             &VolExtentInChunks,
+                             &VolExtentInFiles);
   idx2_RAII(encode_data, E, Init(&E));
-  idx2_BrickTraverse(
-    timer Timer; StartTimer(&Timer);
-    //    idx2_Assert(GetLinearBrick(*Idx2, 0, Top.BrickFrom3) == Top.Address);
-    //    idx2_Assert(GetSpatialBrick(*Idx2, 0, Top.Address) == Top.BrickFrom3);
-    // BVol = local brick storage (we will copy brick data from the input to this)
-    brick_volume BVol;
-    Resize(&BVol.Vol, Idx2->BrickDimsExt3, dtype::float64, E.Alloc);
-    Fill(idx2_Range(f64, BVol.Vol), 0.0);
-    extent BrickExtent(Top.BrickFrom3 * Idx2->BrickDims3, Idx2->BrickDims3);
-    // BrickExtentCrop = the true extent of the brick (boundary bricks are cropped)
-    extent BrickExtentCrop = Crop(BrickExtent, extent(Idx2->Dims3));
-    BVol.ExtentLocal = Relative(BrickExtentCrop, BrickExtent);
-    v2d MinMax = Copier.Copy(BrickExtentCrop, BVol.ExtentLocal, &BVol);
-    Idx2->ValueRange.Min = Min(Idx2->ValueRange.Min, MinMax.Min);
-    Idx2->ValueRange.Max = Max(Idx2->ValueRange.Max, MinMax.Max);
-    //    Copy(BrickExtentCrop, Vol, BVol.ExtentLocal, &BVol.Vol);
-    E.Level = 0;
-    E.Bricks3[E.Level] = Top.BrickFrom3;
-    E.Brick[E.Level] = GetLinearBrick(*Idx2, E.Level, E.Bricks3[E.Level]);
-    idx2_Assert(E.Brick[E.Level] == Top.Address);
-    u64 BrickKey = GetBrickKey(E.Level, E.Brick[E.Level]);
-    Insert(&E.BrickPool, BrickKey, BVol);
-    EncodeBrick_v2(Idx2, P, &E);
-    ,
-    128,
-    Idx2->BricksOrder[E.Level],
-    v3i(0),
-    Idx2->NBricks3[E.Level],
-    extent(Idx2->NBricks3[E.Level]),
-    extent(Idx2->NBricks3[E.Level])
-  );
-
-  /* dump the bit streams to files */
-  timer Timer;
-  StartTimer(&Timer);
-  idx2_PropagateIfError(FlushChunks_v2(*Idx2, &E));
-  idx2_PropagateIfError(FlushChunkExponents_v2(*Idx2, &E));
-
-  cstr MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
-  WriteMetaFile(*Idx2, P, MetaFileName);
-  printf("num channels            = %" PRIi64 "\n", Size(E.Channels));
-  printf("num sub channels        = %" PRIi64 "\n", Size(E.SubChannels));
-  MetaFileName = idx2_PrintScratch("%s/%s/%s.idx2", P.OutDir, P.Meta.Name, P.Meta.Field);
-  PrintStats_v2(MetaFileName);
-  //  _ASSERTE( _CrtCheckMemory( ) );
+  idx2_FileTraverse(
+    idx2_ChunkTraverse(idx2_BrickTraverse(,
+                                          64,
+                                          Idx2->BricksOrderInChunk[Level],
+                                          ChunkTop.ChunkFrom3 * Idx2->BricksPerChunk3s[Level],
+                                          Idx2->BricksPerChunk3s[Level],
+                                          ExtentInBricks,
+                                          VolExtentInBricks);
+                       ,
+                       64,
+                       Idx2->ChunksOrderInFile[Level],
+                       FileTop.FileFrom3 * Idx2->ChunksPerFile3s[Level],
+                       Idx2->ChunksPerFile3s[Level],
+                       ExtentInChunks,
+                       VolExtentInChunks);
+    , 64, Idx2->FilesOrder[Level], v3i(0), Idx2->NFiles3[Level], ExtentInFiles, VolExtentInFiles);
   return idx2_Error(idx2_err_code::NoError);
+
+
+
 }
 
 
