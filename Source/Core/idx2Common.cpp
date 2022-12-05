@@ -746,4 +746,84 @@ GetGrid(const idx2_file& Idx2, const extent& Ext)
 }
 
 
+static void
+ComputeExtentsForTraversal(const idx2_file& Idx2,
+                           const extent& Ext,
+                           i8 Level,
+                           extent* ExtentInFiles,
+                           extent* VolExtentInFiles)
+{
+  v3i B3, C3, F3, Ff3, Fl3;
+  B3 = Idx2.BrickDims3 * Pow(Idx2.GroupBrick3, Level);
+  C3 = Idx2.BricksPerChunk3s[Level] * B3;
+  F3 = C3 * Idx2.ChunksPerFile3s[Level];
+
+  Ff3 = From(Ext) / F3;
+  Fl3 = Last(Ext) / F3;
+  *ExtentInFiles  = extent(Ff3, Fl3 - Ff3 + 1);
+
+  extent VolExt(Idx2.Dims3);
+  v3i Vff3 = From(VolExt) / F3;
+  v3i Vfl3 = Last(VolExt) / F3;
+  *VolExtentInFiles  = extent(Vff3, Vfl3 - Vff3 + 1);
+}
+
+using traverse_callback = error<idx2_err_code>(const traverse_item&);
+
+error<idx2_err_code>
+TraverseHierarchy(u64 TraverseOrder,
+                  const v3i& From3,
+                  const v3i& Dims3,
+                  const extent& Extent, // in units of traverse_item
+                  const extent& VolExtent, // in units of traverse_item
+                  traverse_callback Callback)
+{
+  idx2_RAII(array<traverse_item>, Stack, Reserve(&Stack, 64), Dealloc(&Stack));
+  v3i Dims3Ext((int)NextPow2(Dims3.X), (int)NextPow2(Dims3.Y), (int)NextPow2(Dims3.Z));
+  traverse_item Top;
+  Top.From3 = From3;
+  Top.To3 = From3 + Dims3Ext;
+  Top.TraverseOrder = Top.PrevTraverseOrder = TraverseOrder;
+  PushBack(&Stack, Top);
+  while (Size(Stack) >= 0)
+  {
+    Top = Back(Stack);
+    int FD = Top.TraverseOrder & 0x3;
+    Top.TraverseOrder >>= 2;
+    if (FD == 3)
+    {
+      if (Top.TraverseOrder == 3)
+        Top.TraverseOrder = Top.PrevTraverseOrder;
+      else
+        Top.PrevTraverseOrder = Top.TraverseOrder;
+      continue;
+    }
+    PopBack(&Stack);
+    if (!(Top.To3 - Top.From3 == 1))
+    {
+      traverse_item First = Top, Second = Top;
+      First.To3[FD] =
+        Top.From3[FD] + (Top.To3[FD] - Top.From3[FD]) / 2;
+      Second.From3[FD] =
+        Top.From3[FD] + (Top.To3[FD] - Top.From3[FD]) / 2;
+      extent Skip(First.From3, First.To3 - First.From3);
+      //Second.NItemsBefore = First.NItemsBefore + Prod<u64>(Dims(Crop(Skip, Extent)));
+      Second.ItemOrder = First.ItemOrder + Prod<i32>(Dims(Crop(Skip, VolExtent)));
+      First.Address = Top.Address;
+      Second.Address = Top.Address + Prod<u64>(First.To3 - First.From3);
+      if (Second.From3 < To(Extent) && From(Extent) < Second.To3)
+        PushBack(&Stack, Second);
+      if (First.From3 < To(Extent) && From(Extent) < First.To3)
+        PushBack(&Stack, First);
+    }
+    else
+    {
+      Top.LastItem = Size(Stack) == 0;
+      idx2_PropagateIfError(Callback(Top));
+    }
+  }
+}
+
+
 } // namespace idx2
+

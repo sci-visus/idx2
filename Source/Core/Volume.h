@@ -47,6 +47,16 @@ struct grid : public extent
 };
 
 
+struct extent8
+{
+  u64 From = 0, Dims = 0;
+  extent8();
+  explicit extent8(const v3i& Dims3);
+  extent8(const v3i& From3, const v3i& Dims3);
+  operator bool() const;
+  static extent Invalid();
+};
+
 // TODO: do not allocate in the constructor, use Alloc() function
 struct volume
 {

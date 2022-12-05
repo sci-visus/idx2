@@ -573,8 +573,26 @@ using v3d = v3<f64>;
 #define idx2_BeginFor3Lockstep(C1, B1, E1, S1, C2, B2, E2, S2)
 
 
-} // namespace idx2
+template <typename t> struct v6
+{
+  union
+  {
+    struct
+    {
+      v3i XYZ;
+      v3i UVW;
+    };
+    t E[6];
+  };
+  v6();
+  explicit constexpr v6(t V);
+  constexpr v6(t X_, t Y_, t Z_, t U_, t V_, t W_);
+  template <typename u> v6(const v6<u>& Other);
+  t& operator[](int Idx) const;
+  template <typename u> v6& operator=(const v6<u>& Rhs);
+};
 
+} // namespace idx2
 
 
 #include <assert.h>
@@ -815,6 +833,11 @@ template <typename t> idx2_Inline constexpr v3<t>::v3(t V)
 {
 }
 
+template <typename t> idx2_Inline constexpr v6<t>::v6(t V)
+  : XYZ(V)
+  , UVW(V)
+{
+}
 
 template <typename t> idx2_Inline constexpr v3<t>::v3(t X_, t Y_, t Z_)
   : X(X_)
@@ -823,6 +846,11 @@ template <typename t> idx2_Inline constexpr v3<t>::v3(t X_, t Y_, t Z_)
 {
 }
 
+template <typename t> idx2_Inline constexpr v6<t>::v6(t X_, t Y_, t Z_, t U_, t V_, t W_)
+  : XYZ(X_, Y_, Z_)
+  , UVW(U_, V_, W_)
+{
+}
 
 template <typename t> idx2_Inline
 v3<t>::v3(const v2<t>& V2, t Z_)
@@ -833,11 +861,19 @@ v3<t>::v3(const v2<t>& V2, t Z_)
 
 
 }
+
 template <typename t> template <typename u> idx2_Inline
 v3<t>::v3(const v3<u>& Other)
   : X(Other.X)
   , Y(Other.Y)
   , Z(Other.Z)
+{
+}
+
+template <typename t> template <typename u> idx2_Inline
+v6<t>::v6(const v6<u>& Other)
+  : XYZ(Other.XYZ)
+  , UVW(Other.UVW)
 {
 }
 

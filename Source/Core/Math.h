@@ -44,6 +44,9 @@ template <typename u, typename t = u> t
 Prod(const v3<u>& Vec);
 
 template <typename u, typename t = u> t
+Prod(const v6<u>& Vec);
+
+template <typename u, typename t = u> t
 Sum(const v2<u>& Vec);
 
 template <typename u, typename t = u> t
@@ -148,6 +151,9 @@ template <typename t> bool
 operator==(const v3<t>& Lhs, const v3<t>& Rhs);
 
 template <typename t> bool
+operator==(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> bool
 operator!=(const v3<t>& Lhs, const v3<t>& Rhs);
 
 template <typename t> bool
@@ -248,9 +254,113 @@ BiLerp(t V00, t V10, t V01, t V11, const v2d& T);
 template <typename t> t
 TriLerp(t V000, t V100, t V010, t V110, t V001, t V101, t V011, t V111, const v3d& T);
 
+/* V6 stuffs */
+template <typename t> v6<t>
+operator+(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+operator-(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+operator*(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+operator/(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+operator&(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+operator%(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+operator+(const v6<t>& Lhs, t Val);
+
+template <typename t> v6<t>
+operator-(const v6<t>& Lhs, t Val);
+
+template <typename t> v6<t>
+operator-(t Val, const v6<t>& Lhs);
+
+template <typename t> v6<t>
+operator*(const v6<t>& Lhs, t Val);
+
+template <typename t> v6<t>
+operator/(const v6<t>& Lhs, t Val);
+
+template <typename t> v6<t>
+operator&(const v6<t>& Lhs, t Val);
+
+template <typename t> v6<t>
+operator%(const v6<t>& Lhs, t Val);
+
+template <typename t> bool
+operator==(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> bool
+operator!=(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> bool
+operator<=(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> bool
+operator<(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> bool
+operator>(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> bool
+operator>(const v6<t>& Lhs, t Val);
+
+template <typename t> bool
+operator>=(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> bool
+operator==(const v6<t>& Lhs, t Val);
+
+template <typename t> bool
+operator!=(const v6<t>& Lhs, t Val);
+
+template <typename t> bool
+operator<(t Val, const v6<t>& Rhs);
+
+template <typename t> bool
+operator<(const v6<t>& Lhs, t Val);
+
+template <typename t> bool
+operator<=(t Val, const v6<t>& Rhs);
+
+template <typename t> bool
+operator<=(const v6<t>& Lhs, t Val);
+
+template <typename t, typename u> v6<t>
+operator>>(const v6<t>& Lhs, const v6<u>& Rhs);
+
+template <typename t, typename u> v6<t>
+operator>>(const v6<t>& Lhs, u Val);
+
+template <typename t, typename u> v6<u>
+operator>>(u Val, const v3<t>& Rhs);
+
+template <typename t, typename u> v6<t>
+operator<<(const v6<t>& Lhs, const v6<u>& Rhs);
+
+template <typename t, typename u> v6<t>
+operator<<(const v6<t>& Lhs, u Val);
+
+template <typename t, typename u> v6<u>
+operator<<(u Val, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+Min(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+Max(const v6<t>& Lhs, const v6<t>& Rhs);
+
+template <typename t> v6<t>
+Ceil(const v6<t>& Vec);
 
 } // namespace idx2
-
 
 
 #include "Algorithm.h"

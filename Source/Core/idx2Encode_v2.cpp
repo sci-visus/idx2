@@ -340,44 +340,23 @@ struct channel_ptr
   }
 };
 
-
+static error<idx2_err_code>
+TraverseFiles(const traverse_item& File)
+{
+}
 
 error<idx2_err_code>
 Encode_v2(idx2_file* Idx2, const params& P, brick_copier& Copier)
 {
-  i8 Level = Idx2->NLevels - 1; // coarsest level
-  extent ExtentInBricks, ExtentInChunks, ExtentInFiles;
-  extent VolExtentInBricks, VolExtentInChunks, VolExtentInFiles;
-  ComputeExtentsForTraversal(*Idx2,
-                             extent(Idx2->Dims3),
-                             Level,
-                             &ExtentInBricks,
-                             &ExtentInChunks,
-                             &ExtentInFiles,
-                             &VolExtentInBricks,
-                             &VolExtentInChunks,
-                             &VolExtentInFiles);
-  idx2_RAII(encode_data, E, Init(&E));
-  idx2_FileTraverse(
-    idx2_ChunkTraverse(idx2_BrickTraverse(,
-                                          64,
-                                          Idx2->BricksOrderInChunk[Level],
-                                          ChunkTop.ChunkFrom3 * Idx2->BricksPerChunk3s[Level],
-                                          Idx2->BricksPerChunk3s[Level],
-                                          ExtentInBricks,
-                                          VolExtentInBricks);
-                       ,
-                       64,
-                       Idx2->ChunksOrderInFile[Level],
-                       FileTop.FileFrom3 * Idx2->ChunksPerFile3s[Level],
-                       Idx2->ChunksPerFile3s[Level],
-                       ExtentInChunks,
-                       VolExtentInChunks);
-    , 64, Idx2->FilesOrder[Level], v3i(0), Idx2->NFiles3[Level], ExtentInFiles, VolExtentInFiles);
+  u64 TraverseOrder;
+  v3i FileFrom3;
+  v3i FileTo3;
+  extent Extent;
+  extent VolExtent;
+
+  //TraverseHierarchy();
+
   return idx2_Error(idx2_err_code::NoError);
-
-
-
 }
 
 

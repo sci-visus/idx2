@@ -83,6 +83,7 @@ set(IDX2_CORE_SOURCE_FILES
   VarInt.cpp
   Volume.cpp
   Wavelet.cpp
+  Wavelet_v2.cpp
   Zfp.cpp
 )
 

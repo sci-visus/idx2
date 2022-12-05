@@ -12,34 +12,6 @@ static constexpr i16 BitPlaneKeyBias_ = 1024;
 static constexpr i16 ExponentBitPlane_ = -1024 + BitPlaneKeyBias_;
 
 /* ---------------------- TYPES ----------------------*/
-struct brick_traverse
-{
-  u64 BrickOrder, PrevOrder;
-  v3i BrickFrom3, BrickTo3;
-  i64 NBricksBefore = 0;
-  i32 BrickInChunk = 0;
-  u64 Address = 0;
-};
-
-
-struct chunk_traverse
-{
-  u64 ChunkOrder, PrevOrder;
-  v3i ChunkFrom3, ChunkTo3;
-  i64 NChunksBefore = 0;
-  i32 ChunkInFile = 0;
-  u64 Address = 0;
-};
-
-
-struct file_traverse
-{
-  u64 FileOrder, PrevOrder;
-  v3i FileFrom3, FileTo3;
-  u64 Address = 0;
-};
-
-
 idx2_Inline u64
 GetAddress(u64 Brick, int BrickShift, i8 Level, i8 Subband, i16 BitPlane)
 {

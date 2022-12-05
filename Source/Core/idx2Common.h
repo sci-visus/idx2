@@ -165,8 +165,8 @@ struct idx2_file
   v3i GroupBrick3; // how many bricks in the current level form a brick in the next level
   stack_array<v3i, MaxLevels> BricksPerChunk3s = { { v3i(8) } };
   stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
-  transform_details TransformDetails;           // used for normal transform
-  transform_details TransformDetailsExtrapolate; // used only for extrapolation
+  transform_info TransformDetails;           // used for normal transform
+  transform_info TransformDetailsExtrapolate; // used only for extrapolation
   stref Dir; // the directory containing the idx2 dataset
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
@@ -174,6 +174,17 @@ struct idx2_file
   std::function<bool(const idx2_file&, buffer&, u64)> external_read;
   std::function<bool(const idx2_file&, buffer&, u64)> external_write;
 #endif
+};
+
+
+struct idx2_file_v2
+{
+  static constexpr int MaxLevels = 16;
+  array<v3i> GroupBricks3; // how bricks are grouped on each level to form coarser bricks
+  array<v3i> BrickDims3; // brick dimensions on each level
+  array<v3i> FilesPerVol3; // how many files exist on each level
+  array<v3i> ChunkDims3; // chunk dimensions on each level
+  array<v3i> FileDims3; // file dimensions on each level
 };
 
 
@@ -268,6 +279,43 @@ ComputeExtentsForTraversal(const idx2_file& Idx2,
                            extent* VolExtentInFiles);
 void
 Dealloc(idx2_file* Idx2);
+
+
+struct traverse_item
+{
+  v3i From3, To3;
+  u64 TraverseOrder, PrevTraverseOrder;
+  u64 Address = 0;
+  i32 ItemOrder = 0; // e.g., brick order in chunk, chunk order in file
+  bool LastItem = false;
+};
+
+struct brick_traverse
+{
+  u64 BrickOrder, PrevOrder;
+  v3i BrickFrom3, BrickTo3;
+  i64 NBricksBefore = 0;
+  i32 BrickInChunk = 0;
+  u64 Address = 0;
+};
+
+
+struct chunk_traverse
+{
+  u64 ChunkOrder, PrevOrder;
+  v3i ChunkFrom3, ChunkTo3;
+  i64 NChunksBefore = 0;
+  i32 ChunkInFile = 0;
+  u64 Address = 0;
+};
+
+
+struct file_traverse
+{
+  u64 FileOrder, PrevOrder;
+  v3i FileFrom3, FileTo3;
+  u64 Address = 0;
+};
 
 
 #if !defined(idx2_FileTraverse)

@@ -66,7 +66,7 @@ struct subband
 };
 
 
-struct transform_details
+struct transform_info
 {
   wav_basis_norms_static<16> BasisNorms;
   stack_array<grid, 32> StackGrids;
@@ -76,8 +76,16 @@ struct transform_details
   int NPasses;
 };
 
+struct transform_info_v2
+{
+  wav_basis_norms_static<16> BasisNorms;
+  array<grid> Grids;
+  array<int> Axes;
+  int NLevels;
+};
+
 void
-ComputeTransformDetails(transform_details* Td, const v3i& Dims3, int NLevels, u64 TformOrder);
+ComputeTransformDetails(transform_info* Td, const v3i& Dims3, int NLevels, u64 TformOrder);
 
 
 /* Normal lifting which uses mirroring at the boundary */
@@ -178,7 +186,7 @@ InverseCdf53(const extent& Ext, int NLevels, volume* Vol);
 void
 ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol);
 void
-ExtrapolateCdf53(const transform_details& Td, volume* Vol);
+ExtrapolateCdf53(const transform_info& Td, volume* Vol);
 void
 ForwardCdf53(const v3i& Dims3,
              const v3i& M3,
@@ -199,14 +207,14 @@ void
 ForwardCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
-             const transform_details& Td,
+             const transform_info& Td,
              volume* Vol,
              bool Normalize = false);
 void
 InverseCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
-             const transform_details& Td,
+             const transform_info& Td,
              volume* Vol,
              bool Normalize = false);
 void

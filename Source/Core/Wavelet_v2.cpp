@@ -1,8 +1,8 @@
-#include "Wavelet.h"
 #include "Algorithm.h"
 #include "Array.h"
 #include "Assert.h"
 #include "BitOps.h"
+#include "CircularQueue.h"
 #include "Common.h"
 #include "DataTypes.h"
 #include "Function.h"
@@ -10,53 +10,51 @@
 #include "Math.h"
 #include "Memory.h"
 #include "ScopeGuard.h"
-#include "CircularQueue.h"
+#include "Wavelet.h"
 
 
 namespace idx2
 {
 
 
-void
-ComputeTransformDetails(transform_info* Td, const v3i& Dims3, int NPasses, u64 TformOrder)
+/* In contrast to v1, we will call this for the entire NLevels (i.e., NLevels == Idx2.NLevels).
+In v1, NLevels here is always just 1.
+*/
+static void
+ComputeTransformInfo(stref TransformTemplate,
+                     //const v8i& Dims,
+                     int NLevels,
+                     transform_info_v2* TransformInfo)
 {
-  int Pass = 0;
-  u64 PrevOrder = TformOrder;
-  v3i D3 = Dims3;
-  v3i R3 = D3;
-  v3i S3(1);
-  grid G(Dims3);
-  int StackSize = 0;
-  while (Pass < NPasses)
-  {
-    idx2_Assert(TformOrder != 0);
-    int D = TformOrder & 0x3;
-    TformOrder >>= 2;
-    if (D == 3)
-    {                      // next level
-      if (TformOrder == 3) // next one is the last |
-        TformOrder = PrevOrder;
-      else
-        PrevOrder = TformOrder;
-      SetStrd(&G, S3);
-      SetDims(&G, D3);
-      R3 = D3;
-      ++Pass;
-    }
-    else
-    {
-      Td->StackGrids[StackSize] = G;
-      Td->StackAxes[StackSize++] = D;
-      R3[D] = D3[D] + IsEven(D3[D]);
-      SetDims(&G, R3);
-      D3[D] = (R3[D] + 1) >> 1;
-      S3[D] <<= 1;
-    }
-  }
-  Td->TformOrder = TformOrder;
-  Td->StackSize = StackSize;
-  Td->BasisNorms = GetCdf53NormsFast<16>();
-  Td->NPasses = NPasses;
+  //int Level = 0;
+  //v8i D8 = Dims;
+  //v8i R8 = D8;
+  //v8i S8(1); // spacing
+  //grid G(Dims3);
+  //int Pos = TransformTemplate.Size - 1;
+  //while (Level < NLevels)
+  //{
+  //  idx2_Assert(Pos >= 0);
+  //  int D = TransformTemplate[Pos--] - '0';
+  //  if (D == 10) // the character ':' (next level)
+  //  {
+  //    SetStrd(&G, S3);
+  //    SetDims(&G, D3);
+  //    R3 = D3;
+  //    ++Level;
+  //  }
+  //  else // one of 0, 1, 2
+  //  {
+  //    PushBack(&TransformInfo->Grids, G);
+  //    PushBack(&TransformInfo->Axes, D);
+  //    R3[D] = D3[D] + IsEven(D3[D]);
+  //    SetDims(&G, R3);
+  //    D3[D] = (R3[D] + 1) >> 1;
+  //    S3[D] <<= 1;
+  //  }
+  //}
+  //TransformInfo->BasisNorms = GetCdf53NormsFast<16>();
+  //TransformInfo->NLevels = NLevels;
 }
 
 
@@ -64,7 +62,7 @@ ComputeTransformDetails(transform_info* Td, const v3i& Dims3, int NPasses, u64 T
 Extrapolate a volume to (2^N+1) x (2^N+1) x (2^N+1).
 Dims3 are the dimensions of the volume, not Dims(*Vol), which has to be (2^X+1) x (2^Y+1) x (2^Z+1).
 */
-void
+static void
 ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol)
 {
   v3i N3 = Dims(*Vol);
@@ -77,35 +75,27 @@ ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol)
 }
 
 
-void
+static void
 ForwardCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
-             const transform_info& TransformDetails,
+             const transform_info_v2& TransformInfo,
              volume* Vol,
              bool CoarsestLevel)
 {
-  idx2_For (int, I, 0, TransformDetails.StackSize)
+  idx2_For (int, I, 0, Size(TransformInfo.Axes))
   {
-    int D = TransformDetails.StackAxes[I];
-#define Body(type)                                                                                 \
-  switch (D)                                                                                       \
-  {                                                                                                \
-    case 0:                                                                                        \
-      FLiftCdf53X<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
-      break;                                                                                       \
-    case 1:                                                                                        \
-      FLiftCdf53Y<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
-      break;                                                                                       \
-    case 2:                                                                                        \
-      FLiftCdf53Z<type>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                           \
-      break;                                                                                       \
-    default:                                                                                       \
-      idx2_Assert(false);                                                                          \
-      break;                                                                                       \
-  };
-    idx2_DispatchOnType(Vol->Type);
-#undef Body
+    int D = TransformInfo.Axes[I];
+    if (Vol->Type == dtype::float64)
+    {
+      if (D == 0)
+        FLiftCdf53X<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
+      else if (D == 1)
+        FLiftCdf53Y<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
+      else if (D == 2)
+        FLiftCdf53Z<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
+      // TODO: need higher dimensional transforms
+    }
   }
 
   /* Optionally normalize */
@@ -115,18 +105,24 @@ ForwardCdf53(const v3i& M3,
     if (I == 0 && !CoarsestLevel)
       continue; // do not normalize subband 0
     subband& S = Subbands[I];
-    f64 Wx = M3.X == 1
-               ? 1
-               : (S.LowHigh3.X == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X - 1]
-                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X]);
-    f64 Wy = M3.Y == 1
-               ? 1
-               : (S.LowHigh3.Y == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y - 1]
-                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y]);
+    f64 Wx = M3.X == 1 ? 1
+                       : (S.LowHigh3.X == 0
+                            ? TransformInfo.BasisNorms
+                                .ScalNorms[Iter * TransformInfo.NPasses + S.Level3Rev.X - 1]
+                            : TransformInfo.BasisNorms
+                                .WaveNorms[Iter * TransformInfo.NPasses + S.Level3Rev.X]);
+    f64 Wy = M3.Y == 1 ? 1
+                       : (S.LowHigh3.Y == 0
+                            ? TransformInfo.BasisNorms
+                                .ScalNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Y - 1]
+                            : TransformInfo.BasisNorms
+                                .WaveNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Y]);
     f64 Idx2 = M3.Z == 1 ? 1
                          : (S.LowHigh3.Z == 0
-                              ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z - 1]
-                              : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z]);
+                              ? TransformInfo.BasisNorms
+                                  .ScalNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Z - 1]
+                              : TransformInfo.BasisNorms
+                                  .WaveNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Z]);
     f64 W = Wx * Wy * Idx2;
 #define Body(type)                                                                                 \
   auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
@@ -140,7 +136,7 @@ ForwardCdf53(const v3i& M3,
 
 /* The reason we need to know if the input is on the coarsest level is because we do not want
 to normalize subband 0 otherwise */
-void
+static void
 InverseCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
@@ -155,18 +151,24 @@ InverseCdf53(const v3i& M3,
     if (I == 0 && !CoarsestLevel)
       continue; // do not normalize subband 0
     subband& S = Subbands[I];
-    f64 Wx = M3.X == 1
-               ? 1
-               : (S.LowHigh3.X == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X - 1]
-                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X]);
-    f64 Wy = M3.Y == 1
-               ? 1
-               : (S.LowHigh3.Y == 0 ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y - 1]
-                                    : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y]);
+    f64 Wx = M3.X == 1 ? 1
+                       : (S.LowHigh3.X == 0
+                            ? TransformDetails.BasisNorms
+                                .ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X - 1]
+                            : TransformDetails.BasisNorms
+                                .WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.X]);
+    f64 Wy = M3.Y == 1 ? 1
+                       : (S.LowHigh3.Y == 0
+                            ? TransformDetails.BasisNorms
+                                .ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y - 1]
+                            : TransformDetails.BasisNorms
+                                .WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Y]);
     f64 Idx2 = M3.Z == 1 ? 1
                          : (S.LowHigh3.Z == 0
-                              ? TransformDetails.BasisNorms.ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z - 1]
-                              : TransformDetails.BasisNorms.WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z]);
+                              ? TransformDetails.BasisNorms
+                                  .ScalNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z - 1]
+                              : TransformDetails.BasisNorms
+                                  .WaveNorms[Iter * TransformDetails.NPasses + S.Level3Rev.Z]);
     f64 W = 1.0 / (Wx * Wy * Idx2);
 #define Body(type)                                                                                 \
   auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
@@ -185,13 +187,13 @@ InverseCdf53(const v3i& M3,
   switch (D)                                                                                       \
   {                                                                                                \
     case 0:                                                                                        \
-      ILiftCdf53X<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53X<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);              \
       break;                                                                                       \
     case 1:                                                                                        \
-      ILiftCdf53Y<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53Y<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);              \
       break;                                                                                       \
     case 2:                                                                                        \
-      ILiftCdf53Z<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);                            \
+      ILiftCdf53Z<f64>(TransformDetails.StackGrids[I], M3, lift_option::Normal, Vol);              \
       break;                                                                                       \
     default:                                                                                       \
       idx2_Assert(false);                                                                          \
@@ -202,7 +204,7 @@ InverseCdf53(const v3i& M3,
   }
 }
 
-u64
+static u64
 EncodeTransformOrder(const stref& TransformOrder)
 {
   u64 Result = 0;
@@ -218,7 +220,7 @@ EncodeTransformOrder(const stref& TransformOrder)
 }
 
 
-i8
+static i8
 DecodeTransformOrder(u64 Input, v3i N3, str Output)
 {
   N3 = v3i((int)NextPow2(N3.X), (int)NextPow2(N3.Y), (int)NextPow2(N3.Z));
@@ -254,7 +256,7 @@ Two consecutive ++ signifies the end of the string. If the end is reached before
 levels, the last order gets applied.
 In integral form, TransformOrder = T encodes the axis order of the transform in base-4 integers.
 T % 4 = D in [0, 3] where 0 = X, 1 = Y, 2 = Z, 3 = +*/
-void
+static void
 BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands)
 {
   Clear(Subbands);
@@ -335,4 +337,3 @@ MergeSubbandGrids(const grid& Sb1, const grid& Sb2)
 
 
 } // namespace idx2
-
