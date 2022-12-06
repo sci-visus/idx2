@@ -223,3 +223,4 @@ ErrorExists(const error<t>& Err)
       exit(1);                                                                                     \
     }                                                                                              \
   }
+

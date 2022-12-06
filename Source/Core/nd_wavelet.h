@@ -210,87 +210,11 @@ struct wav_grids
 //#include <stlab/concurrency/future.hpp>
 
 
-#define idx2_RowX(x, y, z, N) i64(z) * N.X* N.Y + i64(y) * N.X + (x)
-#define idx2_RowY(y, x, z, N) i64(z) * N.X* N.Y + i64(y) * N.X + (x)
-#define idx2_RowZ(z, x, y, N) i64(z) * N.X* N.Y + i64(y) * N.X + (x)
-
-
 /* Forward lifting */
-#define idx2_FLiftCdf53(z, y, x)                                                                   \
-  template <typename t> void FLiftCdf53##x(                                                        \
-    const grid& Grid, const v3i& M, lift_option Opt, volume* Vol)                                  \
-  {                                                                                                \
-    v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);                            \
-    if (D.x == 1)                                                                                  \
-      return;                                                                                      \
-    idx2_Assert(M.x <= N.x);                                                                       \
-    idx2_Assert(IsPow2(S.X) && IsPow2(S.Y) && IsPow2(S.Z));                                        \
-    idx2_Assert(D.x >= 2);                                                                         \
-    idx2_Assert(IsEven(P.x));                                                                      \
-    idx2_Assert(P.x + S.x * (D.x - 2) < M.x);                                                      \
-    buffer_t<t> F(Vol->Buffer);                                                                    \
-    int x0 = Min(P.x + S.x * D.x, M.x);       /* extrapolated position */                          \
-    int x1 = Min(P.x + S.x * (D.x - 1), M.x); /* last position */                                  \
-    int x2 = P.x + S.x * (D.x - 2);           /* second last position */                           \
-    int x3 = P.x + S.x * (D.x - 3);           /* third last position */                            \
-    bool Ext = IsEven(D.x);                                                                        \
-    for (int z = P.z; z < P.z + S.z * D.z; z += S.z)                                               \
-    {                                                                                              \
-      int zz = Min(z, M.z);                                                                        \
-      for (int y = P.y; y < P.y + S.y * D.y; y += S.y)                                             \
-      {                                                                                            \
-        int yy = Min(y, M.y);                                                                      \
-        if (Ext)                                                                                   \
-        {                                                                                          \
-          idx2_Assert(M.x < N.x);                                                                  \
-          t A = F[idx2_Row##x(x2, yy, zz, N)]; /* 2nd last (even) */                               \
-          t B = F[idx2_Row##x(x1, yy, zz, N)]; /* last (odd) */                                    \
-          /* store the extrapolated value at the boundary position */                              \
-          F[idx2_Row##x(x0, yy, zz, N)] = 2 * B - A;                                               \
-        }                                                                                          \
-        /* predict (excluding last odd position) */                                                \
-        for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x)                           \
-        {                                                                                          \
-          t& Val = F[idx2_Row##x(x, yy, zz, N)];                                                   \
-          Val -= (F[idx2_Row##x(x - S.x, yy, zz, N)] + F[idx2_Row##x(x + S.x, yy, zz, N)]) / 2;    \
-        }                                                                                          \
-        if (!Ext)                                                                                  \
-        { /* no extrapolation, predict at the last odd position */                                 \
-          t& Val = F[idx2_Row##x(x2, yy, zz, N)];                                                  \
-          Val -= (F[idx2_Row##x(x1, yy, zz, N)] + F[idx2_Row##x(x3, yy, zz, N)]) / 2;              \
-        }                                                                                          \
-        else if (x1 < M.x)                                                                         \
-        {                                                                                          \
-          F[idx2_Row##x(x1, yy, zz, N)] = 0;                                                       \
-        }                                                                                          \
-        /* update (excluding last odd position) */                                                 \
-        if (Opt != lift_option::NoUpdate)                                                          \
-        {                                                                                          \
-          for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x)                         \
-          {                                                                                        \
-            t Val = F[idx2_Row##x(x, yy, zz, N)];                                                  \
-            F[idx2_Row##x(x - S.x, yy, zz, N)] += Val / 4;                                         \
-            F[idx2_Row##x(x + S.x, yy, zz, N)] += Val / 4;                                         \
-          }                                                                                        \
-          if (!Ext)                                                                                \
-          { /* no extrapolation, update at the last odd position */                                \
-            t Val = F[idx2_Row##x(x2, yy, zz, N)];                                                 \
-            F[idx2_Row##x(x3, yy, zz, N)] += Val / 4;                                              \
-            if (Opt == lift_option::Normal)                                                        \
-              F[idx2_Row##x(x1, yy, zz, N)] += Val / 4;                                            \
-            else if (Opt == lift_option::PartialUpdateLast)                                        \
-              F[idx2_Row##x(x1, yy, zz, N)] = Val / 4;                                             \
-          }                                                                                        \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-  }
-
-
 // TODO: this function does not make use of PartialUpdateLast
 #define idx2_ILiftCdf53(z, y, x)                                                                   \
   template <typename t> void ILiftCdf53##x(                                                        \
-    const grid& Grid, const v3i& M, lift_option Opt, volume* Vol)                                  \
+    const grid& Grid, const v3i& M, lift_option Option, volume* Vol)                                  \
   {                                                                                                \
     v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);                            \
     if (D.x == 1)                                                                                  \
@@ -301,10 +225,10 @@ struct wav_grids
     idx2_Assert(IsEven(P.x));                                                                      \
     idx2_Assert(P.x + S.x * (D.x - 2) < M.x);                                                      \
     buffer_t<t> F(Vol->Buffer);                                                                    \
-    int x0 = Min(P.x + S.x * D.x, M.x);       /* extrapolated position */                          \
-    int x1 = Min(P.x + S.x * (D.x - 1), M.x); /* last position */                                  \
-    int x2 = P.x + S.x * (D.x - 2);           /* second last position */                           \
-    int x3 = P.x + S.x * (D.x - 3);           /* third last position */                            \
+    int X0 = Min(P.x + S.x * D.x, M.x);       /* extrapolated position */                          \
+    int X1 = Min(P.x + S.x * (D.x - 1), M.x); /* last position */                                  \
+    int X2 = P.x + S.x * (D.x - 2);           /* second last position */                           \
+    int X3 = P.x + S.x * (D.x - 3);           /* third last position */                            \
     bool Ext = IsEven(D.x);                                                                        \
     for (int z = P.z; z < P.z + S.z * D.z; z += S.z)                                               \
     {                                                                                              \
@@ -313,7 +237,7 @@ struct wav_grids
       {                                                                                            \
         int yy = Min(y, M.y);                                                                      \
         /* inverse update (excluding last odd position) */                                         \
-        if (Opt != lift_option::NoUpdate)                                                          \
+        if (Option != lift_option::NoUpdate)                                                          \
         {                                                                                          \
           for (int x = P.x + S.x; x < P.x + S.x * (D.x - 2); x += 2 * S.x)                         \
           {                                                                                        \
@@ -323,16 +247,16 @@ struct wav_grids
           }                                                                                        \
           if (!Ext)                                                                                \
           { /* no extrapolation, inverse update at the last odd position */                        \
-            t Val = F[idx2_Row##x(x2, yy, zz, N)];                                                 \
-            F[idx2_Row##x(x3, yy, zz, N)] -= Val / 4;                                              \
-            if (Opt == lift_option::Normal)                                                        \
-              F[idx2_Row##x(x1, yy, zz, N)] -= Val / 4;                                            \
+            t Val = F[idx2_Row##x(X2, yy, zz, N)];                                                 \
+            F[idx2_Row##x(X3, yy, zz, N)] -= Val / 4;                                              \
+            if (Option == lift_option::Normal)                                                        \
+              F[idx2_Row##x(X1, yy, zz, N)] -= Val / 4;                                            \
           }                                                                                        \
           else                                                                                     \
           { /* extrapolation, need to "fix" the last position (odd) */                             \
-            t A = F[idx2_Row##x(x0, yy, zz, N)];                                                   \
-            t B = F[idx2_Row##x(x2, yy, zz, N)];                                                   \
-            F[idx2_Row##x(x1, yy, zz, N)] = (A + B) / 2;                                           \
+            t A = F[idx2_Row##x(X0, yy, zz, N)];                                                   \
+            t B = F[idx2_Row##x(X2, yy, zz, N)];                                                   \
+            F[idx2_Row##x(X1, yy, zz, N)] = (A + B) / 2;                                           \
           }                                                                                        \
         }                                                                                          \
         /* inverse predict (excluding last odd position) */                                        \
@@ -343,71 +267,13 @@ struct wav_grids
         }                                                                                          \
         if (!Ext)                                                                                  \
         { /* no extrapolation, inverse predict at the last odd position */                         \
-          t& Val = F[idx2_Row##x(x2, yy, zz, N)];                                                  \
-          Val += (F[idx2_Row##x(x1, yy, zz, N)] + F[idx2_Row##x(x3, yy, zz, N)]) / 2;              \
+          t& Val = F[idx2_Row##x(X2, yy, zz, N)];                                                  \
+          Val += (F[idx2_Row##x(X1, yy, zz, N)] + F[idx2_Row##x(X3, yy, zz, N)]) / 2;              \
         }                                                                                          \
       }                                                                                            \
     }                                                                                              \
   }
 
-
-/* Forward x lifting */
-// TODO: merge the first two loops
-#define idx2_FLiftCdf53Old(z, y, x)                                                                \
-  template <typename t> void FLiftCdf53Old##x(t* F, const v3i& N, const v3i& L)                    \
-  {                                                                                                \
-    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
-    v3i M = (N + P - 1) / P;                                                                       \
-    if (M.x <= 1)                                                                                  \
-      return;                                                                                      \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
-          Val -= F[idx2_Row##x(XLeft, y, z, N)] / 2;                                               \
-          Val -= F[idx2_Row##x(XRight, y, z, N)] / 2;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
-          F[idx2_Row##x(XLeft, y, z, N)] += Val / 4;                                               \
-          F[idx2_Row##x(XRight, y, z, N)] += Val / 4;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
-    int S##x = (M.x + 1) / 2;                                                                      \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          Temp[x / 2] = F[idx2_Row##x(x, y, z, N)];                                                \
-          F[idx2_Row##x(x / 2, y, z, N)] = F[idx2_Row##x(x - 1, y, z, N)];                         \
-        }                                                                                          \
-        if (IsOdd(M.x))                                                                            \
-          F[idx2_Row##x(M.x / 2, y, z, N)] = F[idx2_Row##x(M.x - 1, y, z, N)];                     \
-        for (int x = 0; x < (M.x / 2); ++x)                                                        \
-          F[idx2_Row##x(S##x + x, y, z, N)] = Temp[x];                                             \
-      }                                                                                            \
-    }                                                                                              \
-  }
 
 
 // TODO: merge two loops
@@ -668,41 +534,7 @@ struct wav_grids
   }
 
 
-
-namespace idx2
-{
-
-
-inline stack_array<v3i, 2>
-DimsAtLevel(v3i N, int L)
-{
-  for (int I = 0; I < L; ++I)
-  {
-    N = ((N / 2) * 2) + 1;
-    N = (N + 1) / 2;
-  }
-  return stack_array<v3i, 2>{ N, (N / 2) * 2 + 1 };
-}
-
-
-idx2_FLiftCdf53(Z, Y, X)   // X forward lifting
-idx2_FLiftCdf53(Z, X, Y) // Y forward lifting
-idx2_FLiftCdf53(Y, X, Z) // Z forward lifting
-idx2_ILiftCdf53(Z, Y, X) // X inverse lifting
-idx2_ILiftCdf53(Z, X, Y) // Y inverse lifting
-idx2_ILiftCdf53(Y, X, Z) // Z inverse lifting
+//idx2_ILiftCdf53(Z, Y, X) // X inverse lifting
 
 
 
-
-} // namespace idx2
-
-#undef idx2_FLiftCdf53Old
-#undef idx2_ILiftCdf53Old
-#undef idx2_FLiftCdf53
-#undef idx2_ILiftCdf53
-#undef idx2_FLiftExtCdf53
-#undef idx2_ILiftExtCdf53
-#undef idx2_RowX
-#undef idx2_RowY
-#undef idx2_RowZ

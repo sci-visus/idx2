@@ -63,6 +63,98 @@ ComputeTransformInfo(stref TransformTemplate, const nd_index& Dims)
 }
 
 
+template <typename t> void
+FLiftCdf53(const nd_grid& Grid, const nd_size& StorageDims, i8 d, lift_option Option, nd_volume* Vol)
+{
+  // TODO: check alignment when allocating to ensure auto SIMD works
+  // TODO: add openmp simd
+  nd_index P = MakeFastestDimension(Grid.From, d);
+  nd_size D = MakeFastestDimension(Grid.Dims, d);
+  nd_size S = MakeFastestDimension(Grid.Spacing, d);
+  nd_size N = MakeFastestDimension(Vol->Dims, d);
+  nd_size M = MakeFastestDimension(StorageDims, d);
+  // now dimension d is effectively dimension 0
+  if (D[0] <= 1)
+    return;
+
+  idx2_Assert(M[0] <= N[0]);
+  idx2_Assert(IsPow2(S));
+  idx2_Assert(IsEven(P[0]));
+  idx2_Assert(P[0] + S[0] * (D[0] - 2) < M[0]);
+
+  buffer_t<t> F(Vol->Buffer);
+  i32 X0 = Min(P[0] + S[0] * D[0], M[0]);       /* extrapolated position */
+  i32 X1 = Min(P[0] + S[0] * (D[0] - 1), M[0]); /* last position */
+  i32 X2 = P[0] + S[0] * (D[0] - 2);            /* second last position */
+  i32 X3 = P[0] + S[0] * (D[0] - 3);            /* third last position */
+  bool SignalIsEven = IsEven(D[0]);
+  ndOuterLoop(P, P + S * D, S, [](const nd_index& ndI)
+  {
+    nd_index MinIdx = Min(ndI, M);
+    /* extrapolate if needed */
+    if (SignalIsEven)
+    {
+      idx2_Assert(M[0] < N[0]);
+      t A = F[LinearIndex(MinIdx, N)]; /* 2nd last (even) */
+      t B = F[LinearIndex(MinIdx, N)]; /* last (odd) */
+      /* store the extrapolated value at the boundary position */
+      nd_index ExtrapolateIdx = SetDimension(MinIdx, 0, X0);
+      F[LinearIndex(ExtrapolateIdx)] = 2 * B - A;
+    }
+    /* predict (excluding last odd position) */
+    for (int X = P[0] + S[0]; X < P[0] + S[0] * (D[0] - 2); X += 2 * S[0])
+    {
+      nd_index MiddleIdx = SetDimension(MinIdx, 0, X);
+      nd_index LeftIdx   = SetDimension(MinIdx, 0, X - S[0]);
+      nd_index RightIdx  = SetDimension(MinIdx, 0, X + S[0]);
+      t& Val = F[LinearIndex(MiddleIdx, N)];
+      Val -= (F[LinearIndex(LeftIdx, N)] + F[LinearIndex(RightIdx, N)]) / 2;
+    }
+    /* predict at the last odd position */
+    if (!SignalIsEven)
+    {
+      nd_index SecondLastIdx = SetDimension(MinIdx, 0, X2);
+      nd_index LastIdx       = SetDimension(MinIdx, 0, X1);
+      nd_index ThirdLastIdx  = SetDimension(MinIdx, 0, X3);
+      t& Val = F[LinearIndex(SecondLastIdx, N)];
+      Val -= (F[LinearIndex(LastIdx, N)] + F[LinearIndex(ThirdLastIdx, N)]) / 2;
+    }
+    else if (X1 < M[0])
+    {
+      nd_index LastIdx       = SetDimension(MinIdx, 0, X1);
+      F[LinearIndex(LastIdx, N)] = 0;
+    }
+    /* update (excluding last odd position) */
+    if (Option != lift_option::NoUpdate)
+    {
+      /* update excluding the last odd position */
+      for (int X = P[0] + S[0]; X < P[0] + S[0] * (D[0] - 2); X += 2 * S[0])
+      {
+        nd_index MiddleIdx = SetDimension(MinIdx, 0, X);
+        nd_index LeftIdx   = SetDimension(MinIdx, 0, X - S[0]);
+        nd_index RightIdx  = SetDimension(MinIdx, 0, X + S[0]);
+        t Val = F[LinearIndex(MiddleIdx, N)];
+        F[LinearIndex(LeftIdx, N)]  += Val / 4;
+        F[LinearIndex(RightIdx, N)] += Val / 4;
+      }
+      /* update at the last odd position */
+      if (!SignalIsEven)
+      {
+        nd_index SecondLastIdx = SetDimension(MinIdx, 0, X2);
+        nd_index LastIdx       = SetDimension(MinIdx, 0, X1);
+        nd_index ThirdLastIdx  = SetDimension(MinIdx, 0, X3);
+        t Val = F[LinearIndex(SecondLastIdx, N)];
+        F[LinearIndex(ThirdLastIdx, N)] += Val / 4;
+        if (Option == lift_option::Normal)
+          F[LinearIndex(LastIdx, N)] += Val / 4;
+        else if (Option == lift_option::PartialUpdateLast)
+          F[LinearIndex(LastIdx, N)] = Val / 4;
+      }
+    }
+  });
+}
+
+
 /*
 Extrapolate a volume to (2^N+1) x (2^N+1) x (2^N+1).
 Dims3 are the dimensions of the volume, not Dims(*Vol), which has to be (2^X+1) x (2^Y+1) x (2^Z+1).

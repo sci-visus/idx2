@@ -7,6 +7,7 @@
 #include "Memory.h"
 #include "MemoryMap.h"
 
+/* -------------------------------- TYPES -------------------------------- */
 
 namespace idx2
 {
@@ -35,6 +36,17 @@ struct nd_grid : public nd_extent
 };
 
 
+struct nd_volume
+{
+  buffer Buffer = {};
+  nd_size Dims = nd_size(0);
+  dtype Type = dtype::__Invalid__;
+  nd_volume();
+  nd_volume(const buffer& Buf, const nd_size& Dims3, dtype TypeIn);
+  nd_volume(const nd_size& Dims3, dtype TypeIn, allocator* Alloc = &Mallocator());
+};
+
+
 } // namespace idx2
 
 
@@ -43,6 +55,8 @@ struct nd_grid : public nd_extent
 #include "BitOps.h"
 #include "Math.h"
 
+
+/* -------------------------------- METHODS -------------------------------- */
 
 namespace idx2
 {
@@ -116,6 +130,28 @@ nd_grid::operator bool() const
   return Dims > 0;
 }
 
+
+} // namespace idx2
+
+
+/* -------------------------------- FREE FUNCTIONS -------------------------------- */
+
+namespace idx2
+{
+
+idx2_Inline i64
+LinearIndex(const nd_index& ndIdx, const nd_index& Dims)
+{
+  idx2_Assert(ndIdx < Dims);
+  i64 Stride = 1;
+  i64 LinearIdx = 0;
+  for (int D = 0; D < Dims.Dims(); ++D)
+  {
+    LinearIdx += ndIdx[D] * Stride;
+    Stride *= Dims[D];
+  }
+  return LinearIdx;
+}
 
 } // namespace idx2
 

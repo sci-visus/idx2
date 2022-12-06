@@ -591,6 +591,7 @@ template <typename t> struct v6
   template <typename u> v6(const v6<u>& Other);
   t& operator[](int Idx) const;
   template <typename u> v6& operator=(const v6<u>& Rhs);
+  idx2_Inline i8 Dims() const { return 6; }
 };
 
 using v6i = v6<i32>;
@@ -963,4 +964,155 @@ v6<t>::operator=(const v6<u>& Rhs)
       for (C1.X = (B1).X, C2.X = (B2).X; C1.X < (E1).X; C1.X += (S1).X, C2.X += (S2).X)
 
 
+template <typename t> idx2_Inline i8
+EffectiveDims(const nd_size& Dims)
+{
+  i8 D = Dims.Dims() - 1;
+  while ((D >= 0) && (Dims[D] == 1))
+    --D;
+  return D + 1;
+}
+
+
+/* "Push" dimension D toward the beginning (index 0) so it becomes the fastest varying dimension. */
+template <typename t> idx2_Inline v6<t>
+MakeFastestDimension(v6<t> P, i8 D)
+{
+  while (D > 0)
+  {
+    Swap(P[D - 1], P[D]);
+    --D;
+  }
+  return P;
+}
+
+
+template <typename t> idx2_Inline v6<t>
+SetDimension(v6<t> P, i8 D, t Val)
+{
+  P[D] = Val;
+  return P;
+}
+
+
+template <typename t> idx2_Inline void
+ndLoop(const nd_index& Begin, const nd_size& End, const nd_size& Step, const t& Kernel)
+{
+  i8 D = EffectiveDims(End - Begin);
+  idx_Assert(D <= 6);
+  int X, Y, Z, U, V, W;
+  switch (D)
+  {
+    case 0:
+      idx2_ExitIf(false, "Zero dimensional input\n");
+      break;
+    case 1:
+      _Pragma("omp parallel for collapse(2)")
+      for (X = Begin[0]; X < End[0]; X += Step[0])
+        Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 2:
+      _Pragma("omp parallel for collapse(2)")
+      for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+        for (X = Begin[0]; X < End[0]; X += Step[0])
+          Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 3:
+      _Pragma("omp parallel for collapse(2)")
+      for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+        for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+          for (X = Begin[0]; X < End[0]; X += Step[0])
+            Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 4:
+      _Pragma("omp parallel for collapse(2)")
+      for (U = Begin[3]; U < End[3]; U += Step[3])
+        for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+          for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+            for (X = Begin[0]; X < End[0]; X += Step[0])
+              Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 5:
+      _Pragma("omp parallel for collapse(2)")
+      for (V = Begin[4]; V < End[4]; V += Step[4])
+        for (U = Begin[3]; U < End[3]; U += Step[3])
+          for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+            for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+              for (X = Begin[0]; X < End[0]; X += Step[0])
+                Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 6:
+      _Pragma("omp parallel for collapse(2)")
+      for (W = Begin[5]; W < End[5]; W += Step[5])
+        for (V = Begin[4]; V < End[4]; V += Step[4])
+          for (U = Begin[3]; U < End[3]; U += Step[3])
+            for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+              for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+                for (X = Begin[0]; X < End[0]; X += Step[0])
+                  Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    default:
+      idx2_ExitIf(false, "Effective dimensionality greater than 6\n");
+      break;
+  };
+}
+
+
+/* Like ndLoop but exclude the fastest varying dimension (0) */
+template <typename t> idx2_Inline void
+ndOuterLoop(const nd_index& Begin, const nd_size& End, const nd_size& Step, const t& Kernel)
+{
+  i8 D = EffectiveDims(End);
+  idx_Assert(D <= 6);
+  int X, Y, Z, U, V, W;
+  switch (D)
+  {
+    case 0:
+      idx2_ExitIf(false, "Zero dimensional input\n");
+      break;
+    case 1:
+      break;
+    case 2:
+      _Pragma("omp parallel for collapse(2)")
+      for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+        Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 3:
+      _Pragma("omp parallel for collapse(2)")
+      for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+        for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+          Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 4:
+      _Pragma("omp parallel for collapse(2)")
+      for (U = Begin[3]; U < End[3]; U += Step[3])
+        for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+          for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+            Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 5:
+      _Pragma("omp parallel for collapse(2)")
+      for (V = Begin[4]; V < End[4]; V += Step[4])
+        for (U = Begin[3]; U < End[3]; U += Step[3])
+          for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+            for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+              Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    case 6:
+      _Pragma("omp parallel for collapse(2)")
+      for (W = Begin[5]; W < End[5]; W += Step[5])
+        for (V = Begin[4]; V < End[4]; V += Step[4])
+          for (U = Begin[3]; U < End[3]; U += Step[3])
+            for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+              for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+                Kernel(nd_index(X, Y, Z, U, V, W));
+      break;
+    default:
+      idx2_ExitIf(false, "Effective dimensionality greater than 6\n");
+      break;
+  };
+}
+
+
 } // namespace idx2
+

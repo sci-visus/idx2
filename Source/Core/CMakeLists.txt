@@ -102,6 +102,11 @@ target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 target_compile_definitions(idx2Core PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow>")
 
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(idx2Core PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
 if (PARALLEL_DECODE)
   target_compile_definitions(idx2Core PUBLIC -Didx2_Parallel_Decode)
   target_link_libraries(idx2Core stlab)
