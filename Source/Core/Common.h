@@ -587,6 +587,7 @@ template <typename t> struct v6
   v6();
   explicit constexpr v6(t V);
   constexpr v6(t X_, t Y_, t Z_, t U_, t V_, t W_);
+  template <typename u> v6(const v3<u>& P1, const v3<u>& P2);
   template <typename u> v6(const v6<u>& Other);
   t& operator[](int Idx) const;
   template <typename u> v6& operator=(const v6<u>& Rhs);
@@ -833,22 +834,10 @@ template <typename t> idx2_Inline constexpr v3<t>::v3(t V)
 {
 }
 
-template <typename t> idx2_Inline constexpr v6<t>::v6(t V)
-  : XYZ(V)
-  , UVW(V)
-{
-}
-
 template <typename t> idx2_Inline constexpr v3<t>::v3(t X_, t Y_, t Z_)
   : X(X_)
   , Y(Y_)
   , Z(Z_)
-{
-}
-
-template <typename t> idx2_Inline constexpr v6<t>::v6(t X_, t Y_, t Z_, t U_, t V_, t W_)
-  : XYZ(X_, Y_, Z_)
-  , UVW(U_, V_, W_)
 {
 }
 
@@ -870,13 +859,6 @@ v3<t>::v3(const v3<u>& Other)
 {
 }
 
-template <typename t> template <typename u> idx2_Inline
-v6<t>::v6(const v6<u>& Other)
-  : XYZ(Other.XYZ)
-  , UVW(Other.UVW)
-{
-}
-
 
 template <typename t> idx2_Inline t&
 v3<t>::operator[](int Idx) const
@@ -895,6 +877,56 @@ v3<t>::operator=(const v3<u>& Rhs)
   return *this;
 }
 
+/* v6 stuffs*/
+template <typename t> idx2_Inline
+v6<t>::v6()
+  : XYZ(1)
+  : UVW(1)
+{
+}
+
+
+template <typename t> idx2_Inline constexpr v6<t>::v6(t V)
+  : XYZ(V)
+  , UVW(V)
+{
+}
+
+template <typename t> idx2_Inline constexpr v6<t>::v6(t X_, t Y_, t Z_, t U_, t V_, t W_)
+  : XYZ(X_, Y_, Z_)
+  , UVW(U_, V_, W_)
+{
+}
+
+template <typename t> template <typename u> idx2_Inline
+v6<t>::v6(const v3<u>& XYZ_, const v3<u>& UVW_)
+  : XYZ(XYZ_)
+  , UVW(UVW_)
+{
+}
+
+template <typename t> template <typename u> idx2_Inline
+v6<t>::v6(const v6<u>& Other)
+  : XYZ(Other.XYZ)
+  , UVW(Other.UVW)
+{
+}
+
+template <typename t> idx2_Inline t&
+v6<t>::operator[](int Idx) const
+{
+  assert(Idx < 6);
+  return const_cast<t&>(E[Idx]);
+}
+
+
+template <typename t> template <typename u> idx2_Inline v6<t>&
+v6<t>::operator=(const v6<u>& Rhs)
+{
+  XYZ = Rhs.XYZ;
+  UVW = Rhs.UVW;
+  return *this;
+}
 
 // TODO: move the following to Macros.h?
 #undef idx2_BeginFor3

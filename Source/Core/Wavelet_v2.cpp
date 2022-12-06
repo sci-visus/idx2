@@ -108,21 +108,21 @@ ForwardCdf53(const v3i& M3,
     f64 Wx = M3.X == 1 ? 1
                        : (S.LowHigh3.X == 0
                             ? TransformInfo.BasisNorms
-                                .ScalNorms[Iter * TransformInfo.NPasses + S.Level3Rev.X - 1]
+                                .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.X - 1]
                             : TransformInfo.BasisNorms
-                                .WaveNorms[Iter * TransformInfo.NPasses + S.Level3Rev.X]);
+                                .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.X]);
     f64 Wy = M3.Y == 1 ? 1
                        : (S.LowHigh3.Y == 0
                             ? TransformInfo.BasisNorms
-                                .ScalNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Y - 1]
+                                .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Y - 1]
                             : TransformInfo.BasisNorms
-                                .WaveNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Y]);
+                                .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Y]);
     f64 Idx2 = M3.Z == 1 ? 1
                          : (S.LowHigh3.Z == 0
                               ? TransformInfo.BasisNorms
-                                  .ScalNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Z - 1]
+                                  .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Z - 1]
                               : TransformInfo.BasisNorms
-                                  .WaveNorms[Iter * TransformInfo.NPasses + S.Level3Rev.Z]);
+                                  .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Z]);
     f64 W = Wx * Wy * Idx2;
 #define Body(type)                                                                                 \
   auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
@@ -218,6 +218,7 @@ EncodeTransformOrder(const stref& TransformOrder)
   }
   return Result;
 }
+
 
 
 static i8

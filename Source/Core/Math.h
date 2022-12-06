@@ -917,6 +917,266 @@ Ceil(const v2<t>& Vec)
 }
 
 
+/* v6 stuffs */
+
+template <typename u, typename t> idx2_Inline t
+Prod(const v6<u>& Vec)
+{
+  return Prod<t>(Vec.XYZ) * Prod<t>(Vec.UVW);
+}
+
+
+template <typename u, typename t> idx2_Inline t
+Sum(const v6<u>& Vec)
+{
+  return Sum<t>(Vec.XYZ) + Sum<t>(Vec.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator+(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Lhs.XYZ + Rhs.XYZ, Lhs.UVW + Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator+(const v6<t>& Lhs, t Val)
+{
+  return v6<t>(Lhs.XYZ + Val, Lhs.UVW + Val);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator-(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Lhs.XYZ - Rhs.XYZ, Lhs.UVW - Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator-(const v6<t>& Lhs, t Val)
+{
+  return v6<t>(Lhs.XYZ - Val, Lhs.UVW - Val);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator-(t Val, const v6<t>& Lhs)
+{
+  return v6<t>(Val - Lhs.XYZ, Val - Lhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator*(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Lhs.XYZ * Rhs.XYZ, Lhs.UVW * Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator*(const v6<t>& Lhs, t Val)
+{
+  return v6<t>(Lhs.XYZ * Val, Lhs.UVW * Val);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator/(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Lhs.XYZ / Rhs.XYZ, Lhs.UVW / Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator/(const v6<t>& Lhs, t Val)
+{
+  return v6<t>(Lhs.XYZ / Val, Lhs.UVW / Val);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator&(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Lhs.XYZ & Rhs.XYZ, Lhs.UVW & Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator&(const v6<t>& Lhs, t Val)
+{
+  return v6<t>(Lhs.XYZ & Val, Rhs.UVW & Val);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator%(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Lhs.XYZ % Rhs.XYZ, Lhs.UVW % Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+operator%(const v6<t>& Lhs, t Val)
+{
+  return v6<t>(Lhs.XYZ % Val, Lhs.UVW % Val);
+}
+
+
+template <typename t> idx2_Inline bool
+operator==(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return (Lhs.XYZ == Rhs.XYZ) && (Lhs.UVW == Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline bool
+operator!=(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return (Lhs.XYZ != Rhs.XYZ) || (Lhs.UVW != Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline bool
+operator==(const v6<t>& Lhs, t Val)
+{
+  return (Lhs.XYZ == Val) && (Lhs.UVW == Val);
+}
+
+
+template <typename t> idx2_Inline bool
+operator!=(const v6<t>& Lhs, t Val)
+{
+  return (Lhs.XYZ != Val) || (Lhs.UVW != Val);
+}
+
+
+template <typename t> idx2_Inline bool
+operator<=(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return (Lhs.XYZ <= Rhs.XYZ) && (Lhs.UVW <= Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline bool
+operator<(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return (Lhs.XYZ < Rhs.XYZ) && (Lhs.UVW < Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline bool
+operator>(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return (Lhs.XYZ > Rhs.XYZ) && (Lhs.UVW > Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline bool
+operator>(const v6<t>& Lhs, t Val)
+{
+  return (Lhs.XYZ > Val) && (Lhs.UVW > Val);
+}
+
+
+template <typename t> idx2_Inline bool
+operator>=(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return (Lhs.XYZ >= Rhs.XYZ) && (Lhs.UVW >= Rhs.UVW);
+}
+
+
+template <typename t> bool
+operator<(t Val, const v6<t>& Rhs)
+{
+  return (Val < Rhs.XYZ) && (Val < Rhs.UVW);
+}
+
+
+template <typename t> bool
+operator<(const v6<t>& Lhs, t Val)
+{
+  return (Lhs.XYZ < Val) && (Lhs.UVW < Val);
+}
+
+
+template <typename t> bool
+operator<=(const v6<t>& Lhs, t Val)
+{
+  return (Lhs.XYZ <= Val) && (Lhs.UVW <= Val);
+}
+
+
+template <typename t> bool
+operator<=(t Val, const v6<t>& Rhs)
+{
+  return (Val <= Rhs.XYZ) && (Val <= Rhs.UVW);
+}
+
+
+template <typename t, typename u> idx2_Inline v6<t>
+operator>>(const v6<t>& Lhs, const v6<u>& Rhs)
+{
+  return v6<t>(Lhs.XYZ >> Rhs.XYZ, Lhs.UVW >> Rhs.UVW);
+}
+
+
+template <typename t, typename u> idx2_Inline v6<u>
+operator>>(u Val, const v6<t>& Rhs)
+{
+  return v6<u>(Val >> Rhs.XYZ, Val >> Rhs.UVW);
+}
+
+
+template <typename t, typename u> idx2_Inline v6<t>
+operator>>(const v6<t>& Lhs, u Val)
+{
+  return v6<t>(Lhs.XYZ >> Val, Lhs.UVW >> Val);
+}
+
+
+template <typename t, typename u> idx2_Inline v6<t>
+operator<<(const v6<t>& Lhs, const v6<u>& Rhs)
+{
+  return v6<t>(Lhs.XYZ << Rhs.XYZ, Lhs.UVW << Rhs.UVW);
+}
+
+
+template <typename t, typename u> idx2_Inline v6<t>
+operator<<(const v6<t>& Lhs, u Val)
+{
+  return v6<t>(Lhs.XYZ << Val, Lhs.UVW << Val);
+}
+
+
+template <typename t, typename u> idx2_Inline v6<u>
+operator<<(u Val, const v6<t>& Rhs)
+{
+  return v6<u>(Val << Rhs.XYZ, Val << Rhs.UVW);
+}
+
+
+template <typename t> idx2_Inline v6<t>
+Min(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Min(Lhs.XYZ, Rhs.XYZ), Min(Lhs.UVW, Rhs.UVW));
+}
+
+
+template <typename t> idx2_Inline v6<t>
+Max(const v6<t>& Lhs, const v6<t>& Rhs)
+{
+  return v6<t>(Max(Lhs.XYZ, Rhs.XYZ), Max(Lhs.UVW, Rhs.UVW));
+}
+
+
+template <typename t> idx2_Inline v6<t>
+Ceil(const v6<t>& Vec)
+{
+  return v6<t>(Ceil(Vec.XYZ), Ceil(Vec.UVW));
+}
+
 idx2_Inline i64
 RoundDown(i64 Val, i64 M)
 {

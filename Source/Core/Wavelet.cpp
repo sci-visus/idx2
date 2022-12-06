@@ -202,6 +202,207 @@ InverseCdf53(const v3i& M3,
   }
 }
 
+/* With extrapolation (if needed). Support custom transform order. */
+// TODO: as currently implemented, the behavior of this is different from the BuildSubbands()
+// routine when given a transform order such as XXY++ (BuildSubbands will restrict the second X to
+// the coarse subband produced by the first X, while this function will not).
+void
+ForwardCdf53(const v3i& Dims3,
+             const v3i& M3,
+             int Iter,
+             int NLevels,
+             u64 TformOrder,
+             volume* Vol,
+             bool Normalize)
+{
+  idx2_Assert(Dims3 <= Dims(*Vol));
+  int Level = 0;
+  u64 PrevOrder = TformOrder;
+  v3i D3 = Dims3;
+  v3i R3 = D3;
+  v3i S3(1);
+  grid G(Dims3);
+  while (Level < NLevels)
+  {
+    idx2_Assert(TformOrder != 0);
+    int D = TformOrder & 0x3;
+    TformOrder >>= 2;
+    if (D == 3)
+    {                      // next level
+      if (TformOrder == 3) // next one is the last |
+        TformOrder = PrevOrder;
+      else
+        PrevOrder = TformOrder;
+      SetStrd(&G, S3);
+      SetDims(&G, D3);
+      R3 = D3;
+      ++Level;
+    }
+    else
+    {
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      idx2_Assert(Dims3.X > 1);                                                                    \
+      FLiftCdf53X<type>(G, M3, lift_option::Normal, Vol);                                          \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      idx2_Assert(Dims3.Y > 1);                                                                    \
+      FLiftCdf53Y<type>(G, M3, lift_option::Normal, Vol);                                          \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      idx2_Assert(Dims3.Z > 1);                                                                    \
+      FLiftCdf53Z<type>(G, M3, lift_option::Normal, Vol);                                          \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
+      idx2_DispatchOnType(Vol->Type);
+#undef Body
+      R3[D] = D3[D] + IsEven(D3[D]);
+      SetDims(&G, R3);
+      D3[D] = (R3[D] + 1) >> 1;
+      S3[D] <<= 1;
+    }
+  }
+
+  /* Optionally normalize */
+  if (NLevels > 0 && Normalize)
+  {
+    idx2_Assert(IsFloatingPoint(Vol->Type));
+    idx2_RAII(array<subband>, Subbands, BuildSubbands(Dims3, NLevels, TformOrder, &Subbands));
+    auto BasisNorms = GetCdf53NormsFast<16>();
+    for (int I = 0; I < Size(Subbands); ++I)
+    {
+      subband& S = Subbands[I];
+      f64 Wx = Dims3.X == 1
+                 ? 1
+                 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
+      f64 Wy = Dims3.Y == 1
+                 ? 1
+                 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
+      f64 Idx2 = Dims3.Z == 1
+                   ? 1
+                   : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1]
+                                        : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
+      f64 W = Wx * Wy * Idx2;
+#define Body(type)                                                                                 \
+  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
+  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
+    *It = type(*It * W);
+      idx2_DispatchOnType(Vol->Type);
+#undef Body
+    }
+  }
+}
+
+void
+InverseCdf53(const v3i& Dims3,
+             const v3i& M3,
+             int Iter,
+             int NLevels,
+             u64 TformOrder,
+             volume* Vol,
+             bool Normalize)
+{
+  idx2_Assert(Dims3 <= Dims(*Vol));
+  /* "simulate" the forward transform */
+  stack_array<grid, 32> StackGrids;
+  stack_array<int, 32> StackAxes;
+  int Level = 0;
+  u64 PrevOrder = TformOrder;
+  v3i D3 = Dims3;
+  v3i R3 = D3;
+  v3i S3(1);
+  grid G(Dims3);
+  int Iteration = 0;
+  while (Level < NLevels)
+  {
+    idx2_Assert(TformOrder != 0);
+    int D = TformOrder & 0x3;
+    TformOrder >>= 2;
+    if (D == 3)
+    {                      // next level
+      if (TformOrder == 3) // next one is the last |
+        TformOrder = PrevOrder;
+      else
+        PrevOrder = TformOrder;
+      SetStrd(&G, S3);
+      SetDims(&G, D3);
+      R3 = D3;
+      ++Level;
+    }
+    else
+    {
+      StackGrids[Iteration] = G;
+      StackAxes[Iteration++] = D;
+      R3[D] = D3[D] + IsEven(D3[D]);
+      SetDims(&G, R3);
+      D3[D] = (R3[D] + 1) >> 1;
+      S3[D] <<= 1;
+    }
+  }
+
+  /* inverse normalize if required */
+  if (NLevels > 0 && Normalize)
+  {
+    idx2_Assert(IsFloatingPoint(Vol->Type));
+    idx2_RAII(array<subband>, Subbands, BuildSubbands(Dims3, NLevels, TformOrder, &Subbands));
+    auto BasisNorms = GetCdf53NormsFast<16>();
+    for (int I = 0; I < Size(Subbands); ++I)
+    {
+      subband& S = Subbands[I];
+      f64 Wx = Dims3.X == 1
+                 ? 1
+                 : (S.LowHigh3.X == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.X - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.X]);
+      f64 Wy = Dims3.Y == 1
+                 ? 1
+                 : (S.LowHigh3.Y == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Y - 1]
+                                      : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Y]);
+      f64 Idx2 = Dims3.Z == 1
+                   ? 1
+                   : (S.LowHigh3.Z == 0 ? BasisNorms.ScalNorms[Iter * NLevels + S.Level3Rev.Z - 1]
+                                        : BasisNorms.WaveNorms[Iter * NLevels + S.Level3Rev.Z]);
+      f64 W = 1.0 / (Wx * Wy * Idx2);
+#define Body(type)                                                                                 \
+  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
+  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
+    *It = type(*It * W);
+      idx2_DispatchOnType(Vol->Type);
+#undef Body
+    }
+  }
+
+  /* perform the inverse transform */
+  while (Iteration-- > 0)
+  {
+    int D = StackAxes[Iteration];
+#define Body(type)                                                                                 \
+  switch (D)                                                                                       \
+  {                                                                                                \
+    case 0:                                                                                        \
+      ILiftCdf53X<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol);                       \
+      break;                                                                                       \
+    case 1:                                                                                        \
+      ILiftCdf53Y<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol);                       \
+      break;                                                                                       \
+    case 2:                                                                                        \
+      ILiftCdf53Z<f64>(StackGrids[Iteration], M3, lift_option::Normal, Vol);                       \
+      break;                                                                                       \
+    default:                                                                                       \
+      idx2_Assert(false);                                                                          \
+      break;                                                                                       \
+  };
+    idx2_DispatchOnType(Vol->Type);
+#undef Body
+  }
+}
+
 u64
 EncodeTransformOrder(const stref& TransformOrder)
 {
@@ -217,6 +418,19 @@ EncodeTransformOrder(const stref& TransformOrder)
   return Result;
 }
 
+
+void
+DecodeTransformOrder(u64 Input, str Output)
+{
+  int Len = 0;
+  while (Input != 0)
+  {
+    int T = Input & 0x3;
+    Output[Len++] = T == 3 ? '+' : char('X' + T);
+    Input >>= 2;
+  }
+  Output[Len] = '\0';
+}
 
 i8
 DecodeTransformOrder(u64 Input, v3i N3, str Output)
