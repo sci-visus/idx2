@@ -460,6 +460,37 @@ DecodeTransformOrder(u64 Input, v3i N3, str Output)
 }
 
 
+i8
+DecodeTransformOrder(u64 Input, int Passes, str Output)
+{
+  i8 Len = 0;
+  u64 SavedInput = Input;
+  v3i Passes3(Passes);
+  while (true)
+  {
+    int T = Input & 0x3;
+    Input >>= 2;
+    if (T == 3)
+    {
+      if (Input == 3)
+        Input = SavedInput;
+      else
+        SavedInput = Input;
+    }
+    else
+    {
+      --Passes3[T];
+      if (Passes3[T] < 0)
+        break;
+      Output[Len++] = char('X' + T);
+    }
+  }
+  Output[Len] = '\0';
+  return Len;
+}
+
+
+
 /*
 In string form, a TransformOrder is made from 4 characters: X,Y,Z, and +
 X, Y, and Z denotes the axis where the transform happens, while + denotes where the next
