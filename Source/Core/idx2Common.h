@@ -60,6 +60,7 @@ idx2_Enum(func_level, u8, Subband, Sum, Max);
 namespace idx2
 {
 
+
 /* ---------------------- TYPES ----------------------*/
 
 struct file_id

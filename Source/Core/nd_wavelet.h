@@ -3,6 +3,7 @@
 #include "Array.h"
 #include "Common.h"
 #include "Volume.h"
+#include "nd_volume.h"
 
 
 namespace idx2
@@ -54,7 +55,6 @@ GetCdf53NormsFast()
   return Result;
 }
 
-
 struct subband
 {
   grid Grid;
@@ -74,6 +74,14 @@ struct transform_info
   u64 TformOrder;
   int StackSize;
   int NPasses;
+};
+
+struct transform_info_v2
+{
+  wav_basis_norms_static<16> BasisNorms;
+  array<nd_grid> Grids;
+  array<i8> Axes;
+  i8 NLevels;
 };
 
 void

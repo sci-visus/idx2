@@ -593,6 +593,16 @@ template <typename t> struct v6
   template <typename u> v6& operator=(const v6<u>& Rhs);
 };
 
+using v6i = v6<i32>;
+using v6u = v6<u32>;
+using v6l = v6<i64>;
+using v6ul = v6<u64>;
+using v6f = v6<f32>;
+using v6d = v6<f64>;
+
+using nd_index = v6i;
+using nd_size = v6i;
+
 } // namespace idx2
 
 

@@ -10,51 +10,56 @@
 #include "Math.h"
 #include "Memory.h"
 #include "ScopeGuard.h"
-#include "Wavelet.h"
+#include "nd_wavelet.h"
+#include "nd_volume.h"
 
 
 namespace idx2
 {
 
 
-/* In contrast to v1, we will call this for the entire NLevels (i.e., NLevels == Idx2.NLevels).
-In v1, NLevels here is always just 1.
+/*
+The TransformTemplate is a string that looks like ':210210:210:210', where each number denotes a dimension.
+The transform happens along the dimensions from right to left.
+The ':' character denotes level boundary.
+The number of ':' characters is the same as the number of levels (which is also Idx2.NLevels).
+This is in contrast to v1, in which NLevels is always just 1.
 */
-static void
-ComputeTransformInfo(stref TransformTemplate,
-                     //const v8i& Dims,
-                     int NLevels,
-                     transform_info_v2* TransformInfo)
+static transform_info_v2
+ComputeTransformInfo(stref TransformTemplate, const nd_index& Dims)
 {
-  //int Level = 0;
-  //v8i D8 = Dims;
-  //v8i R8 = D8;
-  //v8i S8(1); // spacing
-  //grid G(Dims3);
-  //int Pos = TransformTemplate.Size - 1;
-  //while (Level < NLevels)
-  //{
-  //  idx2_Assert(Pos >= 0);
-  //  int D = TransformTemplate[Pos--] - '0';
-  //  if (D == 10) // the character ':' (next level)
-  //  {
-  //    SetStrd(&G, S3);
-  //    SetDims(&G, D3);
-  //    R3 = D3;
-  //    ++Level;
-  //  }
-  //  else // one of 0, 1, 2
-  //  {
-  //    PushBack(&TransformInfo->Grids, G);
-  //    PushBack(&TransformInfo->Axes, D);
-  //    R3[D] = D3[D] + IsEven(D3[D]);
-  //    SetDims(&G, R3);
-  //    D3[D] = (R3[D] + 1) >> 1;
-  //    S3[D] <<= 1;
-  //  }
-  //}
-  //TransformInfo->BasisNorms = GetCdf53NormsFast<16>();
-  //TransformInfo->NLevels = NLevels;
+  transform_info_v2 TransformInfo;
+  nd_index CurrentDims = Dims;
+  nd_index ExtrapolatedDims = CurrentDims;
+  nd_index CurrentSpacing(1); // spacing
+  nd_grid G(Dims);
+  i8 Pos = TransformTemplate.Size - 1;
+  i8 NLevels = 0;
+  while (Pos >= 0)
+  {
+    idx2_Assert(Pos >= 0);
+    if (TransformTemplate[Pos--] == ':') // the character ':' (next level)
+    {
+      G.Spacing = CurrentSpacing;
+      G.Dims = CurrentDims;
+      ExtrapolatedDims = CurrentDims;
+      ++NLevels;
+    }
+    else // one of 0, 1, 2
+    {
+      i8 D = TransformTemplate[Pos--] - '0';
+      PushBack(&TransformInfo.Grids, G);
+      PushBack(&TransformInfo.Axes, D);
+      ExtrapolatedDims[D] = CurrentDims[D] + IsEven(CurrentDims[D]);
+      G.Dims = ExtrapolatedDims;
+      CurrentDims[D] = (ExtrapolatedDims[D] + 1) / 2;
+      CurrentSpacing[D] *= 2;
+    }
+  }
+  TransformInfo.BasisNorms = GetCdf53NormsFast<16>();
+  TransformInfo.NLevels = NLevels;
+
+  return TransformInfo;
 }
 
 
@@ -83,54 +88,54 @@ ForwardCdf53(const v3i& M3,
              volume* Vol,
              bool CoarsestLevel)
 {
-  idx2_For (int, I, 0, Size(TransformInfo.Axes))
-  {
-    int D = TransformInfo.Axes[I];
-    if (Vol->Type == dtype::float64)
-    {
-      if (D == 0)
-        FLiftCdf53X<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
-      else if (D == 1)
-        FLiftCdf53Y<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
-      else if (D == 2)
-        FLiftCdf53Z<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
-      // TODO: need higher dimensional transforms
-    }
-  }
-
-  /* Optionally normalize */
-  idx2_Assert(IsFloatingPoint(Vol->Type));
-  for (int I = 0; I < Size(Subbands); ++I)
-  {
-    if (I == 0 && !CoarsestLevel)
-      continue; // do not normalize subband 0
-    subband& S = Subbands[I];
-    f64 Wx = M3.X == 1 ? 1
-                       : (S.LowHigh3.X == 0
-                            ? TransformInfo.BasisNorms
-                                .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.X - 1]
-                            : TransformInfo.BasisNorms
-                                .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.X]);
-    f64 Wy = M3.Y == 1 ? 1
-                       : (S.LowHigh3.Y == 0
-                            ? TransformInfo.BasisNorms
-                                .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Y - 1]
-                            : TransformInfo.BasisNorms
-                                .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Y]);
-    f64 Idx2 = M3.Z == 1 ? 1
-                         : (S.LowHigh3.Z == 0
-                              ? TransformInfo.BasisNorms
-                                  .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Z - 1]
-                              : TransformInfo.BasisNorms
-                                  .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Z]);
-    f64 W = Wx * Wy * Idx2;
-#define Body(type)                                                                                 \
-  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
-  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
-    *It = type(*It * W);
-    idx2_DispatchOnType(Vol->Type);
-#undef Body
-  }
+//  idx2_For (int, I, 0, Size(TransformInfo.Axes))
+//  {
+//    int D = TransformInfo.Axes[I];
+//    if (Vol->Type == dtype::float64)
+//    {
+//      if (D == 0)
+//        FLiftCdf53X<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
+//      else if (D == 1)
+//        FLiftCdf53Y<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
+//      else if (D == 2)
+//        FLiftCdf53Z<f64>(TransformInfo.Grids[I], M3, lift_option::Normal, Vol);
+//      // TODO: need higher dimensional transforms
+//    }
+//  }
+//
+//  /* Optionally normalize */
+//  idx2_Assert(IsFloatingPoint(Vol->Type));
+//  for (int I = 0; I < Size(Subbands); ++I)
+//  {
+//    if (I == 0 && !CoarsestLevel)
+//      continue; // do not normalize subband 0
+//    subband& S = Subbands[I];
+//    f64 Wx = M3.X == 1 ? 1
+//                       : (S.LowHigh3.X == 0
+//                            ? TransformInfo.BasisNorms
+//                                .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.X - 1]
+//                            : TransformInfo.BasisNorms
+//                                .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.X]);
+//    f64 Wy = M3.Y == 1 ? 1
+//                       : (S.LowHigh3.Y == 0
+//                            ? TransformInfo.BasisNorms
+//                                .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Y - 1]
+//                            : TransformInfo.BasisNorms
+//                                .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Y]);
+//    f64 Idx2 = M3.Z == 1 ? 1
+//                         : (S.LowHigh3.Z == 0
+//                              ? TransformInfo.BasisNorms
+//                                  .ScalNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Z - 1]
+//                              : TransformInfo.BasisNorms
+//                                  .WaveNorms[Iter * TransformInfo.NLevels + S.Level3Rev.Z]);
+//    f64 W = Wx * Wy * Idx2;
+//#define Body(type)                                                                                 \
+//  auto ItEnd = End<type>(S.Grid, *Vol);                                                            \
+//  for (auto It = Begin<type>(S.Grid, *Vol); It != ItEnd; ++It)                                     \
+//    *It = type(*It * W);
+//    idx2_DispatchOnType(Vol->Type);
+//#undef Body
+//  }
 }
 
 
