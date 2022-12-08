@@ -109,7 +109,7 @@ endif()
 
 if (PARALLEL_DECODE)
   target_compile_definitions(idx2Core PUBLIC -Didx2_Parallel_Decode)
-  target_link_libraries(idx2Core stlab)
+  target_link_libraries(idx2Core PUBLIC stlab)
 endif()
 
 if (MSVC)
