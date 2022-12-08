@@ -126,6 +126,8 @@ ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8
     // this part handles with caching, in the long-term it should be disabled since OpenVisus can
     // handle the caching itself
     //  TODO: how to handle locking for multithreading here
+    // TODO: this lock here will prevent two threads to submit I/O request at the same time, but for now it's probably ok
+    std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
     file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
     auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
     if (!FileCacheIt)
@@ -141,15 +143,12 @@ ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8
     if (ChunkCacheIt)
       return *ChunkCacheIt.Val;
 
-    buffer buff;
-    bool Result = Idx2.external_read(Idx2, buff, ChunkAddress).get();
-    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound, "Address " PRIu64, ChunkAddress);
+    bitstream ChunkStream;
+    bool Result = Idx2.external_read(Idx2, ChunkStream.Stream, ChunkAddress).get();
+    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
 
     // decompress part
     chunk_cache ChunkCache;
-    bitstream ChunkStream;
-    ChunkStream.Stream = buff;
-    // InitRead(&ChunkCache.ChunkStream, ChunkBuf);
     DecompressChunk(&ChunkStream, &ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
     Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
     return *ChunkCacheIt.Val;
@@ -331,6 +330,9 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
     // this part handles with caching, in the long-term it should be disabled since OpenVisus can
     // handle the caching itself
     //  TODO: how should locking (multithreading) be handled here?
+    // TODO: this lock here will prevent two threads to submit I/O request at the same time, but for now it's probably ok
+    std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
+    u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
     file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
     auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
     if (!FileCacheIt)
@@ -341,16 +343,15 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
       Insert(&FileCacheIt, FileId.Id, FileCache);
     }
     file_cache* FileCache = FileCacheIt.Val;
-    u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
     auto ChunkExpCacheIt = Lookup(FileCache->ChunkExpCaches, ChunkAddress);
     if (ChunkExpCacheIt)
       return *ChunkExpCacheIt.Val;
 
+    // here we release he lock and read the chunk
     // read the block
-    //  TOOD: who manages the memory for buff? (when do I deallocate it?)
     buffer buff;
     bool Result = Idx2.external_read(Idx2, buff, ChunkAddress).get();
-    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound, "Address: " PRIu64, ChunkAddress);
+    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
 
     // decompress the block
     chunk_exp_cache ChunkExpCache;
