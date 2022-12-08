@@ -42,15 +42,15 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
 
     /* brick exponents */
     Flush(&Sc->BrickExpStream);
+    UncompressedExpChunksStat.Add((f64)Size(Sc->BrickExpStream));
     Rewind(&E->ChunkExpStream);
     CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
-    //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
     CompressedExpChunksStat.Add((f64)Size(E->ChunkExpStream));
     Rewind(&Sc->BrickExpStream);
     u64 ChunkExpAddress = GetChunkAddress(Idx2, Sc->LastBrick, Level, Subband, ExponentBitPlane_);
     buffer Buf = ToBuffer(E->ChunkExpStream);
     if (!Idx2.external_write(Idx2, Buf, ChunkExpAddress))
-      throw "to handle this";
+      idx2_ExitIf(true, "Write chunk exponent failed\n");
     Rewind(&E->ChunkExpStream);
     return;
   }
@@ -61,7 +61,6 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
   UncompressedExpChunksStat.Add((f64)Size(Sc->BrickExpStream));
   Rewind(&E->ChunkExpStream);
   CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
-  //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
   CompressedExpChunksStat.Add((f64)Size(E->ChunkExpStream));
 
   /* rewind */
@@ -245,7 +244,7 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
     u64 ChunkAddress = GetChunkAddress(Idx2, C->LastBrick, Level, Subband, BitPlane);
     buffer Buf = ToBuffer(E->ChunkStream);
     if (!Idx2.external_write(Idx2, Buf, ChunkAddress))
-      throw "to handle this";
+      idx2_ExitIf(true, "Write chunk failed\n");
     Rewind(&E->ChunkStream);
     return;
   }
@@ -253,7 +252,6 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
 
   BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
   BrickSizesStat.Add((f64)Size(C->BrickSizeStream));       // brick sizes
-  //BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
   i64 ChunkSize = Size(C->BrickDeltasStream) + Size(C->BrickSizeStream) + Size(C->BrickStream) + 64;
   Rewind(&E->ChunkStream);
   GrowToAccomodate(&E->ChunkStream, ChunkSize);

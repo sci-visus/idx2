@@ -173,7 +173,7 @@ struct idx2_file
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
 #if VISUS_IDX2
-  
+
   //introducing the future for async-read
   std::function<std::future<bool> (const idx2_file&, buffer&, u64) > external_read;
 

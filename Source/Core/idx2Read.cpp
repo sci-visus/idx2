@@ -175,16 +175,12 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
     if (ChunkCacheIt)
       return ChunkCacheIt.Val;
 
-    buffer buff;
-    auto ret = Idx2.external_read(Idx2, buff, ChunkAddress);
-    if (!ret.get())
-      throw "to handle this";
+    bitstream ChunkStream;
+    bool Result = Idx2.external_read(Idx2, ChunkStream.Stream, ChunkAddress).get();
+    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
 
     //decompress part
     chunk_cache ChunkCache;
-    bitstream ChunkStream;
-    ChunkStream.Stream=buff;
-    // InitRead(&ChunkCache.ChunkStream, ChunkBuf);
     DecompressChunk(&ChunkStream, &ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
     Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
     return ChunkCacheIt.Val;
@@ -377,14 +373,15 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     //read the block
     // TOOD: who manages the memory for buff? (when do I deallocate it?)
     buffer buff;
-    auto ret = Idx2.external_read(Idx2, buff, ChunkAddress);
-    if (!ret.get())
-      throw "to handle this";
+    bool Result = Idx2.external_read(Idx2, buff, ChunkAddress).get();
+    if (!Result)
+      idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
 
     //decompress the block
     chunk_exp_cache ChunkExpCache;
     bitstream& ChunkExpStream = ChunkExpCache.ChunkExpStream;
     DecompressBufZstd(buff, &ChunkExpStream);
+    DeallocBuf(&buff);
     InitRead(&ChunkExpCache.ChunkExpStream, ChunkExpStream.Stream);
     Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache);
     return ChunkExpCacheIt.Val;
