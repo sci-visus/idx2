@@ -176,7 +176,8 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
       return ChunkCacheIt.Val;
 
     buffer buff;
-    if (!Idx2.external_read(Idx2, buff, ChunkAddress))
+    auto ret = Idx2.external_read(Idx2, buff, ChunkAddress);
+    if (!ret.get())
       throw "to handle this";
 
     //decompress part
@@ -376,7 +377,8 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     //read the block
     // TOOD: who manages the memory for buff? (when do I deallocate it?)
     buffer buff;
-    if (!Idx2.external_read(Idx2, buff, ChunkAddress))
+    auto ret = Idx2.external_read(Idx2, buff, ChunkAddress);
+    if (!ret.get())
       throw "to handle this";
 
     //decompress the block
