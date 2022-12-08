@@ -499,16 +499,4 @@ BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Su
 }
 
 
-grid
-MergeSubbandGrids(const grid& Sb1, const grid& Sb2)
-{
-  v3i Off3 = Abs(From(Sb2) - From(Sb1));
-  v3i Strd3 = Min(Strd(Sb1), Strd(Sb2)) * Equals(Off3, v3i(0)) + Off3;
-  // TODO: works in case of subbands but not in general
-  v3i Dims3 = Dims(Sb1) + NotEquals(From(Sb1), From(Sb2)) * Dims(Sb2);
-  v3i From3 = Min(From(Sb2), From(Sb1));
-  return grid(From3, Dims3, Strd3);
-}
-
-
 } // namespace idx2
