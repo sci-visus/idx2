@@ -12,6 +12,7 @@
 
 #if VISUS_IDX2
 #include <functional>
+#include <future>
 #endif
 
 /* ---------------------- MACROS ----------------------*/
@@ -175,7 +176,11 @@ struct idx2_file
   bool GroupSubbands = true;
 
 #if VISUS_IDX2
-  std::function<bool(const idx2_file&, buffer&, u64)> external_read;
+  
+  //introducing the future for async-read
+  std::function<std::future<bool> (const idx2_file&, buffer&, u64) > external_read;
+
+  //write is always syncronous and slow, don't use this
   std::function<bool(const idx2_file&, buffer&, u64)> external_write;
 #endif
 };
