@@ -102,8 +102,12 @@ target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 target_compile_definitions(idx2Core PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow>")
 
+if (VISUS_IDX2)
+  target_compile_definitions(idx2Core PUBLIC -DVISUS_IDX2)
+endif()
+
 find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
+if (OpenMP_CXX_FOUND)
   target_link_libraries(idx2Core PUBLIC OpenMP::OpenMP_CXX)
 endif()
 

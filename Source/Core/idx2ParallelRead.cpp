@@ -139,11 +139,11 @@ ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8
     u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
     auto ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
     if (ChunkCacheIt)
-      return ChunkCacheIt.Val;
+      return *ChunkCacheIt.Val;
 
     buffer buff;
-    if (!Idx2.external_read(Idx2, buff, ChunkAddress))
-      throw "to handle this";
+    bool Result = Idx2.external_read(Idx2, buff, ChunkAddress).get();
+    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound, "Address " PRIu64, ChunkAddress);
 
     // decompress part
     chunk_cache ChunkCache;
@@ -152,7 +152,7 @@ ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8
     // InitRead(&ChunkCache.ChunkStream, ChunkBuf);
     DecompressChunk(&ChunkStream, &ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
     Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
-    return ChunkCacheIt.Val;
+    return *ChunkCacheIt.Val;
   }
 #endif
 
@@ -344,13 +344,13 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
     u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
     auto ChunkExpCacheIt = Lookup(FileCache->ChunkExpCaches, ChunkAddress);
     if (ChunkExpCacheIt)
-      return ChunkExpCacheIt.Val;
+      return *ChunkExpCacheIt.Val;
 
     // read the block
     //  TOOD: who manages the memory for buff? (when do I deallocate it?)
     buffer buff;
-    if (!Idx2.external_read(Idx2, buff, ChunkAddress))
-      throw "to handle this";
+    bool Result = Idx2.external_read(Idx2, buff, ChunkAddress).get();
+    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound, "Address: " PRIu64, ChunkAddress);
 
     // decompress the block
     chunk_exp_cache ChunkExpCache;
@@ -358,7 +358,7 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
     DecompressBufZstd(buff, &ChunkExpStream);
     InitRead(&ChunkExpCache.ChunkExpStream, ChunkExpStream.Stream);
     Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache);
-    return ChunkExpCacheIt.Val;
+    return *ChunkExpCacheIt.Val;
   }
 #endif
 

@@ -42,7 +42,6 @@ WriteChunkExponents(const idx2_file& Idx2, encode_data* E, sub_channel* Sc, i8 L
 
     /* brick exponents */
     Flush(&Sc->BrickExpStream);
-    BrickEMaxesStat.Add((f64)Size(Sc->BrickExpStream));
     Rewind(&E->ChunkExpStream);
     CompressBufZstd(ToBuffer(Sc->BrickExpStream), &E->ChunkExpStream);
     //  PushBack(&E->FileEMaxBuffer, E->ChunkEMaxesStream.Stream.Data, Size(E->ChunkEMaxesStream));
@@ -227,7 +226,6 @@ WriteChunk(const idx2_file& Idx2, encode_data* E, channel* C, i8 Level, i8 Subba
   {
     BrickDeltasStat.Add((f64)Size(C->BrickDeltasStream)); // brick deltas
     BrickSizesStat.Add((f64)Size(C->BrickSizeStream));      // brick sizes
-    BrickStreamStat.Add((f64)Size(C->BrickStream));       // brick data
     i64 ChunkSize =
       Size(C->BrickDeltasStream) + Size(C->BrickSizeStream) + Size(C->BrickStream) + 64;
     Rewind(&E->ChunkStream);
