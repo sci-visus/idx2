@@ -688,9 +688,11 @@ ComputeExtentsForTraversal(const idx2_file& Idx2,
 }
 
 error<idx2_err_code>
-Finalize(idx2_file* Idx2, const params& P)
+Finalize(idx2_file* Idx2, params* P)
 {
-  idx2_PropagateIfError(CheckBrickSize(Idx2, P));
+  idx2_PropagateIfError(CheckBrickSize(Idx2, *P));
+  P->Tolerance = Max(fabs(P->Tolerance), Idx2->Tolerance);
+  //printf("tolerance = %.16f\n", P->Tolerance);
   GuessNumLevelsIfNeeded(Idx2);
   if (!(Idx2->NLevels <= idx2_file::MaxLevels))
     return idx2_Error(idx2_err_code::TooManyLevels, "Max # of levels = %d\n", Idx2->MaxLevels);
@@ -700,16 +702,16 @@ Finalize(idx2_file* Idx2, const params& P)
 
 
   char TformOrder[8] = {};
-  ComputeTransformOrder(Idx2, P, TformOrder);
+  ComputeTransformOrder(Idx2, *P, TformOrder);
 
-  BuildSubbands(Idx2, P);
+  BuildSubbands(Idx2, *P);
 
-  ComputeNumBricksPerLevel(Idx2, P);
+  ComputeNumBricksPerLevel(Idx2, *P);
 
-  idx2_PropagateIfError(ComputeGlobalBricksOrder(Idx2, P, TformOrder));
-  idx2_PropagateIfError(ComputeLocalBricksChunksFilesOrders(Idx2, P));
+  idx2_PropagateIfError(ComputeGlobalBricksOrder(Idx2, *P, TformOrder));
+  idx2_PropagateIfError(ComputeLocalBricksChunksFilesOrders(Idx2, *P));
 
-  idx2_PropagateIfError(ComputeFileDirDepths(Idx2, P));
+  idx2_PropagateIfError(ComputeFileDirDepths(Idx2, *P));
 
   ComputeWaveletTransformDetails(Idx2);
 

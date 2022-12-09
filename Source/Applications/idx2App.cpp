@@ -36,9 +36,7 @@ ParseDecodeOptions(int Argc, cstr* Argv, params* P)
   OptVal(Argc, Argv, "--downsampling", &P->DownsamplingFactor3);
 
   // Parse the decode accuracy (--accuracy)
-  idx2_ExitIf(!OptVal(Argc, Argv, "--tolerance", &P->DecodeTolerance),
-              "Provide --tolerance\n"
-              "Example: --tolerance 0.01\n");
+  OptVal(Argc, Argv, "--tolerance", &P->DecodeTolerance);
 
   // Parse the input directory (--in_dir)
   OptVal(Argc, Argv, "--in_dir", &P->InDir);
@@ -147,7 +145,7 @@ ParseEncodeOptions(int Argc, cstr* Argv, params* P)
 
   // Parse the tolerance (--tolerance)
   OptVal(Argc, Argv, "--tolerance", &P->Tolerance);
-  if (P->Tolerance == 0)
+  if (P->Tolerance <= 0)
   {
     if (P->Meta.DType == dtype::float32)
       P->Tolerance = GetMachineEpsilon<f32>();
@@ -216,21 +214,21 @@ ParseParams(int Argc, cstr* Argv)
 
 /* "Copy" the parameters from the command line to the internal idx2_file struct */
 static error<idx2_err_code>
-SetParams(idx2_file* Idx2, const params& P)
+SetParams(idx2_file* Idx2, params* P)
 {
-  SetName(Idx2, P.Meta.Name);
-  SetField(Idx2, P.Meta.Field);
-  SetVersion(Idx2, P.Version);
-  SetDimensions(Idx2, P.Meta.Dims3);
-  SetDataType(Idx2, P.Meta.DType);
-  SetBrickSize(Idx2, P.BrickDims3);
-  SetBricksPerChunk(Idx2, P.BricksPerChunk);
-  SetChunksPerFile(Idx2, P.ChunksPerFile);
-  SetBitPlanesPerChunk(Idx2, P.BitPlanesPerChunk);
-  SetNumLevels(Idx2, (i8)P.NLevels);
-  SetTolerance(Idx2, P.Tolerance);
-  SetFilesPerDirectory(Idx2, P.FilesPerDir);
-  SetDir(Idx2, P.OutDir);
+  SetName(Idx2, P->Meta.Name);
+  SetField(Idx2, P->Meta.Field);
+  SetVersion(Idx2, P->Version);
+  SetDimensions(Idx2, P->Meta.Dims3);
+  SetDataType(Idx2, P->Meta.DType);
+  SetBrickSize(Idx2, P->BrickDims3);
+  SetBricksPerChunk(Idx2, P->BricksPerChunk);
+  SetChunksPerFile(Idx2, P->ChunksPerFile);
+  SetBitPlanesPerChunk(Idx2, P->BitPlanesPerChunk);
+  SetNumLevels(Idx2, (i8)P->NLevels);
+  SetTolerance(Idx2, P->Tolerance);
+  SetFilesPerDirectory(Idx2, P->FilesPerDir);
+  SetDir(Idx2, P->OutDir);
   return Finalize(Idx2, P);
 }
 
@@ -252,7 +250,7 @@ Idx2App(int Argc, const char* Argv[])
   if (P.Action == action::Encode)
   {
     RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
-    idx2_ExitIfError(SetParams(&Idx2, P));
+    idx2_ExitIfError(SetParams(&Idx2, &P));
 
 #if VISUS_IDX2
     //make sure these instances are alive for encoding/decoding operations

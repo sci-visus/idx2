@@ -271,7 +271,7 @@ void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);
 
 error<idx2_err_code>
-Finalize(idx2_file* Idx2, const params& P);
+Finalize(idx2_file* Idx2, params* P);
 
 void
 ComputeExtentsForTraversal(const idx2_file& Idx2,

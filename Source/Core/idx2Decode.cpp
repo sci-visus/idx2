@@ -155,7 +155,8 @@ DecodeSubband(const idx2_file& Idx2,
       { // first block in the brick
         auto ReadChunkResult = ReadChunk(Idx2, D, Brick, Ds.Level, Ds.Subband, BpKey);
         if (!ReadChunkResult)
-          return Error(ReadChunkResult);
+          //return Error(ReadChunkResult);
+          break;
 
         const chunk_cache* ChunkCache = Value(ReadChunkResult);
         auto BrickIt = BinarySearch(idx2_Range(ChunkCache->Bricks), Brick);
@@ -297,9 +298,10 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
     /* now we decode the subband */
     Ds.Subband = Sb;
     auto Result = DecodeSubband(Idx2, D, Ds, Tolerance, S.Grid, &Streams, BrickIt.Val);
-    if (!Result)
+    if (Result)
+      BrickIt.Val->Significant = BrickIt.Val->Significant || Value(Result);
+    else
       return Error(Result);
-    BrickIt.Val->Significant = BrickIt.Val->Significant || Value(Result);
   } // end subband loop
 
   bool CoarsestLevel = Level + 1 == Idx2.NLevels;
