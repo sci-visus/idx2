@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(idx2Core CXX)
 
+add_subdirectory(v2)
+
 set(IDX2_CORE_HEADER_FILES
   Algorithm.h
   Args.h
@@ -66,14 +68,10 @@ set(IDX2_CORE_SOURCE_FILES
   idx2Decode.cpp
   idx2ParallelDecode.cpp
   idx2Encode.cpp
-  idx2Encode_v2.cpp
   idx2Lookup.cpp
-  idx2Lookup_v2.cpp
   idx2Read.cpp
-  idx2Read_v2.cpp
   idx2ParallelRead.cpp
   idx2Write.cpp
-  idx2Write_v2.cpp
   idx2SparseBricks.cpp
   InputOutput.cpp
   Logger.cpp
@@ -90,10 +88,10 @@ set(IDX2_CORE_SOURCE_FILES
   Zfp.cpp
 )
 
-add_library(idx2Core ${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_SOURCE_FILES})
+add_library(idx2Core ${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_HEADER_FILES_V2} ${IDX2_CORE_SOURCE_FILES} ${IDX2_CORE_SOURCE_FILES_V2})
 set_target_properties(idx2Core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER "${IDX2_CORE_HEADER_FILES}")
+  PUBLIC_HEADER "${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_HEADER_FILES_V2}")
 target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 target_compile_definitions(idx2Core PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow>")

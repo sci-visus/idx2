@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.8)
 project(idx2 CXX)
 
 option(BUILD_IDX2PY "Build the Python interface for idx2" OFF)
-option(PARALLEL_DECODE "Enable parallel decoding" OFF)
 option(VISUS_IDX2 "Enable support for OpenViSUS" OFF)
 
 add_subdirectory(Core)

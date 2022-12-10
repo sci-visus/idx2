@@ -147,6 +147,12 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier);
 error<idx2_err_code>
 EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3);
 
+error<idx2_err_code>
+Encode_v2(idx2_file* Idx2, const params& P, brick_copier& Copier);
+
+error<idx2_err_code>
+EncodeBrick_v2(idx2_file* Idx2, const params& P, const v3i& BrickPos3);
+
 void
 Init(encode_data* E, allocator* Alloc = nullptr);
 

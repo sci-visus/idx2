@@ -293,10 +293,10 @@ Idx2App(int Argc, const char* Argv[])
       {
         idx2_ExitIfError(Encode(&Idx2, P, Copier));
       }
-      else if (P.Version == v2i(2, 0))
-      {
-        idx2_ExitIfError(Encode_v2(&Idx2, P, Copier));
-      }
+      //else if (P.Version == v2i(2, 0))
+      //{
+      //  idx2_ExitIfError(Encode_v2(&Idx2, P, Copier));
+      //}
     }
   }
   else if (P.Action == action::Decode)
