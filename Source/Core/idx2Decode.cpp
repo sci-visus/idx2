@@ -468,7 +468,6 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     WriteBricks(&D.BrickPool, "bricks");
   }
 
-  #if defined(idx2_Parallel_Decode)
   printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
   printf("io time             = %f\n", Seconds(D.DecodeIOTime_.load()));
   printf("data movement time  = %f\n", Seconds(D.DataMovementTime_.load()));
@@ -479,18 +478,6 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
   printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool.BrickTable));
   printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks.load());
   printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands.load());
-  #else
-  printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
-  printf("io time             = %f\n", Seconds(D.DecodeIOTime_));
-  printf("data movement time  = %f\n", Seconds(D.DataMovementTime_));
-  printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_);
-  printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_);
-  printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_ + D.BytesData_);
-  printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_ / 8);
-  printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool.BrickTable));
-  printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks);
-  printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands);
-  #endif
 
   return idx2_Error(err_code::NoError);
 }

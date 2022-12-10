@@ -6,11 +6,9 @@
 #include "idx2Read.h"
 #include "idx2SparseBricks.h"
 #include "thread-pool/BS_thread_pool.hpp"
-#if defined(idx2_Parallel_Decode)
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
-#endif
 
 
 namespace idx2
@@ -37,15 +35,12 @@ struct decode_data
   brick_pool BrickPool;
   BS::thread_pool ThreadPool;
 
-#if defined(idx2_Parallel_Decode)
   std::mutex FileCacheMutex;
   std::mutex BrickPoolMutex;
   std::mutex Mutex;
   std::condition_variable AllTasksDone;
   i64 NTasks = 0;
-#endif
 
-#if defined(idx2_Parallel_Decode)
   std::atomic<u64> DecodeIOTime_ = 0;
   std::atomic<u64> BytesExps_ = 0;
   std::atomic<u64> BytesData_ = 0;
@@ -53,15 +48,6 @@ struct decode_data
   std::atomic<u64> DataMovementTime_ = 0;
   std::atomic<i64> NSignificantBlocks = 0;
   std::atomic<i64> NInsignificantSubbands = 0;
-#else
-  u64 DecodeIOTime_ = 0;
-  u64 BytesExps_ = 0;
-  u64 BytesData_ = 0;
-  u64 BytesDecoded_ = 0;
-  u64 DataMovementTime_ = 0;
-  i64 NSignificantBlocks = 0;
-  i64 NInsignificantSubbands = 0;
-#endif
 };
 
 

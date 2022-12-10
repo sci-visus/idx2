@@ -1,20 +1,3 @@
-#if !defined(idx2_Parallel_Decode)
-
-#include "idx2Decode.h"
-namespace idx2
-{
-
-error<idx2_err_code>
-ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
-{
-  return idx2_Error(idx2_err_code::OptionNotSupported);
-}
-
-}
-
-
-#else
-
 #include "Array.h"
 #include "BitStream.h"
 #include "Expected.h"
@@ -31,14 +14,10 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 #include "sexpr.h"
 #include "zstd/zstd.h"
 #include "thread-pool/BS_thread_pool.hpp"
-#include "stlab/concurrency/future.hpp"
-#include "stlab/concurrency/default_executor.hpp"
-#include "stlab/concurrency/immediate_executor.hpp"
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
-#include <set>
 
 
 namespace idx2
@@ -198,8 +177,6 @@ ParallelDecodeSubband(const idx2_file& Idx2,
   return SubbandSignificant;
 }
 
-
-static std::set<u64> SeenBricks;
 
 
 static expected<brick_volume, idx2_err_code>
@@ -571,6 +548,4 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 
 
 } // namespace idx2
-
-#endif
 

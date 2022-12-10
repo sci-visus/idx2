@@ -1,5 +1,3 @@
-#if defined(idx2_Parallel_Decode)
-
 #include "BitStream.h"
 #include "Error.h"
 #include "Expected.h"
@@ -412,6 +410,4 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
 
 
 } // namespace idx2
-
-#endif
 

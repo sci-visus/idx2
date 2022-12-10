@@ -90,10 +90,6 @@ set(IDX2_CORE_SOURCE_FILES
   Zfp.cpp
 )
 
-if (PARALLEL_DECODE)
-  add_subdirectory(stlab)
-endif()
-
 add_library(idx2Core ${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_SOURCE_FILES})
 set_target_properties(idx2Core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
@@ -109,11 +105,6 @@ endif()
 find_package(OpenMP)
 if (OpenMP_CXX_FOUND)
   target_link_libraries(idx2Core PUBLIC OpenMP::OpenMP_CXX)
-endif()
-
-if (PARALLEL_DECODE)
-  target_compile_definitions(idx2Core PUBLIC -Didx2_Parallel_Decode)
-  target_link_libraries(idx2Core PUBLIC stlab)
 endif()
 
 if (MSVC)
