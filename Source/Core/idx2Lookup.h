@@ -86,15 +86,6 @@ enum class file_type
   MetadataFile
 };
 
-
-file_id
-ConstructFilePath_v2(const idx2_file& Idx2, u64 BrickAddress, file_type Type);
-
-
-file_id
-ConstructFilePath_v2(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BpKey, file_type Type);
-
-
 // Compose a key from Brick + Level
 idx2_Inline u64
 GetBrickKey(i8 Level, u64 Brick)
