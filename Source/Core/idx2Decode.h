@@ -5,6 +5,7 @@
 #include "idx2Common.h"
 #include "idx2Read.h"
 #include "idx2SparseBricks.h"
+#include "thread-pool/BS_thread_pool.hpp"
 #if defined(idx2_Parallel_Decode)
 #include <atomic>
 #include <condition_variable>
@@ -34,6 +35,8 @@ struct decode_data
   allocator* Alloc = nullptr;
   file_cache_table FileCacheTable;
   brick_pool BrickPool;
+  BS::thread_pool ThreadPool;
+
 #if defined(idx2_Parallel_Decode)
   std::mutex FileCacheMutex;
   std::mutex BrickPoolMutex;

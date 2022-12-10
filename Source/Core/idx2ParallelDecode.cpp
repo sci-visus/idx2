@@ -30,6 +30,7 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 #include "idx2SparseBricks.h"
 #include "sexpr.h"
 #include "zstd/zstd.h"
+#include "thread-pool/BS_thread_pool.hpp"
 #include "stlab/concurrency/future.hpp"
 #include "stlab/concurrency/default_executor.hpp"
 #include "stlab/concurrency/immediate_executor.hpp"
@@ -472,12 +473,15 @@ TraverseFirstLevel(const idx2_file& Idx2,
         First.Level = Level;
         First.Brick3 = Top.BrickFrom3;
         First.Brick = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
-        auto Task = stlab::async(stlab::default_executor,
-          [&, First, BrickExtentCrop]()
-          {
-            TraverseSecondLevel(Idx2, P, D, First, BrickExtentCrop, OutGrid, OutVolFile, OutVolMem);
-          });
-        Task.detach();
+        D->ThreadPool.push_task([&, First, BrickExtentCrop]() {
+          TraverseSecondLevel(Idx2, P, D, First, BrickExtentCrop, OutGrid, OutVolFile, OutVolMem);
+        });
+        //auto Task = stlab::async(stlab::default_executor,
+        //  [&, First, BrickExtentCrop]()
+        //  {
+        //    TraverseSecondLevel(Idx2, P, D, First, BrickExtentCrop, OutGrid, OutVolFile, OutVolMem);
+        //  });
+        //Task.detach();
         ,
         64,
         Idx2.BricksOrderInChunk[Level],
@@ -542,7 +546,7 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 
   std::unique_lock<std::mutex> Lock(D.Mutex);
   D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
-  stlab::pre_exit();
+  //stlab::pre_exit();
 
   if (P.OutMode == params::out_mode::HashMap)
   {
