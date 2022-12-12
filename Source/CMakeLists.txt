@@ -5,12 +5,12 @@ option(BUILD_IDX2PY "Build the Python interface for idx2" OFF)
 option(VISUS_IDX2 "Enable support for OpenViSUS" OFF)
 
 add_subdirectory(Core)
-set(IDX2_LIB_SOURCE_FILES idx2.h idx2.cpp)
+set(IDX2_LIB_SOURCE_FILES idx2.h idx2_v2.h idx2.cpp)
 
 add_library(idx2 ${IDX2_LIB_SOURCE_FILES})
 
 set_target_properties(idx2 PROPERTIES
-  PUBLIC_HEADER "idx2.h"
+  PUBLIC_HEADER "idx2.h idx2_v2.h"
   POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(idx2 PUBLIC idx2Core)

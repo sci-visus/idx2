@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(idx2Core CXX)
 
-add_subdirectory(v2)
-
 set(IDX2_CORE_HEADER_FILES
   Algorithm.h
   Args.h
@@ -56,6 +54,12 @@ set(IDX2_CORE_HEADER_FILES
   nd_wavelet.h
   Wavelet.h
   Zfp.h
+  v2/idx2Common_v2.h
+  v2/idx2Decode_v2.h
+  v2/idx2Encode_v2
+  v2/idx2Lookup_v2.h
+  v2/idx2Read_v2.h
+  v2/idx2Write_v2.h
 )
 
 set(IDX2_CORE_SOURCE_FILES
@@ -86,6 +90,11 @@ set(IDX2_CORE_SOURCE_FILES
   Wavelet.cpp
   nd_wavelet.cpp
   Zfp.cpp
+  v2/idx2Common_v2.cpp
+  v2/idx2Encode_v2.cpp
+  v2/idx2Lookup_v2.cpp
+  v2/idx2Read_v2.cpp
+  v2/idx2Write_v2.cpp
 )
 
 add_library(idx2Core ${IDX2_CORE_HEADER_FILES} ${IDX2_CORE_HEADER_FILES_V2} ${IDX2_CORE_SOURCE_FILES} ${IDX2_CORE_SOURCE_FILES_V2})

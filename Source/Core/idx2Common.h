@@ -183,17 +183,6 @@ struct idx2_file
 };
 
 
-struct idx2_file_v2
-{
-  static constexpr int MaxLevels = 16;
-  array<v3i> GroupBricks3; // how bricks are grouped on each level to form coarser bricks
-  array<v3i> BrickDims3; // brick dimensions on each level
-  array<v3i> FilesPerVol3; // how many files exist on each level
-  array<v3i> ChunkDims3; // chunk dimensions on each level
-  array<v3i> FileDims3; // file dimensions on each level
-};
-
-
 /* ---------------------- GLOBALS ----------------------*/
 extern free_list_allocator BrickAlloc_;
 

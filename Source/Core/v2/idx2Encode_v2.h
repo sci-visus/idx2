@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Array.h"
-#include "BitStream.h"
-#include "HashTable.h"
-#include "Memory.h"
-#include "idx2Common.h"
-#include "idx2SparseBricks.h"
+#include "../Array.h"
+#include "../BitStream.h"
+#include "../HashTable.h"
+#include "../Memory.h"
+#include "idx2Common_v2.h"
+#include "../idx2SparseBricks.h"
 
 
 namespace idx2

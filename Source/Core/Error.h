@@ -224,3 +224,6 @@ ErrorExists(const error<t>& Err)
     }                                                                                              \
   }
 
+#undef idx2_Exit
+#define idx2_Exit(Msg) idx2_ExitIf(true, Msg)
+

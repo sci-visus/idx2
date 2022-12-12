@@ -8,6 +8,18 @@ namespace idx2
 {
 
 
+bool CheckForUnsupportedOpt(int NArgs, cstr* Args, cstr Opts)
+{
+  for (int I = 0; I + 1 < NArgs; ++I)
+  {
+    if (strstr(Opts, Args[I]) == nullptr)
+      return false;
+  }
+
+  return true;
+}
+
+
 /* Copy the input string into Val */
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
@@ -106,7 +118,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 0; I + 2 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -195,7 +207,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 0; I + 5 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -241,3 +253,4 @@ OptExists(int NArgs, cstr* Args, cstr Opt)
 
 
 } // namespace idx2
+

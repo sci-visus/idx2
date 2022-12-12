@@ -11,6 +11,9 @@ namespace idx2
 {
 
 
+/* Search the Args for unsupported options (e.g., a typo from the user).
+Opts is a string containing all the supported options, separated by whitespaces. */
+bool CheckForUnsupportedOpt(int NArgs, cstr* Args, cstr Opts);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, str Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, stref* Val);

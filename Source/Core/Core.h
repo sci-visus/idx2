@@ -38,6 +38,7 @@
 #include "idx2Decode.h"
 #include "idx2Encode.h"
 #include "idx2Lookup.h"
+#include "v2/idx2Common_v2.h"
 #include "VarInt.h"
 #include "Volume.h"
 #include "Wavelet.h"
