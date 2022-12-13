@@ -446,6 +446,22 @@ IsPow2(int X)
 
 
 idx2_Inline bool
+IsPow2(const v3i& P)
+{
+  idx2_Assert(P > 0);
+  return IsPow2(P.X) && IsPow2(P.Y) && IsPow2(P.Z);
+}
+
+
+idx2_Inline bool
+IsPow2(const v6i& P)
+{
+  idx2_Assert(P > 0);
+  return IsPow2(P.XYZ) && IsPow2(P.UVW);
+}
+
+
+idx2_Inline bool
 IsPrime(i64 X)
 {
   i64 S = (i64)sqrt((f64)X);

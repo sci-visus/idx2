@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(idx2Core CXX)
 
-add_subdirectory(faster)
+if (VERSION_2)
+  add_subdirectory(faster)
+endif()
 
 set(IDX2_CORE_HEADER_FILES
   Algorithm.h
@@ -108,8 +110,6 @@ target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 target_compile_definitions(idx2Core PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow>")
 
-target_link_libraries(idx2Core PUBLIC faster)
-
 if (VISUS_IDX2)
   target_compile_definitions(idx2Core PUBLIC -DVISUS_IDX2)
 endif()
@@ -127,10 +127,20 @@ elseif (UNIX)
   target_compile_options(idx2Core PUBLIC -Wno-format-zero-length -mavx2)
 endif()
 
+#export(TARGETS faster idx2Core NAMESPACE idx2CoreConfig:: FILE idx2CoreConfig.cmake)
+if (VERSION_2)
+target_link_libraries(idx2Core PUBLIC faster)
+install(TARGETS idx2Core faster
+	EXPORT idx2CoreConfig
+	LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  PUBLIC_HEADER DESTINATION include/Core)
+else()
 install(TARGETS idx2Core
 	EXPORT idx2CoreConfig
 	LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   PUBLIC_HEADER DESTINATION include/Core)
+endif()
 
 install(EXPORT idx2CoreConfig DESTINATION lib/cmake/idx2)
