@@ -154,8 +154,10 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
     const auto& Suffix = Idx2->IdxTemplate.Suffix[L];
     if (S == 2 && (Suffix[0] == Suffix[1]))
       return idx2_Error(idx2_err_code::DimensionsRepeated, "Repeated dimensions on level %d\n", L);
+      //printf("Repeated dimensions on level %d\n", L);
     if (S == 3 && (Suffix[0] == Suffix[1] || Suffix[0] == Suffix[2] || Suffix[1] == Suffix[2]))
       return idx2_Error(idx2_err_code::DimensionsRepeated, "Repeated dimensions on level %d\n", L);
+      //printf("Repeated dimensions on level %d\n", L);
   }
 
   /* check that the indexing template agrees with the dimensions */
@@ -171,8 +173,8 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
   for (auto I = 0; I < Size(Idx2->Dimensions); ++I)
   {
     const dimension_info& Dim = Idx2->Dimensions[I];
-    i32 D = Size(Dim.Names) > 0 ? Size(Dim.Names) : Dim.Limit;
-    D = NextPow2(D);
+    i32 D = Size(Dim);
+    D = (i32)NextPow2(D);
     if (D > Dims[I])
       return idx2_Error(idx2_err_code::DimensionMismatched,
                         "Dimension %c needs to appear %d more times in the indexing template\n",

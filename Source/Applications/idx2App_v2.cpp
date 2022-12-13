@@ -47,7 +47,8 @@ main(int Argc, cstr* Argv)
                          "--decode "
                          "--dimensions "
                          "--template "
-                         "--fields ");
+                         "--fields "
+                         "--name");
 
   /* Parse the action (--encode or --decode) */
   cstr InputFile = nullptr;

@@ -21,6 +21,12 @@ struct dimension_info
   char ShortName = '?';
 };
 
+idx2_Inline i32
+Size(const dimension_info& Dim)
+{
+  return Size(Dim.Names) > 0 ? i32(Size(Dim.Names)) : Dim.Limit;
+}
+
 bool
 OptVal(i32 NArgs, cstr* Args, cstr Opt, array<dimension_info>* Dimensions);
 
@@ -40,13 +46,18 @@ struct indexing_template
 
 struct idx2_file_v2
 {
+  static constexpr int MaxNameLength_ = 64;
   static constexpr int MaxNLevels_ = 32;
   static constexpr int MaxNDimsPerLevel_ = 3; // for now our zfp compression only supports up to 3 dimensions
 
   /* For example, xyztf */
   array<dimension_info> Dimensions;
   indexing_template IdxTemplate;
-  i8 CharToIntMap[26]; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
+  i8 CharToIntMap['z' - 'a' + 1]; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
+  char Name[MaxNameLength_] = {};
+  i8 BitsPerBrick      = 0;
+  i8 BrickBitsPerChunk = 0;
+  i8 ChunkBitsPerFile  = 0;
 
   idx2_file_v2();
 };

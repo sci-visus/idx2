@@ -1,5 +1,6 @@
 #include "Args.h"
 #include "Enum.h"
+#include "Error.h"
 #include "String.h"
 #include <string.h>
 
@@ -8,15 +9,14 @@ namespace idx2
 {
 
 
-bool CheckForUnsupportedOpt(int NArgs, cstr* Args, cstr Opts)
+void
+CheckForUnsupportedOpt(int NArgs, cstr* Args, cstr Opts)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 1; I < NArgs; ++I)
   {
-    if (strstr(Opts, Args[I]) == nullptr)
-      return false;
+    if (Args[I][0] == '-' && strstr(Opts, Args[I]) == nullptr)
+      idx2_Exit("Option %s not supported\n", Args[I]);
   }
-
-  return true;
 }
 
 
@@ -24,7 +24,7 @@ bool CheckForUnsupportedOpt(int NArgs, cstr* Args, cstr Opts)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 1; I + 1 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -45,7 +45,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, str Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, cstr* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 1; I + 1 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -72,7 +72,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, stref* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, int* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 1; I + 1 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
       return ToInt(Args[I + 1], Val);
@@ -85,7 +85,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, int* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, i64* V)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 1; I + 1 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -101,7 +101,7 @@ bool
 OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val)
 {
   int IntVal;
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 1; I + 1 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -118,7 +118,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, u8* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val)
 {
-  for (int I = 0; I + 2 < NArgs; ++I)
+  for (int I = 1; I + 2 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -134,7 +134,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, v3i* Val)
 {
-  for (int I = 0; I + 3 < NArgs; ++I)
+  for (int I = 1; I + 3 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -150,7 +150,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, v3i* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, v3<i64>* Val)
 {
-  for (int I = 0; I + 3 < NArgs; ++I)
+  for (int I = 1; I + 3 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -167,7 +167,7 @@ bool
 OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals)
 {
   Clear(Vals);
-  for (int I = 0; I < NArgs; ++I)
+  for (int I = 1; I < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -192,7 +192,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val)
 {
-  for (int I = 0; I + 2 < NArgs; ++I)
+  for (int I = 1; I + 2 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -207,7 +207,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val)
 {
-  for (int I = 0; I + 5 < NArgs; ++I)
+  for (int I = 1; I + 5 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {
@@ -229,7 +229,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val)
 {
-  for (int I = 0; I + 1 < NArgs; ++I)
+  for (int I = 1; I + 1 < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
       return ToDouble(Args[I + 1], Val);
@@ -242,7 +242,7 @@ OptVal(int NArgs, cstr* Args, cstr Opt, f64* Val)
 bool
 OptExists(int NArgs, cstr* Args, cstr Opt)
 {
-  for (int I = 0; I < NArgs; ++I)
+  for (int I = 1; I < NArgs; ++I)
   {
     if (strcmp(Args[I], Opt) == 0)
       return true;
@@ -255,7 +255,7 @@ OptExists(int NArgs, cstr* Args, cstr Opt)
 bool
 OptVal(int NArgs, cstr* Args, cstr Opt, array<stref>* Vals)
 {
-  for (i32 I = 0; I < NArgs; ++I)
+  for (i32 I = 1; I < NArgs; ++I)
   {
     if (strncmp(Args[I], Opt, 32) == 0)
     {

@@ -215,15 +215,15 @@ ErrorExists(const error<t>& Err)
 
 /* Exit the program and print a message if a condition happens */
 #undef idx2_ExitIf
-#define idx2_ExitIf(Cond, Msg)                                                                     \
+#define idx2_ExitIf(Cond, ...)                                                                     \
   {                                                                                                \
     if (Cond)                                                                                      \
     {                                                                                              \
-      fprintf(stderr, "%s\n", Msg);                                                                \
+      fprintf(stderr, __VA_ARGS__);                                                                \
       exit(1);                                                                                     \
     }                                                                                              \
   }
 
 #undef idx2_Exit
-#define idx2_Exit(Msg) idx2_ExitIf(true, Msg)
+#define idx2_Exit(...) idx2_ExitIf(true, __VA_ARGS__)
 
