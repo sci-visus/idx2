@@ -1006,7 +1006,7 @@ operator&(const v6<t>& Lhs, const v6<t>& Rhs)
 template <typename t> idx2_Inline v6<t>
 operator&(const v6<t>& Lhs, t Val)
 {
-  return v6<t>(Lhs.XYZ & Val, Rhs.UVW & Val);
+  return v6<t>(Lhs.XYZ & Val, Lhs.UVW & Val);
 }
 
 

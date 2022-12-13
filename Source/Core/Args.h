@@ -27,6 +27,7 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, v2i* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, t2<char, int>* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, v3<t2<char, int>>* Val);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals);
+bool OptVal(int NArgs, cstr* Args, cstr Opt, array<stref>* Vals);
 bool OptExists(int NArgs, cstr* Args, cstr Opt);
 
 template <typename e> bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val); // output to an Enum

@@ -252,5 +252,28 @@ OptExists(int NArgs, cstr* Args, cstr Opt)
 }
 
 
+bool
+OptVal(int NArgs, cstr* Args, cstr Opt, array<stref>* Vals)
+{
+  for (i32 I = 0; I < NArgs; ++I)
+  {
+    if (strncmp(Args[I], Opt, 32) == 0)
+    {
+      i32 J = I + 1;
+      while (J < NArgs && Args[J][0] != '-')
+      {
+        cstr Temp;
+        Temp = Args[J];
+        stref Str = stref(Temp);
+        PushBack(Vals, Str);
+        ++J;
+      }
+      return J > I + 1;
+    }
+  }
+  return false;
+}
+
+
 } // namespace idx2
 

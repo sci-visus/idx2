@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(idx2Core CXX)
 
+add_subdirectory(faster)
+
 set(IDX2_CORE_HEADER_FILES
   Algorithm.h
   Args.h
@@ -8,6 +10,7 @@ set(IDX2_CORE_HEADER_FILES
   Assert.h
   BitOps.h
   BitStream.h
+  CacheTable.h
   CircularQueue.h
   Codecs.h
   Common.h
@@ -104,6 +107,8 @@ set_target_properties(idx2Core PROPERTIES
 target_compile_features(idx2Core PUBLIC cxx_std_17)
 target_compile_definitions(idx2Core PUBLIC -Didx2_Avx2)
 target_compile_definitions(idx2Core PUBLIC "$<$<CONFIG:DEBUG>:idx2_Slow>")
+
+target_link_libraries(idx2Core PUBLIC faster)
 
 if (VISUS_IDX2)
   target_compile_definitions(idx2Core PUBLIC -DVISUS_IDX2)

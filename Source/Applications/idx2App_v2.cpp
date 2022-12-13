@@ -16,7 +16,18 @@ DoEncode(int Argc, cstr* Argv, cstr InputFile)
   if (!OptVal(Argc, Argv, "--template", &Idx2.IdxTemplate.Full))
     idx2_Exit("Provide indexing --template, e.g., zyzyxzyxzyxzyx|zyx:zyx:zyx:zyx\n");
 
-  Finalize(&Idx2);
+  array<stref> Fields;
+  if (OptVal(Argc, Argv, "--fields", &Fields))
+  {
+    dimension_info Dim;
+    {
+      Dim.Names = Fields;
+      Dim.ShortName = 'f'; // TODO: hardcoding
+    }
+    PushBack(&Idx2.Dimensions, Dim);
+  }
+
+  idx2_ExitIfError(Finalize(&Idx2));
 }
 
 
@@ -35,7 +46,8 @@ main(int Argc, cstr* Argv)
                          "--encode "
                          "--decode "
                          "--dimensions "
-                         "--template ");
+                         "--template "
+                         "--fields ");
 
   /* Parse the action (--encode or --decode) */
   cstr InputFile = nullptr;
