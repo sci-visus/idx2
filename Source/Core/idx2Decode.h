@@ -32,6 +32,9 @@ struct decode_data
 {
   allocator* Alloc = nullptr;
   file_cache_table FileCacheTable;
+#if (VISUS_IDX2)
+  file_cache FileCache; // if using openvisus, we need to cache only the chunks, not the files
+#endif
   brick_pool BrickPool;
   BS::thread_pool ThreadPool;
 

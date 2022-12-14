@@ -121,35 +121,55 @@ ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8
 #if VISUS_IDX2
   if (Idx2.external_read)
   {
-    // this part handles with caching, in the long-term it should be disabled since OpenVisus can
-    // handle the caching itself
-    //  TODO: how to handle locking for multithreading here
-    // TODO: this lock here will prevent two threads to submit I/O request at the same time, but for now it's probably ok
-    std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
     file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
-    auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
-    if (!FileCacheIt)
-    {
-      file_cache FileCache;
-      Init(&FileCache.ChunkExpCaches, 10);
-      Init(&FileCache.ChunkCaches, 10);
-      Insert(&FileCacheIt, FileId.Id, FileCache);
-    }
-    file_cache* FileCache = FileCacheIt.Val;
     u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
-    auto ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
-    if (ChunkCacheIt)
-      return *ChunkCacheIt.Val;
+    D->FileCacheMutex.lock();
+    auto ChunkCacheIt = Lookup(D->FileCache.ChunkCaches, ChunkAddress);
+    if (!ChunkCacheIt) // first thread to request the chunk
+    {
+      chunk_cache ChunkCache;
+      Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
+      D->FileCacheMutex.unlock();
+      bitstream ChunkStream;
+      bool Result = Idx2.external_read(Idx2, ChunkStream.Stream, ChunkAddress).get(); // wait
+      if (Result)
+      {
+        DecompressChunk(&ChunkStream, &ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
+        { // atomic insert into the cache
+          D->FileCacheMutex.lock();
+          ChunkCacheIt = Insert(&D->FileCache.ChunkCaches, ChunkAddress, ChunkCache);
+          D->FileCacheMutex.unlock();
+        }
+        ChunkCache.Ready = true;
+        ChunkCache.Cv->notify_all();
+        return ChunkCache;
+      }
+      else // fail to get the chunk
+      {
+        ChunkCache.Ready = true;
+        ChunkCache.Cv->notify_all();
+        return idx2_Error(idx2_err_code::ChunkNotFound);
+      }
+    }
+    else // not the first thread to request the chunk
+    {
+      D->FileCacheMutex.unlock();
+      std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
+      /* wait until the first thread has decompressed the chunk */
+      chunk_cache ChunkCache;
+      ChunkCacheIt.Val->Cv->wait(Lock, [&D, &ChunkCache, ChunkAddress]
+      {
+        ChunkCache = *Lookup(D->FileCache.ChunkCaches, ChunkAddress).Val;
+        return ChunkCache.Ready == true;
+      });
+      // here the Lock is released
+      if (Size(ChunkCache.ChunkStream.Stream) > 0)
+        return ChunkCache;
+      else
+        return idx2_Error(idx2_err_code::ChunkNotFound);
+    }
 
-    bitstream ChunkStream;
-    bool Result = Idx2.external_read(Idx2, ChunkStream.Stream, ChunkAddress).get();
-    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
-
-    // decompress part
-    chunk_cache ChunkCache;
-    DecompressChunk(&ChunkStream, &ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
-    Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
-    return *ChunkCacheIt.Val;
+    return idx2_Error(idx2_err_code::ChunkNotFound);
   }
 #endif
 
@@ -327,37 +347,58 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
   {
     // this part handles with caching, in the long-term it should be disabled since OpenVisus can
     // handle the caching itself
-    //  TODO: how should locking (multithreading) be handled here?
-    // TODO: this lock here will prevent two threads to submit I/O request at the same time, but for now it's probably ok
-    std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
     u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
-    file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
-    auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
-    if (!FileCacheIt)
+    D->FileCacheMutex.lock();
+    auto ChunkExpCacheIt = Lookup(D->FileCache.ChunkExpCaches, ChunkAddress);
+    if (!ChunkExpCacheIt) // first thread to request the chunk
     {
-      file_cache FileCache;
-      Init(&FileCache.ChunkExpCaches, 10);
-      Init(&FileCache.ChunkCaches, 10);
-      Insert(&FileCacheIt, FileId.Id, FileCache);
+      /* the chunk exp cache is not present, we add the future */
+      chunk_exp_cache ChunkExpCache;
+      Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache); // insert a dummy chunk exp cache
+      D->FileCacheMutex.unlock();
+      buffer ChunkBuf; // TODO: deallocate this
+      bool Result = Idx2.external_read(Idx2, ChunkBuf, ChunkAddress).get(); // block
+      /* decompress */
+      if (Result)
+      {
+        bitstream& ChunkExpStream = ChunkExpCache.ChunkExpStream;
+        DecompressBufZstd(ChunkBuf, &ChunkExpStream);
+        InitRead(&ChunkExpCache.ChunkExpStream, ChunkExpStream.Stream);
+        { // atomic insert to the cache
+          D->FileCacheMutex.lock();
+          ChunkExpCacheIt = Insert(&D->FileCache.ChunkExpCaches, ChunkAddress, ChunkExpCache);
+          D->FileCacheMutex.unlock();
+        }
+        ChunkExpCache.Ready = true;
+        ChunkExpCache.Cv->notify_all();
+        return ChunkExpCache;
+      }
+      else // fail to get the chunk
+      {
+        ChunkExpCache.Ready = true;
+        ChunkExpCache.Cv->notify_all();
+        return idx2_Error(idx2_err_code::ChunkNotFound);
+      }
     }
-    file_cache* FileCache = FileCacheIt.Val;
-    auto ChunkExpCacheIt = Lookup(FileCache->ChunkExpCaches, ChunkAddress);
-    if (ChunkExpCacheIt)
-      return *ChunkExpCacheIt.Val;
+    else // not the first thread to request the chunk
+    {
+      D->FileCacheMutex.unlock();
+      std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
+      chunk_exp_cache ChunkExpCache;
+      /* wait until the first thread has decompressed the chunk */
+      ChunkExpCacheIt.Val->Cv->wait(Lock, [&D, &ChunkExpCache, ChunkAddress]
+      {
+        ChunkExpCache = *Lookup(D->FileCache.ChunkExpCaches, ChunkAddress).Val;
+        return ChunkExpCache.Ready == true;
+      });
+      // here the Lock is released
+      if (Size(ChunkExpCache.ChunkExpStream.Stream) > 0)
+        return ChunkExpCache;
+      else
+        return idx2_Error(idx2_err_code::ChunkNotFound);
+    }
 
-    // here we release he lock and read the chunk
-    // read the block
-    buffer buff;
-    bool Result = Idx2.external_read(Idx2, buff, ChunkAddress).get();
-    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
-
-    // decompress the block
-    chunk_exp_cache ChunkExpCache;
-    bitstream& ChunkExpStream = ChunkExpCache.ChunkExpStream;
-    DecompressBufZstd(buff, &ChunkExpStream);
-    InitRead(&ChunkExpCache.ChunkExpStream, ChunkExpStream.Stream);
-    Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache);
-    return *ChunkExpCacheIt.Val;
+    return idx2_Error(idx2_err_code::ChunkNotFound);
   }
 #endif
 

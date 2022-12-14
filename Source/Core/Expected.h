@@ -28,6 +28,11 @@ template <typename t, typename u = err_code> struct expected
   t* operator->();
   /* Bool operator */
   explicit operator bool() const;
+  virtual ~expected()
+  {
+    if (!Ok)
+      Val.~t();
+  }
 }; // struct expected
 
 template <typename t, typename u> t& Value(expected<t, u>& E);

@@ -55,9 +55,11 @@ struct idx2_file_v2
   indexing_template IdxTemplate;
   i8 CharToIntMap['z' - 'a' + 1]; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
   char Name[MaxNameLength_] = {};
-  i8 BitsPerBrick      = 0;
-  i8 BrickBitsPerChunk = 0;
-  i8 ChunkBitsPerFile  = 0;
+  i8 BitsPerBrick      = 15; // (2^15) equivalent to 32^3
+  i8 BrickBitsPerChunk = 12; // (2^12) equivalent to 16^3
+  i8 ChunkBitsPerFile  = 0; // TODO_v2: choose a default
+  i8 FileBitsPerDir    = 0; // TODO_v2: choose a default
+  i8 FileBitsPerMeta   = 0; // TODO_v2: choose a default
 
   idx2_file_v2();
 };
