@@ -128,6 +128,7 @@ ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8
     if (!ChunkCacheIt) // first thread to request the chunk
     {
       chunk_cache ChunkCache;
+      ChunkCache.Cv = new std::condition_variable>;
       Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
       D->FileCacheMutex.unlock();
       bitstream ChunkStream;
@@ -354,6 +355,7 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
     {
       /* the chunk exp cache is not present, we add the future */
       chunk_exp_cache ChunkExpCache;
+      ChunkExpCache.Cv = new std::condition_variable>;
       Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache); // insert a dummy chunk exp cache
       D->FileCacheMutex.unlock();
       buffer ChunkBuf; // TODO: deallocate this

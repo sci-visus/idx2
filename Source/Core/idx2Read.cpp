@@ -17,6 +17,7 @@ Dealloc(chunk_cache* ChunkCache)
   Dealloc(&ChunkCache->Bricks);
   Dealloc(&ChunkCache->BrickOffsets);
   Dealloc(&ChunkCache->ChunkStream);
+  delete ChunkCache->Cv;
 }
 
 
@@ -24,6 +25,7 @@ void
 Dealloc(chunk_exp_cache* ChunkExpCache)
 {
   Dealloc(&ChunkExpCache->ChunkExpStream);
+  delete ChunkExpCache->Cv;
 }
 
 
