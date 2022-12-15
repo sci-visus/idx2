@@ -67,7 +67,7 @@ struct decode_data;
 
 
 void
-Dealloc(file_cache_table* FileCacheTable);
+DeallocFileCacheTable(file_cache_table* FileCacheTable);
 
 
 // TODO: not quite exhaustive

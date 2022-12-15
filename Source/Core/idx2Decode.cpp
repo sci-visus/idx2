@@ -36,7 +36,7 @@ Dealloc(decode_data* D)
 {
   D->Alloc->DeallocAll();
   Dealloc(&D->BrickPool);
-  Dealloc(&D->FileCacheTable);
+  DeallocFileCacheTable(&D->FileCacheTable);
 #if VISUS_IDX2
   Dealloc(&D->FileCache);
 #endif

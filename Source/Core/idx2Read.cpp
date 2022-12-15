@@ -51,7 +51,7 @@ Dealloc(file_cache* FileCache)
 
 
 void
-Dealloc(file_cache_table* FileCacheTable)
+DeallocFileCacheTable(file_cache_table* FileCacheTable)
 {
   idx2_ForEach (FileCacheIt, *FileCacheTable)
     Dealloc(FileCacheIt.Val);
