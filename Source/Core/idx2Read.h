@@ -4,8 +4,6 @@
 #include "Expected.h"
 #include "HashTable.h"
 #include "idx2Common.h"
-#include <condition_variable>
-#include <memory>
 
 
 namespace idx2
@@ -18,8 +16,6 @@ struct chunk_cache
   array<u64> Bricks;
   array<i32> BrickOffsets;
   bitstream ChunkStream;
-  //std::shared_ptr<std::condition_variable> Cv;
-  std::condition_variable* Cv = nullptr;
   bool Ready = false;
 };
 
@@ -31,10 +27,7 @@ struct chunk_exp_cache
 {
   i32 ChunkPos; // chunk position in the offset array
   bitstream ChunkExpStream;
-  //std::shared_ptr<std::condition_variable> Cv;
-  std::condition_variable* Cv = nullptr;
   bool Ready = false;
-  // TODO: should we also have brick ids and brick sizes?
 };
 
 void
