@@ -168,18 +168,8 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 #if VISUS_IDX2
   if (Idx2.external_read)
   {
-    file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
-    auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
-    if (!FileCacheIt)
-    {
-      file_cache FileCache;
-      Init(&FileCache.ChunkExpCaches, 10);
-      Init(&FileCache.ChunkCaches, 10);
-      Insert(&FileCacheIt, FileId.Id, FileCache);
-    }
-    file_cache* FileCache = FileCacheIt.Val;
     u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
-    auto ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
+    auto ChunkCacheIt = Lookup(D->FileCache.ChunkCaches, ChunkAddress);
     if (ChunkCacheIt)
       return ChunkCacheIt.Val;
 
@@ -362,19 +352,8 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
 #if VISUS_IDX2
   if (Idx2.external_read)
   {
-    //this part handles with caching, in the long-term it should be disabled since OpenVisus can handle the caching itself
-    file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, ExponentBitPlane_);
-    auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
-    if (!FileCacheIt)
-    {
-      file_cache FileCache;
-      Init(&FileCache.ChunkExpCaches, 10);
-      Init(&FileCache.ChunkCaches, 10);
-      Insert(&FileCacheIt, FileId.Id, FileCache);
-    }
-    file_cache* FileCache = FileCacheIt.Val;
     u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
-    auto ChunkExpCacheIt = Lookup(FileCache->ChunkExpCaches, ChunkAddress);
+    auto ChunkExpCacheIt = Lookup(D->FileCache.ChunkExpCaches, ChunkAddress);
     if (ChunkExpCacheIt)
       return ChunkExpCacheIt.Val;
 

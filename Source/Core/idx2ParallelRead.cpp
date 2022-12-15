@@ -128,18 +128,19 @@ ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8
     if (!ChunkCacheIt) // first thread to request the chunk
     {
       chunk_cache ChunkCache;
-      ChunkCache.Cv = new std::condition_variable>;
+      ChunkCache.Cv = new std::condition_variable;
       Insert(&ChunkCacheIt, ChunkAddress, ChunkCache);
       D->FileCacheMutex.unlock();
       bitstream ChunkStream;
       bool Result = Idx2.external_read(Idx2, ChunkStream.Stream, ChunkAddress).get(); // wait
+      std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
       if (Result)
       {
         DecompressChunk(&ChunkStream, &ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
         { // atomic insert into the cache
-          D->FileCacheMutex.lock();
+          //D->FileCacheMutex.lock();
           ChunkCacheIt = Insert(&D->FileCache.ChunkCaches, ChunkAddress, ChunkCache);
-          D->FileCacheMutex.unlock();
+          //D->FileCacheMutex.unlock();
         }
         ChunkCache.Ready = true;
         ChunkCache.Cv->notify_all();
@@ -355,7 +356,7 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
     {
       /* the chunk exp cache is not present, we add the future */
       chunk_exp_cache ChunkExpCache;
-      ChunkExpCache.Cv = new std::condition_variable>;
+      ChunkExpCache.Cv = new std::condition_variable;
       Insert(&ChunkExpCacheIt, ChunkAddress, ChunkExpCache); // insert a dummy chunk exp cache
       D->FileCacheMutex.unlock();
       buffer ChunkBuf; // TODO: deallocate this
@@ -366,10 +367,11 @@ ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 
         bitstream& ChunkExpStream = ChunkExpCache.ChunkExpStream;
         DecompressBufZstd(ChunkBuf, &ChunkExpStream);
         InitRead(&ChunkExpCache.ChunkExpStream, ChunkExpStream.Stream);
+        std::unique_lock<std::mutex> Lock(D->FileCacheMutex);
         { // atomic insert to the cache
-          D->FileCacheMutex.lock();
+          //D->FileCacheMutex.lock();
           ChunkExpCacheIt = Insert(&D->FileCache.ChunkExpCaches, ChunkAddress, ChunkExpCache);
-          D->FileCacheMutex.unlock();
+          //D->FileCacheMutex.unlock();
         }
         ChunkExpCache.Ready = true;
         ChunkExpCache.Cv->notify_all();
