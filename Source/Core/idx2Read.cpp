@@ -28,6 +28,13 @@ Dealloc(chunk_exp_cache* ChunkExpCache)
   delete ChunkExpCache->Cv;
 }
 
+void
+Init(file_cache* FileCache)
+{
+  Init(&FileCache->ChunkCaches, 10);
+  Init(&FileCache->ChunkExpCaches, 10);
+}
+
 
 void
 Dealloc(file_cache* FileCache)
@@ -44,7 +51,7 @@ Dealloc(file_cache* FileCache)
 
 
 void
-DeallocFileCacheTable(file_cache_table* FileCacheTable)
+Dealloc(file_cache_table* FileCacheTable)
 {
   idx2_ForEach (FileCacheIt, *FileCacheTable)
     Dealloc(FileCacheIt.Val);
@@ -161,7 +168,6 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 #if VISUS_IDX2
   if (Idx2.external_read)
   {
-    //this part handles with caching, in the long-term it should be disabled since OpenVisus can handle the caching itself
     file_id FileId = ConstructFilePath(Idx2, Brick, Level, Subband, BpKey);
     auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
     if (!FileCacheIt)

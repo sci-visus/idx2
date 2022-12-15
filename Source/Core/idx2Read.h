@@ -52,6 +52,10 @@ struct file_cache
   bool DataCached = false;
 };
 
+
+void
+Init(file_cache* FileCache);
+
 void
 Dealloc(file_cache* FileCache);
 
@@ -63,7 +67,7 @@ struct decode_data;
 
 
 void
-DeallocFileCacheTable(file_cache_table* FileCacheTable);
+Dealloc(file_cache_table* FileCacheTable);
 
 
 // TODO: not quite exhaustive

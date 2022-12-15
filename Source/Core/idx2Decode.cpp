@@ -25,6 +25,9 @@ Init(decode_data* D, const idx2_file* Idx2, allocator* Alloc)
   Init(&D->BrickPool, Idx2);
   D->Alloc = Alloc ? Alloc : &BrickAlloc_;
   Init(&D->FileCacheTable);
+#if VISUS_IDX2
+  Init(&D->FileCache);
+#endif
 }
 
 
@@ -33,7 +36,10 @@ Dealloc(decode_data* D)
 {
   D->Alloc->DeallocAll();
   Dealloc(&D->BrickPool);
-  DeallocFileCacheTable(&D->FileCacheTable);
+  Dealloc(&D->FileCacheTable);
+#if VISUS_IDX2
+  Dealloc(&D->FileCache);
+#endif
 }
 
 
