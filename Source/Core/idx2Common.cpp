@@ -387,6 +387,17 @@ ComputeTransformOrder(idx2_file* Idx2, const params& P, char* TformOrder)
     DecodeTransformOrder(Idx2->TransformOrder, Idx2->NTformPasses, Idx2->TransformOrderFull.Data);
 }
 
+//const char* bit_rep[16] = { "0000", "0001", "0010", "0011",
+//                            "0100", "0101", "0110", "0111",
+//                            "1000", "1001", "1010", "1011",
+//                            "1100", "1101", "1110", "1111" };
+//
+//void
+//print_byte(uint8_t byte)
+//{
+//  printf("%s%s", bit_rep[byte >> 4], bit_rep[byte & 0x0F]);
+//}
+
 
 /* Build the subbands, including which subbands to decode, depending on P.DownsamplingFactor3*/
 static void
@@ -396,33 +407,33 @@ BuildSubbands(idx2_file* Idx2, const params& P)
   BuildSubbands(Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->Subbands);
   BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->SubbandsNonExt);
 
-  // Compute the decode subband mask based on DownsamplingFactor3
-  v3i Df3 = P.DownsamplingFactor3;
+  v3i Spacing3 = v3i(1) << P.DownsamplingFactor3;
+  //printf("target spacing " idx2_PrStrV3i "\n", idx2_PrV3i(Spacing3));
+  array<array<v3i>> SubbandSpacings3;
+  Resize(&SubbandSpacings3, Idx2->NLevels);
   idx2_For (int, I, 0, Idx2->NLevels)
   {
-    if (Df3.X > 0 && Df3.Y > 0 && Df3.Z > 0)
-    {
-      Idx2->DecodeSubbandMasks[I] = 0;
-      --Df3.X;
-      --Df3.Y;
-      --Df3.Z;
-      if (Df3.X == 0 && Df3.Y == 0 && Df3.Z == 0)
-        Idx2->DecodeSubbandMasks[I] = 1; // decode subband 0 of the next finer resolution level
-      continue;
-    }
+    Resize(&SubbandSpacings3[I], Size(Idx2->Subbands));
     u8 Mask = 0xFF;
-    idx2_For (int, Sb, 0, Size(Idx2->Subbands))
+    //printf("level %d\n", I);
+    idx2_For (int, Sb, 0, Size(SubbandSpacings3[I]))
     {
-      const v3i& Lh3 = Idx2->Subbands[Sb].LowHigh3;
-      if ((Lh3.X == 1 && Df3.X > 0) || (Lh3.Y == 1 && Df3.Y > 0) || (Lh3.Z == 1 && Df3.Z > 0))
+      v3i S3 = SubbandSpacings3[I][Sb] = Strd(Idx2->Subbands[Sb].AccumGrid) * (I > 0 ? SubbandSpacings3[I - 1][0] : v3i(1));
+      //printf("subband %d spacing " idx2_PrStrV3i "\n", Sb, idx2_PrV3i(S3));
+      if (!(S3 >= Spacing3)) // choose this to decode fewer subbands
+      //if (S3 < Spacing3) // choose this to decode more subbands
         Mask = UnsetBit(Mask, Sb);
     }
+    if (I + 1 < Idx2->NLevels && Mask == 1)
+      Mask = 0; // explicitly disable subband 0 if it is the only subband to decode
     Idx2->DecodeSubbandMasks[I] = Mask;
-    if (Df3.X > 0) --Df3.X;
-    if (Df3.Y > 0) --Df3.Y;
-    if (Df3.Z > 0) --Df3.Z;
+    //print_byte(Mask);
+    //printf("\n");
   }
-  // TODO: maybe decode the first (0, 0, 0) subband?
+
+  idx2_ForEach (Elem, SubbandSpacings3)
+    Dealloc(Elem);
+  Dealloc(&SubbandSpacings3);
 }
 
 
