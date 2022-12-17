@@ -134,7 +134,7 @@ ParallelDecodeSubband(const idx2_file& Idx2,
         ++NBps;
       auto SizeBegin = BitSize(*Stream);
       if (NBitPlanesDecoded <= 8)
-        Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
+        Decode(BlockUInts, NVals, Bp, N, Stream, false); // use AVX2
       else                                        // delay the transpose of bits to later
         DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
       auto SizeEnd = BitSize(*Stream);

@@ -119,7 +119,13 @@ DecodeSubband(const idx2_file& Idx2,
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2.BlockDims3;
+    bool BypassDecode = (D3 % Idx2.DecodeSubbandSpacings[Ds.Level][Ds.Subband]) != 0;
     v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
+    bool CodedInNextLevel =
+      Ds.Subband == 0 && Ds.Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+    if (CodedInNextLevel)
+      continue;
+
     const int NDims = NumDims(BlockDims3);
     const int NVals = 1 << (2 * NDims);
     const int Prec = NBitPlanes - 1 - NDims;
@@ -128,11 +134,6 @@ DecodeSubband(const idx2_file& Idx2,
     buffer_t BufInts((i64*)BlockFloats, NVals);
     u64 BlockUInts[4 * 4 * 4] = {};
     buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
-
-    bool CodedInNextLevel =
-      Ds.Subband == 0 && Ds.Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
-    if (CodedInNextLevel)
-      continue;
 
     // we read the exponent for the block
     i16 EMax = SizeOf(Idx2.DType) > 4
@@ -189,7 +190,7 @@ DecodeSubband(const idx2_file& Idx2,
         ++NBps;
       auto SizeBegin = BitSize(*Stream);
       if (NBitPlanesDecoded <= 8)
-        Decode(BlockUInts, NVals, Bp, N, Stream); // use AVX2
+        Decode(BlockUInts, NVals, Bp, N, Stream, BypassDecode); // use AVX2
       else // delay the transpose of bits to later
         DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
       auto SizeEnd = BitSize(*Stream);
@@ -197,7 +198,7 @@ DecodeSubband(const idx2_file& Idx2,
     } // end bit plane loop
 
     /* do inverse zfp transform but only if any bit plane is decoded */
-    if (NBps > 0)
+    if (NBps > 0 && !BypassDecode)
     {
       if (NBitPlanesDecoded > 8)
         TransposeRecursive(BlockUInts, NBps);

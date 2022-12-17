@@ -138,6 +138,7 @@ struct idx2_file
   static constexpr int NTformPasses = 1;
   u64 TransformOrder = 0;
   stack_array<u8, MaxLevels> DecodeSubbandMasks; // one subband mask per level
+  stack_array<array<v3i>, MaxLevels> DecodeSubbandSpacings; // how much to subsample each subband
   stack_array<v3i, MaxLevels> NBricks3; // number of bricks per level
   stack_array<v3i, MaxLevels> NChunks3;
   stack_array<v3i, MaxLevels> NFiles3;

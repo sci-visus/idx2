@@ -987,7 +987,12 @@ DecodeTest(u64* idx2_Restrict Block, int NVals, i8& N, bitstream* idx2_Restrict 
 
 // NOTE: This is the one being used
 template <typename t> void
-Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */ i8& N, bitstream* idx2_Restrict BsIn)
+Decode(t* idx2_Restrict Block,
+       int NVals,
+       int B, /*i64 S, */
+       i8& N,
+       bitstream* idx2_Restrict BsIn,
+       bool BypassDecode = false)
 {
   static_assert(is_unsigned<t>::Value);
   idx2_Assert(NVals <= 64); // e.g. 4x4x4, 4x4, 8x8
@@ -1019,33 +1024,37 @@ Decode(t* idx2_Restrict Block, int NVals, int B, /*i64 S, */ i8& N, bitstream* i
 //    for (int I = 0; I < K; ++I)
 //      Block[I] += (t)((X >> I) & 1u) << B;
 //  }
-#if defined(idx2_Avx2) && defined(__AVX2__)
-  //printf("avx\n");
-  __m256i Minus1 = _mm256_set1_epi64x(-1);
-  __m256i Add = _mm256_set1_epi64x(t(1) << B);
-  __m256i Mask = _mm256_set_epi64x(
-    0xfffffffffffffff7ll, 0xfffffffffffffffbll, 0xfffffffffffffffdll, 0xfffffffffffffffell);
-  while (X)
-  { // the input value X is used as a mask to add the shifted 1 bits (in Add) to the 4 values in
-    // Block
-    __m256i Val = _mm256_set1_epi64x(X);
-    Val = _mm256_or_si256(Val, Mask);
-    Val = _mm256_cmpeq_epi64(Val, Minus1); // "spread" the bits of X to 4 lanes
-    // TODO: to decode more than one bit plane, we can spread the bits of 8 bit planes (or more) to
-    // 4 lanes and then add only once we can even work with 32 8-bit lanes (_epu8 unsigned char) to
-    // do bit transposing and shift the values when adding back to the results later
-    // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    _mm256_maskstore_epi64(
-      (long long int*)Block,
-      Val,
-      _mm256_add_epi64(_mm256_maskload_epi64((long long int*)Block, Val), Add));
-    X >>= 4;
-    Block += 4;
+
+  if (!BypassDecode)
+  {
+    #if defined(idx2_Avx2) && defined(__AVX2__)
+      //printf("avx\n");
+      __m256i Minus1 = _mm256_set1_epi64x(-1);
+      __m256i Add = _mm256_set1_epi64x(t(1) << B);
+      __m256i Mask = _mm256_set_epi64x(
+        0xfffffffffffffff7ll, 0xfffffffffffffffbll, 0xfffffffffffffffdll, 0xfffffffffffffffell);
+      while (X)
+      { // the input value X is used as a mask to add the shifted 1 bits (in Add) to the 4 values in
+        // Block
+        __m256i Val = _mm256_set1_epi64x(X);
+        Val = _mm256_or_si256(Val, Mask);
+        Val = _mm256_cmpeq_epi64(Val, Minus1); // "spread" the bits of X to 4 lanes
+        // TODO: to decode more than one bit plane, we can spread the bits of 8 bit planes (or more) to
+        // 4 lanes and then add only once we can even work with 32 8-bit lanes (_epu8 unsigned char) to
+        // do bit transposing and shift the values when adding back to the results later
+        // int table[8] ALIGNED(32) = { 1, 2, 3, 4, 5, 6, 7, 8 };
+        _mm256_maskstore_epi64(
+          (long long int*)Block,
+          Val,
+          _mm256_add_epi64(_mm256_maskload_epi64((long long int*)Block, Val), Add));
+        X >>= 4;
+        Block += 4;
+      }
+    #else
+      for (int I = 0; X; ++I, X >>= 1)
+        Block[I] += (t)(X & 1u) << B;
+    #endif
   }
-#else
-  for (int I = 0; X; ++I, X >>= 1)
-    Block[I] += (t)(X & 1u) << B;
-#endif
   *BsIn = Bs;
 }
 
