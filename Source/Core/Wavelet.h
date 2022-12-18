@@ -9,29 +9,6 @@ namespace idx2
 {
 
 
-struct wavelet_block
-{
-  v3i Levels;
-  grid Grid;
-  volume Volume;
-  bool IsPacked = false; // if the Volume stores data just for this block
-};
-
-
-struct wav_basis_norms
-{
-  array<f64> ScalNorms; // scaling function norms
-  array<f64> WaveNorms; // wavelet function norms
-};
-
-
-wav_basis_norms
-GetCdf53Norms(int NLevels);
-
-void
-Dealloc(wav_basis_norms* WbN);
-
-
 template <int N> struct wav_basis_norms_static
 {
   stack_array<f64, N> ScalNorms;
@@ -110,21 +87,10 @@ ILiftCdf53Y(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
 template <typename t> void
 ILiftCdf53Z(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
 
-/*
-"In-place" extrapolate a volume to size 2^L+1, which is assumed to be the
-dims of Vol. The original volume is stored in the D3 sub-volume of Vol.
-*/
-void
-Extrapolate(v3i D3, volume* Vol);
 
 void
-ForwardCdf53(const extent& Ext, int NLevels, volume* Vol);
-void
-InverseCdf53(const extent& Ext, int NLevels, volume* Vol);
-void
 ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol);
-void
-ExtrapolateCdf53(const transform_info& Td, volume* Vol);
+
 void
 ForwardCdf53(const v3i& Dims3,
              const v3i& M3,
@@ -141,6 +107,7 @@ InverseCdf53(const v3i& Dims3,
              u64 TformOrder,
              volume* Vol,
              bool Normalize = false);
+
 void
 ForwardCdf53(const v3i& M3,
              int Iter,
@@ -343,338 +310,8 @@ struct wav_grids
   }
 
 
-/* Forward x lifting */
-// TODO: merge the first two loops
-#define idx2_FLiftCdf53Old(z, y, x)                                                                \
-  template <typename t> void FLiftCdf53Old##x(t* F, const v3i& N, const v3i& L)                    \
-  {                                                                                                \
-    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
-    v3i M = (N + P - 1) / P;                                                                       \
-    if (M.x <= 1)                                                                                  \
-      return;                                                                                      \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
-          Val -= F[idx2_Row##x(XLeft, y, z, N)] / 2;                                               \
-          Val -= F[idx2_Row##x(XRight, y, z, N)] / 2;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
-          F[idx2_Row##x(XLeft, y, z, N)] += Val / 4;                                               \
-          F[idx2_Row##x(XRight, y, z, N)] += Val / 4;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
-    int S##x = (M.x + 1) / 2;                                                                      \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          Temp[x / 2] = F[idx2_Row##x(x, y, z, N)];                                                \
-          F[idx2_Row##x(x / 2, y, z, N)] = F[idx2_Row##x(x - 1, y, z, N)];                         \
-        }                                                                                          \
-        if (IsOdd(M.x))                                                                            \
-          F[idx2_Row##x(M.x / 2, y, z, N)] = F[idx2_Row##x(M.x - 1, y, z, N)];                     \
-        for (int x = 0; x < (M.x / 2); ++x)                                                        \
-          F[idx2_Row##x(S##x + x, y, z, N)] = Temp[x];                                             \
-      }                                                                                            \
-    }                                                                                              \
-  }
-
-
-// TODO: merge two loops
-#define idx2_ILiftCdf53Old(z, y, x)                                                                \
-  template <typename t> void ILiftCdf53Old##x(t* F, const v3i& N, const v3i& L)                    \
-  {                                                                                                \
-    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
-    v3i M = (N + P - 1) / P;                                                                       \
-    if (M.x <= 1)                                                                                  \
-      return;                                                                                      \
-    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
-    int S##x = (M.x + 1) >> 1;                                                                     \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 0; x < (M.x / 2); ++x)                                                        \
-          Temp[x] = F[idx2_Row##x(S##x + x, y, z, N)];                                             \
-        if (IsOdd(M.x))                                                                            \
-          F[idx2_Row##x(M.x - 1, y, z, N)] = F[idx2_Row##x(M.x >> 1, y, z, N)];                    \
-        for (int x = (M.x / 2) * 2 - 1; x >= 1; x -= 2)                                            \
-        {                                                                                          \
-          F[idx2_Row##x(x - 1, y, z, N)] = F[idx2_Row##x(x >> 1, y, z, N)];                        \
-          F[idx2_Row##x(x, y, z, N)] = Temp[x / 2];                                                \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
-          F[idx2_Row##x(XLeft, y, z, N)] -= Val / 4;                                               \
-          F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
-          Val += F[idx2_Row##x(XLeft, y, z, N)] / 2;                                               \
-          Val += F[idx2_Row##x(XRight, y, z, N)] / 2;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-  }
-
-
-#define idx2_FLiftCdf53Const(z, y, x)                                                              \
-  template <typename t> void FLiftCdf53Const##x(t* F, const v3i& N, const v3i& L)                  \
-  {                                                                                                \
-    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
-    v3i M = (N + P - 1) / P;                                                                       \
-    if (M.x <= 1)                                                                                  \
-      return;                                                                                      \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x;                                                    \
-          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
-          Val -= (F[idx2_Row##x(XLeft, y, z, N)] + F[idx2_Row##x(XRight, y, z, N)]) / 2;           \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
-          F[idx2_Row##x(XLeft, y, z, N)] += Val / 4;                                               \
-          F[idx2_Row##x(XRight, y, z, N)] += Val / 4;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
-    int S##x = (M.x + 1) / 2;                                                                      \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          Temp[x / 2] = F[idx2_Row##x(x, y, z, N)];                                                \
-          F[idx2_Row##x(x / 2, y, z, N)] = F[idx2_Row##x(x - 1, y, z, N)];                         \
-        }                                                                                          \
-        if (IsOdd(M.x))                                                                            \
-          F[idx2_Row##x(M.x / 2, y, z, N)] = F[idx2_Row##x(M.x - 1, y, z, N)];                     \
-        for (int x = 0; x < (M.x / 2); ++x)                                                        \
-          F[idx2_Row##x(S##x + x, y, z, N)] = Temp[x];                                             \
-      }                                                                                            \
-    }                                                                                              \
-  }
-
-
-// TODO: merge two loops
-#define idx2_ILiftCdf53Const(z, y, x)                                                              \
-  template <typename t> void ILiftCdf53Const##x(t* F, const v3i& N, const v3i& L)                  \
-  {                                                                                                \
-    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
-    v3i M = (N + P - 1) / P;                                                                       \
-    if (M.x <= 1)                                                                                  \
-      return;                                                                                      \
-    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
-    int S##x = (M.x + 1) >> 1;                                                                     \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 0; x < (M.x / 2); ++x)                                                        \
-          Temp[x] = F[idx2_Row##x(S##x + x, y, z, N)];                                             \
-        if (IsOdd(M.x))                                                                            \
-          F[idx2_Row##x(M.x - 1, y, z, N)] = F[idx2_Row##x(M.x >> 1, y, z, N)];                    \
-        for (int x = (M.x / 2) * 2 - 1; x >= 1; x -= 2)                                            \
-        {                                                                                          \
-          F[idx2_Row##x(x - 1, y, z, N)] = F[idx2_Row##x(x >> 1, y, z, N)];                        \
-          F[idx2_Row##x(x, y, z, N)] = Temp[x / 2];                                                \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x - 1;                                                \
-          t Val = F[idx2_Row##x(x, y, z, N)];                                                      \
-          F[idx2_Row##x(XLeft, y, z, N)] -= Val / 4;                                               \
-          F[idx2_Row##x(XRight, y, z, N)] -= Val / 4;                                              \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          int XLeft = x - 1;                                                                       \
-          int XRight = x < M.x - 1 ? x + 1 : x;                                                    \
-          t& Val = F[idx2_Row##x(x, y, z, N)];                                                     \
-          if (x < M.x - 1)                                                                         \
-          {                                                                                        \
-            Val += F[idx2_Row##x(XLeft, y, z, N)] / 2;                                             \
-            Val += F[idx2_Row##x(XRight, y, z, N)] / 2;                                            \
-          }                                                                                        \
-          else                                                                                     \
-          {                                                                                        \
-            Val += F[idx2_Row##x(XLeft, y, z, N)] + F[idx2_Row##x(XRight, y, z, N)];               \
-          }                                                                                        \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-  }
-
-
-#define idx2_FLiftExtCdf53(z, y, x)                                                                \
-  template <typename t> void FLiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L)   \
-  {                                                                                                \
-    idx2_Assert(L.X == L.Y && L.Y == L.Z);                                                         \
-    auto D = DimsAtLevel(N, L.x);                                                                  \
-    /* linearly extrapolate */                                                                     \
-    if (D[0].x < D[1].x)                                                                           \
-    {                                                                                              \
-      idx2_Assert(D[0].x + 1 == D[1].x);                                                           \
-      /*_Pragma("omp parallel for")*/                                                              \
-      for (int z = 0; z < D[1].z; ++z)                                                             \
-      {                                                                                            \
-        for (int y = 0; y < D[1].y; ++y)                                                           \
-        {                                                                                          \
-          t A = F[idx2_Row##x(D[0].x - 2, y, z, NBig)];                                            \
-          t B = F[idx2_Row##x(D[0].x - 1, y, z, NBig)];                                            \
-          F[idx2_Row##x(D[0].x, y, z, NBig)] = 2 * B - A;                                          \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    v3i P(1 << L.X, 1 << L.Y, 1 << L.Z);                                                           \
-    v3i M = (NBig + P - 1) / P;                                                                    \
-    if (M.x <= 1)                                                                                  \
-      return;                                                                                      \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < D[1].x; x += 2)                                                        \
-        {                                                                                          \
-          t& Val = F[idx2_Row##x(x, y, z, NBig)];                                                  \
-          Val -= F[idx2_Row##x(x - 1, y, z, NBig)] / 2;                                            \
-          Val -= F[idx2_Row##x(x + 1, y, z, NBig)] / 2;                                            \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    /*_Pragma("omp parallel for collapse(2)")*/                                                    \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < D[1].x; x += 2)                                                        \
-        {                                                                                          \
-          t Val = F[idx2_Row##x(x, y, z, NBig)];                                                   \
-          F[idx2_Row##x(x - 1, y, z, NBig)] += Val / 4;                                            \
-          F[idx2_Row##x(x + 1, y, z, NBig)] += Val / 4;                                            \
-        }                                                                                          \
-      }                                                                                            \
-    }                                                                                              \
-    idx2_MallocArray(Temp, t, M.x / 2);                                                            \
-    int S##x = (M.x + 1) / 2;                                                                      \
-    for (int z = 0; z < M.z; ++z)                                                                  \
-    {                                                                                              \
-      for (int y = 0; y < M.y; ++y)                                                                \
-      {                                                                                            \
-        for (int x = 1; x < M.x; x += 2)                                                           \
-        {                                                                                          \
-          Temp[x / 2] = F[idx2_Row##x(x, y, z, NBig)];                                             \
-          F[idx2_Row##x(x / 2, y, z, NBig)] = F[idx2_Row##x(x - 1, y, z, NBig)];                   \
-        }                                                                                          \
-        if (IsOdd(M.x))                                                                            \
-          F[idx2_Row##x(M.x / 2, y, z, NBig)] = F[idx2_Row##x(M.x - 1, y, z, NBig)];               \
-        for (int x = 0; x < (M.x / 2); ++x)                                                        \
-          F[idx2_Row##x(S##x + x, y, z, NBig)] = Temp[x];                                          \
-      }                                                                                            \
-    }                                                                                              \
-  }
-
-
-#define idx2_ILiftExtCdf53(z, y, x)                                                                \
-  template <typename t> void ILiftExtCdf53##x(t* F, const v3i& N, const v3i& NBig, const v3i& L)   \
-  {                                                                                                \
-    (void)N;                                                                                       \
-    idx2_Assert(L.X == L.Y && L.Y == L.Z);                                                         \
-    return ILiftCdf53Old##x(F, NBig, L);                                                           \
-  }
-
-
-
 namespace idx2
 {
-
-
-inline stack_array<v3i, 2>
-DimsAtLevel(v3i N, int L)
-{
-  for (int I = 0; I < L; ++I)
-  {
-    N = ((N / 2) * 2) + 1;
-    N = (N + 1) / 2;
-  }
-  return stack_array<v3i, 2>{ N, (N / 2) * 2 + 1 };
-}
 
 
 idx2_FLiftCdf53(Z, Y, X)   // X forward lifting
@@ -685,16 +322,10 @@ idx2_ILiftCdf53(Z, X, Y) // Y inverse lifting
 idx2_ILiftCdf53(Y, X, Z) // Z inverse lifting
 
 
-
-
 } // namespace idx2
 
-#undef idx2_FLiftCdf53Old
-#undef idx2_ILiftCdf53Old
 #undef idx2_FLiftCdf53
 #undef idx2_ILiftCdf53
-#undef idx2_FLiftExtCdf53
-#undef idx2_ILiftExtCdf53
 #undef idx2_RowX
 #undef idx2_RowY
 #undef idx2_RowZ

@@ -179,7 +179,6 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
 }
 
 
-// TODO: return error type
 error<idx2_err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
 {
@@ -408,6 +407,7 @@ BuildSubbands(idx2_file* Idx2, const params& P)
   BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->SubbandsNonExt);
 
 
+  /* compute the list of subbands to decode given the downsampling factor */
   v3i Spacing3 = v3i(1) << P.DownsamplingFactor3;
   //printf("target spacing " idx2_PrStrV3i "\n", idx2_PrV3i(Spacing3));
   array<array<v3i>> SubbandFroms3;
@@ -661,6 +661,7 @@ ComputeWaveletTransformDetails(idx2_file* Idx2)
 }
 
 
+/* TODO NEXT: this function needs revision */
 static void
 GuessNumLevelsIfNeeded(idx2_file* Idx2)
 {
@@ -761,6 +762,8 @@ Dealloc(idx2_file* Idx2)
   Dealloc(&Idx2->FilesOrderStr);
   Dealloc(&Idx2->Subbands);
   Dealloc(&Idx2->SubbandsNonExt);
+  idx2_ForEach (Elem ,Idx2->DecodeSubbandSpacings)
+    Dealloc(Elem);
 }
 
 
