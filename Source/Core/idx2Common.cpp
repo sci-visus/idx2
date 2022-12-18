@@ -409,8 +409,7 @@ BuildSubbands(idx2_file* Idx2, const params& P)
 
 
   v3i Spacing3 = v3i(1) << P.DownsamplingFactor3;
-  v3i From3 = v3i(0);
-  printf("target spacing " idx2_PrStrV3i "\n", idx2_PrV3i(Spacing3));
+  //printf("target spacing " idx2_PrStrV3i "\n", idx2_PrV3i(Spacing3));
   array<array<v3i>> SubbandFroms3;
   array<array<v3i>> SubbandSpacings3;
   Resize(&SubbandFroms3, Idx2->NLevels);
@@ -418,40 +417,46 @@ BuildSubbands(idx2_file* Idx2, const params& P)
   idx2_For (int, I, 0, Idx2->NLevels)
   {
     Resize(&SubbandSpacings3[I], Size(Idx2->Subbands));
+    Resize(&SubbandFroms3[I], Size(Idx2->Subbands));
     u8 Mask = 0xFF;
-    printf("level %d\n", I);
+    //printf("level %d\n", I);
     Resize(&Idx2->DecodeSubbandSpacings[I], Size(Idx2->Subbands));
     idx2_For (int, Sb, 0, Size(SubbandSpacings3[I]))
     {
       v3i F3 = SubbandFroms3[I][Sb] = From(Idx2->Subbands[Sb].Grid) * (I > 0 ? SubbandSpacings3[I - 1][0] : v3i(1));
       v3i S3 = SubbandSpacings3[I][Sb] = Strd(Idx2->Subbands[Sb].Grid) * (I > 0 ? SubbandSpacings3[I - 1][0] : v3i(1));
-      printf("subband %d spacing " idx2_PrStrV3i "\n", Sb, idx2_PrV3i(S3));
-      //if (!(S3 >= Spacing3)) // choose this to decode fewer subbands
-      if (S3 < Spacing3) // choose this to decode more subbands
+      //printf("subband %d from " idx2_PrStrV3i "\n", Sb, idx2_PrV3i(F3));
+      //printf("subband %d spacing " idx2_PrStrV3i "\n", Sb, idx2_PrV3i(S3));
+      Idx2->DecodeSubbandSpacings[I][Sb] = v3i(1);
+      for (int D = 0; D < 3; ++D)
       {
-        Mask = UnsetBit(Mask, Sb);
-      }
-      else // S3[d] >=Spacing3[d] for some d
-      {
-        Idx2->DecodeSubbandSpacings[I][Sb] = v3i(1);
-        for (int D = 0; D < 3; ++D)
+        // check if a grid1 that starts at F3 with spacing S3 is a subgrid
+        // of a grid2 that starts at 0 with spacing Spacing3
+        if ((F3[D] % Spacing3[D]) == 0)
         {
-          if (Spacing3[D] > S3[D])
+          if ((S3[D] % Spacing3[D]) != 0)
             Idx2->DecodeSubbandSpacings[I][Sb][D] = Spacing3[D] / S3[D];
         }
+        else // skip the subband
+        {
+          Mask = UnsetBit(Mask, Sb);
+        }
       }
-      printf("subband decode spacing = " idx2_PrStrV3i "\n", idx2_PrV3i(SubbandSpacings3[I][Sb]));
+      //printf("subband decode spacing = " idx2_PrStrV3i "\n", idx2_PrV3i(Idx2->DecodeSubbandSpacings[I][Sb]));
     }
     if (I + 1 < Idx2->NLevels && Mask == 1)
       Mask = 0; // explicitly disable subband 0 if it is the only subband to decode
     Idx2->DecodeSubbandMasks[I] = Mask;
-    print_byte(Mask);
-    printf("\n");
+    //print_byte(Mask);
+    //printf("\n");
   }
 
   idx2_ForEach (Elem, SubbandSpacings3)
     Dealloc(Elem);
   Dealloc(&SubbandSpacings3);
+  idx2_ForEach (Elem, SubbandFroms3)
+    Dealloc(Elem);
+  Dealloc(&SubbandFroms3);
 }
 
 

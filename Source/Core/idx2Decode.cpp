@@ -119,6 +119,8 @@ DecodeSubband(const idx2_file& Idx2,
     v3i Z3(DecodeMorton3(Block));
     idx2_NextMorton(Block, Z3, NBlocks3);
     v3i D3 = Z3 * Idx2.BlockDims3;
+    //if (Ds.Level ==0 && Ds.Subband == 0)
+    //  printf("D3 " idx2_PrStrV3i " Spacing " idx2_PrStrV3i "\n", idx2_PrV3i(D3), idx2_PrV3i(Idx2.DecodeSubbandSpacings[Ds.Level][Ds.Subband]));
     bool BypassDecode = (D3 % Idx2.DecodeSubbandSpacings[Ds.Level][Ds.Subband]) != 0;
     v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
     bool CodedInNextLevel =
