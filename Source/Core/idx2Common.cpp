@@ -165,7 +165,8 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
   fprintf(Fp, "    (version %d %d)\n", Idx2.Version[0], Idx2.Version[1]);
   fprintf(Fp, "    (brick-size %d %d %d)\n", idx2_PrV3i(Idx2.BrickDims3));
   char TransformOrder[128];
-  DecodeTransformOrder(Idx2.TransformOrder, TransformOrder);
+  // TODO NEXT
+  //DecodeTransformOrder(Idx2.TransformOrder, TransformOrder);
   fprintf(Fp, "    (transform-order \"%s\")\n", TransformOrder);
   fprintf(Fp, "    (num-levels %d)\n", Idx2.NLevels);
   fprintf(Fp, "    (transform-passes-per-levels %d)\n", Idx2.NTformPasses);
@@ -290,10 +291,11 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-order"))
         {
           idx2_Assert(Expr->type == SE_STRING);
-          Idx2->TransformOrder =
-            EncodeTransformOrder(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
-          char TransformOrder[128];
-          DecodeTransformOrder(Idx2->TransformOrder, TransformOrder);
+          // TODO NEXT
+          //Idx2->TransformOrder =
+          //  EncodeTransformOrder(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
+          //char TransformOrder[128];
+          //DecodeTransformOrder(Idx2->TransformOrder, TransformOrder);
           //          printf("Transform order = %s\n", TransformOrder);
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "num-levels"))
@@ -370,22 +372,6 @@ CheckBrickSize(idx2_file* Idx2, const params& P)
 }
 
 
-static void
-ComputeTransformOrder(idx2_file* Idx2, const params& P, char* TformOrder)
-{ /* try to repeat XYZ+, depending on the BrickDims */
-  int J = 0;
-  idx2_For (int, D, 0, 3)
-  {
-    if (Idx2->BrickDims3[D] > 1)
-      TformOrder[J++] = char('X' + D);
-  }
-  TformOrder[J++] = '+';
-  TformOrder[J++] = '+';
-  Idx2->TransformOrder = EncodeTransformOrder(TformOrder);
-  Idx2->TransformOrderFull.Len =
-    DecodeTransformOrder(Idx2->TransformOrder, Idx2->NTformPasses, Idx2->TransformOrderFull.Data);
-}
-
 const char* bit_rep[16] = { "0000", "0001", "0010", "0011",
                             "0100", "0101", "0110", "0111",
                             "1000", "1001", "1010", "1011",
@@ -403,8 +389,9 @@ static void
 BuildSubbands(idx2_file* Idx2, const params& P)
 {
   Idx2->BrickDimsExt3 = idx2_ExtDims(Idx2->BrickDims3);
-  BuildSubbands(Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->Subbands);
-  BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->SubbandsNonExt);
+  // TODO NEXT
+  //BuildSubbands(Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->Subbands);
+  //BuildSubbands(Idx2->BrickDims3, Idx2->NTformPasses, Idx2->TransformOrder, &Idx2->SubbandsNonExt);
 
 
   /* compute the list of subbands to decode given the downsampling factor */
@@ -509,9 +496,10 @@ ComputeGlobalBricksOrder(idx2_file* Idx2, const params& P, const char* TformOrde
       BrickOrder[J++] = '+';
     idx2_For (size_t, K, 0, sizeof(TformOrder))
       BrickOrder[J++] = TformOrder[K];
-    Idx2->BricksOrder[I] = EncodeTransformOrder(BrickOrder);
-    Idx2->BricksOrderStr[I].Len =
-      DecodeTransformOrder(Idx2->BricksOrder[I], N3, Idx2->BricksOrderStr[I].Data);
+    // TODO NEXT
+    //Idx2->BricksOrder[I] = EncodeTransformOrder(BrickOrder);
+    //Idx2->BricksOrderStr[I].Len =
+    //  DecodeTransformOrder(Idx2->BricksOrder[I], N3, Idx2->BricksOrderStr[I].Data);
 
     if (Idx2->BricksOrderStr[I].Len < Idx2->TransformOrderFull.Len)
       return idx2_Error(idx2_err_code::TooManyLevels);
@@ -554,8 +542,9 @@ ComputeLocalBricksChunksFilesOrders(idx2_file* Idx2, const params& P)
         Idx2->BricksPerChunk3s[I][C - 'X'] *= 2;
         BricksOrderInChunk[BricksOrderInChunk.Len - J - 1] = C;
       }
-      Idx2->BricksOrderInChunk[I] =
-        EncodeTransformOrder(stref(BricksOrderInChunk.Data, BricksOrderInChunk.Len));
+      // TODO NEXT
+      //Idx2->BricksOrderInChunk[I] =
+      //  EncodeTransformOrder(stref(BricksOrderInChunk.Data, BricksOrderInChunk.Len));
       idx2_Assert(Idx2->BricksPerChunk[I] = Prod(Idx2->BricksPerChunk3s[I]));
     }
 
@@ -574,8 +563,9 @@ ComputeLocalBricksChunksFilesOrders(idx2_file* Idx2, const params& P)
         Idx2->ChunksPerFile3s[I][C - 'X'] *= 2;
         ChunksOrderInFile[ChunksOrderInFile.Len - J - 1] = C;
       }
-      Idx2->ChunksOrderInFile[I] =
-        EncodeTransformOrder(stref(ChunksOrderInFile.Data, ChunksOrderInFile.Len));
+      // TODO NEXT
+      //Idx2->ChunksOrderInFile[I] =
+      //  EncodeTransformOrder(stref(ChunksOrderInFile.Data, ChunksOrderInFile.Len));
       idx2_Assert(Idx2->ChunksPerFile[I] == Prod(Idx2->ChunksPerFile3s[I]));
       Idx2->NFiles3[I] =
         (Idx2->NChunks3[I] + Idx2->ChunksPerFile3s[I] - 1) / Idx2->ChunksPerFile3s[I];
@@ -592,10 +582,11 @@ ComputeLocalBricksChunksFilesOrders(idx2_file* Idx2, const params& P)
         char C = Idx2->BricksOrderStr[I][Idx2->BricksOrderStr[I].Len - BricksOrderInChunk.Len - J - 1];
         ChunksOrder[ChunksOrder.Len - J - 1] = C;
       }
-      Idx2->ChunksOrder[I] = EncodeTransformOrder(stref(ChunksOrder.Data, ChunksOrder.Len));
-      Resize(&Idx2->ChunksOrderStr, Idx2->NLevels);
-      Idx2->ChunksOrderStr[I].Len = DecodeTransformOrder(
-        Idx2->ChunksOrder[I], Idx2->NChunks3[I], Idx2->ChunksOrderStr[I].Data);
+      // TODO NEXT
+      //Idx2->ChunksOrder[I] = EncodeTransformOrder(stref(ChunksOrder.Data, ChunksOrder.Len));
+      //Resize(&Idx2->ChunksOrderStr, Idx2->NLevels);
+      //Idx2->ChunksOrderStr[I].Len = DecodeTransformOrder(
+      //  Idx2->ChunksOrder[I], Idx2->NChunks3[I], Idx2->ChunksOrderStr[I].Data);
     }
 
     /* files order */
@@ -612,10 +603,11 @@ ComputeLocalBricksChunksFilesOrders(idx2_file* Idx2, const params& P)
                                          ChunksOrderInFile.Len - J - 1];
         FilesOrder[FilesOrder.Len - J - 1] = C;
       }
-      Idx2->FilesOrder[I] = EncodeTransformOrder(stref(FilesOrder.Data, FilesOrder.Len));
-      Resize(&Idx2->FilesOrderStr, Idx2->NLevels);
-      Idx2->FilesOrderStr[I].Len =
-        DecodeTransformOrder(Idx2->FilesOrder[I], Idx2->NFiles3[I], Idx2->FilesOrderStr[I].Data);
+      // TODO NEXT
+      //Idx2->FilesOrder[I] = EncodeTransformOrder(stref(FilesOrder.Data, FilesOrder.Len));
+      //Resize(&Idx2->FilesOrderStr, Idx2->NLevels);
+      //Idx2->FilesOrderStr[I].Len =
+      //  DecodeTransformOrder(Idx2->FilesOrder[I], Idx2->NFiles3[I], Idx2->FilesOrderStr[I].Data);
     }
   }
 
@@ -651,13 +643,23 @@ ComputeFileDirDepths(idx2_file* Idx2, const params& P)
 }
 
 
-/* compute the transform details, for both the normal transform and for extrapolation */
-static void
-ComputeWaveletTransformDetails(idx2_file* Idx2)
+void
+BuildSubbandsForAllLevels(idx2_file* Idx2)
 {
-  ComputeTransformDetails(&Idx2->TransformDetails, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder);
-  int NLevels = Log2Floor(Max(Max(Idx2->BrickDims3.X, Idx2->BrickDims3.Y), Idx2->BrickDims3.Z));
-  ComputeTransformDetails(&Idx2->TransformDetailsExtrapolate, Idx2->BrickDims3, NLevels, Idx2->TransformOrder);
+  tokenizer Tokenizer(Idx2->TransformTemplate, ":");
+  array<stref> TemplateParts;
+  stref Part = Next(&Tokenizer);
+  if (Part.ConstPtr != Idx2->TransformTemplate.ConstPtr)
+    PushBack(&TemplateParts, Part);
+  while (Part = Next(&Tokenizer))
+    PushBack(&TemplateParts, Part);
+  Reverse(Begin(TemplateParts), End(TemplateParts));
+  idx2_ForEach (Part, TemplateParts)
+  {
+    array<subband> Subbands;
+    BuildSubbandsForOneLevel(Idx2->BrickDimsExt3, *Part, &Subbands);
+    PushBack(&Idx2->SubbandsOnEachLevel);
+  }
 }
 
 
@@ -736,8 +738,9 @@ Finalize(idx2_file* Idx2, params* P)
     return idx2_Error(idx2_err_code::SizeMismatched, "BitPlanesPerFile not multiple of BitPlanesPerChunk\n");
 
 
+  // TODO NEXT
   char TformOrder[8] = {};
-  ComputeTransformOrder(Idx2, *P, TformOrder);
+  //ComputeTransformOrder(Idx2, *P, TformOrder);
 
   BuildSubbands(Idx2, *P);
 
@@ -748,7 +751,8 @@ Finalize(idx2_file* Idx2, params* P)
 
   idx2_PropagateIfError(ComputeFileDirDepths(Idx2, *P));
 
-  ComputeWaveletTransformDetails(Idx2);
+  // TODO NEXT
+  //ComputeTransformDetails(&Idx2->TransformDetails, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder);
 
   return idx2_Error(idx2_err_code::NoError);
 }

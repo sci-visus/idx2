@@ -66,16 +66,6 @@ struct subband
 };
 
 
-struct transform_info
-{
-  wav_basis_norms_static<16> BasisNorms;
-  stack_array<grid, 32> StackGrids;
-  stack_array<int, 32> StackAxes;
-  u64 TformOrder;
-  int StackSize;
-  int NPasses;
-};
-
 struct transform_info_v2
 {
   wav_basis_norms_static<16> BasisNorms;
@@ -83,9 +73,6 @@ struct transform_info_v2
   array<i8> Axes;
   i8 NLevels;
 };
-
-void
-ComputeTransformDetails(transform_info* Td, const v3i& Dims3, int NLevels, u64 TformOrder);
 
 
 /*
@@ -132,8 +119,6 @@ InverseCdf53(const extent& Ext, int NLevels, volume* Vol);
 void
 ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol);
 void
-ExtrapolateCdf53(const transform_info& Td, volume* Vol);
-void
 ForwardCdf53(const v3i& Dims3,
              const v3i& M3,
              int Iter,
@@ -153,14 +138,14 @@ void
 ForwardCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
-             const transform_info& Td,
+             const transform_info_v2& Td,
              volume* Vol,
              bool Normalize = false);
 void
 InverseCdf53(const v3i& M3,
              int Iter,
              const array<subband>& Subbands,
-             const transform_info& Td,
+             const transform_info_v2& Td,
              volume* Vol,
              bool Normalize = false);
 

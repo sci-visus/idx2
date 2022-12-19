@@ -35,26 +35,20 @@ GetCdf53NormsFast()
 struct subband
 {
   grid Grid;
-  grid AccumGrid;   // accumulative grid (with the coarsest same-level subband)
-  v3<i8> Level3;    // convention: 0 is the coarsest
-  v3<i8> Level3Rev; // convention: 0 is the finest
   v3<i8> LowHigh3;
-  i8 Level = 0;
 };
 
 
 struct transform_info
 {
-  wav_basis_norms_static<16> BasisNorms;
-  stack_array<grid, 32> StackGrids;
-  stack_array<int, 32> StackAxes;
-  u64 TformOrder;
-  int StackSize;
-  int NPasses;
+  wav_basis_norms_static<32> BasisNorms;
+  array<grid> Grids;
+  array<i8> Axes;
+  i8 NLevels;
 };
 
 void
-ComputeTransformDetails(transform_info* Td, const v3i& Dims3, int NLevels, u64 TformOrder);
+Dealloc(transform_info* TInfo);
 
 
 /*
@@ -89,41 +83,19 @@ ILiftCdf53Z(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
 
 
 void
-ExtrapolateCdf53(const v3i& Dims3, u64 TransformOrder, volume* Vol);
-
-void
-ForwardCdf53(const v3i& Dims3,
-             const v3i& M3,
-             int Iter,
-             int NLevels,
-             u64 TformOrder,
-             volume* Vol,
-             bool Normalize = false);
-void
-InverseCdf53(const v3i& Dims3,
-             const v3i& M3,
-             int Iter,
-             int NLevels,
-             u64 TformOrder,
-             volume* Vol,
-             bool Normalize = false);
-
-void
 ForwardCdf53(const v3i& M3,
-             int Iter,
+             i8 Level,
              const array<subband>& Subbands,
-             const transform_info& Td,
+             const transform_info& TInfo,
              volume* Vol,
-             bool Normalize = false);
+             bool CoarsestLevel = false);
 void
 InverseCdf53(const v3i& M3,
-             int Iter,
+             i8 Level,
              const array<subband>& Subbands,
-             const transform_info& Td,
+             const transform_info& TInfo,
              volume* Vol,
-             bool Normalize = false);
-
-template <typename t> struct array;
+             bool CoarsestLevel = false);
 
 void
 BuildSubbands(const v3i& N3, int NLevels, array<extent>* Subbands);
@@ -131,30 +103,11 @@ BuildSubbands(const v3i& N3, int NLevels, array<extent>* Subbands);
 void
 BuildSubbands(const v3i& N3, int NLevels, array<grid>* Subbands);
 
-u64
-EncodeTransformOrder(const stref& TransformOrder);
+void
+BuildSubbands(const v3i& N3, i8 NLevels, stref Template, array<subband>* Subbands);
 
 void
-DecodeTransformOrder(u64 Input, str Output);
-
-i8
-DecodeTransformOrder(u64 Input, v3i N3, str Output);
-
-i8
-DecodeTransformOrder(u64 Input, int Passes, str Output);
-
-void
-BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands);
-
-grid
-MergeSubbandGrids(const grid& Sb1, const grid& Sb2);
-
-struct wav_grids
-{
-  grid WavGrid; // grid of wavelet coefficients to copy
-  grid ValGrid; // the output grid of values
-  grid WrkGrid; // determined using the WavGrid
-};
+BuildSubbandsForOneLevel(const v3i& N3, stref Template, array<subband>* Subbands);
 
 } // namespace idx2
 

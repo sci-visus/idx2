@@ -288,7 +288,8 @@ EncodeBrick(idx2_file* Idx2, const params& P, encode_data* E, bool IncrementLeve
   idx2_Assert(BVol.Buffer);
 
   // TODO: we do not need to pre-extrapolate, instead just compute and store the extrapolated values
-  ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TransformOrder, &BVol);
+  // TODO NEXT: remove this call
+  //ExtrapolateCdf53(Dims(BIt.Val->ExtentLocal), Idx2->TransformOrder, &BVol);
 
   /* do wavelet transform */
   bool CoarsestLevel = Level + 1 == Idx2->NLevels; // only normalize

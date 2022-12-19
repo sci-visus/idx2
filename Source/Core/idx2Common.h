@@ -135,8 +135,8 @@ struct idx2_file
   v3i BrickDimsExt3 = v3i(33);
   v3i BlockDims3 = v3i(4);
   v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
-  static constexpr int NTformPasses = 1;
-  u64 TransformOrder = 0;
+  static constexpr int NTformPasses = 1; // TODO NEXT: remove this (always 1)
+  u64 TransformOrder = 0; // TODO NEXT: remove this (use the string)
   stack_array<u8, MaxLevels> DecodeSubbandMasks; // one subband mask per level
   stack_array<array<v3i>, MaxLevels> DecodeSubbandSpacings; // how much to subsample each subband
   stack_array<v3i, MaxLevels> NBricks3; // number of bricks per level
@@ -163,21 +163,23 @@ struct idx2_file
   stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
   stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
   v2i Version = v2i(1, 0);
+  // TODO NEXT: we need one set of subbands per level
   array<subband> Subbands;       // based on BrickDimsExt3
+  // TODO NEXT: we need one set of subbands per level
   array<subband> SubbandsNonExt; // based on BrickDims3
   v3i GroupBrick3; // how many bricks in the current level form a brick in the next level
   stack_array<v3i, MaxLevels> BricksPerChunk3s = { { v3i(8) } };
   stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
+  // TODO NEXT: we need one transform detail per level
   transform_info TransformDetails;           // used for normal transform
-  transform_info TransformDetailsExtrapolate; // used only for extrapolation
   stref Dir; // the directory containing the idx2 dataset
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
+  stref TransformTemplate;
+  array<array<subband>> SubbandsOnEachLevel;
 
 #if VISUS_IDX2
-
   //introducing the future for async-read
   std::function<std::future<bool> (const idx2_file&, buffer&, u64) > external_read;
-
   //write is always syncronous and slow, don't use this
   std::function<bool(const idx2_file&, buffer&, u64)> external_write;
 #endif
