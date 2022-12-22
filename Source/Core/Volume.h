@@ -35,12 +35,12 @@ struct extent
 
 struct grid : public extent
 {
-  u64 Strd = 0;
+  u64 Spacing = 0;
   grid();
   explicit grid(const v3i& Dims3);
   explicit grid(const volume& Vol);
   grid(const v3i& From3, const v3i& Dims3);
-  grid(const v3i& From3, const v3i& Dims3, const v3i& Strd3);
+  grid(const v3i& From3, const v3i& Dims3, const v3i& Spacing3);
   explicit grid(const extent& Ext);
   operator bool() const;
   static grid Invalid();
@@ -60,7 +60,7 @@ struct volume
   template <typename t> volume(const t* Ptr, const v3i& Dims3);
   template <typename t> explicit volume(const buffer_t<t>& Buf);
   template <typename t> t& At(const v3i& P) const;
-  template <typename t> t& At(const v3i& From3, const v3i& Strd3, const v3i& P) const;
+  template <typename t> t& At(const v3i& From3, const v3i& Spacing3, const v3i& P) const;
   template <typename t> t& At(const extent& Ext, const v3i& P) const;
   template <typename t> t& At(const grid& Grid, const v3i& P) const;
   template <typename t> t& At(i64 Idx) const;
@@ -93,7 +93,7 @@ struct subvol_grid
 #define idx2_PrStrExt "[" idx2_PrStrV3i idx2_PrStrV3i "]"
 #define idx2_PrExt(G) idx2_PrV3i(From(G)), idx2_PrV3i(Dims(G))
 #define idx2_PrStrGrid "[" idx2_PrStrV3i idx2_PrStrV3i idx2_PrStrV3i "]"
-#define idx2_PrGrid(G) idx2_PrV3i(From(G)), idx2_PrV3i(Dims(G)), idx2_PrV3i(Strd(G))
+#define idx2_PrGrid(G) idx2_PrV3i(From(G)), idx2_PrV3i(Dims(G)), idx2_PrV3i(Spacing(G))
 
 
 bool
@@ -109,7 +109,7 @@ v3i
 Dims(const v3i& First, const v3i& Last);
 
 v3i
-Dims(const v3i& First, const v3i& Last, const v3i& Strd);
+Dims(const v3i& First, const v3i& Last, const v3i& Spacing);
 
 v3i
 From(const extent& Ext);
@@ -127,7 +127,7 @@ v3i
 Dims(const extent& Ext);
 
 v3i
-Strd(const extent& Ext);
+Spacing(const extent& Ext);
 
 i64
 Size(const extent& Ext);
@@ -155,7 +155,7 @@ v3i
 Dims(const grid& Grid);
 
 v3i
-Strd(const grid& Grid);
+Spacing(const grid& Grid);
 
 i64
 Size(const grid& Grid);
@@ -167,7 +167,7 @@ void
 SetDims(grid* Grid, const v3i& Dims3);
 
 void
-SetStrd(grid* Grid, const v3i& Strd3);
+SetSpacing(grid* Grid, const v3i& Spacing3);
 
 v3i
 From(const volume& Vol);
@@ -185,7 +185,7 @@ v3i
 Dims(const volume& Vol);
 
 v3i
-Strd(const volume& Vol);
+Spacing(const volume& Vol);
 
 i64
 Size(const volume& Vol);
@@ -455,7 +455,7 @@ grid::grid() = default;
 idx2_Inline
 grid::grid(const v3i& Dims3)
   : extent(Dims3)
-  , Strd(Pack3i64(v3i(1)))
+  , Spacing(Pack3i64(v3i(1)))
 {
 }
 
@@ -463,15 +463,15 @@ grid::grid(const v3i& Dims3)
 idx2_Inline
 grid::grid(const v3i& From3, const v3i& Dims3)
   : extent(From3, Dims3)
-  , Strd(Pack3i64(v3i(1)))
+  , Spacing(Pack3i64(v3i(1)))
 {
 }
 
 
 idx2_Inline
-grid::grid(const v3i& From3, const v3i& Dims3, const v3i& Strd3)
+grid::grid(const v3i& From3, const v3i& Dims3, const v3i& Spacing3)
   : extent(From3, Dims3)
-  , Strd(Pack3i64(Strd3))
+  , Spacing(Pack3i64(Spacing3))
 {
 }
 
@@ -479,7 +479,7 @@ grid::grid(const v3i& From3, const v3i& Dims3, const v3i& Strd3)
 idx2_Inline
 grid::grid(const extent& Ext)
   : extent(Ext)
-  , Strd(Pack3i64(v3i(1)))
+  , Spacing(Pack3i64(v3i(1)))
 {
 }
 
@@ -487,7 +487,7 @@ grid::grid(const extent& Ext)
 idx2_Inline
 grid::grid(const volume& Vol)
   : extent(Vol)
-  , Strd(Pack3i64(v3i(1)))
+  , Spacing(Pack3i64(v3i(1)))
 {
 }
 
@@ -587,9 +587,9 @@ volume::At(const v3i& P) const
 
 
 template <typename t> idx2_Inline t&
-volume::At(const v3i& From3, const v3i& Strd3, const v3i& P) const
+volume::At(const v3i& From3, const v3i& Spacing3, const v3i& P) const
 {
-  return At<t>(From3 + P * Strd3);
+  return At<t>(From3 + P * Spacing3);
 }
 
 
@@ -603,7 +603,7 @@ volume::At(const extent& Ext, const v3i& P) const
 template <typename t> idx2_Inline t&
 volume::At(const grid& Grid, const v3i& P) const
 {
-  return At<t>(From(Grid) + P * Strd(Grid));
+  return At<t>(From(Grid) + P * Spacing(Grid));
 }
 
 
@@ -625,7 +625,7 @@ operator==(const extent& E1, const extent& E2)
 idx2_Inline bool
 operator==(const grid& G1, const grid& G2)
 {
-  return G1.Dims == G2.Dims && G1.From == G2.From && G1.Strd == G2.Strd;
+  return G1.Dims == G2.Dims && G1.From == G2.From && G1.Spacing == G2.Spacing;
 }
 
 
@@ -644,9 +644,9 @@ Dims(const v3i& Frst, const v3i& Last)
 
 
 idx2_Inline v3i
-Dims(const v3i& Frst, const v3i& Last, const v3i& Strd)
+Dims(const v3i& Frst, const v3i& Last, const v3i& Spacing)
 {
-  return (Last - Frst) / Strd + 1;
+  return (Last - Frst) / Spacing + 1;
 }
 
 
@@ -686,7 +686,7 @@ Dims(const extent& Ext)
 
 
 idx2_Inline v3i
-Strd(const extent& Ext)
+Spacing(const extent& Ext)
 {
   (void)Ext;
   return v3i(1);
@@ -723,7 +723,7 @@ From(const grid& Grid)
 idx2_Inline v3i
 To(const grid& Grid)
 {
-  return From(Grid) + Dims(Grid) * Strd(Grid);
+  return From(Grid) + Dims(Grid) * Spacing(Grid);
 }
 
 
@@ -737,7 +737,7 @@ Frst(const grid& Grid)
 idx2_Inline v3i
 Last(const grid& Grid)
 {
-  return To(Grid) - Strd(Grid);
+  return To(Grid) - Spacing(Grid);
 }
 
 
@@ -749,9 +749,9 @@ Dims(const grid& Grid)
 
 
 idx2_Inline v3i
-Strd(const grid& Grid)
+Spacing(const grid& Grid)
 {
-  return Unpack3i64(Grid.Strd);
+  return Unpack3i64(Grid.Spacing);
 }
 
 
@@ -777,9 +777,9 @@ SetDims(grid* Grid, const v3i& Dims3)
 
 
 idx2_Inline void
-SetStrd(grid* Grid, const v3i& Strd3)
+SetSpacing(grid* Grid, const v3i& Spacing3)
 {
-  Grid->Strd = Pack3i64(Strd3);
+  Grid->Spacing = Pack3i64(Spacing3);
 }
 
 
@@ -960,7 +960,7 @@ template <typename t> grid_iterator<t>
 Begin(const grid& Grid, const volume& Vol)
 {
   grid_iterator<t> Iter;
-  Iter.S = Strd(Grid);
+  Iter.S = Spacing(Grid);
   Iter.D = Dims(Grid) * Iter.S;
   Iter.P = v3i(0);
   Iter.N = Dims(Vol);
@@ -973,7 +973,7 @@ template <typename t> grid_iterator<t>
 End(const grid& Grid, const volume& Vol)
 {
   grid_iterator<t> Iter;
-  v3i To3 = From(Grid) + v3i(0, 0, Dims(Grid).Z * Strd(Grid).Z);
+  v3i To3 = From(Grid) + v3i(0, 0, Dims(Grid).Z * Spacing(Grid).Z);
   Iter.Ptr = (t*)const_cast<byte*>(Vol.Buffer.Data) + Row(Dims(Vol), To3);
   return Iter;
 }
@@ -1052,11 +1052,11 @@ NumDims(const v3i& N)
     v3i Pos;                                                                                       \
     v3i FromI = From(GI), FromJ = From(GJ);                                                        \
     v3i Dims3 = Dims(GI), DimsI = Dims(VI), DimsJ = Dims(VJ);                                      \
-    v3i StrdI = Strd(GI), StrdJ = Strd(GJ);                                                        \
+    v3i SpacingI = Spacing(GI), SpacingJ = Spacing(GJ);                                                        \
     idx2_BeginFor3 (Pos, v3i(0), Dims3, v3i(1))                                                    \
     {                                                                                              \
-      i64 I = Row(DimsI, FromI + Pos * StrdI);                                                     \
-      i64 J = Row(DimsJ, FromJ + Pos * StrdJ);
+      i64 I = Row(DimsI, FromI + Pos * SpacingI);                                                     \
+      i64 J = Row(DimsJ, FromJ + Pos * SpacingJ);
 
 
 #undef idx2_EndGridLoop2
@@ -1071,9 +1071,9 @@ NumDims(const v3i& N)
 #define idx2_BeginGridLoop(G, V)                                                                   \
   {                                                                                                \
     v3i Pos;                                                                                       \
-    v3i From3 = From(G), Dims3 = Dims(G), Strd3 = Strd(G);                                         \
+    v3i From3 = From(G), Dims3 = Dims(G), Spacing3 = Spacing(G);                                         \
     v3i DimsB = Dims(V);                                                                           \
-    idx2_BeginFor3 (Pos, From3, Dims3, Strd3)                                                      \
+    idx2_BeginFor3 (Pos, From3, Dims3, Spacing3)                                                      \
     {                                                                                              \
       i64 I = Row(DimsB, Pos);
 
@@ -1158,14 +1158,14 @@ CopyExtentGrid(const extent& SGrid, const volume& SVol, const grid& DGrid, volum
   idx2_Assert(DVol->Buffer && SVol.Buffer);
 
   v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid);
-  v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstStrd3 = Strd(DGrid);
+  v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstSpacing3 = Spacing(DGrid);
   v3i SrcDims3 = Dims(SVol);
   v3i DstDims3 = Dims(*DVol);
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
 
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, DstStrd3)
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, v3i(1), D3, DstFrom3, DstTo3, DstSpacing3)
   {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   }
@@ -1180,7 +1180,7 @@ CopyGridExtent(const grid& SGrid, const volume& SVol, const extent& DGrid, volum
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
-  v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid), SrcStrd3 = Strd(SGrid);
+  v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid), SrcSpacing3 = Spacing(SGrid);
   v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid);
   v3i SrcDims3 = Dims(SVol);
   v3i DstDims3 = Dims(*DVol);
@@ -1188,7 +1188,7 @@ CopyGridExtent(const grid& SGrid, const volume& SVol, const extent& DGrid, volum
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
 
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, v3i(1))
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcSpacing3, D3, DstFrom3, DstTo3, v3i(1))
   {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   }
@@ -1203,14 +1203,14 @@ CopyGridGrid(const grid& SGrid, const volume& SVol, const grid& DGrid, volume* D
   idx2_Assert(Dims(SGrid) <= Dims(SVol));
   idx2_Assert(Dims(DGrid) <= Dims(*DVol));
   idx2_Assert(DVol->Buffer && SVol.Buffer);
-  v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid), SrcStrd3 = Strd(SGrid);
-  v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstStrd3 = Strd(DGrid);
+  v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid), SrcSpacing3 = Spacing(SGrid);
+  v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstSpacing3 = Spacing(DGrid);
   v3i SrcDims3 = Dims(SVol);
   v3i DstDims3 = Dims(*DVol);
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, DstStrd3)
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcSpacing3, D3, DstFrom3, DstTo3, DstSpacing3)
   {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
   }
@@ -1249,15 +1249,15 @@ CopyGridGridCountZeroes(const grid& SGrid, const volume& SVol, const grid& DGrid
   idx2_Assert(DVol->Buffer && SVol.Buffer);
 
   i64 Count = 0;
-  v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid), SrcStrd3 = Strd(SGrid);
-  v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstStrd3 = Strd(DGrid);
+  v3i SrcFrom3 = From(SGrid), SrcTo3 = To(SGrid), SrcSpacing3 = Spacing(SGrid);
+  v3i DstFrom3 = From(DGrid), DstTo3 = To(DGrid), DstSpacing3 = Spacing(DGrid);
   v3i SrcDims3 = Dims(SVol);
   v3i DstDims3 = Dims(*DVol);
   const stype* idx2_Restrict SrcPtr = (const stype*)SVol.Buffer.Data;
   dtype* idx2_Restrict DstPtr = (dtype*)DVol->Buffer.Data;
 
   v3i S3, D3;
-  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcStrd3, D3, DstFrom3, DstTo3, DstStrd3)
+  idx2_BeginFor3Lockstep(S3, SrcFrom3, SrcTo3, SrcSpacing3, D3, DstFrom3, DstTo3, DstSpacing3)
   {
     DstPtr[Row(DstDims3, D3)] = (dtype)SrcPtr[Row(SrcDims3, S3)];
     Count += (dtype)SrcPtr[Row(SrcDims3, S3)] == 0;
@@ -1271,8 +1271,8 @@ CopyGridGridCountZeroes(const grid& SGrid, const volume& SVol, const grid& DGrid
 template <typename t> void
 Copy(const t& Grid, const subvol_grid& SVol, subvol_grid* DVol)
 {
-  idx2_Assert(Strd(SVol.Grid) % Strd(Grid) == 0);
-  idx2_Assert(Strd(DVol->Grid) % Strd(Grid) == 0);
+  idx2_Assert(Spacing(SVol.Grid) % Spacing(Grid) == 0);
+  idx2_Assert(Spacing(DVol->Grid) % Spacing(Grid) == 0);
   t Crop1 = Crop(Grid, SVol.Grid);
   if (Crop1)
   {
@@ -1330,9 +1330,9 @@ IsSubGrid(const t1& Grid1, const t2& Grid2)
     return false;
   if (!(Last(Grid1) <= Last(Grid2)))
     return false;
-  if ((Strd(Grid1) % Strd(Grid2)) != 0)
+  if ((Spacing(Grid1) % Spacing(Grid2)) != 0)
     return false;
-  if ((From(Grid1) - From(Grid2)) % Strd(Grid2) != 0)
+  if ((From(Grid1) - From(Grid2)) % Spacing(Grid2) != 0)
     return false;
   return true;
 }
@@ -1341,7 +1341,7 @@ IsSubGrid(const t1& Grid1, const t2& Grid2)
 template <typename t1, typename t2> t1
 SubGrid(const t1& Grid1, const t2& Grid2)
 {
-  return t1(From(Grid1) + Strd(Grid1) * From(Grid2), Dims(Grid2), Strd(Grid1) * Strd(Grid2));
+  return t1(From(Grid1) + Spacing(Grid1) * From(Grid2), Dims(Grid2), Spacing(Grid1) * Spacing(Grid2));
 }
 
 
@@ -1350,23 +1350,23 @@ Relative(const t1& Grid1, const t2& Grid2)
 {
   // printf("");
   idx2_Assert(IsSubGrid(Grid1, Grid2));
-  v3i From3 = (From(Grid1) - From(Grid2)) / Strd(Grid2);
-  return grid(From3, Dims(Grid1), Strd(Grid1) / Strd(Grid2));
+  v3i From3 = (From(Grid1) - From(Grid2)) / Spacing(Grid2);
+  return grid(From3, Dims(Grid1), Spacing(Grid1) / Spacing(Grid2));
 }
 
 
 template <typename t1, typename t2> t1
 Crop(const t1& Grid1, const t2& Grid2)
 {
-  v3i Strd3 = Strd(Grid1);
+  v3i Spacing3 = Spacing(Grid1);
   v3i Grid1Frst3 = Frst(Grid1);
   v3i Frst3 = Max(Grid1Frst3, Frst(Grid2));
   v3i Last3 = Min(Last(Grid1), Last(Grid2));
-  Frst3 = ((Frst3 - Grid1Frst3 + Strd3 - 1) / Strd3) * Strd3 + Grid1Frst3;
-  Last3 = ((Last3 - Grid1Frst3) / Strd3) * Strd3 + Grid1Frst3;
+  Frst3 = ((Frst3 - Grid1Frst3 + Spacing3 - 1) / Spacing3) * Spacing3 + Grid1Frst3;
+  Last3 = ((Last3 - Grid1Frst3) / Spacing3) * Spacing3 + Grid1Frst3;
   t1 OutGrid = Grid1;
   SetFrom(&OutGrid, Frst3);
-  SetDims(&OutGrid, Frst3 <= Last3 ? (Last3 - Frst3) / Strd3 + 1 : v3i(0));
+  SetDims(&OutGrid, Frst3 <= Last3 ? (Last3 - Frst3) / Spacing3 + 1 : v3i(0));
   return OutGrid;
 }
 
@@ -1374,7 +1374,7 @@ Crop(const t1& Grid1, const t2& Grid2)
 template <typename t> idx2_Inline bool
 IsInGrid(const t& Grid, const v3i& Point)
 {
-  return (Point - From(Grid)) % Strd(Grid) == v3i(0);
+  return (Point - From(Grid)) % Spacing(Grid) == v3i(0);
 }
 
 
@@ -1388,8 +1388,8 @@ Slab(const t& Grid, dimension D, int N)
   if (N < 0)
   {
     v3i From3 = From(Grid);
-    v3i Strd3 = Strd(Grid);
-    From3[D] += (Dims3[D] + N) * Strd3[D];
+    v3i Spacing3 = Spacing(Grid);
+    From3[D] += (Dims3[D] + N) * Spacing3[D];
     SetFrom(&Slab, From3);
   }
   Dims3[D] = abs(N);

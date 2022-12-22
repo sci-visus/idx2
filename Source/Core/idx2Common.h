@@ -108,74 +108,103 @@ struct params
 };
 
 
+// Limits:
+// Level: 6 bits
+// BitPlane: 12 bits
+// Iteration: 4 bits
+// BricksPerChunk: >= 512
+// ChunksPerFile: <= 4096
+// TODO: add limits to all configurable parameters
+// TODO: use int for all params
+static constexpr int MaxBricksPerChunk = 32768;
+static constexpr int MaxChunksPerFile = 4906;
+static constexpr int MaxFilesPerDir = 4096;
+// so max number of blocks per subband can be represented in 2 bytes
+static constexpr int MaxBrickDim = 256;
+static constexpr int MaxLevels = 16;
+static constexpr int MaxTransformPassesPerLevels = 9;
+static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
+static constexpr int MaxTemplatePostfixLength = 48;
+
+struct transform_template
+{
+  stref Full;
+  stref Prefix; // the part not used for resolution indexing
+  stack_string<MaxTemplatePostfixLength> Postfix; // with the character ':' removed
+  array<v2<i8>> LevelParts; // where in the postfix the levels start: [begin, size]
+};
+
+
+struct subbands_per_level
+{
+  array<subband> PowerOfTwo;
+  array<subband> PowerOfTwoPlusOne;
+  u8 DecodeSubbandMasks = 0; // a bit field which specifies which subbands to decode
+  array<v3i> DecodeSubbandSpacings;
+};
+
+
+struct brick_info_per_level
+{
+  v3i Dims3;
+  v3i Spacing3;
+  v3i Group3;
+  v3i NBricks3; // may not be power of two (cropped against the actual domain)
+  v3i NBricksPerChunk3; // power of two
+  stref Template;
+  stref IndexTemplate; // the part that precedes the BrickTemplate
+  stref IndexTemplateInChunk; // the part that precedes the BrickTemplate but restricted to a chunk
+};
+
+
+struct chunk_info_per_level
+{
+  v3i Dims3;
+  v3i NChunks3; // may not be power of two (cropped against the actual domain)
+  v3i NChunksPerFile3; // power of two
+  stref Template;
+  stref IndexTemplate;
+  stref IndexTemplateInFile;
+};
+
+
+struct file_info_per_level
+{
+  v3i Dims3;
+  v3i NFiles3; // may not be power of two
+  stref Template;
+  stref IndexTemplate;
+  array<i8> FileDirDepths; // how many spatial "bits" are consumed by each file/directory level
+};
+
+
 struct idx2_file
 {
-  // Limits:
-  // Level: 6 bits
-  // BitPlane: 12 bits
-  // Iteration: 4 bits
-  // BricksPerChunk: >= 512
-  // ChunksPerFile: <= 4096
-  // TODO: add limits to all configurable parameters
-  // TODO: use int for all params
-  static constexpr int MaxBricksPerChunk = 32768;
-  static constexpr int MaxChunksPerFile = 4906;
-  static constexpr int MaxFilesPerDir = 4096;
-  // so max number of blocks per subband can be represented in 2 bytes
-  static constexpr int MaxBrickDim = 256;
-  static constexpr int MaxLevels = 16;
-  static constexpr int MaxTransformPassesPerLevels = 9;
-  static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
   char Name[64] = {};
-  char Field[64] = {};
   v3i Dims3 = v3i(256);
-  v3i DownsamplingFactor3 = v3i(0);
+  v3i DownsamplingFactor3 = v3i(0); // TODO NEXT: should be part of params only
   dtype DType = dtype::__Invalid__;
-  v3i BrickDims3 = v3i(32);
-  v3i BrickDimsExt3 = v3i(33);
   v3i BlockDims3 = v3i(4);
   v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
-  static constexpr int NTformPasses = 1; // TODO NEXT: remove this (always 1)
-  u64 TransformOrder = 0; // TODO NEXT: remove this (use the string)
-  stack_array<u8, MaxLevels> DecodeSubbandMasks; // one subband mask per level
-  stack_array<array<v3i>, MaxLevels> DecodeSubbandSpacings; // how much to subsample each subband
-  stack_array<v3i, MaxLevels> NBricks3; // number of bricks per level
-  stack_array<v3i, MaxLevels> NChunks3;
-  stack_array<v3i, MaxLevels> NFiles3;
-  array<stack_string<128>> BricksOrderStr;
-  array<stack_string<128>> ChunksOrderStr;
-  array<stack_string<128>> FilesOrderStr;
-  stack_string<16> TransformOrderFull;
-  stack_array<stack_array<i8, MaxSpatialDepth>, MaxLevels> FilesDirsDepth; // how many spatial "bits" are consumed by each file/directory level
-  stack_array<u64, MaxLevels> BricksOrder; // encode the order of bricks on each level, useful for brick traversal
-  stack_array<u64, MaxLevels> BricksOrderInChunk;
-  stack_array<u64, MaxLevels> ChunksOrderInFile;
-  stack_array<u64, MaxLevels> ChunksOrder;
-  stack_array<u64, MaxLevels> FilesOrder;
   f64 Tolerance = 0;
   i8 NLevels = 1;
-  int FilesPerDir = 512; // maximum number of files (or sub-directories) per directory
-  int BricksPerChunkIn = 4096;
-  int ChunksPerFileIn = 64;
-  int BitPlanesPerChunk = 1;
-  int BitPlanesPerFile = 32;
-  stack_array<int, MaxLevels> BricksPerChunk = { { 4096 } };
-  stack_array<int, MaxLevels> ChunksPerFile = { { 4096 } };
-  stack_array<int, MaxLevels> BricksPerFile = { { 512 * 4096 } };
   v2i Version = v2i(1, 0);
-  // TODO NEXT: we need one set of subbands per level
-  array<subband> Subbands;       // based on BrickDimsExt3
-  // TODO NEXT: we need one set of subbands per level
-  array<subband> SubbandsNonExt; // based on BrickDims3
-  v3i GroupBrick3; // how many bricks in the current level form a brick in the next level
-  stack_array<v3i, MaxLevels> BricksPerChunk3s = { { v3i(8) } };
-  stack_array<v3i, MaxLevels> ChunksPerFile3s = { { v3i(16) } };
-  // TODO NEXT: we need one transform detail per level
-  transform_info TransformDetails;           // used for normal transform
-  stref Dir; // the directory containing the idx2 dataset
+  stref Dir; // the directory containing the idx2 dataset // TODO NEXT: should be part of params
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
-  stref TransformTemplate;
-  array<array<subband>> SubbandsOnEachLevel;
+
+  transform_template Template;
+  array<subbands_per_level> Subbands;
+  array<v3i> Dimensions3; // dimensions per level
+  array<brick_info_per_level> BrickInfo;
+  array<chunk_info_per_level> ChunkInfo;
+  array<file_info_per_level>  FileInfo;
+
+  i8 BitsPerBrick = 15;
+  i8 BrickBitsPerChunk = 12;
+  i8 ChunkBitsPerFile = 6;
+  i8 FileBitsPerDir = 9;
+  i8 BitPlanesPerChunk = 1;
+  i8 BitPlanesPerFile = 16;
 
 #if VISUS_IDX2
   //introducing the future for async-read

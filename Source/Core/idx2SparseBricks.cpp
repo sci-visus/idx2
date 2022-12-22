@@ -251,7 +251,7 @@ WriteBricks(brick_pool* Bp, cstr FileName)
 //    grid GridTo;
 //    SetFrom(&GridTo, v3i(0)); // TODO: this is wrong, we need to determine this from the extent local
 //    SetDims(&GridTo, Dims(BrickVol.ExtentLocal));
-//    SetStrd(&GridTo, v3i(1 << InputResLevel)); // TODO: should be dependent on the Idx2.BrickDims
+//    SetSpacing(&GridTo, v3i(1 << InputResLevel)); // TODO: should be dependent on the Idx2.BrickDims
 //    // TODO: what about other types?
 //    CopyExtentGrid<f64, f64>(BrickVol.ExtentLocal, BrickVol.Vol, GridTo, &BVol.Vol);
 //    bool CoarsestLevel = InputResLevel + 1 == Idx2.NLevels;

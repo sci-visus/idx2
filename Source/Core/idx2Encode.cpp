@@ -176,11 +176,11 @@ EncodeSubbandBlocks(idx2_file* Idx2,
     /* copy the samples to the local buffer and zfp transform them */
     v3i S3;
     int J = 0;
-    v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
+    v3i From3 = From(SbGrid), Spacing3 = Spacing(SbGrid);
     idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
     { // sample loop
       idx2_Assert(D3 + S3 < SbDims3);
-      BlockFloats[J++] = BrickVol->At<f64>(From3, Strd3, D3 + S3);
+      BlockFloats[J++] = BrickVol->At<f64>(From3, Spacing3, D3 + S3);
     }
     idx2_EndFor3; // end sample loop
     /* zfp transform and shuffle */
@@ -236,7 +236,7 @@ EncodeSubbandBlocks(idx2_file* Idx2,
       bool FirstSigBlock = (I == Size(E->LastSigBlock));
       bool BrickNotEmpty = Size(C->BrickStream) > 0;
       bool NewChunk = Brick >= (C->LastChunk + 1) * Idx2->BricksPerChunk[E->Level];
-      if (FirstSigBlock)
+      if (FirstSigBlock) // this is to make sure we only write the previous chunk once
       {
         if (NewChunk)
         {

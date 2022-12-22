@@ -32,7 +32,7 @@ ComputeTransformDetails(const v3i& Dims3, stref Template)
     idx2_Assert(Pos >= 0);
     if (Template[Pos--] == ':') // the character ':' (next level)
     {
-      SetStrd(&G, CurrentSpacing3);
+      SetSpacing(&G, CurrentSpacing3);
       SetDims(&G, CurrentDims3);
       ExtrapolatedDims3 = CurrentDims3;
       ++NLevels;
@@ -161,55 +161,59 @@ InverseCdf53(const v3i& M3,
   }
 }
 
+v3i
+GetDimsFromTemplate(stref Template)
+{
+  v3i Dims3(1);
+  idx2_For (i8, I, 0, Template.Size)
+  {
+    idx2_Assert(isalpha(Template[I]) && islower(Template[I]));
+    i8 D = Template[I] - 'x';
+    Dims3[D] *= 2;
+  }
+  return Dims3;
+}
 
-/*
-In string form, a TransformOrder is made from 4 characters: X,Y,Z, and +
-X, Y, and Z denotes the axis where the transform happens, while + denotes where the next
-level begins (any subsequent transform will be done on the coarsest level subband only). */
+
 /* Build subbands for a particular level.
-The Template here is understood to be only part of a larger template. */
+The Template here is understood to be only part of a larger template.
+In string form, a Template is made from 4 characters: x,y,z, and :
+x, y, and z denotes the axis where the transform happens, while : denotes where the next
+level begins (any subsequent transform will be done on the coarsest level subband only). */
 void
-BuildSubbandsForOneLevel(const v3i& N3, stref Template, array<subband>* Subbands)
+BuildSubbandsForOneLevel(stref Template, const v3i& Dims3, const v3i& Spacing3, array<subband>* Subbands)
 {
   Clear(Subbands);
   // we use a queue to keep track of all the subbands that have been created
   circular_queue<subband, 256> Queue;
-  PushBack(&Queue, subband{ grid(N3), v3<i8>(0) });
+  PushBack(&Queue, subband{ grid(Dims3), grid(v3i(0), Dims3, Spacing3), v3<i8>(0) });
   v3<i8> MaxLevel3(0);
   stack_array<grid, 32> Grids;
   i8 Pos = Size(Template) - 1;
   while (Pos >= 0)
   {
-    if (Template[Pos] == ':') // next level
+    int D = Template[Pos] - 'x';
+    i16 Sz = Size(Queue);
+    for (i16 I = 0; I < Sz; ++I)
     {
-      // push everything in the queue to the output
-      i16 Sz = Size(Queue);
-      for (i16 I = Sz - 1; I >= 1; --I)
-      {
-        PushBack(Subbands, Queue[I]);
-        PopBack(&Queue);
-      }
+      grid_split LocalGridSplits = SplitAlternate(Queue[0].LocalGrid, dimension(D));
+      grid_split GlobalGridSplits = SplitAlternate(Queue[0].GlobalGrid, dimension(D));
+      v3<i8> NextLowHigh3 = Queue[0].LowHigh3;
+      idx2_Assert(NextLowHigh3[D] == 0);
+      NextLowHigh3[D] = 1;
+      PushBack(&Queue, subband{ LocalGridSplits.First, GlobalGridSplits.First, Queue[0].LowHigh3 });
+      PushBack(&Queue, subband{ LocalGridSplits.Second, GlobalGridSplits.Second, NextLowHigh3 });
+      PopFront(&Queue);
     }
-    else // transform along one of the dimensions
-    {
-      int D = Template[Pos] - 'X';
-      i16 Sz = Size(Queue);
-      for (i16 I = 0; I < Sz; ++I)
-      {
-        const grid& G = Queue[0].Grid;
-        grid_split Gs = SplitAlternate(G, dimension(D));
-        v3<i8> NextLowHigh3 = Queue[0].LowHigh3;
-        idx2_Assert(NextLowHigh3[D] == 0);
-        NextLowHigh3[D] = 1;
-        PushBack(&Queue, subband{ Gs.First, Queue[0].LowHigh3 });
-        PushBack(&Queue, subband{ Gs.Second, NextLowHigh3 });
-        PopFront(&Queue);
-      }
-    }
+    --Pos;
   }
 
-  if (Size(Queue) > 0)
-    PushBack(Subbands, Queue[0]);
+  i16 Sz = Size(Queue);
+  for (i16 I = Sz - 1; I >= 0; --I)
+  {
+    PushBack(Subbands, Queue[I]);
+    PopBack(&Queue);
+  }
 
   Reverse(Begin(*Subbands), End(*Subbands));
 }
@@ -219,11 +223,11 @@ grid
 MergeSubbandGrids(const grid& Sb1, const grid& Sb2)
 {
   v3i Off3 = Abs(From(Sb2) - From(Sb1));
-  v3i Strd3 = Min(Strd(Sb1), Strd(Sb2)) * Equals(Off3, v3i(0)) + Off3;
+  v3i Spacing3 = Min(Spacing(Sb1), Spacing(Sb2)) * Equals(Off3, v3i(0)) + Off3;
   // TODO: works in case of subbands but not in general
   v3i Dims3 = Dims(Sb1) + NotEquals(From(Sb1), From(Sb2)) * Dims(Sb2);
   v3i From3 = Min(From(Sb2), From(Sb1));
-  return grid(From3, Dims3, Strd3);
+  return grid(From3, Dims3, Spacing3);
 }
 
 

@@ -165,7 +165,7 @@ Split(const grid& Grid, dimension D, int N)
   Mask3[D] = Dims3[D] - N;
   SetDims(&GridSplit.Second, Mask3);
   v3i From3 = From(Grid);
-  From3[D] += N * Strd(Grid)[D];
+  From3[D] += N * Spacing(Grid)[D];
   SetFrom(&GridSplit.Second, From3);
   return GridSplit;
 }
@@ -175,19 +175,19 @@ grid_split
 SplitAlternate(const grid& Grid, dimension D)
 {
   v3i Dims3 = Dims(Grid);
-  v3i Strd3 = Strd(Grid);
+  v3i Spacing3 = Spacing(Grid);
   v3i From3 = From(Grid);
-  From3[D] += Strd3[D];
+  From3[D] += Spacing3[D];
   grid_split GridSplit{ Grid, Grid };
   v3i Mask3 = Dims3;
   Mask3[D] = (Dims3[D] + 1) >> 1;
   SetDims(&GridSplit.First, Mask3);
-  v3i NewStrd3 = Strd3;
-  NewStrd3[D] <<= 1;
-  SetStrd(&GridSplit.First, NewStrd3);
+  v3i NewSpacing3 = Spacing3;
+  NewSpacing3[D] <<= 1;
+  SetSpacing(&GridSplit.First, NewSpacing3);
   Mask3[D] = Dims3[D] - Mask3[D];
   SetDims(&GridSplit.Second, Mask3);
-  SetStrd(&GridSplit.Second, NewStrd3);
+  SetSpacing(&GridSplit.Second, NewSpacing3);
   SetFrom(&GridSplit.Second, From3);
   return GridSplit;
 }

@@ -215,14 +215,14 @@ DecodeSubband(const idx2_file& Idx2,
       Dequantize(EMax, Prec, BufInts, &BufFloats);
       v3i S3;
       int J = 0;
-      v3i From3 = From(SbGrid), Strd3 = Strd(SbGrid);
+      v3i From3 = From(SbGrid), Spacing3 = Spacing(SbGrid);
       timer DataTimer;
       StartTimer(&DataTimer);
       volume& BVol = BrickVol->Vol;
       idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
       { // sample loop
         idx2_Assert(D3 + S3 < SbDims3);
-        BVol.At<f64>(From3, Strd3, D3 + S3) = BlockFloats[J++];
+        BVol.At<f64>(From3, Spacing3, D3 + S3) = BlockFloats[J++];
       }
       idx2_EndFor3; // end sample loop
       D->DataMovementTime_ += ElapsedTime(&DataTimer);

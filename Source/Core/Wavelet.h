@@ -32,9 +32,15 @@ GetCdf53NormsFast()
 }
 
 
+/* e.g., xyzxyz -> v3i(4, 4, 4) */
+v3i
+GetDimsFromTemplate(stref Template);
+
+
 struct subband
 {
-  grid Grid;
+  grid LocalGrid;
+  grid GlobalGrid;
   v3<i8> LowHigh3;
 };
 
@@ -107,7 +113,7 @@ void
 BuildSubbands(const v3i& N3, i8 NLevels, stref Template, array<subband>* Subbands);
 
 void
-BuildSubbandsForOneLevel(const v3i& N3, stref Template, array<subband>* Subbands);
+BuildSubbandsForOneLevel(stref Template, const v3i& Dims3, const v3i& Spacing3, array<subband>* Subbands);
 
 } // namespace idx2
 
@@ -132,7 +138,7 @@ BuildSubbandsForOneLevel(const v3i& N3, stref Template, array<subband>* Subbands
   template <typename t> void FLiftCdf53##x(                                                        \
     const grid& Grid, const v3i& M, lift_option Opt, volume* Vol)                                  \
   {                                                                                                \
-    v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);                            \
+    v3i P = From(Grid), D = Dims(Grid), S = Spacing(Grid), N = Dims(*Vol);                            \
     if (D.x == 1)                                                                                  \
       return;                                                                                      \
     idx2_Assert(M.x <= N.x);                                                                       \
@@ -204,7 +210,7 @@ BuildSubbandsForOneLevel(const v3i& N3, stref Template, array<subband>* Subbands
   template <typename t> void ILiftCdf53##x(                                                        \
     const grid& Grid, const v3i& M, lift_option Opt, volume* Vol)                                  \
   {                                                                                                \
-    v3i P = From(Grid), D = Dims(Grid), S = Strd(Grid), N = Dims(*Vol);                            \
+    v3i P = From(Grid), D = Dims(Grid), S = Spacing(Grid), N = Dims(*Vol);                            \
     if (D.x == 1)                                                                                  \
       return;                                                                                      \
     idx2_Assert(M.x <= N.x);                                                                       \
