@@ -216,7 +216,8 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
     D->BytesData_ += Size(ChunkStream.Stream);
     D->DecodeIOTime_ += ElapsedTime(&IOTimer);
     // TODO: check for error
-    DecompressChunk(&ChunkStream, ChunkCache, ChunkAddress, Log2Ceil(Idx2.BricksPerChunk[Level]));
+    // TODO NEXT
+    DecompressChunk(&ChunkStream, ChunkCache, ChunkAddress, Size(Idx2.BrickInfo[Level].IndexTemplateInChunk));
   }
 
   return ChunkCacheIt.Val;

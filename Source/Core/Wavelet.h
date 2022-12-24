@@ -9,32 +9,27 @@ namespace idx2
 {
 
 
-template <int N> struct wav_basis_norms_static
+template <int N> struct wavelet_basis_norms
 {
-  stack_array<f64, N> ScalNorms;
-  stack_array<f64, N> WaveNorms;
+  stack_array<f64, N> Scaling;
+  stack_array<f64, N> Wavelet;
 };
 
 
-template <int N> wav_basis_norms_static<N>
+template <int N> const wavelet_basis_norms<N>&
 GetCdf53NormsFast()
 {
-  wav_basis_norms_static<N> Result;
+  static wavelet_basis_norms<N> Result;
   f64 Num1 = 3, Num2 = 23;
   for (int I = 0; I < N; ++I)
   {
-    Result.ScalNorms[I] = sqrt(Num1 / (1 << (I + 1)));
+    Result.Scaling[I] = sqrt(Num1 / (1 << (I + 1)));
     Num1 = Num1 * 4 - 1;
-    Result.WaveNorms[I] = sqrt(Num2 / (1 << (I + 5)));
+    Result.Wavelet[I] = sqrt(Num2 / (1 << (I + 5)));
     Num2 = Num2 * 4 - 33;
   }
   return Result;
 }
-
-
-/* e.g., xyzxyz -> v3i(4, 4, 4) */
-v3i
-GetDimsFromTemplate(stref Template);
 
 
 struct subband
@@ -42,19 +37,8 @@ struct subband
   grid LocalGrid;
   grid GlobalGrid;
   v3<i8> LowHigh3;
+  f64 Norm; // l2 norm of the wavelet basis function
 };
-
-
-struct transform_info
-{
-  wav_basis_norms_static<32> BasisNorms;
-  array<grid> Grids;
-  array<i8> Axes;
-  i8 NLevels;
-};
-
-void
-Dealloc(transform_info* TInfo);
 
 
 /*
@@ -87,33 +71,31 @@ ILiftCdf53Y(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
 template <typename t> void
 ILiftCdf53Z(const grid& Grid, const v3i& M3, lift_option Opt, volume* Vol);
 
+array<grid>
+ComputeTransformGrids(const v3i& Dims3, stref Template, const i8* DimensionMap);
 
 void
 ForwardCdf53(const v3i& M3,
-             i8 Level,
              const array<subband>& Subbands,
-             const transform_info& TInfo,
+             const array<grid>& TransformGrids,
+             stref Template,
+             const i8* DimensionMap,
              volume* Vol,
-             bool CoarsestLevel = false);
+             bool CoarsestLevel);
+
 void
 InverseCdf53(const v3i& M3,
              i8 Level,
              const array<subband>& Subbands,
-             const transform_info& TInfo,
+             const array<grid>& TransformGrids,
+             stref Template,
+             const i8* DimensionMap,
              volume* Vol,
-             bool CoarsestLevel = false);
+             bool CoarsestLevel);
 
-void
-BuildSubbands(const v3i& N3, int NLevels, array<extent>* Subbands);
 
-void
-BuildSubbands(const v3i& N3, int NLevels, array<grid>* Subbands);
-
-void
-BuildSubbands(const v3i& N3, i8 NLevels, stref Template, array<subband>* Subbands);
-
-void
-BuildSubbandsForOneLevel(stref Template, const v3i& Dims3, const v3i& Spacing3, array<subband>* Subbands);
+array<subband>
+BuildSubbandsForOneLevel(stref Template, const i8* DimensionMap, const v3i& Dims3, const v3i& Spacing3);
 
 } // namespace idx2
 

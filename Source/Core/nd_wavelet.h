@@ -33,23 +33,23 @@ void
 Dealloc(wav_basis_norms* WbN);
 
 
-template <int N> struct wav_basis_norms_static
+template <int N> struct wavelet_basis_norms
 {
-  stack_array<f64, N> ScalNorms;
-  stack_array<f64, N> WaveNorms;
+  stack_array<f64, N> Scaling;
+  stack_array<f64, N> Wavelet;
 };
 
 
-template <int N> wav_basis_norms_static<N>
+template <int N> wavelet_basis_norms<N>
 GetCdf53NormsFast()
 {
-  wav_basis_norms_static<N> Result;
+  wavelet_basis_norms<N> Result;
   f64 Num1 = 3, Num2 = 23;
   for (int I = 0; I < N; ++I)
   {
-    Result.ScalNorms[I] = sqrt(Num1 / (1 << (I + 1)));
+    Result.Scaling[I] = sqrt(Num1 / (1 << (I + 1)));
     Num1 = Num1 * 4 - 1;
-    Result.WaveNorms[I] = sqrt(Num2 / (1 << (I + 5)));
+    Result.Wavelet[I] = sqrt(Num2 / (1 << (I + 5)));
     Num2 = Num2 * 4 - 33;
   }
   return Result;
@@ -68,7 +68,7 @@ struct subband
 
 struct transform_info_v2
 {
-  wav_basis_norms_static<16> BasisNorms;
+  wavelet_basis_norms<16> BasisNorms;
   array<nd_grid> Grids;
   array<i8> Axes;
   i8 NLevels;
@@ -152,10 +152,10 @@ InverseCdf53(const v3i& M3,
 template <typename t> struct array;
 
 void
-BuildSubbands(const v3i& N3, int NLevels, array<extent>* Subbands);
+ComputeSubbandMasks(const v3i& N3, int NLevels, array<extent>* Subbands);
 
 void
-BuildSubbands(const v3i& N3, int NLevels, array<grid>* Subbands);
+ComputeSubbandMasks(const v3i& N3, int NLevels, array<grid>* Subbands);
 
 u64
 EncodeTransformOrder(const stref& TransformOrder);
@@ -170,7 +170,7 @@ i8
 DecodeTransformOrder(u64 Input, int Passes, str Output);
 
 void
-BuildSubbands(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands);
+ComputeSubbandMasks(const v3i& N3, int NLevels, u64 TransformOrder, array<subband>* Subbands);
 
 grid
 MergeSubbandGrids(const grid& Sb1, const grid& Sb2);

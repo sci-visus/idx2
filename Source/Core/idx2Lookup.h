@@ -28,17 +28,21 @@ UnpackFileAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8*
   *BitPlane = i16((i32(Address & 0xFFF) << 20) >> 20); // this convoluted double shifts is to keep the sign of BitPlane
   *Subband = (Address >> 12) & 0x3F;
   *Level = (Address >> 60) & 0xF;
-  *Brick = ((Address >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerFile[*Level]);
+  i8 BrickBitsPerFile =
+    Size(Idx2.BrickInfo[*Level].IndexTemplateInChunk) * Size(Idx2.ChunkInfo[*Level].IndexTemplateInFile);
+  *Brick = ((Address >> 18) & 0x3FFFFFFFFFFull) << BrickBitsPerFile;
 }
 
 
 idx2_Inline void
 UnpackChunkAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8* Subband, i16* BitPlane)
 {
+  // TODO NEXT
   *BitPlane = i16((i32(Address & 0xFFF) << 20) >> 20); // this convoluted double shifts is to keep the sign of BitPlane
   *Subband = (Address >> 12) & 0x3F;
   *Level = (Address >> 60) & 0xF;
-  *Brick = ((Address >> 18) & 0x3FFFFFFFFFFull) << Log2Ceil(Idx2.BricksPerChunk[*Level]);
+  i8 BrickBitsPerChunk = Size(Idx2.BrickInfo[*Level].IndexTemplateInChunk);
+  *Brick = ((Address >> 18) & 0x3FFFFFFFFFFull) << BrickBitsPerChunk;
 }
 
 
@@ -46,7 +50,9 @@ UnpackChunkAddress(const idx2_file& Idx2, u64 Address, u64* Brick, i8* Level, i8
 idx2_Inline u64
 GetChunkAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BpKey)
 {
-  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerChunk[Level]), Level, Subband, BpKey);
+  // TODO NEXT
+  i8 BrickBitsPerChunk = Size(Idx2.BrickInfo[Level].IndexTemplateInChunk);
+  return GetAddress(Brick, BrickBitsPerChunk, Level, Subband, BpKey);
 }
 
 
@@ -55,7 +61,10 @@ GetFileAddress(const idx2_file& Idx2, u64 Brick, i8 Level, i8 Subband, i16 BpFil
 {
   Subband = 0; // all subbands are stored in the same file
   BpFileKey = 0;// all bit planes are stored in the same file
-  return GetAddress(Brick, Log2Ceil(Idx2.BricksPerFile[Level]), Level, Subband, BpFileKey);
+  // TODO NEXT
+  i8 BrickBitsPerFile =
+    Size(Idx2.BrickInfo[Level].IndexTemplateInChunk) * Size(Idx2.ChunkInfo[Level].IndexTemplateInFile);
+  return GetAddress(Brick, BrickBitsPerFile, Level, Subband, BpFileKey);
 }
 
 
@@ -138,33 +147,6 @@ BitPlaneFromChannelKey(u64 ChannelKey)
   return i16(ChannelKey >> 16);
 }
 
-
-static u64
-GetLinearChunk(const idx2_file& Idx2, int Level, v3i Chunk3)
-{
-  u64 LinearChunk = 0;
-  int Size = Idx2.ChunksOrderStr[Level].Len;
-  for (int I = Size - 1; I >= 0; --I) {
-    int D = Idx2.ChunksOrderStr[Level][I] - 'X';
-    LinearChunk |= (Chunk3[D] & u64(1)) << (Size - I - 1);
-    Chunk3[D] >>= 1;
-  }
-  return LinearChunk;
-}
-
-
-static u64
-GetLinearFile(const idx2_file& Idx2, int Level, v3i File3)
-{
-  u64 LinearFile = 0;
-  int Size = Idx2.FilesOrderStr[Level].Len;
-  for (int I = Size - 1; I >= 0; --I) {
-    int D = Idx2.FilesOrderStr[Level][I] - 'X';
-    LinearFile |= (File3[D] & u64(1)) << (Size - I - 1);
-    File3[D] >>= 1;
-  }
-  return LinearFile;
-}
 
 
 /* not used for now

@@ -216,6 +216,9 @@ Max(const v3<t>& Lhs, const v3<t>& Rhs);
 i8
 Log2Floor(i64 Val);
 
+v3i
+Log2Floor(const v3i& Vec);
+
 i8
 Log2Ceil(i64 Val);
 
@@ -1215,6 +1218,14 @@ Log2Floor(i64 Val)
 }
 
 
+idx2_Inline v3i
+Log2Floor(const v3i& Val)
+{
+  idx2_Assert(Val > 0);
+  return v3i(Log2Floor(Val.X), Log2Floor(Val.Y), Log2Floor(Val.Z));
+}
+
+
 idx2_Inline i8
 Log2Ceil(i64 Val)
 {
@@ -1240,7 +1251,6 @@ GeometricSum(int Base, int N)
 }
 
 
-// TODO: when n is already a power of two plus one, do not increase n
 idx2_Inline i64
 NextPow2(i64 Val)
 {

@@ -137,16 +137,17 @@ struct transform_template
 
 struct subbands_per_level
 {
-  array<subband> PowerOfTwo;
-  array<subband> PowerOfTwoPlusOne;
-  u8 DecodeSubbandMasks = 0; // a bit field which specifies which subbands to decode
-  array<v3i> DecodeSubbandSpacings;
+  array<subband> PowOf2;
+  array<subband> PowOf2Plus1;
+  u8 DecodeMasks = 0; // a bit field which specifies which subbands to decode
+  array<v3i> Spacings;
 };
 
 
 struct brick_info_per_level
 {
-  v3i Dims3;
+  v3i Dims3Pow2;
+  v3i Dims3Pow2Plus1;
   v3i Spacing3;
   v3i Group3;
   v3i NBricks3; // may not be power of two (cropped against the actual domain)
@@ -192,6 +193,7 @@ struct idx2_file
   stref Dir; // the directory containing the idx2 dataset // TODO NEXT: should be part of params
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
+  i8 DimensionMap['z' - 'a' + 1]; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
   transform_template Template;
   array<subbands_per_level> Subbands;
   array<v3i> Dimensions3; // dimensions per level
@@ -220,6 +222,11 @@ extern free_list_allocator BrickAlloc_;
 
 
 /* ---------------------- FUNCTIONS ----------------------*/
+
+
+/* e.g., xyzxyz -> v3i(4, 4, 4) */
+v3i
+GetDimsFromTemplate(stref Template);
 
 void // TODO: should also return an error?
 WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName);
@@ -280,15 +287,6 @@ void
 SetDir(idx2_file* Idx2, stref Dir);
 
 void
-SetGroupLevels(idx2_file* Idx2, bool GroupLevels);
-
-void
-SetGroupSubLevels(idx2_file* Idx2, bool GroupSubLevels);
-
-void
-SetGroupBitPlanes(idx2_file* Idx2, bool GroupBitPlanes);
-
-void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);
 
 error<idx2_err_code>
@@ -311,7 +309,7 @@ Dealloc(idx2_file* Idx2);
 struct traverse_item
 {
   v3i From3, To3;
-  u64 TraverseOrder, PrevTraverseOrder;
+  i8 Pos = 0;
   u64 Address = 0;
   i32 ItemOrder = 0; // e.g., brick order in chunk, chunk order in file
   bool LastItem = false;
@@ -491,6 +489,22 @@ struct file_traverse
     }                                                                                              \
   }
 #endif
+
+
+using traverse_callback = error<idx2_err_code>(const idx2_file& Idx2,
+                                               const extent& Extent,
+                                               i8 Level,
+                                               const traverse_item&);
+error<idx2_err_code>
+TraverseHierarchy(const idx2_file& Idx2,
+                  stref Template,
+                  const i8* DimensionMap,
+                  i8 Level,
+                  const v3i& From3, // in units of traverse_item
+                  const v3i& Dims3, // in units of traverse_item
+                  const extent& Extent, // in units of traverse_item
+                  const extent& VolExtent, // in units of traverse_item
+                  traverse_callback Callback);
 
 } // namespace idx2
 

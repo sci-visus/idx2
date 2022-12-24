@@ -199,7 +199,7 @@ ParallelDecodeBrick(const idx2_file& Idx2,
   idx2_RAII(stream_cache, Streams, Init(&Streams, 7), Dealloc(&Streams));
   idx2_For (i8, Sb, 0, (i8)Size(Idx2.Subbands))
   {
-    if (!BitSet(Idx2.DecodeSubbandMasks[Level], Sb))
+    if (!BitSet(Idx2.DecodeMasks[Level], Sb))
       continue;
 
     const subband& S = Idx2.Subbands[Sb];
@@ -272,7 +272,7 @@ DecodeTask(const idx2_file& Idx2,
   // The Idx2.DecodeSubbandMasks[Level - 1] == 0 means that no subbands on the next level
   // will be decoded, so we can now just copy the result out
   brick_volume& BVol = Value(Result);
-  if (Ds.Level == 0 || Idx2.DecodeSubbandMasks[Ds.Level - 1] == 0)
+  if (Ds.Level == 0 || Idx2.DecodeMasks[Ds.Level - 1] == 0)
   {
     grid BrickGrid(Ds.Brick3 * B3, Idx2.BrickDims3, v3i(1 << Ds.Level));
     grid OutBrickGrid = Crop(OutGrid, BrickGrid);
@@ -358,7 +358,7 @@ TraverseSecondLevel(const idx2_file& Idx2,
     if (!Result)
       goto EXIT;
 
-    if (NextLevel < 0 || Idx2.DecodeSubbandMasks[NextLevel] == 0)
+    if (NextLevel < 0 || Idx2.DecodeMasks[NextLevel] == 0)
       continue;
 
     ComputeExtentsForTraversal(Idx2,
