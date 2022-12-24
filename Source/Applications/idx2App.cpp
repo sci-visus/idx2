@@ -213,21 +213,17 @@ ParseParams(int Argc, cstr* Argv)
 
 
 /* "Copy" the parameters from the command line to the internal idx2_file struct */
+// TODO NEXT
 static error<idx2_err_code>
 SetParams(idx2_file* Idx2, params* P)
 {
   SetName(Idx2, P->Meta.Name);
-  SetField(Idx2, P->Meta.Field);
   SetVersion(Idx2, P->Version);
   SetDimensions(Idx2, P->Meta.Dims3);
   SetDataType(Idx2, P->Meta.DType);
-  SetBrickSize(Idx2, P->BrickDims3);
-  SetBricksPerChunk(Idx2, P->BricksPerChunk);
-  SetChunksPerFile(Idx2, P->ChunksPerFile);
   SetBitPlanesPerChunk(Idx2, P->BitPlanesPerChunk);
   SetNumLevels(Idx2, (i8)P->NLevels);
   SetTolerance(Idx2, P->Tolerance);
-  SetFilesPerDirectory(Idx2, P->FilesPerDir);
   SetDir(Idx2, P->OutDir);
   return Finalize(Idx2, P);
 }

@@ -138,7 +138,7 @@ BuildSubbandsForOneLevel(stref Template, const i8* DimensionMap, const v3i& Dims
 
   array<subband> Subbands;
 
-  const auto& WavNorms = GetCdf53NormsFast();
+  const auto& WavNorms = GetCdf53NormsFast<32>();
   v3i LogSpacing3 = Log2Floor(Spacing3);
 
   /* we use a queue to produce subbands by breadth-first subdivision */

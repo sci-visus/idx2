@@ -141,6 +141,7 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
 }
 
 
+// TODO NEXT
 error<idx2_err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
 {
@@ -225,22 +226,6 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
           Expr = Expr->next;
           idx2_Assert(Expr->type == SE_FLOAT || Expr->type == SE_INT);
           Idx2->ValueRange.Max = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "brick-size"))
-        {
-          v3i BrickDims3(0);
-          idx2_Assert(Expr->type == SE_INT);
-          BrickDims3.X = Expr->i;
-          idx2_Assert(Expr->next);
-          Expr = Expr->next;
-          idx2_Assert(Expr->type == SE_INT);
-          BrickDims3.Y = Expr->i;
-          idx2_Assert(Expr->next);
-          Expr = Expr->next;
-          idx2_Assert(Expr->type == SE_INT);
-          BrickDims3.Z = Expr->i;
-          SetBrickSize(Idx2, BrickDims3);
-          //          printf("Brick size %d %d %d\n", idx2_PrV3i(Idx2->BrickDims3));
         }
         else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-order"))
         {
@@ -356,7 +341,7 @@ ProcessTransformTemplate(idx2_file* Idx2)
 
   /* parse the prefix (if any) */
   stref Part = Next(&Tokenizer); // this is the prefix if it exists, else it is the first part of the postfix
-  i8 Pos = Part.ConstPtr - Template.Full.ConstPtr;
+  i8 Pos = i8(Part.ConstPtr - Template.Full.ConstPtr);
   if (Pos == 0) // there is a prefix
     Template.Prefix = stref(Template.Full.ConstPtr, Part.Size);
   else // there is no prefix, reset to parse from the beginning
@@ -366,7 +351,7 @@ ProcessTransformTemplate(idx2_file* Idx2)
   i8 DstPos = 0;
   while (stref Part = Next(&Tokenizer))
   {
-    i8 Pos = Part.ConstPtr - Template.Full.ConstPtr;
+    i8 Pos = i8(Part.ConstPtr - Template.Full.ConstPtr);
     i8 Size = Part.Size;
     stref Source(Template.Full.ConstPtr + Pos, Size);
     stref Destination(Template.Postfix.Data + DstPos, Size);
@@ -543,34 +528,34 @@ GuessNumLevelsIfNeeded(idx2_file* Idx2)
 }
 
 
-void
-ComputeExtentsForTraversal(const idx2_file& Idx2,
-                           const extent& Ext,
+file_chunk_brick_traversal::
+file_chunk_brick_traversal(const idx2_file* Idx2,
+                           const extent* Extent,
                            i8 Level,
-                           extent* ExtentInBricks,
-                           extent* ExtentInChunks,
-                           extent* ExtentInFiles,
-                           extent* VolExtentInBricks,
-                           extent* VolExtentInChunks,
-                           extent* VolExtentInFiles)
+                           traverse_callback* BrickCallback)
 {
+  this->Idx2 = Idx2;
+  this->Extent = Extent;
+  this->Level = Level;
+  this->BrickCallback = BrickCallback;
+
   v3i B3, Bf3, Bl3, C3, Cf3, Cl3, F3, Ff3, Fl3; // Brick dimensions, brick first, brick last
-  B3 = Idx2.BrickInfo[Level].Dims3Pow2;
-  C3 = B3 * Idx2.BrickInfo[Level].NBricksPerChunk3;
-  F3 = C3 * Idx2.ChunkInfo[Level].NChunksPerFile3;
+  B3 = Idx2->BrickInfo[Level].Dims3Pow2;
+  C3 = B3 * Idx2->BrickInfo[Level].NBricksPerChunk3;
+  F3 = C3 * Idx2->ChunkInfo[Level].NChunksPerFile3;
 
-  Bf3 = From(Ext) / B3;
-  Bl3 = Last(Ext) / B3;
-  Cf3 = From(Ext) / C3;
-  Cl3 = Last(Ext) / C3;
-  Ff3 = From(Ext) / F3;
-  Fl3 = Last(Ext) / F3;
+  Bf3 = From(*Extent) / B3;
+  Bl3 = Last(*Extent) / B3;
+  Cf3 = From(*Extent) / C3;
+  Cl3 = Last(*Extent) / C3;
+  Ff3 = From(*Extent) / F3;
+  Fl3 = Last(*Extent) / F3;
 
-  *ExtentInBricks = extent(Bf3, Bl3 - Bf3 + 1);
-  *ExtentInChunks = extent(Cf3, Cl3 - Cf3 + 1);
-  *ExtentInFiles  = extent(Ff3, Fl3 - Ff3 + 1);
+  this->ExtentInBricks = extent(Bf3, Bl3 - Bf3 + 1);
+  this->ExtentInChunks = extent(Cf3, Cl3 - Cf3 + 1);
+  this->ExtentInFiles  = extent(Ff3, Fl3 - Ff3 + 1);
 
-  extent VolExt(Idx2.Dims3);
+  extent VolExt(Idx2->Dims3);
   v3i Vbf3, Vbl3, Vcf3, Vcl3, Vff3, Vfl3; // VolBrickFirst, VolBrickLast
   Vbf3 = From(VolExt) / B3;
   Vbl3 = Last(VolExt) / B3;
@@ -579,10 +564,45 @@ ComputeExtentsForTraversal(const idx2_file& Idx2,
   Vff3 = From(VolExt) / F3;
   Vfl3 = Last(VolExt) / F3;
 
-  *VolExtentInBricks = extent(Vbf3, Vbl3 - Vbf3 + 1);
-  *VolExtentInChunks = extent(Vcf3, Vcl3 - Vcf3 + 1);
-  *VolExtentInFiles  = extent(Vff3, Vfl3 - Vff3 + 1);
+  this->VolExtentInBricks = extent(Vbf3, Vbl3 - Vbf3 + 1);
+  this->VolExtentInChunks = extent(Vcf3, Vcl3 - Vcf3 + 1);
+  this->VolExtentInFiles  = extent(Vff3, Vfl3 - Vff3 + 1);
 }
+
+
+error<idx2_err_code>
+TraverseBricks(const file_chunk_brick_traversal& Traversal, const traverse_item& ChunkTop)
+{
+  return Traversal.Traverse(Traversal.Idx2->BrickInfo[Traversal.Level].IndexTemplateInChunk,
+                            ChunkTop.From3 * Traversal.Idx2->BrickInfo[Traversal.Level].NBricksPerChunk3,
+                            Traversal.Idx2->BrickInfo[Traversal.Level].NBricksPerChunk3,
+                            Traversal.ExtentInBricks,
+                            Traversal.VolExtentInBricks,
+                            Traversal.BrickCallback);
+}
+
+error<idx2_err_code>
+TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item& FileTop)
+{
+  return Traversal.Traverse(Traversal.Idx2->ChunkInfo[Traversal.Level].IndexTemplateInFile,
+                            FileTop.From3 * Traversal.Idx2->ChunkInfo[Traversal.Level].NChunksPerFile3,
+                            Traversal.Idx2->ChunkInfo[Traversal.Level].NChunksPerFile3,
+                            Traversal.ExtentInChunks,
+                            Traversal.VolExtentInChunks,
+                            TraverseBricks);
+}
+
+error<idx2_err_code>
+TraverseFiles(const file_chunk_brick_traversal& Traversal)
+{
+  return Traversal.Traverse(Traversal.Idx2->FileInfo[Traversal.Level].IndexTemplate,
+                            v3i(0),
+                            Traversal.Idx2->FileInfo[Traversal.Level].NFiles3,
+                            Traversal.ExtentInFiles,
+                            Traversal.VolExtentInFiles,
+                            TraverseChunks);
+}
+
 
 error<idx2_err_code>
 Finalize(idx2_file* Idx2, params* P)
@@ -631,40 +651,13 @@ GetGrid(const idx2_file& Idx2, const extent& Ext)
 }
 
 
-static void
-ComputeExtentsForTraversal(const idx2_file& Idx2,
-                           const extent& Ext,
-                           i8 Level,
-                           extent* ExtentInFiles,
-                           extent* VolExtentInFiles)
-{
-  v3i B3, C3, F3, Ff3, Fl3;
-  B3 = Idx2.BrickInfo[Level].Dims3Pow2;
-  C3 = B3 * Idx2.BrickInfo[Level].NBricksPerChunk3;
-  F3 = C3 * Idx2.ChunkInfo[Level].NChunksPerFile3;
-
-  Ff3 = From(Ext) / F3;
-  Fl3 = Last(Ext) / F3;
-  *ExtentInFiles  = extent(Ff3, Fl3 - Ff3 + 1);
-
-  extent VolExt(Idx2.Dims3);
-  v3i Vff3 = From(VolExt) / F3;
-  v3i Vfl3 = Last(VolExt) / F3;
-  *VolExtentInFiles  = extent(Vff3, Vfl3 - Vff3 + 1);
-}
-
-using traverse_callback = error<idx2_err_code>(const idx2_file& Idx2, const extent& Extent, i8 Level, const traverse_item&);
-
 error<idx2_err_code>
-TraverseHierarchy(const idx2_file& Idx2,
-                  stref Template,
-                  const i8* DimensionMap,
-                  i8 Level,
-                  const v3i& From3, // in units of traverse_item
-                  const v3i& Dims3, // in units of traverse_item
-                  const extent& Extent, // in units of traverse_item
-                  const extent& VolExtent, // in units of traverse_item
-                  traverse_callback Callback)
+file_chunk_brick_traversal::Traverse(stref Template,
+                                     const v3i& From3, // in units of traverse_item
+                                     const v3i& Dims3, // in units of traverse_item
+                                     const extent& Extent,
+                                     const extent& VolExtent, // in units of traverse_item
+                                     traverse_callback* Callback) const
 {
   idx2_RAII(array<traverse_item>, Stack, Reserve(&Stack, 64), Dealloc(&Stack));
   v3i Dims3PowOf2((int)NextPow2(Dims3.X), (int)NextPow2(Dims3.Y), (int)NextPow2(Dims3.Z));
@@ -676,7 +669,7 @@ TraverseHierarchy(const idx2_file& Idx2,
   while (Size(Stack) >= 0)
   {
     Top = Back(Stack);
-    i8 D = DimensionMap[Template[Top.Pos]];
+    i8 D = Idx2->DimensionMap[Template[Top.Pos]];
     PopBack(&Stack);
     if (!(Top.To3 - Top.From3 == 1))
     {
@@ -700,9 +693,11 @@ TraverseHierarchy(const idx2_file& Idx2,
     else
     {
       Top.LastItem = Size(Stack) == 0;
-      idx2_PropagateIfError(Callback(Idx2, Extent, Level, Top));
+      idx2_PropagateIfError(Callback(*this, Top));
     }
   }
+
+  return idx2_Error(idx2_err_code::NoError);
 }
 
 

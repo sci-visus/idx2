@@ -322,95 +322,58 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
 }
 
 
+// TODO NEXT
 error<idx2_err_code>
 BrickDecodeTask(const idx2_file& Idx2, const extent& Extent, i8 Level, const traverse_item& BrickTop)
 {
-  //          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Level]) + Top.Address;
-  //          idx2_Assert(BrickAddr == GetLinearBrick(Idx2, Level, Top.BrickFrom3));
-  Ds.BrickInChunk = Top.BrickInChunk;
-  brick_volume BVol;
-  Resize(&BVol.Vol, Idx2.BrickDimsExt3, dtype::float64, D.Alloc);
-  // TODO: for progressive decompression, copy the data from BrickTable to BrickVol
-  Fill(idx2_Range(f64, BVol.Vol), 0.0); // TODO: use memset
-  Ds.Level = Level;
-  Ds.Brick3 = Top.BrickFrom3;
-  Ds.Brick = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
-  //printf("level = %d brick = %llu\n", Level, D.Brick[Level]);
-  u64 BrickKey = GetBrickKey(Level, Ds.Brick);
-  auto BrickIt = Insert(&D.BrickPool.BrickTable, BrickKey, BVol);
-  // TODO: pass the brick iterator into the DecodeBrick function to avoid one extra lookup
-  /* --------------- Decode the brick --------------- */
-  idx2_PropagateIfError(DecodeBrick(Idx2, P, &D, Ds, Tolerance));
-  // Copy the samples out to the output buffer (or file)
-  // The Idx2.DecodeSubbandMasks[Level - 1] == 0 means that no subbands on the next level
-  // will be decoded, so we can now just copy the result out
-  /* -------------------- Copy wavelet inverse transform samples to the output --------------- */
-  if (Level == 0 || Idx2.DecodeMasks[Level - 1] == 0)
-  {// TODO: the 1 << level is only true for 1 transform pass per level
-    grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Level));
-    grid OutBrickGrid = Crop(OutGrid, BrickGrid);
-    grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
-    if (P.OutMode == params::out_mode::RegularGridFile ||
-        P.OutMode == params::out_mode::RegularGridMem)
-    {
-      auto OutputVol = P.OutMode == params::out_mode::RegularGridFile ? &OutVol.Vol : &OutVolMem;
-      auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
-                                                        : (CopyGridGrid<f64, f64>);
-      CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
-      Dealloc(&BVol);
-      Delete(&D.BrickPool.BrickTable, BrickKey);
-    }
-    else if (P.OutMode == params::out_mode::HashMap)
-    {
-      //printf("deleting\n");
-      if (!BrickIt.Val->Significant)
-      {
-        Dealloc(&BVol);
-        // TODO: can we delete straight from the iterator?
-        Delete(&D.BrickPool.BrickTable, BrickKey);
-      }
-    }
-  }
-}
+  ////          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Level]) + Top.Address;
+  ////          idx2_Assert(BrickAddr == GetLinearBrick(Idx2, Level, Top.BrickFrom3));
+  //Ds.BrickInChunk = Top.BrickInChunk;
+  //brick_volume BVol;
+  //Resize(&BVol.Vol, Idx2.BrickDimsExt3, dtype::float64, D.Alloc);
+  //// TODO: for progressive decompression, copy the data from BrickTable to BrickVol
+  //Fill(idx2_Range(f64, BVol.Vol), 0.0); // TODO: use memset
+  //Ds.Level = Level;
+  //Ds.Brick3 = Top.BrickFrom3;
+  //Ds.Brick = GetLinearBrick(Idx2, Level, Top.BrickFrom3);
+  ////printf("level = %d brick = %llu\n", Level, D.Brick[Level]);
+  //u64 BrickKey = GetBrickKey(Level, Ds.Brick);
+  //auto BrickIt = Insert(&D.BrickPool.BrickTable, BrickKey, BVol);
+  //// TODO: pass the brick iterator into the DecodeBrick function to avoid one extra lookup
+  ///* --------------- Decode the brick --------------- */
+  //idx2_PropagateIfError(DecodeBrick(Idx2, P, &D, Ds, Tolerance));
+  //// Copy the samples out to the output buffer (or file)
+  //// The Idx2.DecodeSubbandMasks[Level - 1] == 0 means that no subbands on the next level
+  //// will be decoded, so we can now just copy the result out
+  ///* -------------------- Copy wavelet inverse transform samples to the output --------------- */
+  //if (Level == 0 || Idx2.DecodeMasks[Level - 1] == 0)
+  //{// TODO: the 1 << level is only true for 1 transform pass per level
+  //  grid BrickGrid(Top.BrickFrom3 * B3, Idx2.BrickDims3, v3i(1 << Level));
+  //  grid OutBrickGrid = Crop(OutGrid, BrickGrid);
+  //  grid BrickGridLocal = Relative(OutBrickGrid, BrickGrid);
+  //  if (P.OutMode == params::out_mode::RegularGridFile ||
+  //      P.OutMode == params::out_mode::RegularGridMem)
+  //  {
+  //    auto OutputVol = P.OutMode == params::out_mode::RegularGridFile ? &OutVol.Vol : &OutVolMem;
+  //    auto CopyFunc = OutputVol->Type == dtype::float32 ? (CopyGridGrid<f64, f32>)
+  //                                                      : (CopyGridGrid<f64, f64>);
+  //    CopyFunc(BrickGridLocal, BVol.Vol, Relative(OutBrickGrid, OutGrid), OutputVol);
+  //    Dealloc(&BVol);
+  //    Delete(&D.BrickPool.BrickTable, BrickKey);
+  //  }
+  //  else if (P.OutMode == params::out_mode::HashMap)
+  //  {
+  //    //printf("deleting\n");
+  //    if (!BrickIt.Val->Significant)
+  //    {
+  //      Dealloc(&BVol);
+  //      // TODO: can we delete straight from the iterator?
+  //      Delete(&D.BrickPool.BrickTable, BrickKey);
+  //    }
+  //  }
+  //}
 
-
-error<idx2_err_code>
-BrickTraverse(const idx2_file& Idx2, const extent& Extent, i8 Level, const traverse_item& ChunkTop)
-{
-  Idx2.BricksOrderInChunk[Level],
-  ChunkTop.ChunkFrom3 * Idx2.BricksPerChunk3s[Level],
-  Idx2.BricksPerChunk3s[Level],
-  ExtentInBricks,
-  VolExtentInBricks);
-}
-
-
-error<idx2_err_code>
-ChunkTraverse(const idx2_file& Idx2, const extent& Extent, i8 Level, const traverse_item& FileTop)
-{
-  v3i B3, C3, Cf3, Cl3; // Brick dimensions, brick first, brick last
-  B3 = Idx2.BrickInfo[Level].Dims3Pow2;
-  C3 = B3 * Idx2.BrickInfo[Level].NBricksPerChunk3;
-
-  Cf3 = From(Extent) / C3;
-  Cl3 = Last(Extent) / C3;
-  extent ExtentInChunks(Cf3, Cl3 - Cf3 + 1);
-
-  extent VolExt(Idx2.Dims3);
-  v3i Vcf3, Vcl3; // VolBrickFirst, VolBrickLast
-  Vcf3 = From(VolExt) / C3;
-  Vcl3 = Last(VolExt) / C3;
-  extent VolExtentInChunks(Vcf3, Vcl3 - Vcf3 + 1);
-
-  return TraverseHierarchy(Idx2,
-                           Idx2.ChunkInfo[Level].IndexTemplateInFile,
-                           Idx2.DimensionMap,
-                           Level,
-                           FileTop.From3 * Idx2.ChunkInfo[Level].NChunksPerFile3,
-                           Idx2.ChunkInfo[Level].NChunksPerFile3,
-                           ExtentInChunks, // in units of traverse_item
-                           VolExtentInChunks, // in units of traverse_item
-                           BrickTraverse);
+  return idx2_Error(idx2_err_code::NoError)
 }
 
 
@@ -461,37 +424,13 @@ Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
     if (Idx2.Subbands[Level].DecodeMasks == 0)
       break;
 
-    extent Ext = P.DecodeExtent;                  // this is in unit of samples
-    v3i B3, C3, F3, Ff3, Fl3; // Brick dimensions, brick first, brick last
-    B3 = Idx2.BrickInfo[Level].Dims3Pow2;
-    C3 = B3 * Idx2.BrickInfo[Level].NBricksPerChunk3;
-    F3 = C3 * Idx2.ChunkInfo[Level].NChunksPerFile3;
-    Ff3 = From(Ext) / F3;
-    Fl3 = Last(Ext) / F3;
-    extent ExtentInFiles(Ff3, Fl3 - Ff3 + 1);
-
-    extent VolExt(Idx2.Dims3);
-    v3i Vbf3, Vbl3, Vcf3, Vcl3, Vff3, Vfl3; // VolBrickFirst, VolBrickLast
-    Vff3 = From(VolExt) / F3;
-    Vfl3 = Last(VolExt) / F3;
-    extent VolExtentInFiles(Vff3, Vfl3 - Vff3 + 1);
-
-    // file traverse
-    TraverseHierarchy(Idx2,
-                      Idx2.FileInfo[Level].IndexTemplate,
-                      Idx2.DimensionMap,
-                      Level,
-                      v3i(0),
-                      Idx2.FileInfo[Level].NFiles3,
-                      ExtentInFiles, // in units of traverse_item
-                      VolExtentInFiles, // in units of traverse_item
-                      ChunkTraverse);
+    // TODO NEXT
   } // end level loop
 
   if (P.OutMode == params::out_mode::HashMap)
   {
     PrintStatistics(&D.BrickPool);
-    ComputeBrickResolution(&D.BrickPool);
+    //ComputeBrickResolution(&D.BrickPool); // TODO NEXT
     WriteBricks(&D.BrickPool, "bricks");
   }
 
