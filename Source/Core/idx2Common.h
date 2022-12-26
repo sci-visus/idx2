@@ -74,6 +74,12 @@ struct dimension_info
   char ShortName = '?';
 };
 
+idx2_Inline i32
+Size(const dimension_info& Dim)
+{
+  return Size(Dim.Names) > 0 ? i32(Size(Dim.Names)) : Dim.Limit;
+}
+
 struct file_id
 {
   stref Name;
@@ -203,6 +209,7 @@ struct idx2_file
   stref Dir; // the directory containing the idx2 dataset // TODO NEXT: should be part of params
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
+  array<dimension_info> Dimensions; // TODO NEXT: initialize this
   i8 DimensionMap['z' - 'a' + 1]; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
   transform_template Template;
   array<subbands_per_level> Subbands;

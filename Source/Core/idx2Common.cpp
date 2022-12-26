@@ -33,12 +33,19 @@ namespace idx2
 free_list_allocator BrickAlloc_;
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 Dealloc(params* P)
 {
+  // TODO NEXT
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetName(idx2_file* Idx2, cstr Name)
 {
@@ -46,6 +53,9 @@ SetName(idx2_file* Idx2, cstr Name)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetVersion(idx2_file* Idx2, const v2i& Ver)
 {
@@ -53,6 +63,9 @@ SetVersion(idx2_file* Idx2, const v2i& Ver)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetDimensions(idx2_file* Idx2, const v3i& Dims3)
 {
@@ -60,6 +73,9 @@ SetDimensions(idx2_file* Idx2, const v3i& Dims3)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetDataType(idx2_file* Idx2, dtype DType)
 {
@@ -67,6 +83,9 @@ SetDataType(idx2_file* Idx2, dtype DType)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetNumLevels(idx2_file* Idx2, i8 NLevels)
 {
@@ -74,6 +93,9 @@ SetNumLevels(idx2_file* Idx2, i8 NLevels)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetTolerance(idx2_file* Idx2, f64 Tolerance)
 {
@@ -81,6 +103,9 @@ SetTolerance(idx2_file* Idx2, f64 Tolerance)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk)
 {
@@ -88,6 +113,9 @@ SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------*/
 void
 SetBitPlanesPerFile(idx2_file* Idx2, int BitPlanesPerFile)
 {
@@ -95,6 +123,9 @@ SetBitPlanesPerFile(idx2_file* Idx2, int BitPlanesPerFile)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Write the metadata (.idx2) file to disk.
+---------------------------------------------------------------------------------------------*/
 void
 SetDir(idx2_file* Idx2, stref Dir)
 {
@@ -102,6 +133,9 @@ SetDir(idx2_file* Idx2, stref Dir)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Write the metadata (.idx2) file to disk.
+---------------------------------------------------------------------------------------------*/
 void
 SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 {
@@ -109,6 +143,9 @@ SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Write the metadata (.idx2) file to disk.
+---------------------------------------------------------------------------------------------*/
 /* Write the metadata file (idx) */
 // TODO: return error type
 // TODO NEXT
@@ -141,6 +178,9 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Parse metadata from a given buffer.
+---------------------------------------------------------------------------------------------*/
 // TODO NEXT
 error<idx2_err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
@@ -301,6 +341,10 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
   return idx2_Error(idx2_err_code::NoError);
 }
 
+
+/*---------------------------------------------------------------------------------------------
+Read the given metadata (.idx2) file.
+---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName)
 {
@@ -311,6 +355,9 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Return dimensions corresponding to a template.
+---------------------------------------------------------------------------------------------*/
 v3i
 GetDimsFromTemplate(stref Template)
 {
@@ -325,10 +372,53 @@ GetDimsFromTemplate(stref Template)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Return part of the postfix template from the beginning until a given position.
+---------------------------------------------------------------------------------------------*/
+idx2_Inline static stref
+GetPostfixTemplate(const idx2_file& Idx2, i8 Pos)
+{
+  return stref(Idx2.Template.Postfix.Data + Pos, Idx2.Template.Postfix.Len - Pos);
+}
+
+
+/*---------------------------------------------------------------------------------------------
+Return part of the postfix template corresponding to a given position and size.
+---------------------------------------------------------------------------------------------*/
+idx2_Inline static stref
+GetPostfixTemplate(const idx2_file& Idx2, i8 Pos, i8 Size)
+{
+  return stref(Idx2.Template.Postfix.Data + Pos, Size);
+}
+
+
+/*---------------------------------------------------------------------------------------------
+Return part of the postfix template corresponding to a given position and size.
+---------------------------------------------------------------------------------------------*/
+idx2_Inline static stref
+GetPostfixTemplatePart(const transform_template& Template, const v2<i8>& Part)
+{
+  return stref(Template.Postfix.Data + Part[0], Part[1]);
+}
+
+
+/*---------------------------------------------------------------------------------------------
+Return part of the template corresponding to a given level.
+---------------------------------------------------------------------------------------------*/
+idx2_Inline static stref
+GetPostfixTemplateForLevel(const idx2_file& Idx2, i8 Level)
+{
+  return GetPostfixTemplatePart(Idx2.Template, Idx2.Template.LevelParts[Level]);
+}
+
+
+/*---------------------------------------------------------------------------------------------
+Break a template represented as a string into parts that can be better interpreted.
+---------------------------------------------------------------------------------------------*/
 // TODO NEXT: return an error (the template may be invalid)
 /* The full template can be
-zzzyy::xyz:xyz:xy (zzzyy is the prefix), or
-::xyz:xyz:zzz:yyy (there is no prefix)
+zzzyy:xyz:xyz:xy (zzzyy is the prefix), or
+:xyz:xyz:zzz:yyy (there is no prefix)
 */
 // TODO NEXT: we have changed the syntax of the template (there is now a prefix and a middle part)
 // the difference is that the prefix is not used until the end (just add onto whatever address we have computed for the files)
@@ -364,49 +454,97 @@ ProcessTransformTemplate(idx2_file* Idx2)
   Reverse(Begin(Template.LevelParts), End(Template.LevelParts));
 }
 
-idx2_Inline static stref
-GetPostfixTemplate(const idx2_file& Idx2, i8 Pos)
+
+/*---------------------------------------------------------------------------------------------
+Check if the transform template is valid.
+---------------------------------------------------------------------------------------------*/
+static error<idx2_err_code>
+VerifyTransformTemplate(const idx2_file& Idx2)
 {
-  return stref(Idx2.Template.Postfix.Data + Pos, Idx2.Template.Postfix.Len - Pos);
+  /* check for unused dimensions */
+  for (auto I = 0; I < Size(Idx2.Dimensions); ++I)
+  {
+    char C = Idx2.Dimensions[I].ShortName;
+    if (Idx2.DimensionMap[C - 'a'] == -1)
+      return idx2_Error(idx2_err_code::DimensionsTooMany,
+                        "Dimension %c does not appear in the indexing template\n", C);
+  }
+
+  /* check for repeated dimensions on a level */
+  for (auto L = 0; L < Size(Idx2.Template.LevelParts); ++L)
+  {
+    auto Length = Idx2.Template.LevelParts[L][1];
+    if (Length > 3)
+      return idx2_Error(idx2_err_code::DimensionsTooMany,
+                        "More than three dimensions in level %d\n", L);
+    if (Length == 0)
+      return idx2_Error(idx2_err_code::SyntaxError,
+                        ": or | needs to be followed by a dimension in the indexing template\n");
+    const auto Part = GetPostfixTemplateForLevel(Idx2, L);
+    if (Length == 2 && (Part[0] == Part[1]))
+      return idx2_Error(idx2_err_code::DimensionsRepeated,
+                        "Repeated dimensions on level %d\n", L);
+      //printf("Repeated dimensions on level %d\n", L);
+    if (Length == 3 && (Part[0] == Part[1] || Part[0] == Part[2] || Part[1] == Part[2]))
+      return idx2_Error(idx2_err_code::DimensionsRepeated,
+                        "Repeated dimensions on level %d\n", L);
+      //printf("Repeated dimensions on level %d\n", L);
+  }
+
+  /* check that the indexing template agrees with the dimensions */
+  nd_size Dims(1);
+  for (auto I = 0; I < Size(Idx2.Template.Full); ++I)
+  {
+    char C = Idx2.Template.Full[I];
+    if (!isalpha(C))
+      continue;
+    i8 D = Idx2.DimensionMap[C - 'a'];
+    Dims[D] *= 2;
+  }
+  for (auto I = 0; I < Size(Idx2.Dimensions); ++I)
+  {
+    const dimension_info& Dim = Idx2.Dimensions[I];
+    i32 D = (i32)NextPow2(Size(Dim));
+    if (D > Dims[I])
+      return idx2_Error(idx2_err_code::DimensionMismatched,
+                        "Dimension %c needs to appear %d more times in the indexing template\n",
+                        Dim.ShortName,
+                        Log2Floor(D) - Log2Floor(Dims[I]));
+    if (D < Dims[I])
+      return idx2_Error(idx2_err_code::DimensionMismatched,
+                        "Dimension %c needs to appear %d fewer times in the indexing template\n",
+                        Dim.ShortName,
+                        Log2Floor(Dims[I]) - Log2Floor(D));
+  }
+
+  return idx2_Error(idx2_err_code::NoError);
 }
 
-idx2_Inline static stref
-GetPostfixTemplate(const idx2_file& Idx2, i8 Pos, i8 Size)
-{
-  return stref(Idx2.Template.Postfix.Data + Pos, Size);
-}
 
-idx2_Inline static stref
-GetPostfixTemplatePart(const transform_template& Template, const v2<i8>& Part)
-{
-  return stref(Template.Postfix.Data + Part[0], Part[1]);
-}
-
-idx2_Inline static stref
-GetPostfixTemplateForLevel(const idx2_file& Idx2, i8 Level)
-{
-  return GetPostfixTemplatePart(Idx2.Template, Idx2.Template.LevelParts[Level]);
-}
-
-
+/*---------------------------------------------------------------------------------------------
+Compute a list of subbands with necessary details for each level.
+---------------------------------------------------------------------------------------------*/
 static void
 BuildSubbandsForAllLevels(idx2_file* Idx2)
 {
   idx2_For (i8, L, 0, Idx2->NLevels)
   {
     stref TemplatePart = GetPostfixTemplateForLevel(*Idx2, L);
-    subbands_per_level SubbandsOnLevelL;
+    subbands_per_level SubbandsL;
     const v3i& Dims3 = Idx2->BrickInfo[L].Dims3Pow2;
     const v3i& Spacing3 = Idx2->BrickInfo[L].Spacing3;
     // TODO NEXT: do we need both versions?
-    SubbandsOnLevelL.PowOf2 = BuildSubbandsForOneLevel(TemplatePart, Idx2->DimensionMap, Dims3, Spacing3);
-    SubbandsOnLevelL.PowOf2Plus1 = BuildSubbandsForOneLevel(TemplatePart, Idx2->DimensionMap, idx2_ExtDims(Dims3), Spacing3);
-    PushBack(&Idx2->Subbands, SubbandsOnLevelL);
+    SubbandsL.PowOf2 = BuildSubbandsForOneLevel(TemplatePart, Idx2->DimensionMap, Dims3, Spacing3);
+    SubbandsL.PowOf2Plus1 = BuildSubbandsForOneLevel(TemplatePart, Idx2->DimensionMap, idx2_ExtDims(Dims3), Spacing3);
+    PushBack(&Idx2->Subbands, SubbandsL);
   }
 }
 
 
-/* compute the list of subbands to decode given the downsampling factor */
+/*---------------------------------------------------------------------------------------------
+Compute a mask for each level, where each bit determines whether the corresponding subbands
+should be decoded, based on a given DownsamplingFactor.
+---------------------------------------------------------------------------------------------*/
 static void
 ComputeSubbandMasks(idx2_file* Idx2, const params& P)
 {
@@ -442,6 +580,9 @@ ComputeSubbandMasks(idx2_file* Idx2, const params& P)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Compute templates corresponding to bricks/chunks/files on each level.
+---------------------------------------------------------------------------------------------*/
 // TODO NEXT: check the values of BrickBitsPerChunk etc to make sure they are under the limits
 static void
 ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
@@ -453,81 +594,65 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
   v3i NBricks3;
   idx2_For (i8, L, 0, Idx2->NLevels)
   {
-    brick_info_per_level& BrickInfoOnLevelL = Idx2->BrickInfo[L];
-    chunk_info_per_level& ChunkInfoOnLevelL = Idx2->ChunkInfo[L];
-    file_info_per_level& FileInfoOnLevelL = Idx2->FileInfo[L];
+    brick_info_per_level& BrickInfoL = Idx2->BrickInfo[L];
+    chunk_info_per_level& ChunkInfoL = Idx2->ChunkInfo[L];
+    file_info_per_level& FileInfoL = Idx2->FileInfo[L];
 
     /* compute Group3 */
     stref Template = GetPostfixTemplateForLevel(*Idx2, L);
-    BrickInfoOnLevelL.Group3 = GetDimsFromTemplate(Template);
+    BrickInfoL.Group3 = GetDimsFromTemplate(Template);
 
     /* compute brick templates */
     i8 Length = Sum<i8>(Idx2->Template.LevelParts[L]);
-    BrickInfoOnLevelL.Template = GetPostfixTemplateForLevel(*Idx2, L);
+    BrickInfoL.Template = GetPostfixTemplateForLevel(*Idx2, L);
     i8 BrickBits = Min(Length, Idx2->BitsPerBrick);
     i8 BrickIndexBits = Length - BrickBits;
-    BrickInfoOnLevelL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, BrickIndexBits);
-    BrickInfoOnLevelL.Template = GetPostfixTemplate(*Idx2, BrickIndexBits, BrickBits);
-    BrickInfoOnLevelL.Dims3Pow2 = GetDimsFromTemplate(BrickInfoOnLevelL.Template);
-    BrickInfoOnLevelL.Spacing3 = GetDimsFromTemplate(GetPostfixTemplate(*Idx2, Length));
+    BrickInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, BrickIndexBits);
+    BrickInfoL.Template = GetPostfixTemplate(*Idx2, BrickIndexBits, BrickBits);
+    BrickInfoL.Dims3Pow2 = GetDimsFromTemplate(BrickInfoL.Template);
+    BrickInfoL.Spacing3 = GetDimsFromTemplate(GetPostfixTemplate(*Idx2, Length));
     if (L == 0)
-      NBricks3 = (Idx2->Dims3 + BrickInfoOnLevelL.Dims3Pow2 - 1) / BrickInfoOnLevelL.Dims3Pow2;
+      NBricks3 = (Idx2->Dims3 + BrickInfoL.Dims3Pow2 - 1) / BrickInfoL.Dims3Pow2;
     else
-      NBricks3 = (NBricks3 + BrickInfoOnLevelL.Group3 - 1) / BrickInfoOnLevelL.Group3;
-    BrickInfoOnLevelL.NBricks3 = NBricks3;
+      NBricks3 = (NBricks3 + BrickInfoL.Group3 - 1) / BrickInfoL.Group3;
+    BrickInfoL.NBricks3 = NBricks3;
 
     /* compute chunk templates */
     i8 ChunkBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk));
     i8 ChunkIndexBits = Length - ChunkBits;
-    BrickInfoOnLevelL.IndexTemplateInChunk = GetPostfixTemplate(*Idx2, ChunkIndexBits, BrickIndexBits - ChunkIndexBits);
-    BrickInfoOnLevelL.NBricksPerChunk3 = GetDimsFromTemplate(BrickInfoOnLevelL.IndexTemplateInChunk);
-    ChunkInfoOnLevelL.Template = GetPostfixTemplate(*Idx2, ChunkIndexBits, ChunkBits);
-    ChunkInfoOnLevelL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, ChunkIndexBits);
-    ChunkInfoOnLevelL.NChunks3 = (BrickInfoOnLevelL.NBricks3 + BrickInfoOnLevelL.NBricksPerChunk3 - 1) / BrickInfoOnLevelL.NBricksPerChunk3;
+    BrickInfoL.IndexTemplateInChunk = GetPostfixTemplate(*Idx2, ChunkIndexBits, BrickIndexBits - ChunkIndexBits);
+    BrickInfoL.NBricksPerChunk3 = GetDimsFromTemplate(BrickInfoL.IndexTemplateInChunk);
+    ChunkInfoL.Template = GetPostfixTemplate(*Idx2, ChunkIndexBits, ChunkBits);
+    ChunkInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, ChunkIndexBits);
+    ChunkInfoL.NChunks3 = (BrickInfoL.NBricks3 + BrickInfoL.NBricksPerChunk3 - 1) / BrickInfoL.NBricksPerChunk3;
 
     /* compute file templates */
     i8 FileBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk + Idx2->ChunkBitsPerFile));
     i8 FileIndexBits = Length - FileBits;
-    ChunkInfoOnLevelL.IndexTemplateInFile = GetPostfixTemplate(*Idx2, FileIndexBits, ChunkIndexBits - FileIndexBits);
-    ChunkInfoOnLevelL.NChunksPerFile3 = GetDimsFromTemplate(ChunkInfoOnLevelL.IndexTemplateInFile);
-    FileInfoOnLevelL.Template = GetPostfixTemplate(*Idx2, FileIndexBits, FileBits);
-    FileInfoOnLevelL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, FileIndexBits);
-    FileInfoOnLevelL.NFiles3 = (ChunkInfoOnLevelL.NChunks3 + ChunkInfoOnLevelL.NChunksPerFile3 - 1) / ChunkInfoOnLevelL.NChunksPerFile3;
+    ChunkInfoL.IndexTemplateInFile = GetPostfixTemplate(*Idx2, FileIndexBits, ChunkIndexBits - FileIndexBits);
+    ChunkInfoL.NChunksPerFile3 = GetDimsFromTemplate(ChunkInfoL.IndexTemplateInFile);
+    FileInfoL.Template = GetPostfixTemplate(*Idx2, FileIndexBits, FileBits);
+    FileInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, FileIndexBits);
+    FileInfoL.NFiles3 = (ChunkInfoL.NChunks3 + ChunkInfoL.NChunksPerFile3 - 1) / ChunkInfoL.NChunksPerFile3;
 
     /* compute file dir depths */
-    array<i8>& FileDirDepthsOnLevelL = FileInfoOnLevelL.FileDirDepths;
-    PushBack(&FileDirDepthsOnLevelL, i8(FileBits - BrickBits));
+    array<i8>& FileDirDepthsL = FileInfoL.FileDirDepths;
+    PushBack(&FileDirDepthsL, i8(FileBits - BrickBits));
     i8 AccumulatedBits = FileBits - BrickBits;
     while (AccumulatedBits < BrickIndexBits)
     {
       i8 FileBitsPerDir = Min(i8(BrickIndexBits - AccumulatedBits), Idx2->FileBitsPerDir);
       AccumulatedBits += FileBitsPerDir;
-      PushBack(&FileDirDepthsOnLevelL, FileBitsPerDir);
+      PushBack(&FileDirDepthsL, FileBitsPerDir);
     }
-    Reverse(Begin(FileDirDepthsOnLevelL), End(FileDirDepthsOnLevelL));
+    Reverse(Begin(FileDirDepthsL), End(FileDirDepthsL));
   }
 }
 
 
-/* TODO NEXT: this function needs revision */
-static void
-GuessNumLevelsIfNeeded(idx2_file* Idx2)
-{
-  //if (Idx2->NLevels == 0)
-  //{
-  //  v3i BrickDims3 = Idx2->BrickDims3;
-  //  while (BrickDims3 <= Idx2->Dims3)
-  //  {
-  //    BrickDims3.X = BrickDims3.X == 1 ? BrickDims3.X : BrickDims3.X * 2;
-  //    BrickDims3.Y = BrickDims3.Y == 1 ? BrickDims3.Y : BrickDims3.Y * 2;
-  //    BrickDims3.Z = BrickDims3.Z == 1 ? BrickDims3.Z : BrickDims3.Z * 2;
-  //    if (BrickDims3 <= Idx2->Dims3)
-  //      ++Idx2->NLevels;
-  //  }
-  //}
-}
-
-
+/*---------------------------------------------------------------------------------------------
+Compute auxiliary information to be used during hierarchy traversals.
+---------------------------------------------------------------------------------------------*/
 file_chunk_brick_traversal::
 file_chunk_brick_traversal(const idx2_file* Idx2,
                            const extent* Extent,
@@ -570,6 +695,9 @@ file_chunk_brick_traversal(const idx2_file* Idx2,
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Traverse a hierarchy of bricks following a template, and run a callback function for each brick.
+---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
 TraverseBricks(const file_chunk_brick_traversal& Traversal, const traverse_item& ChunkTop)
 {
@@ -581,6 +709,10 @@ TraverseBricks(const file_chunk_brick_traversal& Traversal, const traverse_item&
                             Traversal.BrickCallback);
 }
 
+
+/*---------------------------------------------------------------------------------------------
+Traverse a hierarchy of chunks following a template, and run a callback function for each chunk.
+---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
 TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item& FileTop)
 {
@@ -592,6 +724,10 @@ TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item&
                             TraverseBricks);
 }
 
+
+/*---------------------------------------------------------------------------------------------
+Traverse a hierarchy of files following a template, and run a callback function for each file.
+---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
 TraverseFiles(const file_chunk_brick_traversal& Traversal)
 {
@@ -604,11 +740,15 @@ TraverseFiles(const file_chunk_brick_traversal& Traversal)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Verify the integrity of the parameters in idx2_file and compute necessary auxiliary data
+structures for use during encoding or decoding.
+---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
 Finalize(idx2_file* Idx2, params* P)
 {
   P->Tolerance = Max(fabs(P->Tolerance), Idx2->Tolerance);
-  GuessNumLevelsIfNeeded(Idx2);
+  //GuessNumLevelsIfNeeded(Idx2); // TODO NEXT
   if (!(Idx2->NLevels <= MaxLevels))
     return idx2_Error(idx2_err_code::TooManyLevels, "Max # of levels = %d\n", MaxLevels);
 
@@ -624,6 +764,10 @@ Finalize(idx2_file* Idx2, params* P)
   return idx2_Error(idx2_err_code::NoError);
 }
 
+
+/*---------------------------------------------------------------------------------------------
+Deallocate the main idx2_file struct.
+---------------------------------------------------------------------------------------------*/
 // TODO NEXT
 void
 Dealloc(idx2_file* Idx2)
@@ -632,6 +776,9 @@ Dealloc(idx2_file* Idx2)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Return a grid given a query extent (box) and a downsampling factor.
+---------------------------------------------------------------------------------------------*/
 // TODO: handle the case where the query extent is larger than the domain itself
 // TODO NEXT: look into this
 grid
@@ -651,6 +798,9 @@ GetGrid(const idx2_file& Idx2, const extent& Ext)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+A generic template for hierarchy traversal following a template.
+---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
 file_chunk_brick_traversal::Traverse(stref Template,
                                      const v3i& From3, // in units of traverse_item
@@ -669,7 +819,7 @@ file_chunk_brick_traversal::Traverse(stref Template,
   while (Size(Stack) >= 0)
   {
     Top = Back(Stack);
-    i8 D = Idx2->DimensionMap[Template[Top.Pos]];
+    i8 D = Idx2->DimensionMap[Template[Top.Pos] - 'a'];
     PopBack(&Stack);
     if (!(Top.To3 - Top.From3 == 1))
     {

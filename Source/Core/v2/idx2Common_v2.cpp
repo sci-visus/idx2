@@ -44,9 +44,7 @@ CheckDimensions(idx2_file_v2* Idx2)
 static error<idx2_err_code>
 ParseIndexingTemplate(idx2_file_v2* Idx2)
 {
-
   // TODO: check that each level has at most 3 dimensions (supported by compression)
-
   bool ParsingPostfix = true;
   array<i8> Part;
   for (auto I = Size(Idx2->IdxTemplate.Full) - 1; I >= 0; --I)

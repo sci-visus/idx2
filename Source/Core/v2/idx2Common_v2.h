@@ -12,12 +12,6 @@ namespace idx2
 
 
 
-idx2_Inline i32
-Size(const dimension_info& Dim)
-{
-  return Size(Dim.Names) > 0 ? i32(Size(Dim.Names)) : Dim.Limit;
-}
-
 bool
 OptVal(i32 NArgs, cstr* Args, cstr Opt, array<dimension_info>* Dimensions);
 
@@ -25,6 +19,7 @@ OptVal(i32 NArgs, cstr* Args, cstr Opt, array<dimension_info>* Dimensions);
 struct indexing_template
 {
   /* A string that looks like
+   ----- prefix ----- ------------------- suffix ---------------------
   "fffffttttttttttzzz|zyx:zyx:zyx:zyx:tyx:tyx:tyx:tx:yx:yx:yx:yx:yx:yx"
   The '|' separates the static prefix from the dynamic suffix.
   Only the suffix is used for multiresolution indexing, the prefix is kept constant. */
