@@ -132,7 +132,7 @@ In string form, a Template is made from 4 characters: x,y,z, and :
 x, y, and z denotes the axis where the transform happens, while : denotes where the next
 level begins (any subsequent transform will be done on the coarsest level subband only). */
 array<subband>
-BuildSubbandsForOneLevel(stref Template, const i8* DimensionMap, const v3i& Dims3, const v3i& Spacing3)
+BuildLevelSubbands(stref Template, const i8* DimensionMap, const v3i& Dims3, const v3i& Spacing3)
 {
   idx2_Assert(IsPow2(Spacing3));
 

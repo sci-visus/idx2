@@ -261,45 +261,6 @@ GetGrid(const idx2_file& Idx2, const extent& Ext);
 void
 Dealloc(params* P);
 
-void
-SetName(idx2_file* Idx2, cstr Name);
-
-void
-SetVersion(idx2_file* Idx2, const v2i& Ver);
-
-void
-SetDimensions(idx2_file* Idx2, const v3i& Dims3);
-
-void
-SetDataType(idx2_file* Idx2, dtype DType);
-
-void
-SetNumLevels(idx2_file* Idx2, i8 NIterations);
-
-void
-SetTolerance(idx2_file* Idx2, f64 Accuracy);
-
-void
-SetChunksPerFile(idx2_file* Idx2, int ChunksPerFile);
-
-void
-SetBricksPerChunk(idx2_file* Idx2, int BricksPerChunk);
-
-void
-SetFilesPerDirectory(idx2_file* Idx2, int FilesPerDir);
-
-void
-SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk);
-
-void
-SetBitPlanesPerFile(idx2_file* Idx2, int BitPlanesPerFile);
-
-void
-SetDir(idx2_file* Idx2, stref Dir);
-
-void
-SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3);
-
 error<idx2_err_code>
 Finalize(idx2_file* Idx2, params* P);
 

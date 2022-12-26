@@ -3,6 +3,10 @@
 
 using namespace idx2;
 
+
+/*---------------------------------------------------------------------------------------------
+Parse the --dimensions option from the command line.
+---------------------------------------------------------------------------------------------*/
 bool
 OptVal(i32 NArgs, cstr* Args, cstr Opt, array<dimension_info>* Dimensions)
 {
@@ -28,6 +32,9 @@ OptVal(i32 NArgs, cstr* Args, cstr Opt, array<dimension_info>* Dimensions)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Parse the options for --encode from the command line.
+---------------------------------------------------------------------------------------------*/
 static void
 ParseEncodeOptions(int Argc, cstr* Argv, idx2_file_v2* Idx2)
 {
@@ -59,6 +66,9 @@ ParseEncodeOptions(int Argc, cstr* Argv, idx2_file_v2* Idx2)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Flush the standard input.
+---------------------------------------------------------------------------------------------*/
 static void
 FlushStdIn()
 {
@@ -67,6 +77,10 @@ FlushStdIn()
     ; /* Flush stdin */
 }
 
+
+/*---------------------------------------------------------------------------------------------
+Ask the user to input the name of the dataset.
+---------------------------------------------------------------------------------------------*/
 static stack_string<65>
 GetName()
 {
@@ -89,6 +103,10 @@ GetName()
   return Name;
 }
 
+
+/*---------------------------------------------------------------------------------------------
+Ask for the user to enter the fields.
+---------------------------------------------------------------------------------------------*/
 array<stack_string<65>>
 GetFields()
 {
@@ -100,7 +118,10 @@ GetFields()
     scanf("%64s", Field.Data);
     FlushStdIn();
     LOOP:
-    printf("You entered %s. Press [Enter] to stop adding fields, type 'r' [Enter] to re-enter, or 'n' [Enter] to add another field.\n", Field.Data);
+    printf("You entered %s.\n"
+            "- Press [Enter] to stop adding fields,\n"
+            "- Type 'r' [Enter] to re-enter, or\n"
+            "- Type 'n' [Enter] to add another field.\n", Field.Data);
     char C = getchar();
     if (C == 'r')
     {
@@ -130,6 +151,9 @@ GetFields()
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Ask for the user to enter the dimensions.
+---------------------------------------------------------------------------------------------*/
 static array<dimension_info>
 GetDimensions()
 {
@@ -142,7 +166,10 @@ GetDimensions()
     scanf("%d", &Dimension.Limit);
     FlushStdIn();
     LOOP:
-    printf("You entered %c %d. Press [Enter] to stop adding fields, type 'r' [Enter] to re-enter, or 'n' [Enter] to add another field.\n", Dimension.ShortName, Dimension.Limit);
+    printf("You entered %c %d.\n"
+           "- Press [Enter] to stop adding fields,\n"
+           "- Type 'r' [Enter] to re-enter, or\n"
+           "- Type 'n' [Enter] to add another field.\n", Dimension.ShortName, Dimension.Limit);
     char C = getchar();
     FlushStdIn();
     if (C == 'r')
@@ -173,6 +200,9 @@ GetDimensions()
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Perform the --create action.
+---------------------------------------------------------------------------------------------*/
 static void
 DoCreate(i32 Argc, cstr* Argv)
 {
@@ -182,6 +212,9 @@ DoCreate(i32 Argc, cstr* Argv)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Perform the --encode action.
+---------------------------------------------------------------------------------------------*/
 static void
 DoEncode(i32 Argc, cstr* Argv, cstr InputFile)
 {
@@ -191,12 +224,18 @@ DoEncode(i32 Argc, cstr* Argv, cstr InputFile)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Perform the --decode action.
+---------------------------------------------------------------------------------------------*/
 static void
 DoDecode(i32 Argc, cstr* Argv, cstr InputFile)
 {
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Ask the user for the action they want to perform.
+---------------------------------------------------------------------------------------------*/
 static stack_string<9>
 ChooseAction(i32 Argc, cstr* Argv)
 {
@@ -230,6 +269,9 @@ ChooseAction(i32 Argc, cstr* Argv)
 }
 
 
+/*---------------------------------------------------------------------------------------------
+Main function.
+---------------------------------------------------------------------------------------------*/
 int
 main(int Argc, cstr* Argv)
 {

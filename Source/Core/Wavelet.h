@@ -95,7 +95,7 @@ InverseCdf53(const v3i& M3,
 
 
 array<subband>
-BuildSubbandsForOneLevel(stref Template, const i8* DimensionMap, const v3i& Dims3, const v3i& Spacing3);
+BuildLevelSubbands(stref Template, const i8* DimensionMap, const v3i& Dims3, const v3i& Spacing3);
 
 } // namespace idx2
 

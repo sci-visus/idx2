@@ -27,8 +27,10 @@
 #pragma GCC diagnostic pop
 #endif
 
+
 namespace idx2
 {
+
 
 free_list_allocator BrickAlloc_;
 
@@ -44,106 +46,6 @@ Dealloc(params* P)
 
 
 /*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetName(idx2_file* Idx2, cstr Name)
-{
-  snprintf(Idx2->Name, sizeof(Idx2->Name), "%s", Name);
-}
-
-
-/*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetVersion(idx2_file* Idx2, const v2i& Ver)
-{
-  Idx2->Version = Ver;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetDimensions(idx2_file* Idx2, const v3i& Dims3)
-{
-  Idx2->Dims3 = Dims3;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetDataType(idx2_file* Idx2, dtype DType)
-{
-  Idx2->DType = DType;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetNumLevels(idx2_file* Idx2, i8 NLevels)
-{
-  Idx2->NLevels = NLevels;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetTolerance(idx2_file* Idx2, f64 Tolerance)
-{
-  Idx2->Tolerance = Tolerance;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetBitPlanesPerChunk(idx2_file* Idx2, int BitPlanesPerChunk)
-{
-  Idx2->BitPlanesPerChunk = BitPlanesPerChunk;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------*/
-void
-SetBitPlanesPerFile(idx2_file* Idx2, int BitPlanesPerFile)
-{
-  Idx2->BitPlanesPerFile = BitPlanesPerFile;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-Write the metadata (.idx2) file to disk.
----------------------------------------------------------------------------------------------*/
-void
-SetDir(idx2_file* Idx2, stref Dir)
-{
-  Idx2->Dir = Dir;
-}
-
-
-/*---------------------------------------------------------------------------------------------
-Write the metadata (.idx2) file to disk.
----------------------------------------------------------------------------------------------*/
-void
-SetDownsamplingFactor(idx2_file* Idx2, const v3i& DownsamplingFactor3)
-{
-  Idx2->DownsamplingFactor3 = DownsamplingFactor3;
-}
-
-
-/*---------------------------------------------------------------------------------------------
 Write the metadata (.idx2) file to disk.
 ---------------------------------------------------------------------------------------------*/
 /* Write the metadata file (idx) */
@@ -152,29 +54,7 @@ Write the metadata (.idx2) file to disk.
 void
 WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
 {
-  FILE* Fp = fopen(FileName, "w");
-  fprintf(Fp, "(\n"); // begin (
-  fprintf(Fp, "  (common\n");
-  fprintf(Fp, "    (type \"Simulation\")\n"); // TODO: add this config to Idx2
-  fprintf(Fp, "    (name \"%s\")\n", P.Meta.Name);
-  fprintf(Fp, "    (field \"%s\")\n", P.Meta.Field);
-  fprintf(Fp, "    (dimensions %d %d %d)\n", idx2_PrV3i(Idx2.Dims3));
-  stref DType = ToString(Idx2.DType);
-  fprintf(Fp, "    (data-type \"%s\")\n", idx2_PrintScratchN(Size(DType), "%s", DType.ConstPtr));
-  fprintf(Fp, "    (min-max %.20f %.20f)\n", Idx2.ValueRange.Min, Idx2.ValueRange.Max);
-  fprintf(Fp, "    (accuracy %.20f)\n", Idx2.Tolerance);
-  fprintf(Fp, "  )\n"); // end common)
-  fprintf(Fp, "  (format\n");
-  fprintf(Fp, "    (version %d %d)\n", Idx2.Version[0], Idx2.Version[1]);
-  char TransformOrder[128];
-  // TODO NEXT
-  //DecodeTransformOrder(Idx2.TransformOrder, TransformOrder);
-  fprintf(Fp, "    (transform-order \"%s\")\n", TransformOrder);
-  fprintf(Fp, "    (num-levels %d)\n", Idx2.NLevels);
-  fprintf(Fp, "    (bit-planes-per-chunk %d)\n", Idx2.BitPlanesPerChunk);
-  fprintf(Fp, "  )\n"); // end format)
-  fprintf(Fp, ")\n");   // end )
-  fclose(Fp);
+
 }
 
 
@@ -184,162 +64,7 @@ Parse metadata from a given buffer.
 // TODO NEXT
 error<idx2_err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
-{
-  SExprResult Result = ParseSExpr((cstr)Buf.Data, Size(Buf), nullptr);
-  if (Result.type == SE_SYNTAX_ERROR)
-  {
-    fprintf(stderr, "Error(%d): %s.\n", Result.syntaxError.lineNumber, Result.syntaxError.message);
-    return idx2_Error(idx2_err_code::SyntaxError);
-  }
-  else
-  {
-    SExpr* Data = (SExpr*)malloc(sizeof(SExpr) * Result.count);
-    idx2_CleanUp(free(Data));
-    array<SExpr*> Stack;
-    Reserve(&Stack, Result.count);
-    idx2_CleanUp(Dealloc(&Stack));
-    // This time we supply the pool
-    SExprPool Pool = { Result.count, Data };
-    Result = ParseSExpr((cstr)Buf.Data, Size(Buf), &Pool);
-    // result.expr contains the successfully parsed SExpr
-    //    printf("parse .idx2 file successfully\n");
-    PushBack(&Stack, Result.expr);
-    bool GotId = false;
-    SExpr* LastExpr = nullptr;
-    while (Size(Stack) > 0)
-    {
-      SExpr* Expr = Back(Stack);
-      PopBack(&Stack);
-      if (Expr->next)
-        PushBack(&Stack, Expr->next);
-      if (GotId)
-      {
-        if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "version"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->Version[0] = Expr->i;
-          idx2_Assert(Expr->next);
-          Expr = Expr->next;
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->Version[1] = Expr->i;
-          //          printf("Version = %d.%d\n", Idx2->Version[0], Idx2->Version[1]);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "name"))
-        {
-          idx2_Assert(Expr->type == SE_STRING);
-          memcpy(Idx2->Name, Buf.Data + Expr->s.start, Expr->s.len);
-          Idx2->Name[Expr->s.len] = 0;
-          //          printf("Name = %s\n", Idx2->Name);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "dimensions"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->Dims3.X = Expr->i;
-          idx2_Assert(Expr->next);
-          Expr = Expr->next;
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->Dims3.Y = Expr->i;
-          idx2_Assert(Expr->next);
-          Expr = Expr->next;
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->Dims3.Z = Expr->i;
-          //          printf("Dims = %d %d %d\n", idx2_PrV3i(Idx2->Dims3));
-        }
-        if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "tolerance"))
-        {
-          idx2_Assert(Expr->type == SE_FLOAT);
-          Idx2->Tolerance = Expr->f;
-          //          printf("Accuracy = %.17g\n", Idx2->Accuracy);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "data-type"))
-        {
-          idx2_Assert(Expr->type == SE_STRING);
-          Idx2->DType = StringTo<dtype>()(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
-          //          printf("Data type = %.*s\n", ToString(Idx2->DType).Size,
-          //          ToString(Idx2->DType).ConstPtr);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "min-max"))
-        {
-          idx2_Assert(Expr->type == SE_FLOAT || Expr->type == SE_INT);
-          Idx2->ValueRange.Min = Expr->i;
-          idx2_Assert(Expr->next);
-          Expr = Expr->next;
-          idx2_Assert(Expr->type == SE_FLOAT || Expr->type == SE_INT);
-          Idx2->ValueRange.Max = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-order"))
-        {
-          idx2_Assert(Expr->type == SE_STRING);
-          // TODO NEXT
-          //Idx2->TransformOrder =
-          //  EncodeTransformOrder(stref((cstr)Buf.Data + Expr->s.start, Expr->s.len));
-          //char TransformOrder[128];
-          //DecodeTransformOrder(Idx2->TransformOrder, TransformOrder);
-          //          printf("Transform order = %s\n", TransformOrder);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "num-levels"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->NLevels = i8(Expr->i);
-          //          printf("Num levels = %d\n", Idx2->NLevels);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bits-per-brick"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->BitsPerBrick = Expr->i;
-          //          printf("Bricks per chunk = %d\n", Idx2->BricksPerChunks[0]);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "brick-bits-per-chunk"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->BrickBitsPerChunk = Expr->i;
-          //          printf("Bricks per chunk = %d\n", Idx2->BricksPerChunks[0]);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "chunk-bits-per-file"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->ChunkBitsPerFile = Expr->i;
-          //          printf("Chunks per file = %d\n", Idx2->ChunksPerFiles[0]);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "file-bits-per-directory"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->FileBitsPerDir = Expr->i;
-          //          printf("Files per directory = %d\n", Idx2->FilesPerDir);
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bit-planes-per-chunk"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->BitPlanesPerChunk = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "bit-planes-per-file"))
-        {
-          idx2_Assert(Expr->type == SE_INT);
-          Idx2->BitPlanesPerFile = Expr->i;
-        }
-        else if (SExprStringEqual((cstr)Buf.Data, &(LastExpr->s), "transform-template"))
-        {
-          // TODO NEXT
-        }
-      }
-      if (Expr->type == SE_ID)
-      {
-        LastExpr = Expr;
-        GotId = true;
-      }
-      else if (Expr->type == SE_LIST)
-      {
-        PushBack(&Stack, Expr->head);
-        GotId = false;
-      }
-      else
-      {
-        GotId = false;
-      }
-    }
-  }
-  return idx2_Error(idx2_err_code::NoError);
-}
+{ return idx2_Error(idx2_err_code::NoError); }
 
 
 /*---------------------------------------------------------------------------------------------
@@ -359,13 +84,13 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
 Return dimensions corresponding to a template.
 ---------------------------------------------------------------------------------------------*/
 v3i
-GetDimsFromTemplate(stref Template)
+GetDimsFromTemplate(const idx2_file& Idx2, stref Template)
 {
   v3i Dims3(1);
   idx2_For (i8, I, 0, Template.Size)
   {
     idx2_Assert(isalpha(Template[I]) && islower(Template[I]));
-    i8 D = Template[I] - 'x'; // TODO NEXT: use a table to translate character to number
+    i8 D = Idx2.DimensionMap[Template[I] - 'x'];
     Dims3[D] *= 2;
   }
   return Dims3;
@@ -393,22 +118,14 @@ GetPostfixTemplate(const idx2_file& Idx2, i8 Pos, i8 Size)
 
 
 /*---------------------------------------------------------------------------------------------
-Return part of the postfix template corresponding to a given position and size.
----------------------------------------------------------------------------------------------*/
-idx2_Inline static stref
-GetPostfixTemplatePart(const transform_template& Template, const v2<i8>& Part)
-{
-  return stref(Template.Postfix.Data + Part[0], Part[1]);
-}
-
-
-/*---------------------------------------------------------------------------------------------
 Return part of the template corresponding to a given level.
 ---------------------------------------------------------------------------------------------*/
 idx2_Inline static stref
-GetPostfixTemplateForLevel(const idx2_file& Idx2, i8 Level)
+GetLevelTemplate(const idx2_file& Idx2, i8 Level)
 {
-  return GetPostfixTemplatePart(Idx2.Template, Idx2.Template.LevelParts[Level]);
+  i8 Pos = Idx2.Template.LevelParts[Level][0];
+  i8 Size = Idx2.Template.LevelParts[Level][1];
+  return GetPostfixTemplate(Idx2, Pos, Size);
 }
 
 
@@ -420,8 +137,6 @@ Break a template represented as a string into parts that can be better interpret
 zzzyy:xyz:xyz:xy (zzzyy is the prefix), or
 :xyz:xyz:zzz:yyy (there is no prefix)
 */
-// TODO NEXT: we have changed the syntax of the template (there is now a prefix and a middle part)
-// the difference is that the prefix is not used until the end (just add onto whatever address we have computed for the files)
 static void
 ProcessTransformTemplate(idx2_file* Idx2)
 {
@@ -430,7 +145,7 @@ ProcessTransformTemplate(idx2_file* Idx2)
   tokenizer Tokenizer(Template.Full.ConstPtr, ":");
 
   /* parse the prefix (if any) */
-  stref Part = Next(&Tokenizer); // this is the prefix if it exists, else it is the first part of the postfix
+  stref Part = Next(&Tokenizer); // the prefix if it exists, else the first part of the postfix
   i8 Pos = i8(Part.ConstPtr - Template.Full.ConstPtr);
   if (Pos == 0) // there is a prefix
     Template.Prefix = stref(Template.Full.ConstPtr, Part.Size);
@@ -480,7 +195,7 @@ VerifyTransformTemplate(const idx2_file& Idx2)
     if (Length == 0)
       return idx2_Error(idx2_err_code::SyntaxError,
                         ": or | needs to be followed by a dimension in the indexing template\n");
-    const auto Part = GetPostfixTemplateForLevel(Idx2, L);
+    const auto Part = GetLevelTemplate(Idx2, L);
     if (Length == 2 && (Part[0] == Part[1]))
       return idx2_Error(idx2_err_code::DimensionsRepeated,
                         "Repeated dimensions on level %d\n", L);
@@ -529,13 +244,13 @@ BuildSubbandsForAllLevels(idx2_file* Idx2)
 {
   idx2_For (i8, L, 0, Idx2->NLevels)
   {
-    stref TemplatePart = GetPostfixTemplateForLevel(*Idx2, L);
+    stref TemplateL = GetLevelTemplate(*Idx2, L);
     subbands_per_level SubbandsL;
     const v3i& Dims3 = Idx2->BrickInfo[L].Dims3Pow2;
     const v3i& Spacing3 = Idx2->BrickInfo[L].Spacing3;
     // TODO NEXT: do we need both versions?
-    SubbandsL.PowOf2 = BuildSubbandsForOneLevel(TemplatePart, Idx2->DimensionMap, Dims3, Spacing3);
-    SubbandsL.PowOf2Plus1 = BuildSubbandsForOneLevel(TemplatePart, Idx2->DimensionMap, idx2_ExtDims(Dims3), Spacing3);
+    SubbandsL.PowOf2 = BuildLevelSubbands(TemplateL, Idx2->DimensionMap, Dims3, Spacing3);
+    SubbandsL.PowOf2Plus1 = BuildLevelSubbands(TemplateL, Idx2->DimensionMap, idx2_ExtDims(Dims3), Spacing3);
     PushBack(&Idx2->Subbands, SubbandsL);
   }
 }
@@ -551,13 +266,13 @@ ComputeSubbandMasks(idx2_file* Idx2, const params& P)
   v3i Spacing3 = v3i(1) << P.DownsamplingFactor3;
   idx2_For (int, L, 0, Idx2->NLevels)
   {
-    subbands_per_level& SubbandsOnLevelL = Idx2->Subbands[L];
+    subbands_per_level& SubbandsL = Idx2->Subbands[L];
     u8 Mask = 0xFF;
-    idx2_For (i8, Sb, 0, Size(SubbandsOnLevelL.PowOf2Plus1))
+    idx2_For (i8, Sb, 0, Size(SubbandsL.PowOf2Plus1))
     {
-      v3i F3 = From(SubbandsOnLevelL.PowOf2Plus1[Sb].GlobalGrid);
-      v3i S3 = Spacing(SubbandsOnLevelL.PowOf2Plus1[Sb].GlobalGrid);
-      SubbandsOnLevelL.Spacings[Sb] = v3i(1);
+      v3i F3 = From(SubbandsL.PowOf2Plus1[Sb].GlobalGrid);
+      v3i S3 = Spacing(SubbandsL.PowOf2Plus1[Sb].GlobalGrid);
+      SubbandsL.Spacings[Sb] = v3i(1);
       for (int D = 0; D < 3; ++D)
       {
         // check if a grid1 that starts at F3 with spacing S3 is a subgrid
@@ -565,7 +280,7 @@ ComputeSubbandMasks(idx2_file* Idx2, const params& P)
         if ((F3[D] % Spacing3[D]) == 0)
         {
           if ((S3[D] % Spacing3[D]) != 0)
-            SubbandsOnLevelL.Spacings[Sb][D] = Spacing3[D] / S3[D];
+            SubbandsL.Spacings[Sb][D] = Spacing3[D] / S3[D];
         }
         else // skip the subband
         {
@@ -575,7 +290,7 @@ ComputeSubbandMasks(idx2_file* Idx2, const params& P)
     }
     if (L + 1 < Idx2->NLevels && Mask == 1)
       Mask = 0; // explicitly disable subband 0 if it is the only subband to decode
-    SubbandsOnLevelL.DecodeMasks = Mask;
+    SubbandsL.DecodeMasks = Mask;
   }
 }
 
@@ -591,6 +306,9 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
   Resize(&Idx2->ChunkInfo, Idx2->NLevels);
   Resize(&Idx2->FileInfo, Idx2->NLevels);
 
+  i8 BrickBits, ChunkBits, FileBits;
+  i8 BrickIndexBits, ChunkIndexBits, FileIndexBits;
+  i8 Length;
   v3i NBricks3;
   idx2_For (i8, L, 0, Idx2->NLevels)
   {
@@ -599,53 +317,63 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
     file_info_per_level& FileInfoL = Idx2->FileInfo[L];
 
     /* compute Group3 */
-    stref Template = GetPostfixTemplateForLevel(*Idx2, L);
-    BrickInfoL.Group3 = GetDimsFromTemplate(Template);
+    {
+      stref Template = GetLevelTemplate(*Idx2, L);
+      BrickInfoL.Group3 = GetDimsFromTemplate(*Idx2, Template);
+    }
 
     /* compute brick templates */
-    i8 Length = Sum<i8>(Idx2->Template.LevelParts[L]);
-    BrickInfoL.Template = GetPostfixTemplateForLevel(*Idx2, L);
-    i8 BrickBits = Min(Length, Idx2->BitsPerBrick);
-    i8 BrickIndexBits = Length - BrickBits;
-    BrickInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, BrickIndexBits);
-    BrickInfoL.Template = GetPostfixTemplate(*Idx2, BrickIndexBits, BrickBits);
-    BrickInfoL.Dims3Pow2 = GetDimsFromTemplate(BrickInfoL.Template);
-    BrickInfoL.Spacing3 = GetDimsFromTemplate(GetPostfixTemplate(*Idx2, Length));
-    if (L == 0)
-      NBricks3 = (Idx2->Dims3 + BrickInfoL.Dims3Pow2 - 1) / BrickInfoL.Dims3Pow2;
-    else
-      NBricks3 = (NBricks3 + BrickInfoL.Group3 - 1) / BrickInfoL.Group3;
-    BrickInfoL.NBricks3 = NBricks3;
+    {
+      Length = Sum<i8>(Idx2->Template.LevelParts[L]);
+      BrickInfoL.Template = GetLevelTemplate(*Idx2, L);
+      BrickBits = Min(Length, Idx2->BitsPerBrick);
+      BrickIndexBits = Length - BrickBits;
+      BrickInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, BrickIndexBits);
+      BrickInfoL.Template = GetPostfixTemplate(*Idx2, BrickIndexBits, BrickBits);
+      BrickInfoL.Dims3Pow2 = GetDimsFromTemplate(*Idx2, BrickInfoL.Template);
+      BrickInfoL.Spacing3 = GetDimsFromTemplate(*Idx2, GetPostfixTemplate(*Idx2, Length));
+      if (L == 0)
+        NBricks3 = (Idx2->Dims3 + BrickInfoL.Dims3Pow2 - 1) / BrickInfoL.Dims3Pow2;
+      else
+        NBricks3 = (NBricks3 + BrickInfoL.Group3 - 1) / BrickInfoL.Group3;
+      BrickInfoL.NBricks3 = NBricks3;
+    }
 
     /* compute chunk templates */
-    i8 ChunkBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk));
-    i8 ChunkIndexBits = Length - ChunkBits;
-    BrickInfoL.IndexTemplateInChunk = GetPostfixTemplate(*Idx2, ChunkIndexBits, BrickIndexBits - ChunkIndexBits);
-    BrickInfoL.NBricksPerChunk3 = GetDimsFromTemplate(BrickInfoL.IndexTemplateInChunk);
-    ChunkInfoL.Template = GetPostfixTemplate(*Idx2, ChunkIndexBits, ChunkBits);
-    ChunkInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, ChunkIndexBits);
-    ChunkInfoL.NChunks3 = (BrickInfoL.NBricks3 + BrickInfoL.NBricksPerChunk3 - 1) / BrickInfoL.NBricksPerChunk3;
+    {
+      ChunkBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk));
+      ChunkIndexBits = Length - ChunkBits;
+      BrickInfoL.IndexTemplateInChunk = GetPostfixTemplate(*Idx2, ChunkIndexBits, BrickIndexBits - ChunkIndexBits);
+      BrickInfoL.NBricksPerChunk3 = GetDimsFromTemplate(*Idx2, BrickInfoL.IndexTemplateInChunk);
+      ChunkInfoL.Template = GetPostfixTemplate(*Idx2, ChunkIndexBits, ChunkBits);
+      ChunkInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, ChunkIndexBits);
+      ChunkInfoL.NChunks3 = (BrickInfoL.NBricks3 + BrickInfoL.NBricksPerChunk3 - 1) / BrickInfoL.NBricksPerChunk3;
+    }
 
     /* compute file templates */
-    i8 FileBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk + Idx2->ChunkBitsPerFile));
-    i8 FileIndexBits = Length - FileBits;
-    ChunkInfoL.IndexTemplateInFile = GetPostfixTemplate(*Idx2, FileIndexBits, ChunkIndexBits - FileIndexBits);
-    ChunkInfoL.NChunksPerFile3 = GetDimsFromTemplate(ChunkInfoL.IndexTemplateInFile);
-    FileInfoL.Template = GetPostfixTemplate(*Idx2, FileIndexBits, FileBits);
-    FileInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, FileIndexBits);
-    FileInfoL.NFiles3 = (ChunkInfoL.NChunks3 + ChunkInfoL.NChunksPerFile3 - 1) / ChunkInfoL.NChunksPerFile3;
+    {
+      FileBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk + Idx2->ChunkBitsPerFile));
+      FileIndexBits = Length - FileBits;
+      ChunkInfoL.IndexTemplateInFile = GetPostfixTemplate(*Idx2, FileIndexBits, ChunkIndexBits - FileIndexBits);
+      ChunkInfoL.NChunksPerFile3 = GetDimsFromTemplate(*Idx2, ChunkInfoL.IndexTemplateInFile);
+      FileInfoL.Template = GetPostfixTemplate(*Idx2, FileIndexBits, FileBits);
+      FileInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, FileIndexBits);
+      FileInfoL.NFiles3 = (ChunkInfoL.NChunks3 + ChunkInfoL.NChunksPerFile3 - 1) / ChunkInfoL.NChunksPerFile3;
+    }
 
     /* compute file dir depths */
-    array<i8>& FileDirDepthsL = FileInfoL.FileDirDepths;
-    PushBack(&FileDirDepthsL, i8(FileBits - BrickBits));
-    i8 AccumulatedBits = FileBits - BrickBits;
-    while (AccumulatedBits < BrickIndexBits)
     {
-      i8 FileBitsPerDir = Min(i8(BrickIndexBits - AccumulatedBits), Idx2->FileBitsPerDir);
-      AccumulatedBits += FileBitsPerDir;
-      PushBack(&FileDirDepthsL, FileBitsPerDir);
+      array<i8>& FileDirDepthsL = FileInfoL.FileDirDepths;
+      PushBack(&FileDirDepthsL, i8(FileBits - BrickBits));
+      i8 AccumulatedBits = FileBits - BrickBits;
+      while (AccumulatedBits < BrickIndexBits)
+      {
+        i8 FileBitsPerDir = Min(i8(BrickIndexBits - AccumulatedBits), Idx2->FileBitsPerDir);
+        AccumulatedBits += FileBitsPerDir;
+        PushBack(&FileDirDepthsL, FileBitsPerDir);
+      }
+      Reverse(Begin(FileDirDepthsL), End(FileDirDepthsL));
     }
-    Reverse(Begin(FileDirDepthsL), End(FileDirDepthsL));
   }
 }
 
@@ -699,14 +427,14 @@ file_chunk_brick_traversal(const idx2_file* Idx2,
 Traverse a hierarchy of bricks following a template, and run a callback function for each brick.
 ---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
-TraverseBricks(const file_chunk_brick_traversal& Traversal, const traverse_item& ChunkTop)
+TraverseBricks(const file_chunk_brick_traversal& T, const traverse_item& ChunkTop)
 {
-  return Traversal.Traverse(Traversal.Idx2->BrickInfo[Traversal.Level].IndexTemplateInChunk,
-                            ChunkTop.From3 * Traversal.Idx2->BrickInfo[Traversal.Level].NBricksPerChunk3,
-                            Traversal.Idx2->BrickInfo[Traversal.Level].NBricksPerChunk3,
-                            Traversal.ExtentInBricks,
-                            Traversal.VolExtentInBricks,
-                            Traversal.BrickCallback);
+  return T.Traverse(T.Idx2->BrickInfo[T.Level].IndexTemplateInChunk,
+                    ChunkTop.From3 * T.Idx2->BrickInfo[T.Level].NBricksPerChunk3,
+                    T.Idx2->BrickInfo[T.Level].NBricksPerChunk3,
+                    T.ExtentInBricks,
+                    T.VolExtentInBricks,
+                    T.BrickCallback);
 }
 
 
@@ -714,14 +442,14 @@ TraverseBricks(const file_chunk_brick_traversal& Traversal, const traverse_item&
 Traverse a hierarchy of chunks following a template, and run a callback function for each chunk.
 ---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
-TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item& FileTop)
+TraverseChunks(const file_chunk_brick_traversal& T, const traverse_item& FileTop)
 {
-  return Traversal.Traverse(Traversal.Idx2->ChunkInfo[Traversal.Level].IndexTemplateInFile,
-                            FileTop.From3 * Traversal.Idx2->ChunkInfo[Traversal.Level].NChunksPerFile3,
-                            Traversal.Idx2->ChunkInfo[Traversal.Level].NChunksPerFile3,
-                            Traversal.ExtentInChunks,
-                            Traversal.VolExtentInChunks,
-                            TraverseBricks);
+  return T.Traverse(T.Idx2->ChunkInfo[T.Level].IndexTemplateInFile,
+                    FileTop.From3 * T.Idx2->ChunkInfo[T.Level].NChunksPerFile3,
+                    T.Idx2->ChunkInfo[T.Level].NChunksPerFile3,
+                    T.ExtentInChunks,
+                    T.VolExtentInChunks,
+                    TraverseBricks);
 }
 
 
@@ -729,14 +457,14 @@ TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item&
 Traverse a hierarchy of files following a template, and run a callback function for each file.
 ---------------------------------------------------------------------------------------------*/
 error<idx2_err_code>
-TraverseFiles(const file_chunk_brick_traversal& Traversal)
+TraverseFiles(const file_chunk_brick_traversal& T)
 {
-  return Traversal.Traverse(Traversal.Idx2->FileInfo[Traversal.Level].IndexTemplate,
-                            v3i(0),
-                            Traversal.Idx2->FileInfo[Traversal.Level].NFiles3,
-                            Traversal.ExtentInFiles,
-                            Traversal.VolExtentInFiles,
-                            TraverseChunks);
+  return T.Traverse(T.Idx2->FileInfo[T.Level].IndexTemplate,
+                    v3i(0),
+                    T.Idx2->FileInfo[T.Level].NFiles3,
+                    T.ExtentInFiles,
+                    T.VolExtentInFiles,
+                    TraverseChunks);
 }
 
 
