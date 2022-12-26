@@ -6,31 +6,6 @@ namespace idx2
 {
 
 
-bool
-OptVal(i32 NArgs, cstr* Args, cstr Opt, array<dimension_info>* Dimensions)
-{
-  for (i32 I = 0; I < NArgs; ++I)
-  {
-    if (strncmp(Args[I], Opt, 32) == 0)
-    {
-      i32 J = I + 1;
-      while (true)
-      {
-        dimension_info Dim;
-        if (J >= NArgs || !isalpha(Args[J][0]) || !islower(Args[J][0]))
-          return J > I + 1;
-        Dim.ShortName = Args[J++][0];
-        if (J >= NArgs || !ToInt(Args[J++], &Dim.Limit))
-          return false;
-        PushBack(Dimensions, Dim);
-      }
-      return true;
-    }
-  }
-  return false;
-}
-
-
 idx2_file_v2::idx2_file_v2()
 {
   memset(CharToIntMap, -1, sizeof(CharToIntMap));

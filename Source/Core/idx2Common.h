@@ -64,6 +64,16 @@ namespace idx2
 
 /* ---------------------- TYPES ----------------------*/
 
+struct dimension_info
+{
+  /* A dimension can either be numerical or categorical.
+  In the latter case, each category is given a name (e.g., a field).
+  In the former case, the dimension starts at 0 and has an upper limit. */
+  array<stref> Names;
+  i32 Limit = 0; // exclusive upper limit
+  char ShortName = '?';
+};
+
 struct file_id
 {
   stref Name;
