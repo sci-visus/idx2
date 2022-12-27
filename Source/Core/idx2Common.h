@@ -140,7 +140,9 @@ static constexpr int MaxBrickDim = 256;
 static constexpr int MaxLevels = 16;
 static constexpr int MaxTransformPassesPerLevels = 9;
 static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
+static constexpr int MaxTemplateLength = 96;
 static constexpr int MaxTemplatePostfixLength = 48;
+
 
 struct transform_template
 {
@@ -253,6 +255,9 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName);
 
 error<idx2_err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf);
+
+void
+GuessTransformTemplate(const idx2_file& Idx2);
 
 /* Compute the output grid (from, dims, strides) */
 grid

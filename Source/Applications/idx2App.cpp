@@ -204,6 +204,16 @@ GetDimensions()
 Perform the --create action.
 ---------------------------------------------------------------------------------------------*/
 static void
+GetTransformTemplate()
+{
+
+}
+
+
+/*---------------------------------------------------------------------------------------------
+Perform the --create action.
+---------------------------------------------------------------------------------------------*/
+static void
 DoCreate(i32 Argc, cstr* Argv)
 {
   auto Name = GetName();
@@ -276,6 +286,9 @@ int
 main(int Argc, cstr* Argv)
 {
   SetHandleAbortSignals();
+  idx2_file Idx2;
+  Idx2.Dims3 = v3i(384, 128, 32);
+  GuessTransformTemplate(Idx2);
 
   auto Action = ChooseAction(Argc, Argv);
   if (strcmp(Action.Data, "--create") == 0)

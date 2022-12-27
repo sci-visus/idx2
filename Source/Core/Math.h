@@ -243,6 +243,9 @@ Pow(i64 Base, int Exp);
 i64
 NextPow2(i64 Val);
 
+v3i
+NextPow2(const v3i& Vec);
+
 int
 GeometricSum(int Base, int N);
 
@@ -1233,6 +1236,11 @@ Log2Ceil(i64 Val)
   auto I = Msb((u64)Val);
   return I + i8(Val != (1ll << I));
 }
+
+
+idx2_Inline v3i
+Log2Ceil(const v3i& Vec)
+{ return v3i(Log2Ceil(Vec.X), Log2Ceil(Vec.Y), Log2Ceil(Vec.Z)); }
 
 
 idx2_Inline i8
