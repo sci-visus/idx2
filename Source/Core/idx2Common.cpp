@@ -381,15 +381,14 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
 /*---------------------------------------------------------------------------------------------
 Guess the transform template.
 ---------------------------------------------------------------------------------------------*/
-void
-GuessTransformTemplate(const idx2_file& Idx2)
+stack_array<u8, MaxTemplateLength>
+GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
 {
   stack_array<u8, MaxTemplateLength> Template;
-  stack_array<u8, MaxTemplateLength> TemplateRev; // reversed
   v3i DimsLog = Log2Ceil(Idx2.Dims3);
   i8 Level = 0;
   i8 Pos = 0;
-  while (Sum<i64>(DimsLog) != 0)
+  while (Sum<i32>(DimsLog) != 0)
   {
     bool Used[3] = {};
     i32 DimMax = 0;
@@ -397,37 +396,53 @@ GuessTransformTemplate(const idx2_file& Idx2)
     while (true) // loop for one level
     {
       DMax = -1;
-      for (i8 D = 0; D < 3; ++D)
+      if (Hint == template_hint::Anisotropic)
       {
-        if (DimsLog[D] > DimMax && !Used[D])
+        for (i8 D = 0; D < 3; ++D)
         {
-          DMax = D;
-          DimMax = DimsLog[D];
+          if (DimsLog[D] > DimMax && !Used[D])
+          {
+            DMax = D;
+            DimMax = DimsLog[D];
+          }
         }
       }
+      else if (Hint == template_hint::Isotropic)
+      {
+        for (i8 D = 2; D >= 0; --D)
+        {
+          if (DimsLog[D] > 0 && !Used[D])
+          {
+            DMax = D;
+            DimMax = DimsLog[D];
+          }
+        }
+      }
+      else
+      {
+        idx2_Assert(false);
+      }
 
-      if (DMax != -1)
+      if (DMax != -1) // found a dimension to continue the current level
       {
         Used[DMax] = true;
         --DimsLog[DMax];
         --DimMax;
         Template[Pos++] = 'x' + DMax; // TODO NEXT: we need to translate from number to char
       }
-      else
+      else // done with the current level
       {
-        Template[Pos++] = ':';
+        if (Sum<i32>(DimsLog) >= 21) // so that the coarsest level is at least 128^3-equivalent
+          Template[Pos++] = ':';
         break;
       }
     }
   }
 
-  idx2_For (i8, I, 0, Pos)
-  {
-    TemplateRev[I] = Template[Pos - I - 1];
-  }
+  idx2_For (i8, I, 0, Pos/2)
+    Swap(&Template[I], &Template[Pos - I - 1]);
 
-  return;
-  // TODO NEXT: assume we want coarsest level at about 128^3 and proceed from there
+  return Template;
 }
 
 

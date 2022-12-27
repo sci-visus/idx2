@@ -256,8 +256,15 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName);
 error<idx2_err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf);
 
-void
-GuessTransformTemplate(const idx2_file& Idx2);
+
+enum class template_hint
+{
+  Isotropic, // alternate the dimensions at the end of the template
+  Anisotropic // alternate the dimensions at the beginning of the template
+};
+
+stack_array<u8, MaxTemplateLength>
+GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint);
 
 /* Compute the output grid (from, dims, strides) */
 grid

@@ -287,8 +287,8 @@ main(int Argc, cstr* Argv)
 {
   SetHandleAbortSignals();
   idx2_file Idx2;
-  Idx2.Dims3 = v3i(384, 128, 32);
-  GuessTransformTemplate(Idx2);
+  Idx2.Dims3 = v3i(512, 384, 256);
+  GuessTransformTemplate(Idx2, template_hint::Isotropic);
 
   auto Action = ChooseAction(Argc, Argv);
   if (strcmp(Action.Data, "--create") == 0)
