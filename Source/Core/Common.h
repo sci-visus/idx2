@@ -390,7 +390,7 @@ template <typename t> struct v6
   template <typename u> v6(const v6<u>& Other);
   t& operator[](int Idx) const;
   template <typename u> v6& operator=(const v6<u>& Rhs);
-  idx2_Inline static i8 Dims() { return sizeof(E) / sizeof(E[0]); }
+  idx2_Inline static i8 Size() { return sizeof(E) / sizeof(E[0]); }
 };
 
 using v6i = v6<i32>;
@@ -401,7 +401,6 @@ using v6f = v6<f32>;
 using v6d = v6<f64>;
 
 using nd_string = v6<u8>;
-using nd_index = v6i;
 using nd_size = v6i;
 
 
@@ -704,11 +703,13 @@ template <typename t> idx2_Inline constexpr v6<t>::v6(t V)
 {
 }
 
+
 template <typename t> idx2_Inline constexpr v6<t>::v6(t X_, t Y_, t Z_, t U_, t V_, t W_)
   : XYZ(X_, Y_, Z_)
   , UVW(U_, V_, W_)
 {
 }
+
 
 template <typename t> template <typename u> idx2_Inline
 v6<t>::v6(const v3<u>& XYZ_, const v3<u>& UVW_)
@@ -717,12 +718,14 @@ v6<t>::v6(const v3<u>& XYZ_, const v3<u>& UVW_)
 {
 }
 
+
 template <typename t> template <typename u> idx2_Inline
 v6<t>::v6(const v6<u>& Other)
   : XYZ(Other.XYZ)
   , UVW(Other.UVW)
 {
 }
+
 
 template <typename t> idx2_Inline t&
 v6<t>::operator[](int Idx) const
@@ -739,6 +742,166 @@ v6<t>::operator=(const v6<u>& Rhs)
   UVW = Rhs.UVW;
   return *this;
 }
+
+
+template <typename t> idx2_Inline constexpr void
+Swap(t* A, t* idx2_Restrict B)
+{
+  t T = *A;
+  *A = *B;
+  *B = T;
+}
+
+
+idx2_Inline nd_size
+SetDimension(nd_size P, i8 D, i32 Val)
+{
+  P[D] = Val;
+  return P;
+}
+
+
+idx2_Inline i8
+EffectiveDims(const nd_size& Dims)
+{
+  i8 D = Dims.Size() - 1;
+  while ((D >= 0) && (Dims[D] == 1))
+    --D;
+  return D + 1;
+}
+
+
+/* Put dimension D at index 0 so it becomes the fastest varying dimension. */
+idx2_Inline nd_size
+MakeFastestDimension(nd_size P, i8 D)
+{
+  while (D > 0)
+  {
+    Swap(&P[D - 1], &P[D]);
+    --D;
+  }
+  return P;
+}
+
+template <typename t> idx2_Inline void
+ndLoop(const nd_size& Begin, const nd_size& End, const nd_size& Step, const t& Kernel)
+{
+  i8 D = EffectiveDims(End - Begin);
+  //idx2_Assert(D <= 6);
+  int X, Y, Z, U, V, W;
+  switch (D)
+  {
+    case 0:
+      //idx2_ExitIf(false, "Zero dimensional input\n");
+      break;
+    case 1:
+      _Pragma("omp parallel for")
+      for (X = Begin[0]; X < End[0]; X += Step[0])
+        Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 2:
+      _Pragma("omp parallel for collapse(2)")
+      for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+        for (X = Begin[0]; X < End[0]; X += Step[0])
+          Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 3:
+      _Pragma("omp parallel for collapse(2)")
+      for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+        for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+          for (X = Begin[0]; X < End[0]; X += Step[0])
+            Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 4:
+      _Pragma("omp parallel for collapse(2)")
+      for (U = Begin[3]; U < End[3]; U += Step[3])
+        for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+          for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+            for (X = Begin[0]; X < End[0]; X += Step[0])
+              Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 5:
+      _Pragma("omp parallel for collapse(2)")
+      for (V = Begin[4]; V < End[4]; V += Step[4])
+        for (U = Begin[3]; U < End[3]; U += Step[3])
+          for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+            for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+              for (X = Begin[0]; X < End[0]; X += Step[0])
+                Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 6:
+      _Pragma("omp parallel for collapse(2)")
+      for (W = Begin[5]; W < End[5]; W += Step[5])
+        for (V = Begin[4]; V < End[4]; V += Step[4])
+          for (U = Begin[3]; U < End[3]; U += Step[3])
+            for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+              for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+                for (X = Begin[0]; X < End[0]; X += Step[0])
+                  Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    default:
+      //idx2_Exit("Effective dimensionality greater than 6\n");
+      break;
+  };
+}
+
+
+/* Like ndLoop but exclude the fastest varying dimension (0) */
+template <typename t> idx2_Inline void
+ndOuterLoop(const nd_size& Begin, const nd_size& End, const nd_size& Step, const t& Kernel)
+{
+  i8 D = EffectiveDims(End);
+  //idx2_Assert(D <= 6);
+  int X, Y, Z, U, V, W;
+  switch (D)
+  {
+    case 0:
+      //idx2_Exit("Zero dimensional input\n");
+      break;
+    case 1:
+      break;
+    case 2:
+      _Pragma("omp parallel for")
+      for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+        Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 3:
+      _Pragma("omp parallel for collapse(2)")
+      for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+        for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+          Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 4:
+      _Pragma("omp parallel for collapse(2)")
+      for (U = Begin[3]; U < End[3]; U += Step[3])
+        for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+          for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+            Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 5:
+      _Pragma("omp parallel for collapse(2)")
+      for (V = Begin[4]; V < End[4]; V += Step[4])
+        for (U = Begin[3]; U < End[3]; U += Step[3])
+          for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+            for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+              Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    case 6:
+      _Pragma("omp parallel for collapse(2)")
+      for (W = Begin[5]; W < End[5]; W += Step[5])
+        for (V = Begin[4]; V < End[4]; V += Step[4])
+          for (U = Begin[3]; U < End[3]; U += Step[3])
+            for (Z = Begin[2]; Z < End[2]; Z += Step[2])
+              for (Y = Begin[1]; Y < End[1]; Y += Step[1])
+                Kernel(nd_size(X, Y, Z, U, V, W));
+      break;
+    default:
+      //idx2_Exit("Effective dimensionality greater than 6\n");
+      break;
+  };
+}
+
+
 
 // TODO: move the following to Macros.h?
 #undef idx2_BeginFor3
@@ -763,7 +926,6 @@ v6<t>::operator=(const v6<u>& Rhs)
     for (C1.Y = (B1).Y, C2.Y = (B2).Y; C1.Y < (E1).Y; C1.Y += (S1).Y, C2.Y += (S2).Y)              \
     {                                                                                              \
       for (C1.X = (B1).X, C2.X = (B2).X; C1.X < (E1).X; C1.X += (S1).X, C2.X += (S2).X)
-
 
 
 } // namespace idx2

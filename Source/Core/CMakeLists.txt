@@ -56,7 +56,6 @@ set(IDX2_CORE_HEADER_FILES
   VarInt.h
   Volume.h
   nd_volume.h
-  nd_wavelet.h
   Wavelet.h
   Zfp.h
   v2/idx2Common_v2.h
@@ -93,7 +92,6 @@ set(IDX2_CORE_SOURCE_FILES
   Volume.cpp
   nd_volume.cpp
   Wavelet.cpp
-  nd_wavelet.cpp
   Zfp.cpp
   v2/idx2Common_v2.cpp
   v2/idx2Encode_v2.cpp

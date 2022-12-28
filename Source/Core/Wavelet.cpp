@@ -11,10 +11,228 @@
 #include "Memory.h"
 #include "ScopeGuard.h"
 #include "CircularQueue.h"
+#include "nd_volume.h"
 
 
 namespace idx2
 {
+
+
+/*
+The TransformTemplate is a string that looks like ':210210:210:210', where each number denotes a dimension.
+The transform happens along the dimensions from right to left.
+The ':' character denotes level boundary.
+The number of ':' characters is the same as the number of levels (which is also Idx2.NLevels).
+This is in contrast to v1, in which NLevels is always just 1.
+*/
+static transform_info_v2
+ComputeTransformInfo(stref Template, const nd_size& Dims)
+{
+  transform_info_v2 TransformInfo;
+  nd_size CurrentDims = Dims;
+  nd_size ExtrapolatedDims = CurrentDims;
+  nd_size CurrentSpacing(1); // spacing
+  nd_grid G(Dims);
+  i8 Pos = Template.Size - 1;
+  i8 NLevels = 0;
+  while (Pos >= 0)
+  {
+    idx2_Assert(Pos >= 0);
+    if (Template[Pos--] == ':') // the character ':' (next level)
+    {
+      G.Spacing = CurrentSpacing;
+      G.Dims = CurrentDims;
+      ExtrapolatedDims = CurrentDims;
+      ++NLevels;
+    }
+    else // one of 0, 1, 2
+    {
+      i8 D = Template[Pos--] - '0';
+      PushBack(&TransformInfo.Grids, G);
+      PushBack(&TransformInfo.Axes, D);
+      ExtrapolatedDims[D] = CurrentDims[D] + IsEven(CurrentDims[D]);
+      G.Dims = ExtrapolatedDims;
+      CurrentDims[D] = (ExtrapolatedDims[D] + 1) / 2;
+      CurrentSpacing[D] *= 2;
+    }
+  }
+  TransformInfo.BasisNorms = GetCdf53NormsFast<16>();
+  TransformInfo.NLevels = NLevels;
+
+  return TransformInfo;
+}
+
+
+template <typename t> void
+FLiftCdf53(const nd_grid& Grid,
+           const nd_size& StorageDims,
+           i8 d,
+           lift_option Option,
+           nd_volume* Vol)
+{
+  // TODO: check alignment when allocating to ensure auto SIMD works
+  // TODO: add openmp simd
+  nd_size P = MakeFastestDimension(Grid.From   , d);
+  nd_size  D = MakeFastestDimension(Grid.Dims   , d);
+  nd_size  S = MakeFastestDimension(Grid.Spacing, d);
+  nd_size  N = MakeFastestDimension(Vol->Dims   , d);
+  nd_size  M = MakeFastestDimension(StorageDims , d);
+  // now dimension d is effectively dimension 0
+  if (D[0] <= 1)
+    return;
+
+  idx2_Assert(M[0] <= N[0]);
+  idx2_Assert(IsPow2(S));
+  idx2_Assert(IsEven(P[0]));
+  idx2_Assert(P[0] + S[0] * (D[0] - 2) < M[0]);
+
+  buffer_t<t> F(Vol->Buffer);
+  auto X0 = Min(P[0] + S[0] * D[0], M[0]);       /* extrapolated position */
+  auto X1 = Min(P[0] + S[0] * (D[0] - 1), M[0]); /* last position */
+  auto X2 = P[0] + S[0] * (D[0] - 2);            /* second last position */
+  auto X3 = P[0] + S[0] * (D[0] - 3);            /* third last position */
+  bool SignalIsEven = IsEven(D[0]);
+  ndOuterLoop(P, P + S * D, S, [&](const nd_size& ndI)
+  {
+    nd_size MinIdx = Min(ndI, M);
+    nd_size SecondLastIdx = SetDimension(MinIdx, 0, X2);
+    nd_size LastIdx       = SetDimension(MinIdx, 0, X1);
+    nd_size ThirdLastIdx  = SetDimension(MinIdx, 0, X3);
+    /* extrapolate if needed */
+    if (SignalIsEven)
+    {
+      idx2_Assert(M[0] < N[0]);
+      t A = F[LinearIndex(MinIdx, N)]; /* 2nd last (even) */
+      t B = F[LinearIndex(MinIdx, N)]; /* last (odd) */
+      /* store the extrapolated value at the boundary position */
+      nd_size ExtrapolateIdx = SetDimension(MinIdx, 0, X0);
+      F[LinearIndex(ExtrapolateIdx, N)] = 2 * B - A;
+    }
+    /* predict (excluding last odd position) */
+    for (auto X = P[0] + S[0]; X < X2; X += 2 * S[0])
+    {
+      nd_size MiddleIdx = SetDimension(MinIdx, 0, X);
+      nd_size LeftIdx   = SetDimension(MinIdx, 0, X - S[0]);
+      nd_size RightIdx  = SetDimension(MinIdx, 0, X + S[0]);
+      t& Val = F[LinearIndex(MiddleIdx, N)];
+      Val -= (F[LinearIndex(LeftIdx, N)] + F[LinearIndex(RightIdx, N)]) / 2;
+    }
+    /* predict at the last odd position */
+    if (!SignalIsEven)
+    {
+      t& Val = F[LinearIndex(SecondLastIdx, N)];
+      Val -= (F[LinearIndex(LastIdx, N)] + F[LinearIndex(ThirdLastIdx, N)]) / 2;
+    }
+    else if (X1 < M[0])
+    {
+      nd_size LastIdx       = SetDimension(MinIdx, 0, X1);
+      F[LinearIndex(LastIdx, N)] = 0;
+    }
+    /* update (excluding last odd position) */
+    if (Option != lift_option::NoUpdate)
+    {
+      /* update excluding the last odd position */
+      for (auto X = P[0] + S[0]; X < X2; X += 2 * S[0])
+      {
+        nd_size MiddleIdx = SetDimension(MinIdx, 0, X);
+        nd_size LeftIdx   = SetDimension(MinIdx, 0, X - S[0]);
+        nd_size RightIdx  = SetDimension(MinIdx, 0, X + S[0]);
+        t Val = F[LinearIndex(MiddleIdx, N)];
+        F[LinearIndex(LeftIdx, N)]  += Val / 4;
+        F[LinearIndex(RightIdx, N)] += Val / 4;
+      }
+      /* update at the last odd position */
+      if (!SignalIsEven)
+      {
+        t Val = F[LinearIndex(SecondLastIdx, N)];
+        F[LinearIndex(ThirdLastIdx, N)] += Val / 4;
+        if (Option == lift_option::Normal)
+          F[LinearIndex(LastIdx, N)] += Val / 4;
+        else if (Option == lift_option::PartialUpdateLast)
+          F[LinearIndex(LastIdx, N)] = Val / 4;
+      }
+    }
+  });
+}
+
+
+// TODO: this function does not make use of PartialUpdateLast
+template <typename t> void
+ILiftCdf53(const nd_grid& Grid,
+           const nd_size& StorageDims,
+           i8 d,
+           lift_option Option,
+           nd_volume* Vol)
+{
+  nd_size P = MakeFastestDimension(Grid.From, d);
+  nd_size D = MakeFastestDimension(Grid.Dims, d);
+  nd_size S = MakeFastestDimension(Grid.Spacing, d);
+  nd_size N = MakeFastestDimension(Vol->Dims, d);
+  nd_size M = MakeFastestDimension(StorageDims, d);
+  // now dimension d is effectively dimension 0
+  if (D[0] <= 1)
+    return;
+
+  idx2_Assert(M[0] <= N[0]);
+  idx2_Assert(IsPow2(S));
+  idx2_Assert(IsEven(P[0]));
+  idx2_Assert(P[0] + S[0] * (D[0] - 2) < M[0]);
+
+  buffer_t<t> F(Vol->Buffer);
+  auto X0 = Min(P[0] + S[0] * D[0], M[0]);       /* extrapolated position */
+  auto X1 = Min(P[0] + S[0] * (D[0] - 1), M[0]); /* last position */
+  auto X2 = P[0] + S[0] * (D[0] - 2);            /* second last position */
+  auto X3 = P[0] + S[0] * (D[0] - 3);            /* third last position */
+  bool SignalIsEven = IsEven(D[0]);
+  ndOuterLoop(P, P + S * D, S, [&](const nd_size& ndI)
+  {
+    nd_size MinIdx = Min(ndI, M);
+    nd_size SecondLastIdx = SetDimension(MinIdx, 0, X2);
+    nd_size LastIdx       = SetDimension(MinIdx, 0, X1);
+    nd_size ThirdLastIdx  = SetDimension(MinIdx, 0, X3);
+    /* inverse update (excluding last odd position) */
+    if (Option != lift_option::NoUpdate)
+    {
+      for (auto X = P[0] + S[0]; X < X2; X += 2 * S[0])
+      {
+        nd_size MiddleIdx = SetDimension(MinIdx, 0, X);
+        nd_size LeftIdx   = SetDimension(MinIdx, 0, X - S[0]);
+        nd_size RightIdx  = SetDimension(MinIdx, 0, X + S[0]);
+        t Val = F[LinearIndex(MiddleIdx, N)];
+        F[LinearIndex(LeftIdx, N)] -= Val / 4;
+        F[LinearIndex(RightIdx, N)] -= Val / 4;
+      }
+      if (!SignalIsEven)
+      { /* no extrapolation, inverse update at the last odd position */
+        t Val = F[LinearIndex(SecondLastIdx, N)];
+        F[LinearIndex(ThirdLastIdx, N)] -= Val / 4;
+        if (Option == lift_option::Normal)
+          F[LinearIndex(LastIdx, N)] -= Val / 4;
+      }
+      else
+      { /* extrapolation, need to "fix" the last position (odd) */
+        nd_size ExtrapolateIdx = SetDimension(MinIdx, 0, X0);
+        t A = F[LinearIndex(ExtrapolateIdx, N)];
+        t B = F[LinearIndex(SecondLastIdx, N)];
+        F[LinearIndex(LastIdx, N)] = (A + B) / 2;
+      }
+    }
+    /* inverse predict (excluding last odd position) */
+    for (auto X = P[0] + S[0]; X < X2; X += 2 * S[0])
+    {
+      nd_size MiddleIdx = SetDimension(MinIdx, 0, X);
+      nd_size LeftIdx   = SetDimension(MinIdx, 0, X - S[0]);
+      nd_size RightIdx  = SetDimension(MinIdx, 0, X + S[0]);
+      t& Val = F[LinearIndex(MiddleIdx, N)];
+      Val += (F[LinearIndex(LeftIdx, N)] + F[LinearIndex(RightIdx, N)]) / 2;
+    }
+    if (!SignalIsEven)
+    { /* no extrapolation, inverse predict at the last odd position */
+      t& Val = F[LinearIndex(SecondLastIdx, N)];
+      Val += (F[LinearIndex(LastIdx, N)] + F[LinearIndex(ThirdLastIdx, N)]) / 2;
+    }
+  });
+}
 
 
 array<grid>
@@ -51,12 +269,12 @@ ComputeTransformGrids(const v3i& Dims3, stref Template, const i8* DimensionMap)
 
 
 void
-ForwardCdf53(const v3i& M3,
+ForwardCdf53(const nd_size& StorageDims,
              const array<subband>& Subbands,
-             const array<grid>& TransformGrids,
+             const array<nd_grid>& TransformGrids,
              stref Template,
-             const i8* DimensionMap,
-             volume* Vol,
+             const i8* DimsMap,
+             nd_volume* Vol,
              bool CoarsestLevel)
 {
   idx2_Assert(Vol->Type == dtype::float64);
@@ -64,24 +282,20 @@ ForwardCdf53(const v3i& M3,
 
   idx2_For (i8, I, 0, Size(TransformGrids))
   {
-    int D = DimensionMap[Template[I]];
-    if (D == 0)
-      FLiftCdf53X<f64>(TransformGrids[I], M3, lift_option::Normal, Vol);
-    else if (D == 1)
-      FLiftCdf53Y<f64>(TransformGrids[I], M3, lift_option::Normal, Vol);
-    else if (D == 2)
-      FLiftCdf53Z<f64>(TransformGrids[I], M3, lift_option::Normal, Vol);
+    i8 D = DimsMap[Template[I]];
+    FLiftCdf53<f64>(TransformGrids[I], StorageDims, D, lift_option::Normal, Vol);
   }
 
   /* Optionally normalize the coefficients */
   idx2_For (i8, Sb, 0, Size(Subbands))
   {
-    if (Sb == 0 && !CoarsestLevel)
-      continue; // do not normalize subband 0
-    subband& S = Subbands[Sb];
-    auto ItEnd = End<f64>(S.LocalGrid, *Vol);
-    for (auto It = Begin<f64>(S.LocalGrid, *Vol); It != ItEnd; ++It)
-      *It *= S.Norm;
+    // TODO NEXT
+    //if (Sb == 0 && !CoarsestLevel)
+    //  continue; // do not normalize subband 0
+    //subband& S = Subbands[Sb];
+    //auto ItEnd = End<f64>(S.LocalGrid, *Vol);
+    //for (auto It = Begin<f64>(S.LocalGrid, *Vol); It != ItEnd; ++It)
+    //  *It *= S.Norm;
   }
 }
 
@@ -89,13 +303,12 @@ ForwardCdf53(const v3i& M3,
 /* The reason we need to know if the input is on the coarsest level is because we do not want
 to normalize subband 0 otherwise */
 void
-InverseCdf53(const v3i& M3,
-             i8 Level,
+InverseCdf53(const nd_size& StorageDims,
              const array<subband>& Subbands,
-             const array<grid>& TransformGrids,
+             const array<nd_grid>& TransformGrids,
              stref Template,
-             const i8* DimensionMap,
-             volume* Vol,
+             const i8* DimsMap,
+             nd_volume* Vol,
              bool CoarsestLevel)
 {
   /* inverse normalize if required */
@@ -104,60 +317,61 @@ InverseCdf53(const v3i& M3,
 
   idx2_For (i8, Sb, 0, Size(Subbands))
   {
-    if (Sb == 0 && !CoarsestLevel)
-      continue; // do not normalize subband 0
-    subband& S = Subbands[Sb];
-    f64 W = 1.0 / S.Norm;
-    auto ItEnd = End<f64>(S.LocalGrid, *Vol);
-    for (auto It = Begin<f64>(S.LocalGrid, *Vol); It != ItEnd; ++It)
-      *It *= W;
+    // TODO NEXT
+    //if (Sb == 0 && !CoarsestLevel)
+    //  continue; // do not normalize subband 0
+    //subband& S = Subbands[Sb];
+    //f64 W = 1.0 / S.Norm;
+    //auto ItEnd = End<f64>(S.LocalGrid, *Vol);
+    //for (auto It = Begin<f64>(S.LocalGrid, *Vol); It != ItEnd; ++It)
+    //  *It *= W;
   }
 
   /* perform the inverse transform */
   idx2_InclusiveForBackward (i8, I, i8(Size(TransformGrids) - 1), 0)
   {
-    int D = DimensionMap[Template[I]];
-    if (D == 0)
-      ILiftCdf53X<f64>(TransformGrids[I], M3, lift_option::Normal, Vol);
-    else if (D == 1)
-      ILiftCdf53Y<f64>(TransformGrids[I], M3, lift_option::Normal, Vol);
-    else if (D == 2)
-      ILiftCdf53Z<f64>(TransformGrids[I], M3, lift_option::Normal, Vol);
+    int D = DimsMap[Template[I]];
+    ILiftCdf53<f64>(TransformGrids[I], StorageDims, D, lift_option::Normal, Vol);
   }
 }
 
-/* Build subbands for a particular level.
+/*---------------------------------------------------------------------------------------------
+Build subbands for a particular level.
 The Template here is understood to be only part of a larger template.
 In string form, a Template is made from 4 characters: x,y,z, and :
 x, y, and z denotes the axis where the transform happens, while : denotes where the next
-level begins (any subsequent transform will be done on the coarsest level subband only). */
+level begins (any subsequent transform will be done on the coarsest level subband only).
+---------------------------------------------------------------------------------------------*/
 array<subband>
-BuildLevelSubbands(stref Template, const i8* DimensionMap, const v3i& Dims3, const v3i& Spacing3)
+BuildLevelSubbands(stref Template,
+                   const i8* DimsMap,
+                   const nd_size& Dims,
+                   const nd_size& Spacing)
 {
-  idx2_Assert(IsPow2(Spacing3));
+  idx2_Assert(IsPow2(Spacing));
 
   array<subband> Subbands;
 
   const auto& WavNorms = GetCdf53NormsFast<32>();
-  v3i LogSpacing3 = Log2Floor(Spacing3);
+  nd_size LogSpacing = Log2Floor(Spacing);
 
   /* we use a queue to produce subbands by breadth-first subdivision */
   circular_queue<subband, 128> Queue;
-  PushBack(&Queue, subband{ grid(Dims3), grid(v3i(0), Dims3, Spacing3), v3<i8>(0), 0 });
+  PushBack(&Queue, subband{ nd_grid(Dims), nd_grid(nd_size(0), Dims, Spacing), v6<i8>(0), 0 });
   i8 Pos = Size(Template) - 1;
   while (Pos >= 0)
   {
-    i8 D = DimensionMap[Template[Pos]];
+    i8 D = DimsMap[Template[Pos]];
     i8 Sz = i8(Size(Queue));
     for (i8 I = 0; I < Sz; ++I)
     {
-      grid_split LocalGridSplits = SplitAlternate(Queue[0].LocalGrid, dimension(D));
-      grid_split GlobalGridSplits = SplitAlternate(Queue[0].GlobalGrid, dimension(D));
-      v3<i8> NextLowHigh3 = Queue[0].LowHigh3;
-      idx2_Assert(NextLowHigh3[D] == 0);
-      NextLowHigh3[D] = 1;
-      PushBack(&Queue, subband{ LocalGridSplits.First, GlobalGridSplits.First, Queue[0].LowHigh3, 0 });
-      PushBack(&Queue, subband{ LocalGridSplits.Second, GlobalGridSplits.Second, NextLowHigh3, 0 });
+      nd_grid_split LocalGridSplits = nd_SplitAlternate(Queue[0].LocalGrid, dimension(D));
+      nd_grid_split GlobalGridSplits = nd_SplitAlternate(Queue[0].GlobalGrid, dimension(D));
+      v6<i8> NextLowHigh = Queue[0].LowHigh;
+      idx2_Assert(NextLowHigh[D] == 0);
+      NextLowHigh[D] = 1;
+      PushBack(&Queue, subband{ LocalGridSplits.First, GlobalGridSplits.First, Queue[0].LowHigh, 0 });
+      PushBack(&Queue, subband{ LocalGridSplits.Second, GlobalGridSplits.Second, NextLowHigh, 0 });
       PopFront(&Queue);
     }
     --Pos;
@@ -170,11 +384,11 @@ BuildLevelSubbands(stref Template, const i8* DimensionMap, const v3i& Dims3, con
     v3d Weights(1);
     for (i8 Pos = 0; Pos < Size(Template); ++Pos)
     {
-      i8 D = DimensionMap[Template[Pos]];
-      if (Queue[I].LowHigh3[D] == 0)
-        Weights[D] = WavNorms.Scaling[LogSpacing3[D]];
+      i8 D = DimsMap[Template[Pos]];
+      if (Queue[I].LowHigh[D] == 0)
+        Weights[D] = WavNorms.Scaling[LogSpacing[D]];
       else
-        Weights[D] = WavNorms.Wavelet[LogSpacing3[D]];
+        Weights[D] = WavNorms.Wavelet[LogSpacing[D]];
     }
     Queue[I].Norm = Prod<f64>(Weights);
     PushBack(&Subbands, Queue[I]);

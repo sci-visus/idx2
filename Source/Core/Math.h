@@ -52,6 +52,8 @@ Sum(const v2<u>& Vec);
 template <typename u, typename t = u> t
 Sum(const v3<u>& Vec);
 
+template <typename u, typename t = u> t
+Sum(const v6<u>& Vec);
 
 /* 2D vector math */
 template <typename t> v2<t>
@@ -1222,10 +1224,18 @@ Log2Floor(i64 Val)
 
 
 idx2_Inline v3i
-Log2Floor(const v3i& Val)
+Log2Floor(const v3i& Vec)
 {
-  idx2_Assert(Val > 0);
-  return v3i(Log2Floor(Val.X), Log2Floor(Val.Y), Log2Floor(Val.Z));
+  idx2_Assert(Vec > 0);
+  return v3i(Log2Floor(Vec.X), Log2Floor(Vec.Y), Log2Floor(Vec.Z));
+}
+
+
+idx2_Inline v6i
+Log2Floor(const v6i& Vec)
+{
+  idx2_Assert(Vec > 0);
+  return v6i(v3i(Vec.XYZ), v3i(Vec.UVW));
 }
 
 
@@ -1240,7 +1250,16 @@ Log2Ceil(i64 Val)
 
 idx2_Inline v3i
 Log2Ceil(const v3i& Vec)
-{ return v3i(Log2Ceil(Vec.X), Log2Ceil(Vec.Y), Log2Ceil(Vec.Z)); }
+{
+  return v3i(Log2Ceil(Vec.X), Log2Ceil(Vec.Y), Log2Ceil(Vec.Z));
+}
+
+
+idx2_Inline v6i
+Log2Ceil(const v6i& Vec)
+{
+  return v6i(Log2Ceil(Vec.XYZ), Log2Ceil(Vec.UVW));
+}
 
 
 idx2_Inline i8
@@ -1266,6 +1285,20 @@ NextPow2(i64 Val)
   if (Val == 0)
     return 1;
   return 1ll << (Msb((u64)(Val - 1)) + 1);
+}
+
+
+idx2_Inline v3i
+NextPow2(const v3i& Vec)
+{
+  return v3i((i32)NextPow2((i64)Vec.X), (i32)NextPow2((i64)Vec.Y), (i32)NextPow2((i64)Vec.Z));
+}
+
+
+idx2_Inline v6i
+NextPow2(const v6i& Vec)
+{
+  return v6i(NextPow2(Vec.XYZ), NextPow2(Vec.UVW));
 }
 
 

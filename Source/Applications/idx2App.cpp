@@ -321,7 +321,6 @@ main(int Argc, cstr* Argv)
 {
   SetHandleAbortSignals();
   idx2_file Idx2;
-  Idx2.Dims3 = v3i(768, 128, 512);
   GetTransformTemplate(&Idx2);
 
   auto Action = ChooseAction(Argc, Argv);

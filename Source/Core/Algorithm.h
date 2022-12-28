@@ -33,7 +33,6 @@ template <typename i> void InsertionSort(i Beg, i End);
 
 template <typename i> bool AreSame(i Beg1, i End1, i Beg2, i End2);
 
-template <typename t> constexpr void Swap(t* A, t* B);
 template <typename i> constexpr void IterSwap(i A, i B);
 
 template <typename i, typename t> void Fill(i Beg, i End, const t& Val);
@@ -233,15 +232,6 @@ AreSame(i Beg1, i End1, i Beg2)
       return false;
   }
   return Same;
-}
-
-
-template <typename t> idx2_Inline constexpr void
-Swap(t* A, t* idx2_Restrict B)
-{
-  t T = *A;
-  *A = *B;
-  *B = T;
 }
 
 

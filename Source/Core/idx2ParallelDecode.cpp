@@ -491,63 +491,63 @@ TraverseFirstLevel(const idx2_file& Idx2,
 error<idx2_err_code>
 ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 {
-  timer DecodeTimer;
-  StartTimer(&DecodeTimer);
-  // TODO: we should add a --effective-mask
-  grid OutGrid = GetGrid(Idx2, P.DecodeExtent);
-  // printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
-  mmap_volume OutVolFile;
-  volume OutVolMem;
-  idx2_CleanUp(if (P.OutMode == params::out_mode::RegularGridFile) { Unmap(&OutVolFile); });
+  //timer DecodeTimer;
+  //StartTimer(&DecodeTimer);
+  //// TODO: we should add a --effective-mask
+  //grid OutGrid = GetGrid(Idx2, P.DecodeExtent);
+  //// printf("output grid = " idx2_PrStrGrid "\n", idx2_PrGrid(OutGrid));
+  //mmap_volume OutVolFile;
+  //volume OutVolMem;
+  //idx2_CleanUp(if (P.OutMode == params::out_mode::RegularGridFile) { Unmap(&OutVolFile); });
 
-  if (P.OutMode == params::out_mode::RegularGridFile)
-  {
-    metadata Met;
-    memcpy(Met.Name, Idx2.Name, sizeof(Met.Name));
-    Met.Dims3 = Dims(OutGrid);
-    Met.DType = Idx2.DType;
-    //  printf("zfp decode time = %f\n", DecodeTime_);
-    cstr OutFile = P.OutFile
-                     ? idx2_PrintScratch("%s/%s", P.OutDir, P.OutFile)
-                     : idx2_PrintScratch(
-                         "%s/%s-tolerance-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeTolerance);
-    //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
-    MapVolume(OutFile, Met.Dims3, Met.DType, &OutVolFile, map_mode::Write);
-    printf("writing output volume to %s\n", OutFile);
-  }
-  else if (P.OutMode == params::out_mode::RegularGridMem)
-  {
-    OutVolMem.Buffer = *OutBuf;
-    SetDims(&OutVolMem, Dims(OutGrid));
-    OutVolMem.Type = Idx2.DType;
-  }
+  //if (P.OutMode == params::out_mode::RegularGridFile)
+  //{
+  //  metadata Met;
+  //  memcpy(Met.Name, Idx2.Name, sizeof(Met.Name));
+  //  Met.Dims3 = Dims(OutGrid);
+  //  Met.DType = Idx2.DType;
+  //  //  printf("zfp decode time = %f\n", DecodeTime_);
+  //  cstr OutFile = P.OutFile
+  //                   ? idx2_PrintScratch("%s/%s", P.OutDir, P.OutFile)
+  //                   : idx2_PrintScratch(
+  //                       "%s/%s-tolerance-%f.raw", P.OutDir, ToRawFileName(Met), P.DecodeTolerance);
+  //  //    idx2_RAII(mmap_volume, OutVol, (void)OutVol, Unmap(&OutVol));
+  //  MapVolume(OutFile, Met.Dims3, Met.DType, &OutVolFile, map_mode::Write);
+  //  printf("writing output volume to %s\n", OutFile);
+  //}
+  //else if (P.OutMode == params::out_mode::RegularGridMem)
+  //{
+  //  OutVolMem.Buffer = *OutBuf;
+  //  SetDims(&OutVolMem, Dims(OutGrid));
+  //  OutVolMem.Type = Idx2.DType;
+  //}
 
-  // for now the allocator seems not a bottleneck
-  idx2_RAII(decode_data, D, Init(&D, &Idx2, &Mallocator()));
+  //// for now the allocator seems not a bottleneck
+  //idx2_RAII(decode_data, D, Init(&D, &Idx2, &Mallocator()));
 
-  TraverseFirstLevel(Idx2, P, &D, OutGrid, &OutVolFile, &OutVolMem);
+  //TraverseFirstLevel(Idx2, P, &D, OutGrid, &OutVolFile, &OutVolMem);
 
-  std::unique_lock<std::mutex> Lock(D.Mutex);
-  D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
-  //stlab::pre_exit();
+  //std::unique_lock<std::mutex> Lock(D.Mutex);
+  //D.AllTasksDone.wait(Lock, [&D]{ return D.NTasks == 0; });
+  ////stlab::pre_exit();
 
-  if (P.OutMode == params::out_mode::HashMap)
-  {
-    PrintStatistics(&D.BrickPool);
-    //ComputeBrickResolution(&D.BrickPool); // TODO NEXT
-    WriteBricks(&D.BrickPool, "bricks");
-  }
+  //if (P.OutMode == params::out_mode::HashMap)
+  //{
+  //  PrintStatistics(&D.BrickPool);
+  //  //ComputeBrickResolution(&D.BrickPool); // TODO NEXT
+  //  WriteBricks(&D.BrickPool, "bricks");
+  //}
 
-  printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
-  printf("io time             = %f\n", Seconds(D.DecodeIOTime_.load()));
-  printf("data movement time  = %f\n", Seconds(D.DataMovementTime_.load()));
-  printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_.load());
-  printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_.load());
-  printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_.load() + D.BytesData_.load());
-  printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_.load() / 8);
-  printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool.BrickTable));
-  printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks.load());
-  printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands.load());
+  //printf("total decode time   = %f\n", Seconds(ElapsedTime(&DecodeTimer)));
+  //printf("io time             = %f\n", Seconds(D.DecodeIOTime_.load()));
+  //printf("data movement time  = %f\n", Seconds(D.DataMovementTime_.load()));
+  //printf("exp   bytes read    = %" PRIi64 "\n", D.BytesExps_.load());
+  //printf("data  bytes read    = %" PRIi64 "\n", D.BytesData_.load());
+  //printf("total bytes read    = %" PRIi64 "\n", D.BytesExps_.load() + D.BytesData_.load());
+  //printf("total bytes decoded = %" PRIi64 "\n", D.BytesDecoded_.load() / 8);
+  //printf("final size of brick hashmap = %" PRIi64 "\n", Size(D.BrickPool.BrickTable));
+  //printf("number of significant blocks = %" PRIi64 "\n", D.NSignificantBlocks.load());
+  //printf("number of insignificant subbands = %" PRIi64 "\n", D.NInsignificantSubbands.load());
 
   return idx2_Error(err_code::NoError);
 }

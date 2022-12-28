@@ -59,7 +59,7 @@ PrintStatistics(const brick_pool* Bp)
   }
   idx2_For (i8, L, 0, Idx2->NLevels)
   {
-    i64 NBricks = Prod<i64>(Idx2->BrickInfo[L].NBricks3);
+    i64 NBricks = Prod<i64>(Idx2->BrickInfo[L].NBricks);
     f64 Percent = f64(Count[L]) * 100 / f64(NBricks);
     printf("level %d: %lld out of %lld bricks significant (%f percent)\n", L, Count[L], NBricks, Percent);
   }

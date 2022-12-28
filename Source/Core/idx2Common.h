@@ -9,6 +9,7 @@
 #include "Memory.h"
 #include "Volume.h"
 #include "Wavelet.h"
+#include "nd_volume.h"
 
 #if VISUS_IDX2
 #include <functional>
@@ -158,7 +159,7 @@ struct transform_template
 struct subbands_per_level
 {
   array<subband> PowOf2;
-  array<subband> PowOf2Plus1;
+  array<subband> Pow2Plus1;
   u8 DecodeMasks = 0; // a bit field which specifies which subbands to decode
   array<nd_size> Spacings;
 };
@@ -202,7 +203,7 @@ struct file_info_per_level
 struct idx2_file
 {
   stack_string<64> Name;
-  nd_index Dims;
+  nd_size Dims;
   dtype DType = dtype::__Invalid__;
   v3i BlockDims3 = v3i(4);
   f64 Tolerance = 0;
@@ -235,7 +236,7 @@ extern free_list_allocator BrickAlloc_;
 
 
 /* e.g., xyzxyz -> v3i(4, 4, 4) */
-v3i
+nd_size
 GetDimsFromTemplate(stref Template);
 
 void // TODO: should also return an error?
@@ -260,7 +261,7 @@ GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint);
 
 /* Compute the output grid (from, dims, strides) */
 grid
-GetGrid(const idx2_file& Idx2, const extent& Ext);
+GetGrid(const idx2_file& Idx2, const nd_extent& Ext);
 
 void
 Dealloc(params* P);
@@ -270,21 +271,21 @@ Finalize(idx2_file* Idx2, params* P);
 
 void
 ComputeExtentsForTraversal(const idx2_file& Idx2,
-                           const extent& Ext,
+                           const nd_extent& Ext,
                            i8 Level,
-                           extent* ExtentInBricks,
-                           extent* ExtentInChunks,
-                           extent* ExtentInFiles,
-                           extent* VolExtentInBricks,
-                           extent* VolExtentInChunks,
-                           extent* VolExtentInFiles);
+                           nd_extent* ExtentInBricks,
+                           nd_extent* ExtentInChunks,
+                           nd_extent* ExtentInFiles,
+                           nd_extent* VolExtentInBricks,
+                           nd_extent* VolExtentInChunks,
+                           nd_extent* VolExtentInFiles);
 void
 Dealloc(idx2_file* Idx2);
 
 
 struct traverse_item
 {
-  v3i From3, To3;
+  nd_size From, To;
   i8 Pos = 0;
   u64 Address = 0;
   i32 ItemOrder = 0; // e.g., brick order in chunk, chunk order in file
@@ -294,37 +295,40 @@ struct traverse_item
 
 struct file_chunk_brick_traversal;
 
-using traverse_callback = error<idx2_err_code> (const file_chunk_brick_traversal& Traversal, const traverse_item&);
+using traverse_callback = error<idx2_err_code> (const file_chunk_brick_traversal&, const traverse_item&);
 
 struct file_chunk_brick_traversal
 {
   const idx2_file* Idx2;
-  const extent* Extent;
+  const nd_extent* Extent;
   i8 Level;
-  extent ExtentInBricks;
-  extent ExtentInChunks;
-  extent ExtentInFiles;
-  extent VolExtentInBricks;
-  extent VolExtentInChunks;
-  extent VolExtentInFiles;
+  nd_extent ExtentInBricks;
+  nd_extent ExtentInChunks;
+  nd_extent ExtentInFiles;
+  nd_extent VolExtentInBricks;
+  nd_extent VolExtentInChunks;
+  nd_extent VolExtentInFiles;
   traverse_callback* BrickCallback;
 
   file_chunk_brick_traversal(const idx2_file* Idx2,
-                             const extent* Extent,
+                             const nd_extent* Extent,
                              i8 Level,
                              traverse_callback* BrickCallback);
 
   error<idx2_err_code> Traverse(stref Template,
-                                const v3i& From3,
-                                const v3i& Dims3,
-                                const extent& Extent,
-                                const extent& VolExtent,
+                                const nd_size& From3,
+                                const nd_size& Dims3,
+                                const nd_extent& Extent,
+                                const nd_extent& VolExtent,
                                 traverse_callback* Callback) const;
 };
 
-error<idx2_err_code> TraverseFiles(const file_chunk_brick_traversal& Traversal);
-error<idx2_err_code> TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item& FileTop);
-error<idx2_err_code> TraverseBricks(const file_chunk_brick_traversal& Traversal, traverse_item& ChunkTop);
+error<idx2_err_code>
+TraverseFiles(const file_chunk_brick_traversal& Traversal);
+error<idx2_err_code>
+TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item& FileTop);
+error<idx2_err_code>
+TraverseBricks(const file_chunk_brick_traversal& Traversal, traverse_item& ChunkTop);
 
 
 
