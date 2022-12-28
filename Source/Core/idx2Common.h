@@ -144,12 +144,14 @@ static constexpr int MaxTemplateLength = 96;
 static constexpr int MaxTemplatePostfixLength = 48;
 
 
+using template_type = stack_string<MaxTemplateLength>;
+
+
 struct transform_template
 {
-  stref Full;
-  stref Prefix; // the part not used for resolution indexing
-  stack_string<MaxTemplatePostfixLength> Postfix; // with the character ':' removed
-  array<v2<i8>> LevelParts; // where in the postfix the levels start: [begin, size]
+  template_type Full;
+  template_type ColonRemoved; // with the character ':' removed
+  array<v2<i8>> LevelParts; // where in the ColonRemoved the levels start: [begin, size]
 };
 
 
@@ -158,18 +160,18 @@ struct subbands_per_level
   array<subband> PowOf2;
   array<subband> PowOf2Plus1;
   u8 DecodeMasks = 0; // a bit field which specifies which subbands to decode
-  array<v3i> Spacings;
+  array<nd_size> Spacings;
 };
 
 
 struct brick_info_per_level
 {
-  v3i Dims3Pow2;
-  v3i Dims3Pow2Plus1;
-  v3i Spacing3;
-  v3i Group3;
-  v3i NBricks3; // may not be power of two (cropped against the actual domain)
-  v3i NBricksPerChunk3; // power of two
+  nd_size DimsPow2;
+  nd_size DimsPow2Plus1;
+  nd_size Spacing;
+  nd_size Group;
+  nd_size NBricks; // may not be power of two (cropped against the actual domain)
+  nd_size NBricksPerChunk; // power of two
   stref Template;
   stref IndexTemplate; // the part that precedes the BrickTemplate
   stref IndexTemplateInChunk; // the part that precedes the BrickTemplate but restricted to a chunk
@@ -178,9 +180,9 @@ struct brick_info_per_level
 
 struct chunk_info_per_level
 {
-  v3i Dims3;
-  v3i NChunks3; // may not be power of two (cropped against the actual domain)
-  v3i NChunksPerFile3; // power of two
+  nd_size Dims;
+  nd_size NChunks; // may not be power of two (cropped against the actual domain)
+  nd_size NChunksPerFile; // power of two
   stref Template;
   stref IndexTemplate;
   stref IndexTemplateInFile;
@@ -189,8 +191,8 @@ struct chunk_info_per_level
 
 struct file_info_per_level
 {
-  v3i Dims3;
-  v3i NFiles3; // may not be power of two
+  nd_size Dims;
+  nd_size NFiles; // may not be power of two
   stref Template;
   stref IndexTemplate;
   array<i8> FileDirDepths; // how many spatial "bits" are consumed by each file/directory level
@@ -199,23 +201,19 @@ struct file_info_per_level
 
 struct idx2_file
 {
-  char Name[64] = {};
-  v3i Dims3 = v3i(256);
-  v3i DownsamplingFactor3 = v3i(0); // TODO NEXT: should be part of params only
+  stack_string<64> Name;
+  nd_index Dims;
   dtype DType = dtype::__Invalid__;
   v3i BlockDims3 = v3i(4);
-  v2<i16> BitPlaneRange = v2<i16>(traits<i16>::Max, traits<i16>::Min);
   f64 Tolerance = 0;
   i8 NLevels = 1;
-  v2i Version = v2i(1, 0);
-  stref Dir; // the directory containing the idx2 dataset // TODO NEXT: should be part of params
+  v2i Version = v2i(2, 0);
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
   array<dimension_info> Dimensions; // TODO NEXT: initialize this
   i8 DimensionMap['z' - 'a' + 1]; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
   transform_template Template;
   array<subbands_per_level> Subbands;
-  array<v3i> Dimensions3; // dimensions per level
   array<brick_info_per_level> BrickInfo;
   array<chunk_info_per_level> ChunkInfo;
   array<file_info_per_level>  FileInfo;
@@ -226,13 +224,6 @@ struct idx2_file
   i8 FileBitsPerDir = 9;
   i8 BitPlanesPerChunk = 1;
   i8 BitPlanesPerFile = 16;
-
-#if VISUS_IDX2
-  //introducing the future for async-read
-  std::function<std::future<bool> (const idx2_file&, buffer&, u64) > external_read;
-  //write is always syncronous and slow, don't use this
-  std::function<bool(const idx2_file&, buffer&, u64)> external_write;
-#endif
 };
 
 
@@ -260,10 +251,11 @@ ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf);
 enum class template_hint
 {
   Isotropic, // alternate the dimensions at the end of the template
-  Anisotropic // alternate the dimensions at the beginning of the template
+  Anisotropic, // alternate the dimensions at the beginning of the template
+  Size
 };
 
-stack_array<u8, MaxTemplateLength>
+template_type
 GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint);
 
 /* Compute the output grid (from, dims, strides) */

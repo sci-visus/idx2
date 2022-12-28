@@ -114,7 +114,7 @@ InverseCdf53(const v3i& M3,
   }
 
   /* perform the inverse transform */
-  idx2_InclusiveForBackward (i8, I, Size(TransformGrids) - 1, 0)
+  idx2_InclusiveForBackward (i8, I, i8(Size(TransformGrids) - 1), 0)
   {
     int D = DimensionMap[Template[I]];
     if (D == 0)
@@ -148,7 +148,7 @@ BuildLevelSubbands(stref Template, const i8* DimensionMap, const v3i& Dims3, con
   while (Pos >= 0)
   {
     i8 D = DimensionMap[Template[Pos]];
-    i8 Sz = Size(Queue);
+    i8 Sz = i8(Size(Queue));
     for (i8 I = 0; I < Sz; ++I)
     {
       grid_split LocalGridSplits = SplitAlternate(Queue[0].LocalGrid, dimension(D));
@@ -164,7 +164,7 @@ BuildLevelSubbands(stref Template, const i8* DimensionMap, const v3i& Dims3, con
   }
 
   /* compute the basis function norms and move the subbands from the queue to the output array */
-  i8 Sz = Size(Queue);
+  i8 Sz = i8(Size(Queue));
   for (i8 I = Sz - 1; I >= 0; --I)
   {
     v3d Weights(1);

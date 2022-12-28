@@ -236,9 +236,19 @@ template <int N> struct stack_string
   char Data[N] = {};
   u8 Len = 0;
   char& operator[](int Idx) const;
+  stack_string<N>& operator=(const stack_string<N>& Other);
 };
 
 template <int N> int Size(const stack_string<N>& S);
+
+
+template <int N> stack_string<N>&
+stack_string<N>::operator=(const stack_string<N>& Other)
+{
+  memcpy(this->Data, Other.Data, this->Len);
+  this->Len = Other.Len;
+  return *this;
+}
 
 template <typename t, typename u> struct t2
 {

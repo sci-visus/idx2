@@ -204,9 +204,43 @@ GetDimensions()
 Perform the --create action.
 ---------------------------------------------------------------------------------------------*/
 static void
-GetTransformTemplate()
+GetTransformTemplate(idx2_file* Idx2)
 {
+  template_hint TemplateHint = template_hint::Isotropic;
+  while (true)
+  {
+    auto Template = GuessTransformTemplate(*Idx2, TemplateHint);
+    printf("Provide a transform template: default = %s\n", Template.Data);
+    LOOP:
+    printf("- Press [Enter] to accept the template above,\n"
+           "- Type 'n' [Enter] to cycle through suggested templates, or\n"
+           "- Type 'r' [Enter] to type a custom template.\n");
+    char C = getchar();
+    FlushStdIn();
+    if (C == 'n')
+    {
+      TemplateHint = template_hint((int(TemplateHint) + 1) % int(template_hint::Size));
+      continue;
+    }
+    else if (C == '\n')
+    {
+      Idx2->Template.Full = Template;
+      break;
+    }
+    else if (C == 'r')
+    {
+      printf("Enter your desired template: ");
+      scanf("%96s", Template.Data);
+      FlushStdIn();
+      goto LOOP;
+    }
+    else
+    {
+      goto LOOP;
+    }
+  }
 
+  // TODO NEXT: verify the template
 }
 
 
@@ -287,8 +321,8 @@ main(int Argc, cstr* Argv)
 {
   SetHandleAbortSignals();
   idx2_file Idx2;
-  Idx2.Dims3 = v3i(512, 384, 256);
-  GuessTransformTemplate(Idx2, template_hint::Isotropic);
+  Idx2.Dims3 = v3i(768, 128, 512);
+  GetTransformTemplate(&Idx2);
 
   auto Action = ChooseAction(Argc, Argv);
   if (strcmp(Action.Data, "--create") == 0)

@@ -90,7 +90,7 @@ GetDimsFromTemplate(const idx2_file& Idx2, stref Template)
   idx2_For (i8, I, 0, Template.Size)
   {
     idx2_Assert(isalpha(Template[I]) && islower(Template[I]));
-    i8 D = Idx2.DimensionMap[Template[I] - 'x'];
+    i8 D = Idx2.DimensionMap[Template[I] - 'a'];
     Dims3[D] *= 2;
   }
   return Dims3;
@@ -98,12 +98,12 @@ GetDimsFromTemplate(const idx2_file& Idx2, stref Template)
 
 
 /*---------------------------------------------------------------------------------------------
-Return part of the postfix template from the beginning until a given position.
+Return part of the postfix template from the beginning until a given size.
 ---------------------------------------------------------------------------------------------*/
 idx2_Inline static stref
-GetPostfixTemplate(const idx2_file& Idx2, i8 Pos)
+GetPostfixTemplate(const idx2_file& Idx2, i8 Size)
 {
-  return stref(Idx2.Template.Postfix.Data + Pos, Idx2.Template.Postfix.Len - Pos);
+  return stref(Idx2.Template.ColonRemoved.Data + Size, Idx2.Template.ColonRemoved.Len - Size);
 }
 
 
@@ -113,7 +113,7 @@ Return part of the postfix template corresponding to a given position and size.
 idx2_Inline static stref
 GetPostfixTemplate(const idx2_file& Idx2, i8 Pos, i8 Size)
 {
-  return stref(Idx2.Template.Postfix.Data + Pos, Size);
+  return stref(Idx2.Template.ColonRemoved.Data + Pos, Size);
 }
 
 
@@ -142,24 +142,33 @@ ProcessTransformTemplate(idx2_file* Idx2)
 {
   // TODO NEXT: check the syntax of the template
   transform_template& Template = Idx2->Template;
-  tokenizer Tokenizer(Template.Full.ConstPtr, ":");
+  tokenizer Tokenizer(Template.Full.Data, ":");
 
   /* parse the prefix (if any) */
   stref Part = Next(&Tokenizer); // the prefix if it exists, else the first part of the postfix
-  i8 Pos = i8(Part.ConstPtr - Template.Full.ConstPtr);
+  i8 Pos = i8(Part.ConstPtr - Template.Full.Data);
+  i8 DstPos = 0;
   if (Pos == 0) // there is a prefix
-    Template.Prefix = stref(Template.Full.ConstPtr, Part.Size);
+  {
+    i8 Size = Part.Size;
+    stref Prefix = stref(Template.Full.Data, Size);
+    stref Source(Template.Full.Data, Size);
+    stref Destination(Template.ColonRemoved.Data, Size);
+    Copy(Source, &Destination, true);
+    DstPos += Size;
+  }
   else // there is no prefix, reset to parse from the beginning
+  {
     Reset(&Tokenizer);
+  }
 
   /* parse the postfix */
-  i8 DstPos = 0;
   while (stref Part = Next(&Tokenizer))
   {
-    i8 Pos = i8(Part.ConstPtr - Template.Full.ConstPtr);
+    i8 Pos = i8(Part.ConstPtr - Template.Full.Data);
     i8 Size = Part.Size;
-    stref Source(Template.Full.ConstPtr + Pos, Size);
-    stref Destination(Template.Postfix.Data + DstPos, Size);
+    stref Source(Template.Full.Data + Pos, Size);
+    stref Destination(Template.ColonRemoved.Data + DstPos, Size);
     Copy(Source, &Destination, true);
     PushBack(&Template.LevelParts, v2<i8>(DstPos, Size));
     DstPos += Size;
@@ -381,10 +390,10 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
 /*---------------------------------------------------------------------------------------------
 Guess the transform template.
 ---------------------------------------------------------------------------------------------*/
-stack_array<u8, MaxTemplateLength>
+template_type
 GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
 {
-  stack_array<u8, MaxTemplateLength> Template;
+  template_type Template;
   v3i DimsLog = Log2Ceil(Idx2.Dims3);
   i8 Level = 0;
   i8 Pos = 0;
@@ -441,6 +450,8 @@ GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
 
   idx2_For (i8, I, 0, Pos/2)
     Swap(&Template[I], &Template[Pos - I - 1]);
+  Template[Pos] = 0;
+  Template.Len = Pos;
 
   return Template;
 }
