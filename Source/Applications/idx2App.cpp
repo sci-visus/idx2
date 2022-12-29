@@ -154,10 +154,9 @@ GetFields()
 /*---------------------------------------------------------------------------------------------
 Ask for the user to enter the dimensions.
 ---------------------------------------------------------------------------------------------*/
-static array<dimension_info>
-GetDimensions()
+static void
+GetDimensions(idx2_file* Idx2)
 {
-  array<dimension_info> AllDimensions;
   while (true)
   {
     dimension_info Dimension;
@@ -167,9 +166,9 @@ GetDimensions()
     FlushStdIn();
     LOOP:
     printf("You entered %c %d.\n"
-           "- Press [Enter] to stop adding fields,\n"
+           "- Press [Enter] to stop adding dimensions,\n"
            "- Type 'r' [Enter] to re-enter, or\n"
-           "- Type 'n' [Enter] to add another field.\n", Dimension.ShortName, Dimension.Limit);
+           "- Type 'n' [Enter] to add another dimension.\n", Dimension.ShortName, Dimension.Limit);
     char C = getchar();
     FlushStdIn();
     if (C == 'r')
@@ -178,12 +177,12 @@ GetDimensions()
     }
     else if (C == 'n')
     {
-      PushBack(&AllDimensions, Dimension);
+      PushBack(&Idx2->DimensionInfo, Dimension);
       continue;
     }
     else if (C == '\n')
     {
-      PushBack(&AllDimensions, Dimension);
+      PushBack(&Idx2->DimensionInfo, Dimension);
       break;
     }
     else
@@ -192,11 +191,9 @@ GetDimensions()
     }
   }
 
-  printf("The following %d dimensions have been added: ", (i32)Size(AllDimensions));
-  idx2_ForEach (Dimension, AllDimensions)
-    printf("%c %d  ", Dimension->ShortName, Dimension->Limit);
-
-  return AllDimensions;
+  printf("The following %d dimensions have been added: ", (i32)Size(Idx2->DimensionInfo));
+  idx2_ForEach (Dim, Idx2->DimensionInfo)
+    printf("%c %d  ", Dim->ShortName, Dim->Limit);
 }
 
 
@@ -224,7 +221,7 @@ GetTransformTemplate(idx2_file* Idx2)
     }
     else if (C == '\n')
     {
-      Idx2->Template.Full = Template;
+      Idx2->Template.Original = Template;
       break;
     }
     else if (C == 'r')

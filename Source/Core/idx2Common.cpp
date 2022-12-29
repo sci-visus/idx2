@@ -85,13 +85,13 @@ ReadMetaFile(idx2_file* Idx2, cstr FileName)
 Return dimensions corresponding to a template.
 ---------------------------------------------------------------------------------------------*/
 nd_size
-GetDimsFromTemplate(const idx2_file& Idx2, stref Template)
+Dims(const template_view& Template)
 {
   nd_size Dims(1);
   idx2_For (i8, I, 0, Template.Size)
   {
-    idx2_Assert(isalpha(Template[I]) && islower(Template[I]));
-    i8 D = Idx2.DimensionMap[Template[I] - 'a'];
+    i8 J = I + Template.Begin;
+    i8 D = Template[J];
     Dims[D] *= 2;
   }
   return Dims;
@@ -99,63 +99,27 @@ GetDimsFromTemplate(const idx2_file& Idx2, stref Template)
 
 
 /*---------------------------------------------------------------------------------------------
-Return part of the postfix template from the beginning until a given size.
----------------------------------------------------------------------------------------------*/
-idx2_Inline static stref
-GetPostfixTemplate(const idx2_file& Idx2, i8 Size)
-{
-  return stref(Idx2.Template.ColonRemoved.Data + Size, Idx2.Template.ColonRemoved.Len - Size);
-}
-
-
-/*---------------------------------------------------------------------------------------------
-Return part of the postfix template corresponding to a given position and size.
----------------------------------------------------------------------------------------------*/
-idx2_Inline static stref
-GetPostfixTemplate(const idx2_file& Idx2, i8 Pos, i8 Size)
-{
-  return stref(Idx2.Template.ColonRemoved.Data + Pos, Size);
-}
-
-
-/*---------------------------------------------------------------------------------------------
-Return part of the template corresponding to a given level.
----------------------------------------------------------------------------------------------*/
-idx2_Inline static stref
-GetLevelTemplate(const idx2_file& Idx2, i8 Level)
-{
-  i8 Pos = Idx2.Template.LevelParts[Level][0];
-  i8 Size = Idx2.Template.LevelParts[Level][1];
-  return GetPostfixTemplate(Idx2, Pos, Size);
-}
-
-
-/*---------------------------------------------------------------------------------------------
 Break a template represented as a string into parts that can be better interpreted.
----------------------------------------------------------------------------------------------*/
-// TODO NEXT: return an error (the template may be invalid)
-/* The full template can be
+The full template can be
 zzzyy:xyz:xyz:xy (zzzyy is the prefix), or
 :xyz:xyz:zzz:yyy (there is no prefix)
-*/
+---------------------------------------------------------------------------------------------*/
+// TODO NEXT: return an error (the template may be invalid)
 static void
-ProcessTransformTemplate(idx2_file* Idx2)
+ProcessTransformTemplate(transform_template* Template, i8* DimsMap)
 {
   // TODO NEXT: check the syntax of the template
-  transform_template& Template = Idx2->Template;
-  tokenizer Tokenizer(Template.Full.Data, ":");
+  tokenizer Tokenizer(Template->Original.Data, ":");
 
   /* parse the prefix (if any) */
   stref Part = Next(&Tokenizer); // the prefix if it exists, else the first part of the postfix
-  i8 Pos = i8(Part.ConstPtr - Template.Full.Data);
+  i8 Pos = i8(Part.ConstPtr - Template->Original.Data);
   i8 DstPos = 0;
   if (Pos == 0) // there is a prefix
   {
     i8 Size = Part.Size;
-    stref Prefix = stref(Template.Full.Data, Size);
-    stref Source(Template.Full.Data, Size);
-    stref Destination(Template.ColonRemoved.Data, Size);
-    Copy(Source, &Destination, true);
+    idx2_For (i8, I, 0, Size)
+      Template->Processed[I] = DimsMap[Template->Original[I] - 'a'];
     DstPos += Size;
   }
   else // there is no prefix, reset to parse from the beginning
@@ -166,17 +130,16 @@ ProcessTransformTemplate(idx2_file* Idx2)
   /* parse the postfix */
   while (stref Part = Next(&Tokenizer))
   {
-    i8 Pos = i8(Part.ConstPtr - Template.Full.Data);
+    i8 Pos = i8(Part.ConstPtr - Template->Original.Data);
     i8 Size = Part.Size;
-    stref Source(Template.Full.Data + Pos, Size);
-    stref Destination(Template.ColonRemoved.Data + DstPos, Size);
-    Copy(Source, &Destination, true);
-    PushBack(&Template.LevelParts, v2<i8>(DstPos, Size));
+    idx2_For (i8, I, 0, Size)
+      Template->Processed[DstPos + I] = DimsMap[Template->Original[Pos + I] - 'a'];
+    PushBack(&Template->LevelViews, template_view{&Template->Processed, DstPos, Size});
     DstPos += Size;
   }
 
   /* reverse so that the LevelParts start from level 0 */
-  Reverse(Begin(Template.LevelParts), End(Template.LevelParts));
+  Reverse(Begin(Template->LevelViews), End(Template->LevelViews));
 }
 
 
@@ -187,30 +150,30 @@ static error<idx2_err_code>
 VerifyTransformTemplate(const idx2_file& Idx2)
 {
   /* check for unused dimensions */
-  for (auto I = 0; I < Size(Idx2.Dimensions); ++I)
+  for (auto I = 0; I < Size(Idx2.DimensionInfo); ++I)
   {
-    char C = Idx2.Dimensions[I].ShortName;
+    char C = Idx2.DimensionInfo[I].ShortName;
     if (Idx2.DimensionMap[C - 'a'] == -1)
       return idx2_Error(idx2_err_code::DimensionsTooMany,
                         "Dimension %c does not appear in the indexing template\n", C);
   }
 
   /* check for repeated dimensions on a level */
-  for (auto L = 0; L < Size(Idx2.Template.LevelParts); ++L)
+  for (auto L = 0; L < Size(Idx2.Template.LevelViews); ++L)
   {
-    auto Length = Idx2.Template.LevelParts[L][1];
+    auto Length = Idx2.Template.LevelViews[L][1];
     if (Length > 3)
       return idx2_Error(idx2_err_code::DimensionsTooMany,
                         "More than three dimensions in level %d\n", L);
     if (Length == 0)
       return idx2_Error(idx2_err_code::SyntaxError,
                         ": or | needs to be followed by a dimension in the indexing template\n");
-    const auto Part = GetLevelTemplate(Idx2, L);
-    if (Length == 2 && (Part[0] == Part[1]))
+    const template_view& View = Idx2.Template.LevelViews[L];
+    if (Length == 2 && (View[0] == View[1]))
       return idx2_Error(idx2_err_code::DimensionsRepeated,
                         "Repeated dimensions on level %d\n", L);
       //printf("Repeated dimensions on level %d\n", L);
-    if (Length == 3 && (Part[0] == Part[1] || Part[0] == Part[2] || Part[1] == Part[2]))
+    if (Length == 3 && (View[0] == View[1] || View[0] == View[2] || View[1] == View[2]))
       return idx2_Error(idx2_err_code::DimensionsRepeated,
                         "Repeated dimensions on level %d\n", L);
       //printf("Repeated dimensions on level %d\n", L);
@@ -218,17 +181,17 @@ VerifyTransformTemplate(const idx2_file& Idx2)
 
   /* check that the indexing template agrees with the dimensions */
   nd_size Dims(1);
-  for (auto I = 0; I < Size(Idx2.Template.Full); ++I)
+  for (auto I = 0; I < Size(Idx2.Template.Original); ++I)
   {
-    char C = Idx2.Template.Full[I];
+    char C = Idx2.Template.Original[I];
     if (!isalpha(C))
       continue;
     i8 D = Idx2.DimensionMap[C - 'a'];
     Dims[D] *= 2;
   }
-  for (auto I = 0; I < Size(Idx2.Dimensions); ++I)
+  for (auto I = 0; I < Size(Idx2.DimensionInfo); ++I)
   {
-    const dimension_info& Dim = Idx2.Dimensions[I];
+    const dimension_info& Dim = Idx2.DimensionInfo[I];
     i32 D = (i32)NextPow2(Size(Dim));
     if (D > Dims[I])
       return idx2_Error(idx2_err_code::DimensionMismatched,
@@ -254,14 +217,14 @@ BuildSubbandsForAllLevels(idx2_file* Idx2)
 {
   idx2_For (i8, L, 0, Idx2->NLevels)
   {
-    stref TemplateL = GetLevelTemplate(*Idx2, L);
+    const template_view& TemplateL = Idx2->Template.LevelViews[L];
     subbands_per_level SubbandsL;
     const nd_size& DimsPow2 = Idx2->BrickInfo[L].DimsPow2;
     const nd_size& DimsPow2Plus1 = Idx2->BrickInfo[L].DimsPow2Plus1;
     const nd_size& Spacing = Idx2->BrickInfo[L].Spacing;
     // TODO NEXT: do we need both versions?
-    SubbandsL.PowOf2 = BuildLevelSubbands(TemplateL, Idx2->DimensionMap, DimsPow2, Spacing);
-    SubbandsL.Pow2Plus1 = BuildLevelSubbands(TemplateL, Idx2->DimensionMap, DimsPow2Plus1, Spacing);
+    SubbandsL.Pow2 = BuildLevelSubbands(TemplateL, DimsPow2, Spacing);
+    SubbandsL.Pow2Plus1 = BuildLevelSubbands(TemplateL, DimsPow2Plus1, Spacing);
     PushBack(&Idx2->Subbands, SubbandsL);
   }
 }
@@ -312,6 +275,8 @@ Compute templates corresponding to bricks/chunks/files on each level.
 static void
 ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
 {
+  const template_int& Template = Idx2->Template.Processed;
+
   Resize(&Idx2->BrickInfo, Idx2->NLevels);
   Resize(&Idx2->ChunkInfo, Idx2->NLevels);
   Resize(&Idx2->FileInfo, Idx2->NLevels);
@@ -328,20 +293,19 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
 
     /* compute Group3 */
     {
-      stref Template = GetLevelTemplate(*Idx2, L);
-      BrickInfoL.Group = GetDimsFromTemplate(*Idx2, Template);
+      BrickInfoL.Group = Dims(Idx2->Template.LevelViews[L]);
     }
 
     /* compute brick templates */
     {
-      Length = Sum<i8>(Idx2->Template.LevelParts[L]);
-      BrickInfoL.Template = GetLevelTemplate(*Idx2, L);
+      Length = Sum<i8>(Idx2->Template.LevelViews[L]);
+      BrickInfoL.Template = Idx2->Template.LevelViews[L];
       BrickBits = Min(Length, Idx2->BitsPerBrick);
       BrickIndexBits = Length - BrickBits;
-      BrickInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, BrickIndexBits);
-      BrickInfoL.Template = GetPostfixTemplate(*Idx2, BrickIndexBits, BrickBits);
-      BrickInfoL.DimsPow2 = GetDimsFromTemplate(*Idx2, BrickInfoL.Template);
-      BrickInfoL.Spacing = GetDimsFromTemplate(*Idx2, GetPostfixTemplate(*Idx2, Length));
+      BrickInfoL.IndexTemplate = template_view{&Template, 0, BrickIndexBits};
+      BrickInfoL.Template = template_view{&Template, BrickIndexBits, BrickBits};
+      BrickInfoL.DimsPow2 = Dims(BrickInfoL.Template);
+      BrickInfoL.Spacing = Dims(template_view{&Template, 0, Length});
       if (L == 0)
         NBricks = (Idx2->Dims + BrickInfoL.DimsPow2 - 1) / BrickInfoL.DimsPow2;
       else
@@ -353,10 +317,10 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
     {
       ChunkBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk));
       ChunkIndexBits = Length - ChunkBits;
-      BrickInfoL.IndexTemplateInChunk = GetPostfixTemplate(*Idx2, ChunkIndexBits, BrickIndexBits - ChunkIndexBits);
-      BrickInfoL.NBricksPerChunk = GetDimsFromTemplate(*Idx2, BrickInfoL.IndexTemplateInChunk);
-      ChunkInfoL.Template = GetPostfixTemplate(*Idx2, ChunkIndexBits, ChunkBits);
-      ChunkInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, ChunkIndexBits);
+      BrickInfoL.IndexTemplateInChunk = template_view{&Template, ChunkIndexBits, i8(BrickIndexBits - ChunkIndexBits)};
+      BrickInfoL.NBricksPerChunk = Dims(BrickInfoL.IndexTemplateInChunk);
+      ChunkInfoL.Template = template_view{&Template, ChunkIndexBits, ChunkBits};
+      ChunkInfoL.IndexTemplate = template_view{&Template, 0, ChunkIndexBits};
       ChunkInfoL.NChunks = (BrickInfoL.NBricks + BrickInfoL.NBricksPerChunk - 1) / BrickInfoL.NBricksPerChunk;
     }
 
@@ -364,16 +328,16 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
     {
       FileBits = Min(Length, i8(Idx2->BitsPerBrick + Idx2->BrickBitsPerChunk + Idx2->ChunkBitsPerFile));
       FileIndexBits = Length - FileBits;
-      ChunkInfoL.IndexTemplateInFile = GetPostfixTemplate(*Idx2, FileIndexBits, ChunkIndexBits - FileIndexBits);
-      ChunkInfoL.NChunksPerFile = GetDimsFromTemplate(*Idx2, ChunkInfoL.IndexTemplateInFile);
-      FileInfoL.Template = GetPostfixTemplate(*Idx2, FileIndexBits, FileBits);
-      FileInfoL.IndexTemplate = GetPostfixTemplate(*Idx2, 0, FileIndexBits);
+      ChunkInfoL.IndexTemplateInFile = template_view{&Template, FileIndexBits, i8(ChunkIndexBits - FileIndexBits)};
+      ChunkInfoL.NChunksPerFile = Dims(ChunkInfoL.IndexTemplateInFile);
+      FileInfoL.Template = template_view{&Template, FileIndexBits, FileBits};
+      FileInfoL.IndexTemplate = template_view{&Template, 0, FileIndexBits};
       FileInfoL.NFiles = (ChunkInfoL.NChunks + ChunkInfoL.NChunksPerFile - 1) / ChunkInfoL.NChunksPerFile;
     }
 
     /* compute file dir depths */
     {
-      array<i8>& FileDirDepthsL = FileInfoL.FileDirDepths;
+      auto& FileDirDepthsL = FileInfoL.FileDirDepths;
       PushBack(&FileDirDepthsL, i8(FileBits - BrickBits));
       i8 AccumulatedBits = FileBits - BrickBits;
       while (AccumulatedBits < BrickIndexBits)
@@ -391,10 +355,10 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
 /*---------------------------------------------------------------------------------------------
 Guess the transform template.
 ---------------------------------------------------------------------------------------------*/
-template_type
+template_str
 GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
 {
-  template_type Template;
+  template_str Template;
   nd_size DimsLog = Log2Ceil(Idx2.Dims);
   i8 Level = 0;
   i8 Pos = 0;
@@ -570,17 +534,6 @@ Finalize(idx2_file* Idx2, params* P)
   //ComputeTransformDetails(&Idx2->TransformDetails, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder);
 
   return idx2_Error(idx2_err_code::NoError);
-}
-
-
-/*---------------------------------------------------------------------------------------------
-Deallocate the main idx2_file struct.
----------------------------------------------------------------------------------------------*/
-// TODO NEXT
-void
-Dealloc(idx2_file* Idx2)
-{
-  Dealloc(&Idx2->Subbands);
 }
 
 

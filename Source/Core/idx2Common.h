@@ -75,11 +75,13 @@ struct dimension_info
   char ShortName = '?';
 };
 
+
 idx2_Inline i32
 Size(const dimension_info& Dim)
 {
   return Size(Dim.Names) > 0 ? i32(Size(Dim.Names)) : Dim.Limit;
 }
+
 
 struct file_id
 {
@@ -125,43 +127,30 @@ struct params
 };
 
 
-// Limits:
-// Level: 6 bits
-// BitPlane: 12 bits
-// Iteration: 4 bits
-// BricksPerChunk: >= 512
-// ChunksPerFile: <= 4096
-// TODO: add limits to all configurable parameters
-// TODO: use int for all params
-static constexpr int MaxBricksPerChunk = 32768;
-static constexpr int MaxChunksPerFile = 4906;
-static constexpr int MaxFilesPerDir = 4096;
-// so max number of blocks per subband can be represented in 2 bytes
-static constexpr int MaxBrickDim = 256;
-static constexpr int MaxLevels = 16;
-static constexpr int MaxTransformPassesPerLevels = 9;
-static constexpr int MaxSpatialDepth = 4; // we have at most this number of spatial subdivisions
-static constexpr int MaxTemplateLength = 96;
-static constexpr int MaxTemplatePostfixLength = 48;
+static constexpr i8 MaxNumDimensions_ = nd_size::Size();
 
 
-using template_type = stack_string<MaxTemplateLength>;
+idx2_Inline i8
+Size(const template_view& TemplateView)
+{
+  return TemplateView.Size;
+}
 
 
 struct transform_template
 {
-  template_type Full;
-  template_type ColonRemoved; // with the character ':' removed
-  array<v2<i8>> LevelParts; // where in the ColonRemoved the levels start: [begin, size]
+  template_str Original; // e.g., xyzxyz:xyz:xyz
+  template_int Processed; // 012012012012
+  stack_array<template_view, MaxNumLevels_> LevelViews; // where the levels are in the Processed template
 };
 
 
 struct subbands_per_level
 {
-  array<subband> PowOf2;
-  array<subband> Pow2Plus1;
+  stack_array<subband, MaxNumSubbandsPerLevel_> Pow2;
+  stack_array<subband, MaxNumSubbandsPerLevel_> Pow2Plus1;
   u8 DecodeMasks = 0; // a bit field which specifies which subbands to decode
-  array<nd_size> Spacings;
+  stack_array<nd_size, MaxNumSubbandsPerLevel_> Spacings;
 };
 
 
@@ -173,9 +162,9 @@ struct brick_info_per_level
   nd_size Group;
   nd_size NBricks; // may not be power of two (cropped against the actual domain)
   nd_size NBricksPerChunk; // power of two
-  stref Template;
-  stref IndexTemplate; // the part that precedes the BrickTemplate
-  stref IndexTemplateInChunk; // the part that precedes the BrickTemplate but restricted to a chunk
+  template_view Template;
+  template_view IndexTemplate; // the part that precedes the BrickTemplate
+  template_view IndexTemplateInChunk; // the part that precedes the BrickTemplate but restricted to a chunk
 };
 
 
@@ -184,9 +173,9 @@ struct chunk_info_per_level
   nd_size Dims;
   nd_size NChunks; // may not be power of two (cropped against the actual domain)
   nd_size NChunksPerFile; // power of two
-  stref Template;
-  stref IndexTemplate;
-  stref IndexTemplateInFile;
+  template_view Template;
+  template_view IndexTemplate;
+  template_view IndexTemplateInFile;
 };
 
 
@@ -194,30 +183,32 @@ struct file_info_per_level
 {
   nd_size Dims;
   nd_size NFiles; // may not be power of two
-  stref Template;
-  stref IndexTemplate;
-  array<i8> FileDirDepths; // how many spatial "bits" are consumed by each file/directory level
+  template_view Template;
+  template_view IndexTemplate;
+  // TODO NEXT
+  stack_array<i8, 8> FileDirDepths; // how many spatial "bits" are consumed by each file/directory level
 };
 
 
 struct idx2_file
 {
+  static constexpr v3i BlockDims3 = v3i(4);
+
+  v2i Version = v2i(2, 0);
   stack_string<64> Name;
   nd_size Dims;
   dtype DType = dtype::__Invalid__;
-  v3i BlockDims3 = v3i(4);
   f64 Tolerance = 0;
   i8 NLevels = 1;
-  v2i Version = v2i(2, 0);
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
-  array<dimension_info> Dimensions; // TODO NEXT: initialize this
-  i8 DimensionMap['z' - 'a' + 1]; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
+  stack_array<dimension_info, MaxNumDimensions_> DimensionInfo; // TODO NEXT: initialize this
+  stack_array<i8, 'z' - 'a' + 1> DimensionMap; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
   transform_template Template;
-  array<subbands_per_level> Subbands;
-  array<brick_info_per_level> BrickInfo;
-  array<chunk_info_per_level> ChunkInfo;
-  array<file_info_per_level>  FileInfo;
+  stack_array<subbands_per_level, MaxNumLevels_> Subbands;
+  stack_array<brick_info_per_level, MaxNumLevels_> BrickInfo;
+  stack_array<chunk_info_per_level, MaxNumLevels_> ChunkInfo;
+  stack_array<file_info_per_level, MaxNumLevels_>  FileInfo;
 
   i8 BitsPerBrick = 15;
   i8 BrickBitsPerChunk = 12;
@@ -237,13 +228,16 @@ extern free_list_allocator BrickAlloc_;
 
 /* e.g., xyzxyz -> v3i(4, 4, 4) */
 nd_size
-GetDimsFromTemplate(stref Template);
+Dims(const template_view& Template);
+
 
 void // TODO: should also return an error?
 WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName);
 
+
 error<idx2_err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName);
+
 
 error<idx2_err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf);
@@ -256,18 +250,23 @@ enum class template_hint
   Size
 };
 
-template_type
+
+template_str
 GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint);
+
 
 /* Compute the output grid (from, dims, strides) */
 grid
 GetGrid(const idx2_file& Idx2, const nd_extent& Ext);
 
+
 void
 Dealloc(params* P);
 
+
 error<idx2_err_code>
 Finalize(idx2_file* Idx2, params* P);
+
 
 void
 ComputeExtentsForTraversal(const idx2_file& Idx2,
@@ -279,6 +278,8 @@ ComputeExtentsForTraversal(const idx2_file& Idx2,
                            nd_extent* VolExtentInBricks,
                            nd_extent* VolExtentInChunks,
                            nd_extent* VolExtentInFiles);
+
+
 void
 Dealloc(idx2_file* Idx2);
 
@@ -295,7 +296,9 @@ struct traverse_item
 
 struct file_chunk_brick_traversal;
 
+
 using traverse_callback = error<idx2_err_code> (const file_chunk_brick_traversal&, const traverse_item&);
+
 
 struct file_chunk_brick_traversal
 {
@@ -323,13 +326,17 @@ struct file_chunk_brick_traversal
                                 traverse_callback* Callback) const;
 };
 
+
 error<idx2_err_code>
 TraverseFiles(const file_chunk_brick_traversal& Traversal);
+
+
 error<idx2_err_code>
 TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item& FileTop);
+
+
 error<idx2_err_code>
 TraverseBricks(const file_chunk_brick_traversal& Traversal, traverse_item& ChunkTop);
-
 
 
 } // namespace idx2

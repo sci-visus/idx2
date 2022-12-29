@@ -50,7 +50,7 @@ void
 PrintStatistics(const brick_pool* Bp)
 {
   const idx2_file* Idx2 = Bp->Idx2;
-  i64 Count[MaxLevels] = {};
+  i64 Count[MaxNumLevels_] = {};
 
   idx2_ForEach (BIt, Bp->BrickTable)
   {

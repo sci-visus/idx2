@@ -95,8 +95,8 @@ struct encode_data
   hash_table<u64, sub_channel> SubChannels;
   i8 Level = 0;
   i8 Subband = 0;
-  stack_array<u64, MaxLevels> Brick;
-  stack_array<v3i, MaxLevels> Bricks3;
+  stack_array<u64, MaxNumLevels_> Brick;
+  stack_array<v3i, MaxNumLevels_> Bricks3;
   // map from file address to chunk info
   hash_table<u64, chunk_meta_info> ChunkMeta;
   // map from file address to a stream of chunk emax sizes

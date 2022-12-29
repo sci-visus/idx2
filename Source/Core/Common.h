@@ -221,15 +221,25 @@ template <typename t, int N> struct stack_array
   static_assert(N > 0);
   // constexpr stack_array() = default;
   t Arr[N] = {};
-  u8 Len = 0;
+  u8 Size = 0;
   t& operator[](int Idx) const;
+
+  idx2_Inline static constexpr int Capacity() { return N; }
 };
 
 template <typename t, int N> t* Begin(const stack_array<t, N>& A);
 template <typename t, int N> t* End(const stack_array<t, N>& A);
 template <typename t, int N> t* RevBegin(const stack_array<t, N>& A);
 template <typename t, int N> t* RevEnd(const stack_array<t, N>& A);
-template <typename t, int N> constexpr int Size(const stack_array<t, N>& A);
+// TODO NEXT
+//template <typename t, int N> constexpr int Size(const stack_array<t, N>& A);
+
+template <typename t, int N> void
+PushBack(stack_array<t, N>* A, const t& Item)
+{
+  idx2_Assert(A->Size < A->Capacity());
+  A->Arr[A->Size++] = Item;
+}
 
 template <int N> struct stack_string
 {
@@ -246,7 +256,7 @@ template <int N> stack_string<N>&
 stack_string<N>::operator=(const stack_string<N>& Other)
 {
   memcpy(this->Data, Other.Data, this->Len);
-  this->Len = Other.Len;
+  this->Len = Other.Size;
   return *this;
 }
 
@@ -390,7 +400,7 @@ template <typename t> struct v6
   template <typename u> v6(const v6<u>& Other);
   t& operator[](int Idx) const;
   template <typename u> v6& operator=(const v6<u>& Rhs);
-  idx2_Inline static i8 Size() { return sizeof(E) / sizeof(E[0]); }
+  idx2_Inline static constexpr Size() { return sizeof(E) / sizeof(E[0]); }
 };
 
 using v6i = v6<i32>;
@@ -563,10 +573,10 @@ RevEnd(const stack_array<t, N>& A)
 }
 
 
-template <typename t, int N> idx2_Inline constexpr int
-Size(const stack_array<t, N>&)
+template <typename t, int N> idx2_Inline i8
+Size(const stack_array<t, N>& A)
 {
-  return N;
+  return A.Len;
 }
 
 
@@ -645,6 +655,7 @@ template <typename t> idx2_Inline constexpr v3<t>::v3(t V)
 {
 }
 
+
 template <typename t> idx2_Inline constexpr v3<t>::v3(t X_, t Y_, t Z_)
   : X(X_)
   , Y(Y_)
@@ -652,15 +663,15 @@ template <typename t> idx2_Inline constexpr v3<t>::v3(t X_, t Y_, t Z_)
 {
 }
 
+
 template <typename t> idx2_Inline
 v3<t>::v3(const v2<t>& V2, t Z_)
   : X(V2.X)
   , Y(V2.Y)
   , Z(Z_)
 {
-
-
 }
+
 
 template <typename t> template <typename u> idx2_Inline
 v3<t>::v3(const v3<u>& Other)
@@ -687,6 +698,7 @@ v3<t>::operator=(const v3<u>& Rhs)
   Z = Rhs.Z;
   return *this;
 }
+
 
 /* v6 stuffs*/
 template <typename t> idx2_Inline
@@ -782,6 +794,7 @@ MakeFastestDimension(nd_size P, i8 D)
   }
   return P;
 }
+
 
 template <typename t> idx2_Inline void
 ndLoop(const nd_size& Begin, const nd_size& End, const nd_size& Step, const t& Kernel)

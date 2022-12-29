@@ -10,6 +10,29 @@ namespace idx2
 {
 
 
+static constexpr i8 MaxNumLevels_ = 16;
+static constexpr i8 MaxTemplateLength_ = 64;
+static constexpr i8 MaxBitsPerLevel_ = 3;
+static constexpr i8 MaxNumSubbandsPerLevel_ = 1 << MaxBitsPerLevel_;
+
+using template_str = stack_string<MaxTemplateLength_>;
+using template_int = stack_array<i8, MaxTemplateLength_>;
+
+
+struct template_view
+{
+  const template_int* Template = nullptr;
+  i8 Begin = 0;
+  i8 Size = 0;
+  idx2_Inline i8 operator[](i8 I) const
+  {
+    idx2_Assert(I < Size);
+    idx2_Assert(Begin + I < Template->Size);
+    return (*Template)[Begin + I];
+  }
+};
+
+
 template <int N> struct wavelet_basis_norms
 {
   stack_array<f64, N> Scaling;
@@ -93,9 +116,8 @@ InverseCdf53(const v3i& M3,
              bool CoarsestLevel);
 
 
-array<subband>
-BuildLevelSubbands(stref Template,
-                   const i8* DimensionMap,
+stack_array<subband, MaxNumSubbandsPerLevel_>
+BuildLevelSubbands(const template_view& TemplateView,
                    const nd_size& Dims,
                    const nd_size& Spacing);
 
