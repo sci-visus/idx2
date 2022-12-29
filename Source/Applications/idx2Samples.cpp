@@ -4,7 +4,7 @@
 #include "stdio.h"
 
 
-idx2::error<idx2::idx2_err_code>
+idx2::error<idx2::err_code>
 Decode1()
 {
   idx2::params P;
@@ -32,7 +32,7 @@ Decode1()
   // idx2_CleanUp(if (Fp) fclose(Fp));
   // fwrite(OutBuf.Data, OutBuf.Bytes, 1, Fp);
 
-  return idx2_Error(idx2::idx2_err_code::NoError);
+  return idx2_Error(idx2::err_code::NoError);
 }
 
 

@@ -259,7 +259,7 @@ error<>
 ReadVolume(cstr FileName, const v3i& Dims3, dtype Type, volume* Vol);
 
 /* Memory-map a volume */
-error<mmap_err_code>
+error<err_code>
 MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mode Mode);
 
 void

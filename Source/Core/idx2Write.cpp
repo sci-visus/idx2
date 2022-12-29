@@ -117,7 +117,7 @@ Write also the metadata for the exponent chunks at the end of each file. */
 * F : buffer    = (varint compressed) sizes of the exponent chunks
 * G : B buffers, whose sizes are encoded in F, each being one exponent chunk
 */
-error<idx2_err_code>
+error<err_code>
 FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
 {
 #if VISUS_IDX2
@@ -139,7 +139,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     idx2_ForEach (Sch, E->SortedSubChannels)
       WriteChunkExponents(Idx2, E, Sch->SubChannel, Sch->Level, Sch->Subband); //just call  WriteChunkExponents
 
-    return idx2_Error(idx2_err_code::NoError);
+    return idx2_Error(err_code::NoError);
   }
 #endif
 
@@ -200,7 +200,7 @@ FlushChunkExponents(const idx2_file& Idx2, encode_data* E)
     Dealloc(&CeIt.Val->FileExpBuffer);
   }
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
@@ -313,7 +313,7 @@ them. Also, for each file, the FlushChunks function writes the metadata for all 
 * L : buffer = (varint compressed) sizes of the bit plane chunks
 * M : H buffers, whose sizes are encoded in L, each being one bit plane chunk
 */
-error<idx2_err_code>
+error<err_code>
 FlushChunks(const idx2_file& Idx2, encode_data* E)
 {
 #if VISUS_IDX2
@@ -334,7 +334,7 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
       // printf("key %llu level %d subband %d bitplane %d\n", Ch->First, Level, Subband, BitPlane);
       WriteChunk(Idx2, E, Ch->Second, Level, Subband, BitPlane); //just call WriteChunk
     }
-    return idx2_Error(idx2_err_code::NoError);
+    return idx2_Error(err_code::NoError);
   }
 #endif
   /* write the chunks */
@@ -381,7 +381,7 @@ FlushChunks(const idx2_file& Idx2, encode_data* E)
     CompressedChunkAddressesStat.Add((f64)Size(E->CompressedChunkAddresses));
   }
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 

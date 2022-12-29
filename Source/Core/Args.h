@@ -4,7 +4,6 @@
 
 #include "Array.h"
 #include "Common.h"
-#include "Enum.h"
 #include "String.h"
 
 namespace idx2
@@ -30,8 +29,6 @@ bool OptVal(int NArgs, cstr* Args, cstr Opt, array<int>* Vals);
 bool OptVal(int NArgs, cstr* Args, cstr Opt, array<stref>* Vals);
 bool OptExists(int NArgs, cstr* Args, cstr Opt);
 
-template <typename e> bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val); // output to an Enum
-
 #undef idx2_RequireOption
 #define idx2_RequireOption(Argc, Argv, Str, Var, Err)                                              \
   if (!OptVal(Argc, Argv, Str, Var))                                                               \
@@ -43,22 +40,3 @@ template <typename e> bool OptVal(int NArgs, cstr* Args, cstr Opt, e* Val); // o
 
 } // namespace idx2
 
-
-
-namespace idx2
-{
-
-
-template <typename e> bool
-OptVal(int NArgs, cstr* Args, cstr Opt, e* Val)
-{
-  cstr BufPtr = nullptr;
-  if (!OptVal(NArgs, Args, Opt, &BufPtr))
-    return false;
-  *Val = StringTo<e>()(BufPtr);
-
-  return true;
-}
-
-
-} // namespace idx2

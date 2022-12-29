@@ -38,31 +38,31 @@ Parse the options for --encode from the command line.
 static void
 ParseEncodeOptions(int Argc, cstr* Argv, idx2_file_v2* Idx2)
 {
-  /* indexing --template */
-  if (!OptVal(Argc, Argv, "--template", &Idx2->IdxTemplate.Full))
-    idx2_Exit("Provide indexing --template, e.g., zyzyxzyxzyxzyx|zyx:zyx:zyx:zyx\n");
+  ///* indexing --template */
+  //if (!OptVal(Argc, Argv, "--template", &Idx2->IdxTemplate.Full))
+  //  idx2_Exit("Provide indexing --template, e.g., zyzyxzyxzyxzyx|zyx:zyx:zyx:zyx\n");
 
-  /* --name */
-  cstr Name = nullptr;
-  if (OptVal(Argc, Argv, "--name", &Name))
-    snprintf(Idx2->Name, sizeof(Idx2->Name), "%s", Name);
-  else
-    idx2_Exit("Provide --name, e.g., miranda\n");
+  ///* --name */
+  //cstr Name = nullptr;
+  //if (OptVal(Argc, Argv, "--name", &Name))
+  //  snprintf(Idx2->Name, sizeof(Idx2->Name), "%s", Name);
+  //else
+  //  idx2_Exit("Provide --name, e.g., miranda\n");
 
-  /* --fields */
-  array<stref> Fields;
-  if (OptVal(Argc, Argv, "--fields", &Fields))
-  {
-    dimension_info Dim;
-    {
-      Dim.Names = Fields;
-      Dim.ShortName = 'f'; // TODO: hardcoding
-    }
-    PushBack(&Idx2->Dimensions, Dim);
-  }
+  ///* --fields */
+  //array<name_str> Fields;
+  //if (OptVal(Argc, Argv, "--fields", &Fields))
+  //{
+  //  dimension_info Dim;
+  //  {
+  //    Dim.Names = Fields;
+  //    Dim.ShortName = 'f'; // TODO: hardcoding
+  //  }
+  //  PushBack(&Idx2->Dimensions, Dim);
+  //}
 
-  /* --bits_per_brick */
-  OptVal(Argc, Argv, "--name", &Name);
+  ///* --bits_per_brick */
+  //OptVal(Argc, Argv, "--name", &Name);
 }
 
 
@@ -107,21 +107,22 @@ GetName()
 /*---------------------------------------------------------------------------------------------
 Ask for the user to enter the fields.
 ---------------------------------------------------------------------------------------------*/
-array<stack_string<65>>
-GetFields()
+void
+GetFields(idx2_file* Idx2)
 {
-  array<stack_string<65>> AllFields;
+  dimension_info Fields;
+  Fields.ShortName = 'f';
   while (true)
   {
-    stack_string<65> Field;
+    name_str Name;
     printf("Add a field (no space): ");
-    scanf("%64s", Field.Data);
+    scanf("%64s", Name.Data);
     FlushStdIn();
     LOOP:
     printf("You entered %s.\n"
             "- Press [Enter] to stop adding fields,\n"
             "- Type 'r' [Enter] to re-enter, or\n"
-            "- Type 'n' [Enter] to add another field.\n", Field.Data);
+            "- Type 'n' [Enter] to add another field.\n", Name.Data);
     char C = getchar();
     if (C == 'r')
     {
@@ -129,12 +130,12 @@ GetFields()
     }
     else if (C == 'n')
     {
-      PushBack(&AllFields, Field);
+      PushBack(&Fields.Names, Name);
       continue;
     }
     else if (C == '\n')
     {
-      PushBack(&AllFields, Field);
+      PushBack(&Fields.Names, Name);
       break;
     }
     else
@@ -143,11 +144,11 @@ GetFields()
     }
   }
 
-  printf("The following %d fields have been added: ", (i32)Size(AllFields));
-  idx2_ForEach (Field, AllFields)
-    printf("%s ", Field->Data);
+  PushBack(&Idx2->DimensionInfo, Fields);
 
-  return AllFields;
+  printf("The following %d fields have been added: ", (i32)Size(Fields));
+  idx2_ForEach (Field, Fields.Names)
+    printf("%s ", Field->Data);
 }
 
 
@@ -247,9 +248,10 @@ Perform the --create action.
 static void
 DoCreate(i32 Argc, cstr* Argv)
 {
+  idx2_file Idx2;
   auto Name = GetName();
-  auto Fields = GetFields();
-  auto Dimensions = GetDimensions();
+  GetFields(&Idx2);
+  GetDimensions(&Idx2);
 }
 
 
@@ -259,9 +261,6 @@ Perform the --encode action.
 static void
 DoEncode(i32 Argc, cstr* Argv, cstr InputFile)
 {
-  idx2_RAII(idx2_file_v2, Idx2);
-  ParseEncodeOptions(Argc, Argv, &Idx2);
-  idx2_ExitIfError(Finalize(&Idx2));
 }
 
 

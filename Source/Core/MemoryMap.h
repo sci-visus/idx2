@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Common.h"
-#include "Enum.h"
 #include "Error.h"
 
 
@@ -28,17 +27,6 @@
 #endif
 
 // TODO: create a mapping that is not backed by a file
-
-idx2_Enum(mmap_err_code,
-          int,
-          idx2_CommonErrs,
-          MappingFailed,
-          MapViewFailed,
-          AllocateFailed,
-          FlushFailed,
-          SyncFailed,
-          UnmapFailed);
-
 
 namespace idx2
 {
@@ -64,22 +52,22 @@ struct mmap_file
   buffer Buf;
 };
 
-error<mmap_err_code>
+error<err_code>
 OpenFile(mmap_file* MMap, cstr Name, map_mode Mode);
 
-error<mmap_err_code>
+error<err_code>
 MapFile(mmap_file* MMap, i64 Bytes = 0);
 
-error<mmap_err_code>
+error<err_code>
 FlushFile(mmap_file* MMap, byte* Start = nullptr, i64 Bytes = 0);
 
-error<mmap_err_code>
+error<err_code>
 SyncFile(mmap_file* MMap);
 
-error<mmap_err_code>
+error<err_code>
 UnmapFile(mmap_file* MMap);
 
-error<mmap_err_code>
+error<err_code>
 CloseFile(mmap_file* MMap);
 
 template <typename t> void

@@ -7,7 +7,7 @@ namespace idx2
 {
 
 
-error<mmap_err_code>
+error<err_code>
 OpenFile(mmap_file* MMap, cstr Name, map_mode Mode)
 {
 #if defined(_WIN32)
@@ -19,14 +19,14 @@ OpenFile(mmap_file* MMap, cstr Name, map_mode Mode)
                            FILE_ATTRIBUTE_NORMAL,
                            NULL);
   if (MMap->File == INVALID_HANDLE_VALUE)
-    return idx2_Error(mmap_err_code::FileCreateFailed, "file: %s\n", Name);
+    return idx2_Error(err_code::FileCreateFailed, "file: %s\n", Name);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   MMap->File = open(Name, Mode == map_mode::Read ? O_RDONLY : O_RDWR | O_CREAT | O_TRUNC, 0600);
   if (MMap->File == -1)
-    return idx2_Error(mmap_err_code::FileCreateFailed, "file: %s\n", Name);
+    return idx2_Error(err_code::FileCreateFailed, "file: %s\n", Name);
 #endif
   MMap->Mode = Mode;
-  return idx2_Error(mmap_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
@@ -53,7 +53,7 @@ mac_fallocate(file_handle fd, i64 aLength)
 
 
 /* Size is only used when Mode is Write or ReadWrite */
-error<mmap_err_code>
+error<err_code>
 MapFile(mmap_file* MMap, i64 Bytes)
 {
 #if defined(_WIN32)
@@ -68,7 +68,7 @@ MapFile(mmap_file* MMap, i64 Bytes)
                       FileSize.LowPart,
                       0);
   if (MMap->FileMapping == NULL)
-    return idx2_Error(mmap_err_code::MappingFailed);
+    return idx2_Error(err_code::MappingFailed);
 
   LPVOID MapAddress = MapViewOfFile(MMap->FileMapping,
                                     MMap->Mode == map_mode::Read    ? FILE_MAP_READ
@@ -78,7 +78,7 @@ MapFile(mmap_file* MMap, i64 Bytes)
                                     0,
                                     0);
   if (MapAddress == NULL)
-    return idx2_Error(mmap_err_code::MapViewFailed);
+    return idx2_Error(err_code::MapViewFailed);
   MMap->Buf.Data = (byte*)MapAddress;
   MMap->Buf.Bytes = FileSize.QuadPart;
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
@@ -91,10 +91,10 @@ MapFile(mmap_file* MMap, i64 Bytes)
   if (MMap->Mode == map_mode::Write)
 #if defined(__APPLE__)
     if (!mac_fallocate(MMap->File, FileSize))
-      return idx2_Error(mmap_err_code::AllocateFailed);
+      return idx2_Error(err_code::AllocateFailed);
 #else
     if (posix_fallocate(MMap->File, 0, FileSize) == -1)
-      return idx2_Error(mmap_err_code::AllocateFailed);
+      return idx2_Error(err_code::AllocateFailed);
 #endif
   void* MapAddress = mmap(0,
                           FileSize,
@@ -103,23 +103,23 @@ MapFile(mmap_file* MMap, i64 Bytes)
                           MMap->File,
                           0);
   if (MapAddress == MAP_FAILED)
-    return idx2_Error(mmap_err_code::MapViewFailed);
+    return idx2_Error(err_code::MapViewFailed);
   MMap->Buf.Data = (byte*)MapAddress;
   MMap->Buf.Bytes = FileSize;
 #endif
-  return idx2_Error(mmap_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 /* (Non-blocking) flush dirty pages */
-error<mmap_err_code>
+error<err_code>
 FlushFile(mmap_file* MMap, byte* Start, i64 Bytes)
 {
 #if defined(_WIN32)
   bool Result =
     Start ? FlushViewOfFile(Start, (size_t)Bytes) : FlushViewOfFile(MMap->Buf.Data, (size_t)Bytes);
   if (!Result)
-    return idx2_Error(mmap_err_code::FlushFailed);
+    return idx2_Error(err_code::FlushFailed);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   int Result;
   if (Start)
@@ -136,65 +136,65 @@ FlushFile(mmap_file* MMap, byte* Start, i64 Bytes)
                    : msync(MMap->Buf.Data, MMap->Buf.Bytes, MS_ASYNC);
   }
   if (Result == -1)
-    return idx2_Error(mmap_err_code::FlushFailed);
+    return idx2_Error(err_code::FlushFailed);
 #endif
-  return idx2_Error(mmap_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 /*
 (Blocking) flush file metadata and ensure file is physically written. Meant to be called at the very
 end */
-error<mmap_err_code>
+error<err_code>
 SyncFile(mmap_file* MMap)
 {
 #if defined(_WIN32)
   if (!FlushFileBuffers(MMap->File))
-    return idx2_Error(mmap_err_code::SyncFailed);
+    return idx2_Error(err_code::SyncFailed);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   if (msync(MMap->Buf.Data, MMap->Buf.Bytes, MS_SYNC) == -1)
-    return idx2_Error(mmap_err_code::SyncFailed);
+    return idx2_Error(err_code::SyncFailed);
 #endif
-  return idx2_Error(mmap_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 /* Unmap the file and close all handles */
-error<mmap_err_code>
+error<err_code>
 UnmapFile(mmap_file* MMap)
 {
 #if defined(_WIN32)
   if (!UnmapViewOfFile(MMap->Buf.Data))
   {
     CloseHandle(MMap->FileMapping);
-    return idx2_Error(mmap_err_code::UnmapFailed);
+    return idx2_Error(err_code::UnmapFailed);
   }
   if (!CloseHandle(MMap->FileMapping))
-    return idx2_Error(mmap_err_code::UnmapFailed);
+    return idx2_Error(err_code::UnmapFailed);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   if (munmap(MMap->Buf.Data, MMap->Buf.Bytes) == -1)
-    return idx2_Error(mmap_err_code::UnmapFailed);
+    return idx2_Error(err_code::UnmapFailed);
 #endif
   MMap->Buf.Data = nullptr;
   MMap->Buf.Bytes = 0;
-  return idx2_Error(mmap_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 /* Close the file */
-error<mmap_err_code>
+error<err_code>
 CloseFile(mmap_file* MMap)
 {
 #if defined(_WIN32)
   if (!CloseHandle(MMap->File))
-    return idx2_Error(mmap_err_code::FileCloseFailed);
+    return idx2_Error(err_code::FileCloseFailed);
 #elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
   if (close(MMap->File) == -1)
-    return idx2_Error(mmap_err_code::FileCloseFailed);
+    return idx2_Error(err_code::FileCloseFailed);
 #endif
   MMap->Buf.Data = nullptr;
   MMap->Buf.Bytes = 0;
-  return idx2_Error(mmap_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 

@@ -3,11 +3,8 @@
 #pragma once
 
 #include "Common.h"
-#include "Enum.h"
 #include "Macros.h"
 
-
-idx2_Enum(dtype, i8, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64);
 
 /*
 Dispatch some code depending on Type. To use, define a Body macro which
@@ -23,6 +20,47 @@ contains the code to run. Presumably the code makes use of Type.
 
 namespace idx2
 {
+
+
+enum class dtype
+{
+  __Invalid__,
+  i8,
+  int8,
+  uint8,
+  int16,
+  uint16,
+  int32,
+  uint32,
+  int64,
+  uint64,
+  float32,
+  float64
+};
+
+
+constexpr cstr dtype_str[] =
+{
+  "__Invalid__",
+  "i8",
+  "int8",
+  "uint8",
+  "int16",
+  "uint16",
+  "int32",
+  "uint32",
+  "int64",
+  "uint64",
+  "float32",
+  "float64"
+};
+
+
+idx2_Inline constexpr cstr
+ToString(dtype DType)
+{
+  return dtype_str[(int)DType];
+}
 
 
 template <typename t> struct dtype_traits

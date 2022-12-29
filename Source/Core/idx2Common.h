@@ -31,36 +31,15 @@
   }
 
 
-/* ---------------------- ENUMS ----------------------*/
-idx2_Enum(action, u8, Encode, Decode);
-
-idx2_Enum(idx2_err_code,
-          u8,
-          idx2_CommonErrs,
-          BrickSizeNotPowerOfTwo,
-          BrickSizeTooBig,
-          TooManyLevels,
-          TooManyTransformPassesPerLevel,
-          TooManyLevelsOrTransformPasses,
-          TooManyBricksPerFile,
-          TooManyFilesPerDir,
-          NotSupportedInVersion,
-          CannotCreateDirectory,
-          SyntaxError,
-          TooManyBricksPerChunk,
-          TooManyChunksPerFile,
-          ChunksPerFileNotPowerOf2,
-          BricksPerChunkNotPowerOf2,
-          ChunkNotFound,
-          BrickNotFound,
-          FileNotFound,
-          UnsupportedScheme);
-
-idx2_Enum(func_level, u8, Subband, Sum, Max);
-
-
 namespace idx2
 {
+
+
+static constexpr i8  MaxNumDimensions_ = nd_size::Size();
+static constexpr i8  MaxNameLength_ = 64;
+static constexpr i16 MaxNumFields_ = 512;
+
+using name_str = stack_string<MaxNameLength_>;
 
 
 /* ---------------------- TYPES ----------------------*/
@@ -70,10 +49,15 @@ struct dimension_info
   /* A dimension can either be numerical or categorical.
   In the latter case, each category is given a name (e.g., a field).
   In the former case, the dimension starts at 0 and has an upper limit. */
-  array<stref> Names;
+  array<name_str> Names;
   i32 Limit = 0; // exclusive upper limit
   char ShortName = '?';
 };
+
+
+idx2_Inline void
+Dealloc(dimension_info* DimInfo)
+{ Dealloc(&DimInfo->Names); }
 
 
 idx2_Inline i32
@@ -93,7 +77,6 @@ struct file_id
 struct params
 {
   volume NasaMask;
-  action Action = action::__Invalid__;
   metadata Meta;
   v2i Version = v2i(1, 0);
   // v3i Dims3 = v3i(256);
@@ -125,16 +108,6 @@ struct params
   out_mode OutMode = out_mode::RegularGridMem;
   bool ParallelDecode = false;
 };
-
-
-static constexpr i8 MaxNumDimensions_ = nd_size::Size();
-
-
-idx2_Inline i8
-Size(const template_view& TemplateView)
-{
-  return TemplateView.Size;
-}
 
 
 struct transform_template
@@ -195,7 +168,7 @@ struct idx2_file
   static constexpr v3i BlockDims3 = v3i(4);
 
   v2i Version = v2i(2, 0);
-  stack_string<64> Name;
+  name_str Name;
   nd_size Dims;
   dtype DType = dtype::__Invalid__;
   f64 Tolerance = 0;
@@ -235,11 +208,11 @@ void // TODO: should also return an error?
 WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName);
 
 
-error<idx2_err_code>
+error<err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName);
 
 
-error<idx2_err_code>
+error<err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf);
 
 
@@ -264,7 +237,7 @@ void
 Dealloc(params* P);
 
 
-error<idx2_err_code>
+error<err_code>
 Finalize(idx2_file* Idx2, params* P);
 
 
@@ -280,8 +253,14 @@ ComputeExtentsForTraversal(const idx2_file& Idx2,
                            nd_extent* VolExtentInFiles);
 
 
-void
-Dealloc(idx2_file* Idx2);
+idx2_Inline void
+Dealloc(idx2_file* Idx2)
+{
+  idx2_ForEach (DimInfo, Idx2->DimensionInfo)
+  {
+    Dealloc(&*DimInfo);
+  }
+}
 
 
 struct traverse_item
@@ -297,7 +276,7 @@ struct traverse_item
 struct file_chunk_brick_traversal;
 
 
-using traverse_callback = error<idx2_err_code> (const file_chunk_brick_traversal&, const traverse_item&);
+using traverse_callback = error<err_code> (const file_chunk_brick_traversal&, const traverse_item&);
 
 
 struct file_chunk_brick_traversal
@@ -318,24 +297,25 @@ struct file_chunk_brick_traversal
                              i8 Level,
                              traverse_callback* BrickCallback);
 
-  error<idx2_err_code> Traverse(stref Template,
-                                const nd_size& From3,
-                                const nd_size& Dims3,
-                                const nd_extent& Extent,
-                                const nd_extent& VolExtent,
-                                traverse_callback* Callback) const;
+  error<err_code>
+  Traverse(const template_view& TemplateView,
+           const nd_size& From3,
+           const nd_size& Dims3,
+           const nd_extent& Extent,
+           const nd_extent& VolExtent,
+           traverse_callback* Callback) const;
 };
 
 
-error<idx2_err_code>
+error<err_code>
 TraverseFiles(const file_chunk_brick_traversal& Traversal);
 
 
-error<idx2_err_code>
+error<err_code>
 TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item& FileTop);
 
 
-error<idx2_err_code>
+error<err_code>
 TraverseBricks(const file_chunk_brick_traversal& Traversal, traverse_item& ChunkTop);
 
 

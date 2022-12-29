@@ -50,7 +50,7 @@ struct idx2_file_v2
   idx2_file_v2();
 };
 
-error<idx2_err_code>
+error<err_code>
 Finalize(idx2_file_v2* Idx2);
 
 

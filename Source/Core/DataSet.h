@@ -4,6 +4,7 @@
 #include "Common.h"
 #include "DataTypes.h"
 #include "Error.h"
+#include "String.h"
 
 
 namespace idx2
@@ -31,7 +32,6 @@ struct metadata
 cstr ToString(const metadata& Meta);
 cstr ToRawFileName(const metadata& Meta);
 error<> ReadMetaData(cstr FileName, metadata* Meta);
-error<> StrToMetaData(stref FilePath, metadata* Meta);
 
 
 } // namespace idx2

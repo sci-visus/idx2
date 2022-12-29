@@ -391,7 +391,7 @@ brick_copier::Copy(const extent& ExtentGlobal, const extent& ExtentLocal, brick_
 }
 
 
-error<idx2_err_code>
+error<err_code>
 Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
 {
   //const int BrickBytes = Prod(Idx2->BrickDimsExt3) * sizeof(f64);
@@ -446,7 +446,7 @@ Encode(idx2_file* Idx2, const params& P, brick_copier& Copier)
   PrintStats(MetaFileName);
   printf("total time              = %f seconds\n", TotalTime_);
   //  _ASSERTE( _CrtCheckMemory( ) );
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 

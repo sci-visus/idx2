@@ -1,13 +1,119 @@
 #pragma once
 
 #include "Common.h"
-#include "ErrorCodes.h"
 #include "Format.h"
 #include "Macros.h"
 
 
 namespace idx2
 {
+
+
+enum class err_code
+{
+  NoError,
+  UnknownError,
+  SizeZero,
+  SizeTooSmall,
+  SizeMismatched,
+  DimensionMismatched,
+  DimensionsTooMany,
+  AttributeNotFound,
+  OptionNotSupported,
+  TypeNotSupported,
+  FileCreateFailed,
+  FileReadFailed,
+  FileWriteFailed,
+  FileOpenFailed,
+  FileCloseFailed,
+  FileSeekFailed,
+  FileTellFailed,
+  ParseFailed,
+  OutOfMemory,
+  DimensionsRepeated,
+  DimensionTooSmall,
+  MappingFailed,
+  MapViewFailed,
+  AllocateFailed,
+  FlushFailed,
+  SyncFailed,
+  UnmapFailed,
+  BrickSizeNotPowerOfTwo,
+  BrickSizeTooBig,
+  TooManyLevels,
+  TooManyTransformPassesPerLevel,
+  TooManyLevelsOrTransformPasses,
+  TooManyBricksPerFile,
+  TooManyFilesPerDir,
+  NotSupportedInVersion,
+  CannotCreateDirectory,
+  SyntaxError,
+  TooManyBricksPerChunk,
+  TooManyChunksPerFile,
+  ChunksPerFileNotPowerOf2,
+  BricksPerChunkNotPowerOf2,
+  ChunkNotFound,
+  BrickNotFound,
+  FileNotFound,
+  UnsupportedScheme
+};
+
+
+constexpr cstr err_code_str[] =
+{
+  "NoError",
+  "UnknownError",
+  "SizeZero",
+  "SizeTooSmall",
+  "SizeMismatched",
+  "DimensionMismatched",
+  "DimensionsTooMany",
+  "AttributeNotFound",
+  "OptionNotSupported",
+  "TypeNotSupported",
+  "FileCreateFailed",
+  "FileReadFailed",
+  "FileWriteFailed",
+  "FileOpenFailed",
+  "FileCloseFailed",
+  "FileSeekFailed",
+  "FileTellFailed",
+  "ParseFailed",
+  "OutOfMemory",
+  "DimensionsRepeated",
+  "DimensionTooSmall",
+  "MappingFailed",
+  "MapViewFailed",
+  "AllocateFailed",
+  "FlushFailed",
+  "SyncFailed",
+  "UnmapFailed",
+  "BrickSizeNotPowerOfTwo",
+  "BrickSizeTooBig",
+  "TooManyLevels",
+  "TooManyTransformPassesPerLevel",
+  "TooManyLevelsOrTransformPasses",
+  "TooManyBricksPerFile",
+  "TooManyFilesPerDir",
+  "NotSupportedInVersion",
+  "CannotCreateDirectory",
+  "SyntaxError",
+  "TooManyBricksPerChunk",
+  "TooManyChunksPerFile",
+  "ChunksPerFileNotPowerOf2",
+  "BricksPerChunkNotPowerOf2",
+  "ChunkNotFound",
+  "BrickNotFound",
+  "FileNotFound",
+  "UnsupportedScheme"
+};
+
+
+idx2_Inline constexpr cstr
+ToString(err_code ErrCode)
+{
+  return err_code_str[(int)ErrCode];
+}
 
 
 /* There should be only one error in-flight on each thread */
@@ -90,9 +196,8 @@ ToString(const error<t>& Err, bool Force)
     auto ErrStr = ToString(Err.Code);
     snprintf(ScratchBuf,
              sizeof(ScratchBuf),
-             "%.*s (file: %s, line %d): %s",
-             ErrStr.Size,
-             ErrStr.Ptr,
+             "%s (file: %s, line %d): %s",
+             ErrStr,
              Err.Files[0],
              Err.Lines[0],
              Err.Msg);
@@ -134,9 +239,8 @@ ErrorExists(const error<t>& Err)
       auto ErrStr = ToString(Err.Code);                                                            \
       int L = snprintf(idx2::ScratchBuf,                                                           \
                        sizeof(idx2::ScratchBuf),                                                   \
-                       "%.*s (file %s, line %d): ",                                                \
-                       ErrStr.Size,                                                                \
-                       ErrStr.Ptr,                                                                 \
+                       "%s (file %s, line %d): ",                                                  \
+                       ErrStr,                                                                     \
                        __FILE__,                                                                   \
                        __LINE__);                                                                  \
       idx2_SPrintHelper(idx2::ScratchBuf, L, "" __VA_ARGS__);                                      \

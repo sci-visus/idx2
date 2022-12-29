@@ -277,4 +277,14 @@ FwdDist(i Beg, i End)
 }
 
 
+template <typename i, typename t> t
+Sum(i Beg, i End)
+{
+  t S = 0;
+  while (Beg != End)
+    S += *Beg;
+  return S;
+}
+
+
 } // namespace idx2

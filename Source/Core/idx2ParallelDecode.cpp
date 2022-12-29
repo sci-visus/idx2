@@ -23,7 +23,7 @@
 namespace idx2
 {
 
-error<idx2_err_code>
+error<err_code>
 ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf);
 
 
@@ -31,7 +31,7 @@ ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf);
 // TODO: we can detect the precision and switch to the avx2 version that uses float for better
 // performance
 // TODO: if a block does not decode any bit plane, no need to copy data afterwards
-static expected<bool, idx2_err_code>
+static expected<bool, err_code>
 ParallelDecodeSubband(const idx2_file& Idx2,
                       decode_data* D,
                       decode_state Ds,
@@ -179,7 +179,7 @@ ParallelDecodeSubband(const idx2_file& Idx2,
 
 
 
-static expected<brick_volume, idx2_err_code>
+static expected<brick_volume, err_code>
 ParallelDecodeBrick(const idx2_file& Idx2,
                     const params& P,
                     decode_data* D,
@@ -254,7 +254,7 @@ ParallelDecodeBrick(const idx2_file& Idx2,
 }
 
 
-expected<brick_volume, idx2_err_code>
+expected<brick_volume, err_code>
 DecodeTask(const idx2_file& Idx2,
            const params& P,
            decode_data* D,
@@ -322,11 +322,11 @@ DecodeTask(const idx2_file& Idx2,
 
   //return Value(Result);
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
-error<idx2_err_code>
+error<err_code>
 TraverseSecondLevel(const idx2_file& Idx2,
                     const params& P,
                     decode_data* D,
@@ -342,7 +342,7 @@ TraverseSecondLevel(const idx2_file& Idx2,
   //int LastIndex = 0;
   //idx2_RAII(array<decode_state>, BrickStack, Reserve(&BrickStack, 128), Dealloc(&BrickStack));
   //PushBack(&BrickStack, First);
-  //expected<brick_volume, idx2_err_code> Result;
+  //expected<brick_volume, err_code> Result;
   //while (Size(BrickStack) > 0)
   //{
   //  decode_state Current = Back(BrickStack);
@@ -416,11 +416,11 @@ TraverseSecondLevel(const idx2_file& Idx2,
   //if (!Result)
   //  return Error(Result);
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 // TODO NEXT
-error<idx2_err_code>
+error<err_code>
 TraverseFirstLevel(const idx2_file& Idx2,
                    const params& P,
                    decode_data* D,
@@ -483,12 +483,12 @@ TraverseFirstLevel(const idx2_file& Idx2,
   //    VolExtentInChunks);
   //  , 64, Idx2.FilesOrder[Level], v3i(0), Idx2.NFiles3[Level], ExtentInFiles, VolExtentInFiles);
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 /* TODO: dealloc chunks after we are done with them */
-error<idx2_err_code>
+error<err_code>
 ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 {
   //timer DecodeTimer;

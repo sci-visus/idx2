@@ -78,7 +78,7 @@ DeallocFileCacheTable(file_cache_table* FileCacheTable)
 * L : buffer = (varint compressed) sizes of the bit plane chunks
 * M : H buffers, whose sizes are encoded in L, each being one bit plane chunk
 */
-static error<idx2_err_code>
+static error<err_code>
 ReadFile(const idx2_file& Idx2,
          decode_data* D,
          file_cache_table::iterator* FileCacheIt,
@@ -86,17 +86,17 @@ ReadFile(const idx2_file& Idx2,
 {
 #if VISUS_IDX2
   if (Idx2.external_read)
-    return idx2_Error(idx2_err_code::NoError);
+    return idx2_Error(err_code::NoError);
 #endif
 
   timer IOTimer;
   StartTimer(&IOTimer);
 
   if (*FileCacheIt && FileCacheIt->Val->DataCached)
-    return idx2_Error(idx2_err_code::NoError);
+    return idx2_Error(err_code::NoError);
 
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-  idx2_ReturnErrorIf(!Fp, idx2::idx2_err_code::FileNotFound, "File: %s", FileId.Name.ConstPtr);
+  idx2_ReturnErrorIf(!Fp, idx2::err_code::FileNotFound, "File: %s", FileId.Name.ConstPtr);
   idx2_FSeek(Fp, 0, SEEK_END);
   i64 FileSize = idx2_FTell(Fp);
   int S = 0; // total number of bytes used to store exponents info
@@ -155,12 +155,12 @@ ReadFile(const idx2_file& Idx2,
   }
   FileCacheIt->Val->DataCached = true;
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 /* Given a brick address, read the chunk associated with the brick and cache the chunk */
-expected<const chunk_cache*, idx2_err_code>
+expected<const chunk_cache*, err_code>
 ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BpKey)
 {
 #if VISUS_IDX2
@@ -173,7 +173,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 
     bitstream ChunkStream;
     bool Result = Idx2.external_read(Idx2, ChunkStream.Stream, ChunkAddress).get();
-    idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
+    idx2_ReturnErrorIf(!Result, err_code::ChunkNotFound);
 
     //decompress part
     chunk_cache ChunkCache;
@@ -187,7 +187,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
   auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
   idx2_PropagateIfError(ReadFile(Idx2, D, &FileCacheIt, FileId));
   if (!FileCacheIt)
-    return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
+    return idx2_Error(err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
 
   /* find the appropriate chunk */
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, BpKey);
@@ -196,7 +196,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
   decltype(FileCache->ChunkCaches)::iterator ChunkCacheIt;
   ChunkCacheIt = Lookup(FileCache->ChunkCaches, ChunkAddress);
   if (!ChunkCacheIt)
-    return idx2_Error(idx2_err_code::ChunkNotFound);
+    return idx2_Error(err_code::ChunkNotFound);
   chunk_cache* ChunkCache = ChunkCacheIt.Val;
   if (Size(ChunkCache->ChunkStream.Stream) == 0) // chunk has not been loaded
   {
@@ -204,7 +204,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
     StartTimer(&IOTimer);
     idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
     if (!Fp)
-      return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
+      return idx2_Error(err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
     i32 ChunkPos = ChunkCache->ChunkPos;
     i64 ChunkOffset = ChunkPos > 0 ? FileCache->ChunkOffsets[ChunkPos - 1] : 0;
     i64 ChunkSize = FileCache->ChunkOffsets[ChunkPos] - ChunkOffset;
@@ -249,7 +249,7 @@ ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband
 * F : buffer    = (varint compressed) sizes of the exponent chunks
 * G : B buffers, whose sizes are encoded in F, each being one exponent chunk
 */
-static error<idx2_err_code>
+static error<err_code>
 ReadFileExponents(const idx2_file& Idx2,
                   decode_data* D,
                   i8 Level,
@@ -258,17 +258,17 @@ ReadFileExponents(const idx2_file& Idx2,
 {
 #if VISUS_IDX2
   if (Idx2.external_read)
-    return idx2_Error(idx2_err_code::NoError);
+    return idx2_Error(err_code::NoError);
 #endif
 
   timer IOTimer;
   StartTimer(&IOTimer);
 
   if (*FileCacheIt && FileCacheIt->Val->ExpCached)
-    return idx2_Error(idx2_err_code::NoError);
+    return idx2_Error(err_code::NoError);
 
   idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
-  idx2_ReturnErrorIf(!Fp, idx2::idx2_err_code::FileNotFound, "File: %s", FileId.Name.ConstPtr);
+  idx2_ReturnErrorIf(!Fp, idx2::err_code::FileNotFound, "File: %s", FileId.Name.ConstPtr);
   idx2_FSeek(Fp, 0, SEEK_END);
   i64 FileSize = idx2_FTell(Fp);
   int ExponentSize = 0; // total bytes of the encoded chunk sizes
@@ -315,12 +315,12 @@ ReadFileExponents(const idx2_file& Idx2,
   }
 
   if (NChunks != NChunks2)
-    return idx2_Error(idx2_err_code::SizeMismatched,
+    return idx2_Error(err_code::SizeMismatched,
                       "number of chunks is either %d or %d\n", NChunks, NChunks2);
 
   // NOTE: this should no longer be true if a file stores more than one level
   if (NChunks % Size(Idx2.Subbands) != 0)
-    return idx2_Error(idx2_err_code::SizeMismatched,
+    return idx2_Error(err_code::SizeMismatched,
                       "number of chunks = %d is not divisible by number of subbands which is %d\n", NChunks, (int)Size(Idx2.Subbands));
 
   //Resize(&FileCache.ChunkCaches, Size(FileCache.ChunkExpOffsets));
@@ -339,13 +339,13 @@ ReadFileExponents(const idx2_file& Idx2,
   }
   FileCacheIt->Val->ExpCached = true;
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 /* Given a brick address, read the exponent chunk associated with the brick and cache it */
 // TODO: remove the last two params (already stored in D)
-expected<const chunk_exp_cache*, idx2_err_code>
+expected<const chunk_exp_cache*, err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband)
 {
 #if VISUS_IDX2
@@ -361,7 +361,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     buffer buff;
     bool Result = Idx2.external_read(Idx2, buff, ChunkAddress).get();
     if (!Result)
-      idx2_ReturnErrorIf(!Result, idx2_err_code::ChunkNotFound);
+      idx2_ReturnErrorIf(!Result, err_code::ChunkNotFound);
 
     //decompress the block
     chunk_exp_cache ChunkExpCache;
@@ -378,7 +378,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
   auto FileCacheIt = Lookup(D->FileCacheTable, FileId.Id);
   idx2_PropagateIfError(ReadFileExponents(Idx2, D, Level, &FileCacheIt, FileId));
   if (!FileCacheIt)
-    return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
+    return idx2_Error(err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
 
   /* find the appropriate chunk */
   u64 ChunkAddress = GetChunkAddress(Idx2, Brick, Level, Subband, ExponentBitPlane_);
@@ -386,7 +386,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
   decltype(FileCache->ChunkExpCaches)::iterator ChunkCacheIt;
   ChunkCacheIt = Lookup(FileCache->ChunkExpCaches, ChunkAddress);
   if (!ChunkCacheIt)
-    return idx2_Error(idx2_err_code::ChunkNotFound);
+    return idx2_Error(err_code::ChunkNotFound);
 
   chunk_exp_cache* ChunkExpCache = ChunkCacheIt.Val;
   if (Size(ChunkExpCache->ChunkExpStream.Stream) == 0) // chunk has not been loaded
@@ -395,7 +395,7 @@ ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i
     StartTimer(&IOTimer);
     idx2_RAII(FILE*, Fp = fopen(FileId.Name.ConstPtr, "rb"), , if (Fp) fclose(Fp));
     if (!Fp)
-      return idx2_Error(idx2_err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
+      return idx2_Error(err_code::FileNotFound, "File: %s\n", FileId.Name.ConstPtr);
     i32 ChunkPos = ChunkExpCache->ChunkPos;
     i64 ChunkExpOffset = FileCache->ExponentBeginOffset;
     i32 ChunkExpSize = FileCache->ChunkExpOffsets[ChunkPos];

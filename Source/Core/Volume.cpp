@@ -58,7 +58,7 @@ ReadVolume(cstr FileName, const v3i& Dims3, dtype Type, volume* Volume)
 }
 
 
-error<mmap_err_code>
+error<err_code>
 MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mode Mode)
 {
   idx2_ReturnIfError(OpenFile(&Vol->MMap, FileName, Mode));
@@ -71,7 +71,7 @@ MapVolume(cstr FileName, const v3i& Dims3, dtype DType, mmap_volume* Vol, map_mo
     idx2_ReturnIfError(MapFile(&Vol->MMap));
   }
   Vol->Vol = volume(Vol->MMap.Buf, Dims3, DType);
-  return idx2_Error(mmap_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 

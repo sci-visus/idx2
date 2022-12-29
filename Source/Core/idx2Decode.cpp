@@ -43,7 +43,7 @@ Dealloc(decode_data* D)
 }
 
 
-error<idx2_err_code>
+error<err_code>
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf);
 
 
@@ -82,7 +82,7 @@ DecompressBufZstd(const buffer& Input, bitstream* Output)
 // TODO: we can detect the precision and switch to the avx2 version that uses float for better
 // performance
 // TODO: if a block does not decode any bit plane, no need to copy data afterwards
-static expected<bool, idx2_err_code>
+static expected<bool, err_code>
 DecodeSubband(const idx2_file& Idx2,
               decode_data* D,
               decode_state Ds,
@@ -237,7 +237,7 @@ DecodeSubband(const idx2_file& Idx2,
 
 
 // TODO NEXT: check that this function is still correct (specifically the parts related to Brick3 and BrickInfo)
-static error<idx2_err_code>
+static error<err_code>
 DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state Ds, f64 Tolerance)
 {
   //i8 Level = Ds.Level;
@@ -319,12 +319,12 @@ DecodeBrick(const idx2_file& Idx2, const params& P, decode_data* D, decode_state
   ////InverseCdf53(Idx2.BrickDimsExt3, Ds.Level, Idx2.Subbands, Idx2.TransformDetails, &BVol, CoarsestLevel);
 
   ////printf("%d\n", AnySubbandDecoded);
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
 // TODO NEXT
-error<idx2_err_code>
+error<err_code>
 BrickDecodeTask(const idx2_file& Idx2, const extent& Extent, i8 Level, const traverse_item& BrickTop)
 {
   ////          u64 BrickAddr = (ChunkAddr * Idx2.BricksPerChunks[Level]) + Top.Address;
@@ -374,12 +374,12 @@ BrickDecodeTask(const idx2_file& Idx2, const extent& Extent, i8 Level, const tra
   //  }
   //}
 
-  return idx2_Error(idx2_err_code::NoError)
+  return idx2_Error(err_code::NoError)
 }
 
 
 /* TODO: dealloc chunks after we are done with them */
-error<idx2_err_code>
+error<err_code>
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf)
 {
   //timer DecodeTimer;

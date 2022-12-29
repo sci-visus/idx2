@@ -63,15 +63,15 @@ WriteMetaFile(const idx2_file& Idx2, const params& P, cstr FileName)
 Parse metadata from a given buffer.
 ---------------------------------------------------------------------------------------------*/
 // TODO NEXT
-error<idx2_err_code>
+error<err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf)
-{ return idx2_Error(idx2_err_code::NoError); }
+{ return idx2_Error(err_code::NoError); }
 
 
 /*---------------------------------------------------------------------------------------------
 Read the given metadata (.idx2) file.
 ---------------------------------------------------------------------------------------------*/
-error<idx2_err_code>
+error<err_code>
 ReadMetaFile(idx2_file* Idx2, cstr FileName)
 {
   buffer Buf;
@@ -146,7 +146,7 @@ ProcessTransformTemplate(transform_template* Template, i8* DimsMap)
 /*---------------------------------------------------------------------------------------------
 Check if the transform template is valid.
 ---------------------------------------------------------------------------------------------*/
-static error<idx2_err_code>
+static error<err_code>
 VerifyTransformTemplate(const idx2_file& Idx2)
 {
   /* check for unused dimensions */
@@ -154,7 +154,7 @@ VerifyTransformTemplate(const idx2_file& Idx2)
   {
     char C = Idx2.DimensionInfo[I].ShortName;
     if (Idx2.DimensionMap[C - 'a'] == -1)
-      return idx2_Error(idx2_err_code::DimensionsTooMany,
+      return idx2_Error(err_code::DimensionsTooMany,
                         "Dimension %c does not appear in the indexing template\n", C);
   }
 
@@ -163,18 +163,18 @@ VerifyTransformTemplate(const idx2_file& Idx2)
   {
     auto Length = Idx2.Template.LevelViews[L][1];
     if (Length > 3)
-      return idx2_Error(idx2_err_code::DimensionsTooMany,
+      return idx2_Error(err_code::DimensionsTooMany,
                         "More than three dimensions in level %d\n", L);
     if (Length == 0)
-      return idx2_Error(idx2_err_code::SyntaxError,
+      return idx2_Error(err_code::SyntaxError,
                         ": or | needs to be followed by a dimension in the indexing template\n");
     const template_view& View = Idx2.Template.LevelViews[L];
     if (Length == 2 && (View[0] == View[1]))
-      return idx2_Error(idx2_err_code::DimensionsRepeated,
+      return idx2_Error(err_code::DimensionsRepeated,
                         "Repeated dimensions on level %d\n", L);
       //printf("Repeated dimensions on level %d\n", L);
     if (Length == 3 && (View[0] == View[1] || View[0] == View[2] || View[1] == View[2]))
-      return idx2_Error(idx2_err_code::DimensionsRepeated,
+      return idx2_Error(err_code::DimensionsRepeated,
                         "Repeated dimensions on level %d\n", L);
       //printf("Repeated dimensions on level %d\n", L);
   }
@@ -194,18 +194,18 @@ VerifyTransformTemplate(const idx2_file& Idx2)
     const dimension_info& Dim = Idx2.DimensionInfo[I];
     i32 D = (i32)NextPow2(Size(Dim));
     if (D > Dims[I])
-      return idx2_Error(idx2_err_code::DimensionMismatched,
+      return idx2_Error(err_code::DimensionMismatched,
                         "Dimension %c needs to appear %d more times in the indexing template\n",
                         Dim.ShortName,
                         Log2Floor(D) - Log2Floor(Dims[I]));
     if (D < Dims[I])
-      return idx2_Error(idx2_err_code::DimensionMismatched,
+      return idx2_Error(err_code::DimensionMismatched,
                         "Dimension %c needs to appear %d fewer times in the indexing template\n",
                         Dim.ShortName,
                         Log2Floor(Dims[I]) - Log2Floor(D));
   }
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
@@ -298,7 +298,7 @@ ComputeBrickChunkFileInfo(idx2_file* Idx2, const params& P)
 
     /* compute brick templates */
     {
-      Length = Sum<i8>(Idx2->Template.LevelViews[L]);
+      Length = Sum(Idx2->Template.LevelViews[L]);
       BrickInfoL.Template = Idx2->Template.LevelViews[L];
       BrickBits = Min(Length, Idx2->BitsPerBrick);
       BrickIndexBits = Length - BrickBits;
@@ -416,7 +416,7 @@ GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
   idx2_For (i8, I, 0, Pos/2)
     Swap(&Template[I], &Template[Pos - I - 1]);
   Template[Pos] = 0;
-  Template.Len = Pos;
+  Template.Size = Pos;
 
   return Template;
 }
@@ -470,7 +470,7 @@ file_chunk_brick_traversal(const idx2_file* Idx2,
 /*---------------------------------------------------------------------------------------------
 Traverse a hierarchy of bricks following a template, and run a callback function for each brick.
 ---------------------------------------------------------------------------------------------*/
-error<idx2_err_code>
+error<err_code>
 TraverseBricks(const file_chunk_brick_traversal& T, const traverse_item& ChunkTop)
 {
   return T.Traverse(T.Idx2->BrickInfo[T.Level].IndexTemplateInChunk,
@@ -485,7 +485,7 @@ TraverseBricks(const file_chunk_brick_traversal& T, const traverse_item& ChunkTo
 /*---------------------------------------------------------------------------------------------
 Traverse a hierarchy of chunks following a template, and run a callback function for each chunk.
 ---------------------------------------------------------------------------------------------*/
-error<idx2_err_code>
+error<err_code>
 TraverseChunks(const file_chunk_brick_traversal& T, const traverse_item& FileTop)
 {
   return T.Traverse(T.Idx2->ChunkInfo[T.Level].IndexTemplateInFile,
@@ -500,7 +500,7 @@ TraverseChunks(const file_chunk_brick_traversal& T, const traverse_item& FileTop
 /*---------------------------------------------------------------------------------------------
 Traverse a hierarchy of files following a template, and run a callback function for each file.
 ---------------------------------------------------------------------------------------------*/
-error<idx2_err_code>
+error<err_code>
 TraverseFiles(const file_chunk_brick_traversal& T)
 {
   return T.Traverse(T.Idx2->FileInfo[T.Level].IndexTemplate,
@@ -516,13 +516,13 @@ TraverseFiles(const file_chunk_brick_traversal& T)
 Verify the integrity of the parameters in idx2_file and compute necessary auxiliary data
 structures for use during encoding or decoding.
 ---------------------------------------------------------------------------------------------*/
-error<idx2_err_code>
+error<err_code>
 Finalize(idx2_file* Idx2, params* P)
 {
   //P->Tolerance = Max(fabs(P->Tolerance), Idx2->Tolerance);
   ////GuessNumLevelsIfNeeded(Idx2); // TODO NEXT
   //if (!(Idx2->NLevels <= MaxLevels))
-  //  return idx2_Error(idx2_err_code::TooManyLevels, "Max # of levels = %d\n", MaxLevels);
+  //  return idx2_Error(err_code::TooManyLevels, "Max # of levels = %d\n", MaxLevels);
 
   //ProcessTransformTemplate(Idx2);
   //BuildSubbandsForAllLevels(Idx2);
@@ -533,7 +533,7 @@ Finalize(idx2_file* Idx2, params* P)
   // TODO NEXT
   //ComputeTransformDetails(&Idx2->TransformDetails, Idx2->BrickDimsExt3, Idx2->NTformPasses, Idx2->TransformOrder);
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
@@ -562,8 +562,8 @@ Return a grid given a query extent (box) and a downsampling factor.
 /*---------------------------------------------------------------------------------------------
 A generic template for hierarchy traversal following a template.
 ---------------------------------------------------------------------------------------------*/
-error<idx2_err_code>
-file_chunk_brick_traversal::Traverse(stref Template,
+error<err_code>
+file_chunk_brick_traversal::Traverse(const template_view& TemplateView,
                                      const nd_size& From, // in units of traverse_item
                                      const nd_size& Dims, // in units of traverse_item
                                      const nd_extent& Extent,
@@ -580,7 +580,7 @@ file_chunk_brick_traversal::Traverse(stref Template,
   while (Size(Stack) >= 0)
   {
     Top = Back(Stack);
-    i8 D = Idx2->DimensionMap[Template[Top.Pos] - 'a'];
+    i8 D = TemplateView[Top.Pos];
     PopBack(&Stack);
     if (!(Top.To - Top.From == 1))
     {
@@ -608,7 +608,7 @@ file_chunk_brick_traversal::Traverse(stref Template,
     }
   }
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 

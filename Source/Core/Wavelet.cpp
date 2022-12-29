@@ -26,19 +26,19 @@ The number of ':' characters is the same as the number of levels (which is also 
 This is in contrast to v1, in which NLevels is always just 1.
 */
 static transform_info_v2
-ComputeTransformInfo(stref Template, const nd_size& Dims)
+ComputeTransformInfo(const template_view& TemplateView, const nd_size& Dims)
 {
   transform_info_v2 TransformInfo;
   nd_size CurrentDims = Dims;
   nd_size ExtrapolatedDims = CurrentDims;
   nd_size CurrentSpacing(1); // spacing
   nd_grid G(Dims);
-  i8 Pos = Template.Size - 1;
+  i8 Pos = TemplateView.Size - 1;
   i8 NLevels = 0;
   while (Pos >= 0)
   {
     idx2_Assert(Pos >= 0);
-    if (Template[Pos--] == ':') // the character ':' (next level)
+    if (TemplateView[Pos--] == ':') // the character ':' (next level)
     {
       G.Spacing = CurrentSpacing;
       G.Dims = CurrentDims;
@@ -47,7 +47,7 @@ ComputeTransformInfo(stref Template, const nd_size& Dims)
     }
     else // one of 0, 1, 2
     {
-      i8 D = Template[Pos--] - '0';
+      i8 D = TemplateView[Pos--] - '0';
       PushBack(&TransformInfo.Grids, G);
       PushBack(&TransformInfo.Axes, D);
       ExtrapolatedDims[D] = CurrentDims[D] + IsEven(CurrentDims[D]);
@@ -236,7 +236,7 @@ ILiftCdf53(const nd_grid& Grid,
 
 
 array<grid>
-ComputeTransformGrids(const v3i& Dims3, stref Template, const i8* DimensionMap)
+ComputeTransformGrids(const v3i& Dims3, const template_view& TemplateView, const i8* DimensionMap)
 {
   array<grid> TransformGrids;
 
@@ -244,10 +244,10 @@ ComputeTransformGrids(const v3i& Dims3, stref Template, const i8* DimensionMap)
   v3i ExtrapolatedDims3 = CurrentDims3;
   v3i CurrentSpacing3(1); // spacing
   grid G(Dims3);
-  i8 Pos = Template.Size - 1;
+  i8 Pos = TemplateView.Size - 1;
   while (Pos >= 0)
   {
-    if (Template[Pos--] == ':') // the character ':' (next level)
+    if (TemplateView[Pos--] == ':') // the character ':' (next level)
     {
       SetSpacing(&G, CurrentSpacing3);
       SetDims(&G, CurrentDims3);
@@ -255,7 +255,7 @@ ComputeTransformGrids(const v3i& Dims3, stref Template, const i8* DimensionMap)
     }
     else
     {
-      i8 D = DimensionMap[Template[Pos--]];
+      i8 D = DimensionMap[TemplateView[Pos--]];
       PushBack(&TransformGrids, G);
       ExtrapolatedDims3[D] = CurrentDims3[D] + IsEven(CurrentDims3[D]);
       SetDims(&G, ExtrapolatedDims3);
@@ -272,17 +272,17 @@ void
 ForwardCdf53(const nd_size& StorageDims,
              const array<subband>& Subbands,
              const array<nd_grid>& TransformGrids,
-             stref Template,
+             const template_view& TemplateView,
              const i8* DimsMap,
              nd_volume* Vol,
              bool CoarsestLevel)
 {
   idx2_Assert(Vol->Type == dtype::float64);
-  idx2_Assert(Size(Template) == Size(TransformGrids));
+  idx2_Assert(Size(TemplateView) == Size(TransformGrids));
 
   idx2_For (i8, I, 0, Size(TransformGrids))
   {
-    i8 D = DimsMap[Template[I]];
+    i8 D = DimsMap[TemplateView[I]];
     FLiftCdf53<f64>(TransformGrids[I], StorageDims, D, lift_option::Normal, Vol);
   }
 
@@ -306,14 +306,14 @@ void
 InverseCdf53(const nd_size& StorageDims,
              const array<subband>& Subbands,
              const array<nd_grid>& TransformGrids,
-             stref Template,
+             const template_view& TemplateView,
              const i8* DimsMap,
              nd_volume* Vol,
              bool CoarsestLevel)
 {
   /* inverse normalize if required */
   idx2_Assert(Vol->Type == dtype::float64);
-  idx2_Assert(Size(Template) == Size(TransformGrids));
+  idx2_Assert(Size(TemplateView) == Size(TransformGrids));
 
   idx2_For (i8, Sb, 0, Size(Subbands))
   {
@@ -330,7 +330,7 @@ InverseCdf53(const nd_size& StorageDims,
   /* perform the inverse transform */
   idx2_InclusiveForBackward (i8, I, i8(Size(TransformGrids) - 1), 0)
   {
-    int D = DimsMap[Template[I]];
+    int D = DimsMap[TemplateView[I]];
     ILiftCdf53<f64>(TransformGrids[I], StorageDims, D, lift_option::Normal, Vol);
   }
 }
@@ -357,10 +357,10 @@ BuildLevelSubbands(const template_view& TemplateView,
   /* we use a queue to produce subbands by breadth-first subdivision */
   circular_queue<subband, 128> Queue;
   PushBack(&Queue, subband{ nd_grid(Dims), nd_grid(nd_size(0), Dims, Spacing), v6<i8>(0), 0 });
-  i8 Pos = Size(Template) - 1;
+  i8 Pos = Size(TemplateView) - 1;
   while (Pos >= 0)
   {
-    i8 D = DimsMap[Template[Pos]];
+    i8 D = TemplateView[Pos];
     i8 Sz = i8(Size(Queue));
     for (i8 I = 0; I < Sz; ++I)
     {
@@ -381,9 +381,9 @@ BuildLevelSubbands(const template_view& TemplateView,
   for (i8 I = Sz - 1; I >= 0; --I)
   {
     v3d Weights(1);
-    for (i8 Pos = 0; Pos < Size(Template); ++Pos)
+    for (i8 Pos = 0; Pos < Size(TemplateView); ++Pos)
     {
-      i8 D = DimsMap[Template[Pos]];
+      i8 D = TemplateView[Pos];
       if (Queue[I].LowHigh[D] == 0)
         Weights[D] = WavNorms.Scaling[LogSpacing[D]];
       else

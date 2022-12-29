@@ -207,12 +207,12 @@ its ancestor (using the ResolutionStream). */
 *     (for simplicity we use float64 regardless of the original type)
 */
 // TODO NEXT
-error<idx2_err_code>
+error<err_code>
 WriteBricks(brick_pool* Bp, cstr FileName)
 {
   //idx2_RAII(FILE*, Fp = fopen(FileName, "wb"), , if (Fp) fclose(Fp));
   //if (!Fp)
-  //  return idx2_Error(idx2_err_code::FileCreateFailed);
+  //  return idx2_Error(err_code::FileCreateFailed);
 
   //WritePOD(Fp, Bp->Idx2->Dims3);
   //WritePOD(Fp, Bp->Idx2->BrickDims3);
@@ -230,7 +230,7 @@ WriteBricks(brick_pool* Bp, cstr FileName)
   //  WriteVolume(Fp, BrickVol.Vol, grid(BrickVol.ExtentLocal));
   //} idx2_EndFor3
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 

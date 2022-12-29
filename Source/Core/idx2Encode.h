@@ -140,11 +140,11 @@ void
 CompressBufZstd(const buffer& Input, bitstream* Output);
 
 /* Encode a whole volume, assuming the volume is available  */
-error<idx2_err_code>
+error<err_code>
 Encode(idx2_file* Idx2, const params& P, brick_copier& Copier);
 
 /* Encode a brick. Use this when the input data is not in the form of a big volume. */
-error<idx2_err_code>
+error<err_code>
 EncodeBrick(idx2_file* Idx2, const params& P, const v3i& BrickPos3);
 
 void

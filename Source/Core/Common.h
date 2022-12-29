@@ -221,7 +221,7 @@ template <typename t, int N> struct stack_array
   static_assert(N > 0);
   // constexpr stack_array() = default;
   t Arr[N] = {};
-  u8 Size = 0;
+  i8 Size = 0;
   t& operator[](int Idx) const;
 
   idx2_Inline static constexpr int Capacity() { return N; }
@@ -231,20 +231,24 @@ template <typename t, int N> t* Begin(const stack_array<t, N>& A);
 template <typename t, int N> t* End(const stack_array<t, N>& A);
 template <typename t, int N> t* RevBegin(const stack_array<t, N>& A);
 template <typename t, int N> t* RevEnd(const stack_array<t, N>& A);
-// TODO NEXT
-//template <typename t, int N> constexpr int Size(const stack_array<t, N>& A);
 
 template <typename t, int N> void
 PushBack(stack_array<t, N>* A, const t& Item)
 {
-  idx2_Assert(A->Size < A->Capacity());
+  //idx2_Assert(A->Size < A->Capacity()); // TODO NEXT
   A->Arr[A->Size++] = Item;
+}
+
+template<typename t, int N> void
+Resize(stack_array<t, N>* A, u8 Size)
+{
+  A->Size = Size;
 }
 
 template <int N> struct stack_string
 {
   char Data[N] = {};
-  u8 Len = 0;
+  u8 Size = 0;
   char& operator[](int Idx) const;
   stack_string<N>& operator=(const stack_string<N>& Other);
 };
@@ -255,8 +259,8 @@ template <int N> int Size(const stack_string<N>& S);
 template <int N> stack_string<N>&
 stack_string<N>::operator=(const stack_string<N>& Other)
 {
-  memcpy(this->Data, Other.Data, this->Len);
-  this->Len = Other.Size;
+  memcpy(this->Data, Other.Data, this->Size);
+  this->Size = Other.Size;
   return *this;
 }
 
@@ -400,7 +404,7 @@ template <typename t> struct v6
   template <typename u> v6(const v6<u>& Other);
   t& operator[](int Idx) const;
   template <typename u> v6& operator=(const v6<u>& Rhs);
-  idx2_Inline static constexpr Size() { return sizeof(E) / sizeof(E[0]); }
+  idx2_Inline static i8 constexpr Size() { return sizeof(E) / sizeof(E[0]); }
 };
 
 using v6i = v6<i32>;
@@ -576,7 +580,7 @@ RevEnd(const stack_array<t, N>& A)
 template <typename t, int N> idx2_Inline i8
 Size(const stack_array<t, N>& A)
 {
-  return A.Len;
+  return A.Size;
 }
 
 
@@ -591,7 +595,7 @@ stack_string<N>::operator[](int Idx) const
 template <int N> idx2_Inline int
 Size(const stack_string<N>& S)
 {
-  return S.Len;
+  return S.Size;
 }
 
 

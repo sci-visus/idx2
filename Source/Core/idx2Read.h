@@ -92,17 +92,17 @@ Size(const file_cache& F)
 }
 
 
-expected<const chunk_exp_cache*, idx2_err_code>
+expected<const chunk_exp_cache*, err_code>
 ReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband);
 
 
-expected<const chunk_cache*, idx2_err_code>
+expected<const chunk_cache*, err_code>
 ReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BitPlane);
 
-expected<chunk_cache, idx2_err_code>
+expected<chunk_cache, err_code>
 ParallelReadChunk(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband, i16 BpKey);
 
-expected<chunk_exp_cache, idx2_err_code>
+expected<chunk_exp_cache, err_code>
 ParallelReadChunkExponents(const idx2_file& Idx2, decode_data* D, u64 Brick, i8 Level, i8 Subband);
 
 } // namespace idx2

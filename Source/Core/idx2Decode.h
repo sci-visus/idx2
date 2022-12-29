@@ -66,10 +66,10 @@ void
 DecompressChunk(bitstream* ChunkStream, chunk_cache* ChunkCache, u64 ChunkAddress, int L);
 
 // TODO: return an error code?
-error<idx2_err_code>
+error<err_code>
 Decode(const idx2_file& Idx2, const params& P, buffer* OutBuf = nullptr);
 
-error<idx2_err_code>
+error<err_code>
 ParallelDecode(const idx2_file& Idx2, const params& P, buffer* OutBuf = nullptr);
 
 void

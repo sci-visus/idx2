@@ -78,7 +78,7 @@ brick_volume
 UpsampleToFinest(const brick_volume& BrickVol, i8 InputResLevel);
 
 
-error<idx2_err_code>
+error<err_code>
 WriteBricks(brick_pool* Bp, cstr FileName);
 
 

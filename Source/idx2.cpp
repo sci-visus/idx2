@@ -5,7 +5,7 @@
 namespace idx2
 {
 
-error<idx2_err_code>
+error<err_code>
 InitFromBuffer(idx2_file* Idx2, params& P, buffer& Buf)
 {
   //// TODO NEXT
@@ -16,11 +16,11 @@ InitFromBuffer(idx2_file* Idx2, params& P, buffer& Buf)
   //if (Dims(P.DecodeExtent) == v3i(0)) // TODO: this could conflate with the user wanting to decode a
   //                                    // single sample (very unlikely though)
   //  P.DecodeExtent = extent(Idx2->Dims3);
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
-error<idx2_err_code>
+error<err_code>
 Init(idx2_file* Idx2, params& P)
 {
   //// TODO NEXT
@@ -30,7 +30,7 @@ Init(idx2_file* Idx2, params& P)
   //idx2_PropagateIfError(Finalize(Idx2, &P));
   //if (Dims(P.DecodeExtent) == v3i(0)) // TODO: this could conflate with the user wanting to decode a single sample (very unlikely though)
   //  P.DecodeExtent = extent(Idx2->Dims3);
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
@@ -42,19 +42,19 @@ GetOutputGrid(const idx2_file& Idx2, const params& P)
 }
 
 
-error<idx2_err_code>
+error<err_code>
 Decode(idx2_file* Idx2, params& P, buffer* OutBuf)
 {
   Decode(*Idx2, P, OutBuf);
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
-error<idx2_err_code>
+error<err_code>
 Destroy(idx2_file* Idx2)
 {
   Dealloc(Idx2);
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 

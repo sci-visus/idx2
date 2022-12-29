@@ -33,6 +33,20 @@ struct template_view
 };
 
 
+idx2_Inline i8
+Size(const template_view& TemplateView)
+{
+  return TemplateView.Size;
+}
+
+
+idx2_Inline i8
+Sum(const template_view& TemplateView)
+{
+  return TemplateView.Begin + TemplateView.Size;
+}
+
+
 template <int N> struct wavelet_basis_norms
 {
   stack_array<f64, N> Scaling;
@@ -93,14 +107,14 @@ enum lift_option
 
 
 array<grid>
-ComputeTransformGrids(const v3i& Dims3, stref Template, const i8* DimensionMap);
+ComputeTransformGrids(const v3i& Dims3, const template_view& TemplateView, const i8* DimensionMap);
 
 
 void
 ForwardCdf53(const v3i& M3,
              const array<subband>& Subbands,
              const array<grid>& TransformGrids,
-             stref Template,
+             const template_view& TemplateView,
              const i8* DimensionMap,
              volume* Vol,
              bool CoarsestLevel);
@@ -110,7 +124,7 @@ InverseCdf53(const v3i& M3,
              i8 Level,
              const array<subband>& Subbands,
              const array<grid>& TransformGrids,
-             stref Template,
+             const template_view& TemplateView,
              const i8* DimsMap,
              volume* Vol,
              bool CoarsestLevel);

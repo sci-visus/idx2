@@ -20,20 +20,20 @@ Dealloc(idx2_file_v2* Idx2)
 }
 
 
-static error<idx2_err_code>
+static error<err_code>
 CheckDimensions(idx2_file_v2* Idx2)
 {
   idx2_ForEach (Dim, Idx2->Dimensions)
   {
     if (Size(Dim->Names) == 0 && Dim->Limit == 0)
-      return idx2_Error(idx2_err_code::SizeZero, "Dimension %c is zero\n", Dim->ShortName);
+      return idx2_Error(err_code::SizeZero, "Dimension %c is zero\n", Dim->ShortName);
     if (Size(Dim->Names) > 0 && Dim->Limit > 0)
-      return idx2_Error(idx2_err_code::DimensionsRepeated, "Dimension %c is both numerical and categorical\n", Dim->ShortName);
+      return idx2_Error(err_code::DimensionsRepeated, "Dimension %c is both numerical and categorical\n", Dim->ShortName);
     if (Size(Dim->Names) == 1 || Dim->Limit == 1)
-      return idx2_Error(idx2_err_code::DimensionTooSmall, "Dimension %c is too small (1), consider removing it\n", Dim->ShortName);
+      return idx2_Error(err_code::DimensionTooSmall, "Dimension %c is too small (1), consider removing it\n", Dim->ShortName);
   }
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 // TODO: check that the number of dimensions per level is at most the size of the brick
@@ -41,7 +41,7 @@ CheckDimensions(idx2_file_v2* Idx2)
 // TODO: check that the indexing template matches the dimensions
 // TODO: check that we have at most 6 dimensions
 
-static error<idx2_err_code>
+static error<err_code>
 ParseIndexingTemplate(idx2_file_v2* Idx2)
 {
   // TODO: check that each level has at most 3 dimensions (supported by compression)
@@ -52,7 +52,7 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
     if (Idx2->IdxTemplate.Full[I] == ':') // push a new level
     {
       if (!ParsingPostfix)
-        return idx2_Error(idx2_err_code::SyntaxError, ": cannot occur after | in the indexing template\n");
+        return idx2_Error(err_code::SyntaxError, ": cannot occur after | in the indexing template\n");
 
       PushBack(&Idx2->IdxTemplate.Suffix, Part);
       Part = array<i8>(); // reset
@@ -60,7 +60,7 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
     else if (Idx2->IdxTemplate.Full[I] == '|') // push a new level
     {
       if (!ParsingPostfix)
-        return idx2_Error(idx2_err_code::SyntaxError, "Only one | allowed in the indexing template\n");
+        return idx2_Error(err_code::SyntaxError, "Only one | allowed in the indexing template\n");
 
       PushBack(&Idx2->IdxTemplate.Suffix, Part);
       Part = array<i8>(); // reset
@@ -70,9 +70,9 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
     {
       char C = Idx2->IdxTemplate.Full[I];
       if (!isalpha(C) || !islower(C))
-        return idx2_Error(idx2_err_code::SyntaxError, "Unsupported character (%c) in the indexing template\n", C);
+        return idx2_Error(err_code::SyntaxError, "Unsupported character (%c) in the indexing template\n", C);
       //if (ParsingPostfix && C == 'f')
-      //  return idx2_Error(idx2_err_code::SyntaxError, "Dimension f (fields) cannot appear in the postfix\n", C);
+      //  return idx2_Error(err_code::SyntaxError, "Dimension f (fields) cannot appear in the postfix\n", C);
 
       i8& D = Idx2->CharToIntMap[C - 'a'];
       /* map this dimension to an int if it is not mapped */
@@ -89,7 +89,7 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
       }
       /* check for error */
       if (D == -1)
-        return idx2_Error(idx2_err_code::DimensionsTooMany,
+        return idx2_Error(err_code::DimensionsTooMany,
                           "The indexing template contains an unknown dimension: %c\n", C);
 
       /* push the current dimension */
@@ -105,7 +105,7 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
   {
     PushBack(&Idx2->IdxTemplate.Suffix, Part);
     if (Size(Idx2->IdxTemplate.Prefix) > 0)
-      return idx2_Error(idx2_err_code::SyntaxError, "Invalid indexing template syntax\n");
+      return idx2_Error(err_code::SyntaxError, "Invalid indexing template syntax\n");
   }
 
   /* check for unused dimensions */
@@ -113,7 +113,7 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
   {
     char C = Idx2->Dimensions[I].ShortName;
     if (Idx2->CharToIntMap[C - 'a'] == -1)
-      return idx2_Error(idx2_err_code::DimensionsTooMany, "Dimension %c does not appear in the indexing template\n", C);
+      return idx2_Error(err_code::DimensionsTooMany, "Dimension %c does not appear in the indexing template\n", C);
   }
 
   /* check for repeated dimensions on a level */
@@ -121,15 +121,15 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
   {
     auto S = Size(Idx2->IdxTemplate.Suffix[L]);
     if (S > 3)
-      return idx2_Error(idx2_err_code::DimensionsTooMany, "More than three dimensions in level %d\n", L);
+      return idx2_Error(err_code::DimensionsTooMany, "More than three dimensions in level %d\n", L);
     if (S == 0)
-      return idx2_Error(idx2_err_code::SyntaxError, ": or | needs to be followed by a dimension in the indexing template\n");
+      return idx2_Error(err_code::SyntaxError, ": or | needs to be followed by a dimension in the indexing template\n");
     const auto& Suffix = Idx2->IdxTemplate.Suffix[L];
     if (S == 2 && (Suffix[0] == Suffix[1]))
-      return idx2_Error(idx2_err_code::DimensionsRepeated, "Repeated dimensions on level %d\n", L);
+      return idx2_Error(err_code::DimensionsRepeated, "Repeated dimensions on level %d\n", L);
       //printf("Repeated dimensions on level %d\n", L);
     if (S == 3 && (Suffix[0] == Suffix[1] || Suffix[0] == Suffix[2] || Suffix[1] == Suffix[2]))
-      return idx2_Error(idx2_err_code::DimensionsRepeated, "Repeated dimensions on level %d\n", L);
+      return idx2_Error(err_code::DimensionsRepeated, "Repeated dimensions on level %d\n", L);
       //printf("Repeated dimensions on level %d\n", L);
   }
 
@@ -149,30 +149,30 @@ ParseIndexingTemplate(idx2_file_v2* Idx2)
     i32 D = Size(Dim);
     D = (i32)NextPow2(D);
     if (D > Dims[I])
-      return idx2_Error(idx2_err_code::DimensionMismatched,
+      return idx2_Error(err_code::DimensionMismatched,
                         "Dimension %c needs to appear %d more times in the indexing template\n",
                         Dim.ShortName,
                         Log2Floor(D) - Log2Floor(Dims[I]));
     if (D < Dims[I])
-      return idx2_Error(idx2_err_code::DimensionMismatched,
+      return idx2_Error(err_code::DimensionMismatched,
                         "Dimension %c needs to appear %d fewer times in the indexing template\n",
                         Dim.ShortName,
                         Log2Floor(Dims[I]) - Log2Floor(D));
   }
 
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
-error<idx2_err_code>
+error<err_code>
 Finalize(idx2_file_v2* Idx2)
 {
   idx2_PropagateIfError(CheckDimensions(Idx2));
   idx2_PropagateIfError(ParseIndexingTemplate(Idx2));
   /* print the parsed indexing template */
 
-  return idx2_Error(idx2_err_code::NoError);
+  return idx2_Error(err_code::NoError);
 }
 
 
