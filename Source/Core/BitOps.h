@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.h"
-#include "Macros.h"
 #if defined(__clang__) || defined(__GNUC__)
 //#include <x86intrin.h>
 #endif
@@ -54,7 +53,6 @@ u32 HighBits64(u64 V);
 
 #include "Assert.h"
 #include "Common.h"
-#include "Macros.h"
 // #include "bitmap_tables.h"
 
 namespace idx2

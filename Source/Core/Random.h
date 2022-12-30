@@ -27,7 +27,6 @@
 #pragma once
 
 #include "Common.h"
-#include "Macros.h"
 
 
 namespace idx2

@@ -29,7 +29,6 @@ void SetHandleAbortSignals(handler& Handler = AbortHandler);
 #pragma GCC diagnostic pop
 #endif
 #include "Format.h"
-#include "Macros.h"
 #include "StackTrace.h"
 
 

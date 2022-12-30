@@ -120,7 +120,6 @@ Reset(tokenizer* Tk);
 
 
 
-#include "Macros.h"
 #include <assert.h>
 #include <string.h>
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.h"
-#include "Macros.h"
 #include "Memory.h"
 #include <initializer_list>
 #include <string.h>

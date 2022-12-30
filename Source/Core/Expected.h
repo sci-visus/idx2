@@ -2,7 +2,6 @@
 
 #include "Common.h"
 #include "Error.h"
-#include "Macros.h"
 
 
 namespace idx2

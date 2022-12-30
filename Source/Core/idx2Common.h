@@ -17,10 +17,6 @@
 #endif
 
 /* ---------------------- MACROS ----------------------*/
-// Get non-extrapolated dims
-#define idx2_NonExtDims(P3) v3i(P3.X - (P3.X > 1), P3.Y - (P3.Y > 1), P3.Z - (P3.Z > 1))
-#define idx2_ExtDims(P3) v3i(P3.X + (P3.X > 1), P3.Y + (P3.Y > 1), P3.Z + (P3.Z > 1))
-
 #define idx2_NextMorton(Morton, Row3, Dims3)                                                       \
   if (!(Row3 < Dims3))                                                                             \
   {                                                                                                \

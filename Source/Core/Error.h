@@ -2,7 +2,6 @@
 
 #include "Common.h"
 #include "Format.h"
-#include "Macros.h"
 
 
 namespace idx2

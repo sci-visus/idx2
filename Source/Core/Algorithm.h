@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Macros.h"
+
+#include "Common.h"
 
 
 namespace idx2

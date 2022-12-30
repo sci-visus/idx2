@@ -7,7 +7,6 @@
 #include "BitOps.h"
 #include "BitStream.h"
 #include "Common.h"
-#include "Macros.h"
 #include "Math.h"
 #include <immintrin.h>
 //#include <iostream>

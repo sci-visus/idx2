@@ -27,9 +27,6 @@ Unlock(mutex* Mutex);
 
 
 
-#include "Macros.h"
-
-
 #if defined(_WIN32)
 
 #ifndef WIN32_LEAN_AND_MEAN

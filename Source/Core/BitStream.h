@@ -102,7 +102,6 @@ void Dealloc(bitstream* Bs);
 
 #include "Algorithm.h"
 #include "Assert.h"
-#include "Macros.h"
 
 
 namespace idx2
