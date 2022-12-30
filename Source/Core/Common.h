@@ -205,50 +205,6 @@ struct false_type
   static constexpr bool Value = false;
 };
 
-template <typename t> struct remove_const
-{
-  typedef t type;
-};
-
-template <typename t> struct remove_const<const t>
-{
-  typedef t type;
-};
-
-template <typename t> struct remove_volatile
-{
-  typedef t type;
-};
-
-template <typename t> struct remove_volatile<volatile t>
-{
-  typedef t type;
-};
-
-template <typename t> struct remove_cv
-{
-  typedef typename remove_volatile<typename remove_const<t>::type>::type type;
-};
-
-template <typename t> struct remove_reference
-{
-  typedef t type;
-};
-
-template <typename t> struct remove_reference<t&>
-{
-  typedef t type;
-};
-
-template <typename t> struct remove_reference<t&&>
-{
-  typedef t type;
-};
-
-template <typename t> struct remove_cv_ref
-{
-  typedef typename remove_cv<typename remove_reference<t>::type>::type type;
-};
 
 template <typename t1, typename t2> struct is_same_type : false_type
 {
@@ -258,17 +214,6 @@ template <typename t> struct is_same_type<t, t> : true_type
 {
 };
 
-template <typename t> struct is_pointer_helper : false_type
-{
-};
-
-template <typename t> struct is_pointer_helper<t*> : true_type
-{
-};
-
-template <typename t> struct is_pointer : is_pointer_helper<typename remove_cv<t>::type>
-{
-};
 
 template <typename t> auto& Value(t&& T);
 
@@ -390,22 +335,23 @@ Resize(stack_array<t, N>* A, u8 Size)
   A->Size = Size;
 }
 
-template <int N> struct stack_string
+template <i8 N> struct stack_string
 {
   char Data[N] = {};
-  u8 Size = 0;
-  char& operator[](int Idx) const;
+  i8 Size = 0;
+  char& operator[](i8 Idx) const;
   stack_string<N>& operator=(const stack_string<N>& Other);
+  idx2_Inline static constexpr i8 Capacity(){ return N; };
 };
 
-template <int N> int Size(const stack_string<N>& S);
+template <i8 N> int Size(const stack_string<N>& S);
 
 
-template <int N> stack_string<N>&
+template <i8 N> stack_string<N>&
 stack_string<N>::operator=(const stack_string<N>& Other)
 {
-  memcpy(this->Data, Other.Data, this->Size);
   this->Size = Other.Size;
+  memcpy(this->Data, Other.Data, this->Size);
   return *this;
 }
 
@@ -729,15 +675,15 @@ Size(const stack_array<t, N>& A)
 }
 
 
-template <int N> idx2_Inline char&
-stack_string<N>::operator[](int Idx) const
+template <i8 N> idx2_Inline char&
+stack_string<N>::operator[](i8 Idx) const
 {
   assert(Idx < N);
   return const_cast<char&>(Data[Idx]);
 }
 
 
-template <int N> idx2_Inline int
+template <i8 N> idx2_Inline int
 Size(const stack_string<N>& S)
 {
   return S.Size;
@@ -1063,8 +1009,6 @@ ndOuterLoop(const nd_size& Begin, const nd_size& End, const nd_size& Step, const
   };
 }
 
-
-
 // TODO: move the following to Macros.h?
 #undef idx2_BeginFor3
 #define idx2_BeginFor3(Counter, Begin, End, Step)                                                  \
@@ -1089,6 +1033,32 @@ ndOuterLoop(const nd_size& Begin, const nd_size& End, const nd_size& Step, const
     {                                                                                              \
       for (C1.X = (B1).X, C2.X = (B2).X; C1.X < (E1).X; C1.X += (S1).X, C2.X += (S2).X)
 
+
+idx2_Inline bool
+StrEqual(cstr S, cstr T)
+{
+  return strcmp(S, T) == 0;
+}
+
+
+idx2_Inline bool
+StrEqualOneOf(cstr S, cstr A, cstr B, cstr C = nullptr)
+{
+  return StrEqual(S, A) || StrEqual(S, B) || StrEqual(S, C);
+}
+
+
+template <i8 N> idx2_Inline bool
+FGets(stack_string<N>* Str)
+{
+  if (fgets(Str->Data, Str->Capacity(), stdin))
+  {
+    Str->Size = i8(strlen(Str->Data) - 1); // avoid the '\n' at the end
+    Str->Data[Str->Size] = 0;
+    return true;
+  }
+  return false;
+}
 
 } // namespace idx2
 

@@ -81,17 +81,16 @@ FlushStdIn()
 /*---------------------------------------------------------------------------------------------
 Ask the user to input the name of the dataset.
 ---------------------------------------------------------------------------------------------*/
-static stack_string<65>
-GetName()
+static void
+GetName(idx2_file* Idx2)
 {
-  stack_string<65> Name;
   while (true)
   {
     printf("Name the dataset (no space): ");
-    scanf("%64s", Name.Data);
-    FlushStdIn();
+    FGets(&Idx2->Name);
     LOOP:
-    printf("You entered %s. Press [Enter] to continue or type 'r' [Enter] to re-enter.\n", Name.Data);
+    printf("You entered %.*s.\n", Idx2->Name.Size, Idx2->Name.Data);
+    printf("Press [Enter] to continue or type 'r' [Enter] to re-enter.\n");
     char C = getchar();
     if (C == 'r')
       continue;
@@ -100,7 +99,6 @@ GetName()
     else
       goto LOOP;
   }
-  return Name;
 }
 
 
@@ -116,8 +114,7 @@ GetFields(idx2_file* Idx2)
   {
     name_str Name;
     printf("Add a field (no space): ");
-    scanf("%64s", Name.Data);
-    FlushStdIn();
+    FGets(&Name);
     LOOP:
     printf("You entered %s.\n"
             "- Press [Enter] to stop adding fields,\n"
@@ -246,10 +243,10 @@ GetTransformTemplate(idx2_file* Idx2)
 Perform the --create action.
 ---------------------------------------------------------------------------------------------*/
 static void
-DoCreate(i32 Argc, cstr* Argv)
+DoCreate()
 {
   idx2_file Idx2;
-  auto Name = GetName();
+  GetName(&Idx2);
   GetFields(&Idx2);
   GetDimensions(&Idx2);
 }
@@ -259,7 +256,7 @@ DoCreate(i32 Argc, cstr* Argv)
 Perform the --encode action.
 ---------------------------------------------------------------------------------------------*/
 static void
-DoEncode(i32 Argc, cstr* Argv, cstr InputFile)
+DoEncode()
 {
 }
 
@@ -268,7 +265,7 @@ DoEncode(i32 Argc, cstr* Argv, cstr InputFile)
 Perform the --decode action.
 ---------------------------------------------------------------------------------------------*/
 static void
-DoDecode(i32 Argc, cstr* Argv, cstr InputFile)
+DoDecode()
 {
 }
 
@@ -276,10 +273,11 @@ DoDecode(i32 Argc, cstr* Argv, cstr InputFile)
 /*---------------------------------------------------------------------------------------------
 Ask the user for the action they want to perform.
 ---------------------------------------------------------------------------------------------*/
-static stack_string<9>
-ChooseAction(i32 Argc, cstr* Argv)
+static void
+ChooseAction()
 {
-  stack_string<9> Action;
+  /* prompt for the action */
+  stack_string<10> Action;
   while (true)
   {
     printf("Choose action:\n");
@@ -287,10 +285,10 @@ ChooseAction(i32 Argc, cstr* Argv)
     printf("  2. Encode a portion or the entirety of a dataset (--encode)\n");
     printf("  3. Decode a portion or the entirety of a dataset (--decode)\n");
     printf("Enter your choice (--create, --encode, or --decode): ");
-    scanf("%8s", Action.Data);
-    FlushStdIn();
+    FGets(&Action);
     LOOP:
-    printf("You entered %s. Press [Enter] to continue or type 'r' [Enter] to re-enter.\n", Action.Data);
+    printf("You entered %.*s.\n", Action.Size, Action.Data);
+    printf("Press [Enter] to continue or type 'r' [Enter] to re-enter.\n");
     char C = getchar();
     if (C == 'r')
       continue;
@@ -298,14 +296,25 @@ ChooseAction(i32 Argc, cstr* Argv)
       break;
     else
       goto LOOP;
-    if (strcmp(Action.Data, "--create") == 0 ||
-        strcmp(Action.Data, "--encode") == 0 ||
-        strcmp(Action.Data, "--decode") == 0)
-    {
-      break;
-    }
   }
-  return Action;
+
+  /* perform the action */
+  if (StrEqual(Action.Data, "--create"))
+  {
+    DoCreate();
+  }
+  else if (StrEqual(Action.Data, "--encode"))
+  {
+    DoEncode();
+  }
+  else if (StrEqual(Action.Data, "--decode"))
+  {
+    DoDecode();
+  }
+  else
+  {
+    idx2_Exit("Unknown action entered (not one of --create, --encode, --decode)\n");
+  }
 }
 
 
@@ -316,14 +325,7 @@ int
 main(int Argc, cstr* Argv)
 {
   SetHandleAbortSignals();
-  idx2_file Idx2;
-  GetTransformTemplate(&Idx2);
-
-  auto Action = ChooseAction(Argc, Argv);
-  if (strcmp(Action.Data, "--create") == 0)
-  {
-    DoCreate(Argc, Argv);
-  }
+  ChooseAction();
   return 0;
 
   CheckForUnsupportedOpt(Argc,
@@ -339,15 +341,6 @@ main(int Argc, cstr* Argv)
                          "--chunk_bits_per_file"
                          "--file_bits_per_dir"
                          "--file_bits_per_meta");
-
-  /* Parse the action (--encode or --decode) */
-  cstr InputFile = nullptr;
-  if (OptVal(Argc, Argv, "--encode", &InputFile))
-    DoEncode(Argc, Argv, InputFile);
-  else if (OptVal(Argc, Argv, "--decode", &InputFile))
-    DoDecode(Argc, Argv, InputFile);
-  else
-    idx2_Exit("Provide either --encode or --decode, followed by a file name\n");
 
   return 0;
 }
