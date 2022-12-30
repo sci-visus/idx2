@@ -650,14 +650,14 @@ Begin(const stack_array<t, N>& A)
 template <typename t, int N> idx2_Inline t*
 End(const stack_array<t, N>& A)
 {
-  return const_cast<t*>(&A.Arr[0]) + N;
+  return const_cast<t*>(&A.Arr[0]) + A.Size;
 }
 
 
 template <typename t, int N> idx2_Inline t*
 RevBegin(const stack_array<t, N>& A)
 {
-  return const_cast<t*>(&A.Arr[0]) + (N - 1);
+  return const_cast<t*>(&A.Arr[0]) + (A.Size - 1);
 }
 
 
@@ -1045,6 +1045,15 @@ idx2_Inline bool
 StrEqualOneOf(cstr S, cstr A, cstr B, cstr C = nullptr)
 {
   return StrEqual(S, A) || StrEqual(S, B) || StrEqual(S, C);
+}
+
+
+static void
+FlushStdIn()
+{
+  char c;
+  while ((c = fgetc(stdin)) != '\n' && c != EOF)
+    ; /* Flush stdin */
 }
 
 

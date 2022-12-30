@@ -67,18 +67,6 @@ ParseEncodeOptions(int Argc, cstr* Argv, idx2_file_v2* Idx2)
 
 
 /*---------------------------------------------------------------------------------------------
-Flush the standard input.
----------------------------------------------------------------------------------------------*/
-static void
-FlushStdIn()
-{
-  char c;
-  while ((c = fgetc(stdin)) != '\n' && c != EOF)
-    ; /* Flush stdin */
-}
-
-
-/*---------------------------------------------------------------------------------------------
 Ask the user to input the name of the dataset.
 ---------------------------------------------------------------------------------------------*/
 static void
@@ -93,11 +81,19 @@ GetName(idx2_file* Idx2)
     printf("Press [Enter] to continue or type 'r' [Enter] to re-enter.\n");
     char C = getchar();
     if (C == 'r')
+    {
+      FlushStdIn();
       continue;
+    }
     else if (C == '\n')
+    {
       break;
+    }
     else
+    {
+      FlushStdIn();
       goto LOOP;
+    }
   }
 }
 
@@ -116,17 +112,19 @@ GetFields(idx2_file* Idx2)
     printf("Add a field (no space): ");
     FGets(&Name);
     LOOP:
-    printf("You entered %s.\n"
-            "- Press [Enter] to stop adding fields,\n"
-            "- Type 'r' [Enter] to re-enter, or\n"
-            "- Type 'n' [Enter] to add another field.\n", Name.Data);
+    printf("You entered %.*s.\n", Name.Size, Name.Data);
+    printf("- Press [Enter] to stop adding fields,\n"
+           "- Type 'r' [Enter] to re-enter, or\n"
+           "- Type 'n' [Enter] to add another field.\n");
     char C = getchar();
     if (C == 'r')
     {
+      FlushStdIn();
       continue;
     }
     else if (C == 'n')
     {
+      FlushStdIn();
       PushBack(&Fields.Names, Name);
       continue;
     }
@@ -137,15 +135,17 @@ GetFields(idx2_file* Idx2)
     }
     else
     {
+      FlushStdIn();
       goto LOOP;
     }
   }
 
   PushBack(&Idx2->DimensionInfo, Fields);
 
-  printf("The following %d fields have been added: ", (i32)Size(Fields));
+  printf("The following %d fields have been added:\n", (i32)Size(Fields));
   idx2_ForEach (Field, Fields.Names)
-    printf("%s ", Field->Data);
+    printf("%.*s ", Field->Size, Field->Data);
+  printf("\n");
 }
 
 
@@ -159,22 +159,26 @@ GetDimensions(idx2_file* Idx2)
   {
     dimension_info Dimension;
     printf("Add a dimension (e.g., x 512): ");
-    Dimension.ShortName = getchar();
-    scanf("%d", &Dimension.Limit);
-    FlushStdIn();
-    LOOP:
+    int Result = 0;
+    while (Result != 2)
+    {
+      Result = scanf("%c %d", &Dimension.ShortName, &Dimension.Limit);
+      FlushStdIn();
+    }
+  LOOP:
     printf("You entered %c %d.\n"
            "- Press [Enter] to stop adding dimensions,\n"
            "- Type 'r' [Enter] to re-enter, or\n"
            "- Type 'n' [Enter] to add another dimension.\n", Dimension.ShortName, Dimension.Limit);
     char C = getchar();
-    FlushStdIn();
     if (C == 'r')
     {
+      FlushStdIn();
       continue;
     }
     else if (C == 'n')
     {
+      FlushStdIn();
       PushBack(&Idx2->DimensionInfo, Dimension);
       continue;
     }
@@ -185,13 +189,19 @@ GetDimensions(idx2_file* Idx2)
     }
     else
     {
+      FlushStdIn();
       goto LOOP;
     }
   }
 
-  printf("The following %d dimensions have been added: ", (i32)Size(Idx2->DimensionInfo));
+  printf("The following %d dimensions have been added (f stands for fields): ", (i32)Size(Idx2->DimensionInfo));
   idx2_ForEach (Dim, Idx2->DimensionInfo)
-    printf("%c %d  ", Dim->ShortName, Dim->Limit);
+  {
+    if (Dim->ShortName != 'f')
+      printf("%c %d, ", Dim->ShortName, Dim->Limit);
+    else
+      printf("%c %d, ", Dim->ShortName, (i32)Size(Dim->Names));
+  }
 }
 
 
@@ -281,33 +291,41 @@ ChooseAction()
   while (true)
   {
     printf("Choose action:\n");
-    printf("  1. Create dataset (--create)\n");
-    printf("  2. Encode a portion or the entirety of a dataset (--encode)\n");
-    printf("  3. Decode a portion or the entirety of a dataset (--decode)\n");
-    printf("Enter your choice (--create, --encode, or --decode): ");
+    printf("  1. Create dataset (create)\n");
+    printf("  2. Encode a portion or the entirety of a dataset (encode)\n");
+    printf("  3. Decode a portion or the entirety of a dataset (decode)\n");
+    printf("Enter your choice (create, encode, or decode): ");
     FGets(&Action);
     LOOP:
     printf("You entered %.*s.\n", Action.Size, Action.Data);
     printf("Press [Enter] to continue or type 'r' [Enter] to re-enter.\n");
     char C = getchar();
     if (C == 'r')
+    {
+      FlushStdIn();
       continue;
+    }
     else if (C == '\n')
+    {
       break;
+    }
     else
+    {
+      FlushStdIn();
       goto LOOP;
+    }
   }
 
   /* perform the action */
-  if (StrEqual(Action.Data, "--create"))
+  if (StrEqual(Action.Data, "create"))
   {
     DoCreate();
   }
-  else if (StrEqual(Action.Data, "--encode"))
+  else if (StrEqual(Action.Data, "encode"))
   {
     DoEncode();
   }
-  else if (StrEqual(Action.Data, "--decode"))
+  else if (StrEqual(Action.Data, "decode"))
   {
     DoDecode();
   }
