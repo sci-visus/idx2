@@ -342,14 +342,14 @@ In string form, a Template is made from 4 characters: x,y,z, and :
 x, y, and z denotes the axis where the transform happens, while : denotes where the next
 level begins (any subsequent transform will be done on the coarsest level subband only).
 ---------------------------------------------------------------------------------------------*/
-stack_array<subband, MaxNumSubbandsPerLevel_>
+array<subband>
 BuildLevelSubbands(const template_view& TemplateView,
                    const nd_size& Dims,
                    const nd_size& Spacing)
 {
   idx2_Assert(IsPow2(Spacing));
 
-  stack_array<subband, MaxNumSubbandsPerLevel_> Subbands;
+  array<subband> Subbands;
 
   const auto& WavNorms = GetCdf53NormsFast<MaxNumLevels_>();
   nd_size LogSpacing = Log2Floor(Spacing);

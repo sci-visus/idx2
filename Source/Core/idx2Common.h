@@ -10,6 +10,8 @@
 #include "Volume.h"
 #include "Wavelet.h"
 #include "nd_volume.h"
+#include "idx2Config.h"
+
 
 #if VISUS_IDX2
 #include <functional>
@@ -31,9 +33,6 @@ namespace idx2
 {
 
 
-static constexpr i8  MaxNumDimensions_ = nd_size::Size();
-static constexpr i8  MaxNameLength_ = 64;
-static constexpr i16 MaxNumFields_ = 512;
 
 using name_str = stack_string<MaxNameLength_>;
 
@@ -110,20 +109,20 @@ struct transform_template
 {
   template_str Original; // e.g., xyzxyz:xyz:xyz
   template_int Processed; // 012012012012
-  stack_array<template_view, MaxNumLevels_> LevelViews; // where the levels are in the Processed template
+  array<template_view> LevelViews; // where the levels are in the Processed template
 };
 
 
 struct subbands_per_level
 {
-  stack_array<subband, MaxNumSubbandsPerLevel_> Pow2;
-  stack_array<subband, MaxNumSubbandsPerLevel_> Pow2Plus1;
+  array<subband> Pow2;
+  array<subband> Pow2Plus1;
   u8 DecodeMasks = 0; // a bit field which specifies which subbands to decode
-  stack_array<nd_size, MaxNumSubbandsPerLevel_> Spacings;
+  array<nd_size> Spacings;
 };
 
 
-struct brick_info_per_level
+struct brick_indexing_per_level
 {
   nd_size DimsPow2;
   nd_size DimsPow2Plus1;
@@ -137,7 +136,7 @@ struct brick_info_per_level
 };
 
 
-struct chunk_info_per_level
+struct chunk_indexing_per_level
 {
   nd_size Dims;
   nd_size NChunks; // may not be power of two (cropped against the actual domain)
@@ -148,14 +147,14 @@ struct chunk_info_per_level
 };
 
 
-struct file_info_per_level
+struct file_indexing_per_level
 {
   nd_size Dims;
   nd_size NFiles; // may not be power of two
   template_view Template;
   template_view IndexTemplate;
   // TODO NEXT
-  stack_array<i8, 8> FileDirDepths; // how many spatial "bits" are consumed by each file/directory level
+  array<i8> FileDirDepths; // how many spatial "bits" are consumed by each file/directory level
 };
 
 
@@ -168,16 +167,15 @@ struct idx2_file
   nd_size Dims;
   dtype DType = dtype::__Invalid__;
   f64 Tolerance = 0;
-  i8 NLevels = 1;
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
-  stack_array<dimension_info, MaxNumDimensions_> DimensionInfo; // TODO NEXT: initialize this
+  array<dimension_info> DimensionInfo; // TODO NEXT: initialize this
   stack_array<i8, 'z' - 'a' + 1> DimensionMap; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
   transform_template Template;
-  stack_array<subbands_per_level, MaxNumLevels_> Subbands;
-  stack_array<brick_info_per_level, MaxNumLevels_> BrickInfo;
-  stack_array<chunk_info_per_level, MaxNumLevels_> ChunkInfo;
-  stack_array<file_info_per_level, MaxNumLevels_>  FileInfo;
+  array<subbands_per_level> Subbands;
+  array<brick_indexing_per_level> BrickIndexing;
+  array<chunk_indexing_per_level> ChunkIndexing;
+  array<file_indexing_per_level>  FileIndexing;
 
   i8 BitsPerBrick = 15;
   i8 BrickBitsPerChunk = 12;

@@ -88,52 +88,52 @@ EncodeBrickSubbandMetadata(idx2_file* Idx2,
                            const u64 Brick,
                            const u32 LastBlock)
 {
-  /* pass 2: encode the brick meta info */
-  idx2_InclusiveFor (u32, Block, 0, LastBlock)
-  {
-    v3i Z3(DecodeMorton3(Block));
-    idx2_NextMorton(Block, Z3, NBlocks3);
-    v3i D3 = Z3 * Idx2->BlockDims3;
-    v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
-    bool CodedInNextLevel =
-      E->Subband == 0 && E->Level + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
-    if (CodedInNextLevel)
-      continue;
-    /* done at most once per brick, by the last significant block */
-    idx2_For (int, I, 0, Size(E->LastSigBlock))
-    {
-      i16 BpKey = E->LastSigBlock[I].BitPlane;
-      if (Block != E->LastSigBlock[I].Block)
-        continue;
+  ///* pass 2: encode the brick meta info */
+  //idx2_InclusiveFor (u32, Block, 0, LastBlock)
+  //{
+  //  v3i Z3(DecodeMorton3(Block));
+  //  idx2_NextMorton(Block, Z3, NBlocks3);
+  //  v3i D3 = Z3 * Idx2->BlockDims3;
+  //  v3i BlockDims3 = Min(Idx2->BlockDims3, SbDims3 - D3);
+  //  bool CodedInNextLevel =
+  //    E->Subband == 0 && E->Level + 1 < Idx2->NLevels && BlockDims3 == Idx2->BlockDims3;
+  //  if (CodedInNextLevel)
+  //    continue;
+  //  /* done at most once per brick, by the last significant block */
+  //  idx2_For (int, I, 0, Size(E->LastSigBlock))
+  //  {
+  //    i16 BpKey = E->LastSigBlock[I].BitPlane;
+  //    if (Block != E->LastSigBlock[I].Block)
+  //      continue;
 
-      u32 ChannelKey = GetChannelKey(BpKey, E->Level, E->Subband);
-      auto ChannelIt = Lookup(E->Channels, ChannelKey);
-      idx2_Assert(ChannelIt);
-      channel* C = ChannelIt.Val;
-      /* write brick delta */
-      if (C->NBricks == 0)
-      { // start of a chunk
-        GrowToAccomodate(&C->BrickDeltasStream, 8);
-        WriteVarByte(&C->BrickDeltasStream, Brick);
-      }
-      else
-      {
-        GrowToAccomodate(&C->BrickDeltasStream, (Brick - C->LastBrick - 1 + 8) / 8);
-        WriteUnary(&C->BrickDeltasStream, u32(Brick - C->LastBrick - 1));
-      }
-      /* write brick size */
-      i64 BrickSize = Size(C->BlockStream);
-      GrowToAccomodate(&C->BrickSizeStream, 4);
-      WriteVarByte(&C->BrickSizeStream, BrickSize);
-      /* write brick data */
-      GrowToAccomodate(&C->BrickStream, BrickSize);
-      WriteStream(&C->BrickStream, &C->BlockStream);
-      //BlockStat.Add((f64)Size(C->BlockStream));
-      Rewind(&C->BlockStream);
-      ++C->NBricks;
-      C->LastBrick = Brick;
-    } // end bit plane loop
-  }   // end zfp block loop
+  //    u32 ChannelKey = GetChannelKey(BpKey, E->Level, E->Subband);
+  //    auto ChannelIt = Lookup(E->Channels, ChannelKey);
+  //    idx2_Assert(ChannelIt);
+  //    channel* C = ChannelIt.Val;
+  //    /* write brick delta */
+  //    if (C->NBricks == 0)
+  //    { // start of a chunk
+  //      GrowToAccomodate(&C->BrickDeltasStream, 8);
+  //      WriteVarByte(&C->BrickDeltasStream, Brick);
+  //    }
+  //    else
+  //    {
+  //      GrowToAccomodate(&C->BrickDeltasStream, (Brick - C->LastBrick - 1 + 8) / 8);
+  //      WriteUnary(&C->BrickDeltasStream, u32(Brick - C->LastBrick - 1));
+  //    }
+  //    /* write brick size */
+  //    i64 BrickSize = Size(C->BlockStream);
+  //    GrowToAccomodate(&C->BrickSizeStream, 4);
+  //    WriteVarByte(&C->BrickSizeStream, BrickSize);
+  //    /* write brick data */
+  //    GrowToAccomodate(&C->BrickStream, BrickSize);
+  //    WriteStream(&C->BrickStream, &C->BlockStream);
+  //    //BlockStat.Add((f64)Size(C->BlockStream));
+  //    Rewind(&C->BlockStream);
+  //    ++C->NBricks;
+  //    C->LastBrick = Brick;
+  //  } // end bit plane loop
+  //}   // end zfp block loop
 }
 
 

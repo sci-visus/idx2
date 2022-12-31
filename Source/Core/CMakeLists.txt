@@ -29,6 +29,7 @@ set(IDX2_CORE_HEADER_FILES
   HashSet.h
   HashTable.h
   idx2Common.h
+  idx2Config.h
   idx2Decode.h
   idx2Encode.h
   idx2Lookup.h
@@ -38,7 +39,6 @@ set(IDX2_CORE_HEADER_FILES
   InputOutput.h
   LinkedList.h
   Logger.h
-  Macros.h
   Math.h
   Memory.h
   MemoryMap.h

@@ -4,16 +4,12 @@
 #include "Common.h"
 #include "Volume.h"
 #include "nd_volume.h"
+#include "idx2Config.h"
 
 
 namespace idx2
 {
 
-
-static constexpr i8 MaxNumLevels_ = 16;
-static constexpr i8 MaxTemplateLength_ = 64;
-static constexpr i8 MaxBitsPerLevel_ = 3;
-static constexpr i8 MaxNumSubbandsPerLevel_ = 1 << MaxBitsPerLevel_;
 
 using template_str = stack_string<MaxTemplateLength_>;
 using template_int = stack_array<i8, MaxTemplateLength_>;
@@ -130,7 +126,7 @@ InverseCdf53(const v3i& M3,
              bool CoarsestLevel);
 
 
-stack_array<subband, MaxNumSubbandsPerLevel_>
+array<subband>
 BuildLevelSubbands(const template_view& TemplateView,
                    const nd_size& Dims,
                    const nd_size& Spacing);

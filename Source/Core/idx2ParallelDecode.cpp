@@ -40,141 +40,142 @@ ParallelDecodeSubband(const idx2_file& Idx2,
                       hash_table<i16, bitstream>* StreamsPtr,
                       brick_volume* BrickVol)       // TODO: move to decode_states
 {
-  u64 Brick = Ds.Brick;
-  v3i SbDims3 = Dims(SbGrid);
-  v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
-  int BlockCount = Prod(NBlocks3);
-  // the following subtracts blocks on subband 0 that are coded in the next level
-  // meaning, we only code subband-0 blocks that are on the boundary (extrapolated)
-  if (Ds.Subband == 0 && Ds.Level + 1 < Idx2.NLevels)
-    BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
+  //u64 Brick = Ds.Brick;
+  //v3i SbDims3 = Dims(SbGrid);
+  //v3i NBlocks3 = (SbDims3 + Idx2.BlockDims3 - 1) / Idx2.BlockDims3;
+  //int BlockCount = Prod(NBlocks3);
+  //// the following subtracts blocks on subband 0 that are coded in the next level
+  //// meaning, we only code subband-0 blocks that are on the boundary (extrapolated)
+  //if (Ds.Subband == 0 && Ds.Level + 1 < Idx2.NLevels)
+  //  BlockCount -= Prod(SbDims3 / Idx2.BlockDims3);
 
-  /* first, read the block exponents */
-  auto ReadChunkExpResult = ParallelReadChunkExponents(Idx2, D, Brick, Ds.Level, Ds.Subband);
-  if (!ReadChunkExpResult)
-    return Error(ReadChunkExpResult);
+  ///* first, read the block exponents */
+  //auto ReadChunkExpResult = ParallelReadChunkExponents(Idx2, D, Brick, Ds.Level, Ds.Subband);
+  //if (!ReadChunkExpResult)
+  //  return Error(ReadChunkExpResult);
 
-  chunk_exp_cache ChunkExpCache = Value(ReadChunkExpResult); // make a copy to avoid data race
-  i32 BrickExpOffset = (Ds.BrickInChunk * BlockCount) * (SizeOf(Idx2.DType) > 4 ? 2 : 1);
-  bitstream BrickExpsStream = ChunkExpCache.ChunkExpStream;
-  SeekToByte(&BrickExpsStream, BrickExpOffset);
-  u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
-  const i8 NBitPlanes = idx2_BitSizeOf(u64);
-  Clear(StreamsPtr);
+  //chunk_exp_cache ChunkExpCache = Value(ReadChunkExpResult); // make a copy to avoid data race
+  //i32 BrickExpOffset = (Ds.BrickInChunk * BlockCount) * (SizeOf(Idx2.DType) > 4 ? 2 : 1);
+  //bitstream BrickExpsStream = ChunkExpCache.ChunkExpStream;
+  //SeekToByte(&BrickExpsStream, BrickExpOffset);
+  //u32 LastBlock = EncodeMorton3(v3<u32>(NBlocks3 - 1));
+  //const i8 NBitPlanes = idx2_BitSizeOf(u64);
+  //Clear(StreamsPtr);
 
-  bool SubbandSignificant = false; // whether there is any significant block on this subband
-  idx2_InclusiveFor (u32, Block, 0, LastBlock)
-  { // zfp block loop
-    v3i Z3(DecodeMorton3(Block));
-    idx2_NextMorton(Block, Z3, NBlocks3);
-    v3i D3 = Z3 * Idx2.BlockDims3;
-    v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
-    const int NDims = NumDims(BlockDims3);
-    const int NVals = 1 << (2 * NDims);
-    const int Prec = NBitPlanes - 1 - NDims;
-    f64 BlockFloats[4 * 4 * 4];
-    buffer_t BufFloats(BlockFloats, NVals);
-    buffer_t BufInts((i64*)BlockFloats, NVals);
-    u64 BlockUInts[4 * 4 * 4] = {};
-    buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
+  //bool SubbandSignificant = false; // whether there is any significant block on this subband
+  //idx2_InclusiveFor (u32, Block, 0, LastBlock)
+  //{ // zfp block loop
+  //  v3i Z3(DecodeMorton3(Block));
+  //  idx2_NextMorton(Block, Z3, NBlocks3);
+  //  v3i D3 = Z3 * Idx2.BlockDims3;
+  //  v3i BlockDims3 = Min(Idx2.BlockDims3, SbDims3 - D3);
+  //  const int NDims = NumDims(BlockDims3);
+  //  const int NVals = 1 << (2 * NDims);
+  //  const int Prec = NBitPlanes - 1 - NDims;
+  //  f64 BlockFloats[4 * 4 * 4];
+  //  buffer_t BufFloats(BlockFloats, NVals);
+  //  buffer_t BufInts((i64*)BlockFloats, NVals);
+  //  u64 BlockUInts[4 * 4 * 4] = {};
+  //  buffer_t BufUInts(BlockUInts, Prod(BlockDims3));
 
-    bool CodedInNextLevel =
-      Ds.Subband == 0 && Ds.Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
-    if (CodedInNextLevel)
-      continue;
+  //  bool CodedInNextLevel =
+  //    Ds.Subband == 0 && Ds.Level + 1 < Idx2.NLevels && BlockDims3 == Idx2.BlockDims3;
+  //  if (CodedInNextLevel)
+  //    continue;
 
-    // we read the exponent for the block
-    i16 EMax = SizeOf(Idx2.DType) > 4
-                 ? (i16)Read(&BrickExpsStream, 16) - traits<f64>::ExpBias
-                 : (i16)Read(&BrickExpsStream, traits<f32>::ExpBits) - traits<f32>::ExpBias;
-    i8 N = 0;
-    i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType)), NBitPlanes);
-    int NBitPlanesDecoded = Exponent(Tolerance) - 6 - EMax + 1;
-    i8 NBps = 0;
-    int Bpc = Idx2.BitPlanesPerChunk;
-    idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
-    { // bit plane loop
-      i16 RealBp = Bp + EMax;
-      i16 BpKey = (RealBp + BitPlaneKeyBias_) / Bpc; // make it so that the BpKey is positive
-      // TODO: always decode extra 6 bit planes?
-      bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Tolerance) + 1;
-      if (TooHighPrecision)
-      {
-        if ((RealBp + BitPlaneKeyBias_) % Bpc == 0) // make sure we encode full "block" of BpKey
-          break;
-      }
+  //  // we read the exponent for the block
+  //  i16 EMax = SizeOf(Idx2.DType) > 4
+  //               ? (i16)Read(&BrickExpsStream, 16) - traits<f64>::ExpBias
+  //               : (i16)Read(&BrickExpsStream, traits<f32>::ExpBits) - traits<f32>::ExpBias;
+  //  i8 N = 0;
+  //  i8 EndBitPlane = Min(i8(BitSizeOf(Idx2.DType)), NBitPlanes);
+  //  int NBitPlanesDecoded = Exponent(Tolerance) - 6 - EMax + 1;
+  //  i8 NBps = 0;
+  //  int Bpc = Idx2.BitPlanesPerChunk;
+  //  idx2_InclusiveForBackward (i8, Bp, NBitPlanes - 1, NBitPlanes - EndBitPlane)
+  //  { // bit plane loop
+  //    i16 RealBp = Bp + EMax;
+  //    i16 BpKey = (RealBp + BitPlaneKeyBias_) / Bpc; // make it so that the BpKey is positive
+  //    // TODO: always decode extra 6 bit planes?
+  //    bool TooHighPrecision = NBitPlanes - 6 > RealBp - Exponent(Tolerance) + 1;
+  //    if (TooHighPrecision)
+  //    {
+  //      if ((RealBp + BitPlaneKeyBias_) % Bpc == 0) // make sure we encode full "block" of BpKey
+  //        break;
+  //    }
 
-      auto StreamIt = Lookup(*StreamsPtr, BpKey);
-      bitstream* Stream = nullptr;
-      if (!StreamIt)
-      { // first block in the brick
-        auto ReadChunkResult = ParallelReadChunk(Idx2, D, Brick, Ds.Level, Ds.Subband, BpKey);
-        if (!ReadChunkResult)
-          return Error(ReadChunkResult);
+  //    auto StreamIt = Lookup(*StreamsPtr, BpKey);
+  //    bitstream* Stream = nullptr;
+  //    if (!StreamIt)
+  //    { // first block in the brick
+  //      auto ReadChunkResult = ParallelReadChunk(Idx2, D, Brick, Ds.Level, Ds.Subband, BpKey);
+  //      if (!ReadChunkResult)
+  //        return Error(ReadChunkResult);
 
-        chunk_cache ChunkCache = Value(ReadChunkResult); // making a copy to avoid data race
-        u64* BrickPos = BinarySearch(idx2_Range(ChunkCache.Bricks), Brick);
-        idx2_Assert(BrickPos != End(ChunkCache.Bricks));
-        //idx2_Assert(*BrickPos == Brick);
-        i64 BrickInChunk = BrickPos - Begin(ChunkCache.Bricks);
-        idx2_Assert(BrickInChunk < Size(ChunkCache.BrickOffsets));
-        i64 BrickOffset = ChunkCache.BrickOffsets[BrickInChunk];
-        //BrickOffset += Size(ChunkCache.ChunkStream);
-        Insert(&StreamIt, BpKey, ChunkCache.ChunkStream);
-        Stream = StreamIt.Val;
-        // seek to the correct byte offset of the brick in the chunk
-        SeekToByte(Stream, BrickOffset);
-      }
-      else // if the stream already exists
-      {
-        Stream = StreamIt.Val;
-      }
-      /* zfp decode */
-      if (!TooHighPrecision)
-        ++NBps;
-      auto SizeBegin = BitSize(*Stream);
-      if (NBitPlanesDecoded <= 8)
-        Decode(BlockUInts, NVals, Bp, N, Stream, false); // use AVX2
-      else                                        // delay the transpose of bits to later
-        DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
-      auto SizeEnd = BitSize(*Stream);
-      D->BytesDecoded_ += SizeEnd - SizeBegin;
-    } // end bit plane loop
+  //      chunk_cache ChunkCache = Value(ReadChunkResult); // making a copy to avoid data race
+  //      u64* BrickPos = BinarySearch(idx2_Range(ChunkCache.Bricks), Brick);
+  //      idx2_Assert(BrickPos != End(ChunkCache.Bricks));
+  //      //idx2_Assert(*BrickPos == Brick);
+  //      i64 BrickInChunk = BrickPos - Begin(ChunkCache.Bricks);
+  //      idx2_Assert(BrickInChunk < Size(ChunkCache.BrickOffsets));
+  //      i64 BrickOffset = ChunkCache.BrickOffsets[BrickInChunk];
+  //      //BrickOffset += Size(ChunkCache.ChunkStream);
+  //      Insert(&StreamIt, BpKey, ChunkCache.ChunkStream);
+  //      Stream = StreamIt.Val;
+  //      // seek to the correct byte offset of the brick in the chunk
+  //      SeekToByte(Stream, BrickOffset);
+  //    }
+  //    else // if the stream already exists
+  //    {
+  //      Stream = StreamIt.Val;
+  //    }
+  //    /* zfp decode */
+  //    if (!TooHighPrecision)
+  //      ++NBps;
+  //    auto SizeBegin = BitSize(*Stream);
+  //    if (NBitPlanesDecoded <= 8)
+  //      Decode(BlockUInts, NVals, Bp, N, Stream, false); // use AVX2
+  //    else                                        // delay the transpose of bits to later
+  //      DecodeTest(&BlockUInts[NBitPlanes - 1 - Bp], NVals, N, Stream);
+  //    auto SizeEnd = BitSize(*Stream);
+  //    D->BytesDecoded_ += SizeEnd - SizeBegin;
+  //  } // end bit plane loop
 
-    /* do inverse zfp transform but only if any bit plane is decoded */
-    if (NBps > 0)
-    {
-      if (NBitPlanesDecoded > 8)
-        TransposeRecursive(BlockUInts, NBps);
+  //  /* do inverse zfp transform but only if any bit plane is decoded */
+  //  if (NBps > 0)
+  //  {
+  //    if (NBitPlanesDecoded > 8)
+  //      TransposeRecursive(BlockUInts, NBps);
 
-      // if the subband is not 0 or if this is the last level, we count this block
-      // as significant, otherwise it is not significant
-      bool CurrBlockSignificant = (Ds.Subband > 0 || Ds.Level + 1 == Idx2.NLevels);
-      SubbandSignificant = SubbandSignificant || CurrBlockSignificant;
-      ++D->NSignificantBlocks;
-      InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
-      InverseZfp((i64*)BlockFloats, NDims);
-      Dequantize(EMax, Prec, BufInts, &BufFloats);
-      v3i S3;
-      int J = 0;
-      v3i From3 = From(SbGrid), Spacing3 = Spacing(SbGrid);
-      timer DataTimer;
-      StartTimer(&DataTimer);
-      volume& Vol = BrickVol->Vol;
-      idx2_Assert(Vol.Buffer);
-      idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
-      { // sample loop
-        idx2_Assert(D3 + S3 < SbDims3);
-        Vol.At<f64>(From3, Spacing3, D3 + S3) = BlockFloats[J++];
-      }
-      idx2_EndFor3; // end sample loop
-      D->DataMovementTime_ += ElapsedTime(&DataTimer);
-    }
-  }
-  D->NInsignificantSubbands += (SubbandSignificant == false);
-  // printf("%d\n", AnyBlockDecoded);
+  //    // if the subband is not 0 or if this is the last level, we count this block
+  //    // as significant, otherwise it is not significant
+  //    bool CurrBlockSignificant = (Ds.Subband > 0 || Ds.Level + 1 == Idx2.NLevels);
+  //    SubbandSignificant = SubbandSignificant || CurrBlockSignificant;
+  //    ++D->NSignificantBlocks;
+  //    InverseShuffle(BlockUInts, (i64*)BlockFloats, NDims);
+  //    InverseZfp((i64*)BlockFloats, NDims);
+  //    Dequantize(EMax, Prec, BufInts, &BufFloats);
+  //    v3i S3;
+  //    int J = 0;
+  //    v3i From3 = From(SbGrid), Spacing3 = Spacing(SbGrid);
+  //    timer DataTimer;
+  //    StartTimer(&DataTimer);
+  //    volume& Vol = BrickVol->Vol;
+  //    idx2_Assert(Vol.Buffer);
+  //    idx2_BeginFor3 (S3, v3i(0), BlockDims3, v3i(1))
+  //    { // sample loop
+  //      idx2_Assert(D3 + S3 < SbDims3);
+  //      Vol.At<f64>(From3, Spacing3, D3 + S3) = BlockFloats[J++];
+  //    }
+  //    idx2_EndFor3; // end sample loop
+  //    D->DataMovementTime_ += ElapsedTime(&DataTimer);
+  //  }
+  //}
+  //D->NInsignificantSubbands += (SubbandSignificant == false);
+  //// printf("%d\n", AnyBlockDecoded);
 
-  return SubbandSignificant;
+  //return SubbandSignificant;
+  return false;
 }
 
 
@@ -428,7 +429,7 @@ TraverseFirstLevel(const idx2_file& Idx2,
                    mmap_volume* OutVolFile,
                    volume* OutVolMem)
 {
-  i8 Level = Idx2.NLevels - 1; // coarsest level
+  //i8 Level = Idx2.NLevels - 1; // coarsest level
   extent ExtentInBricks, ExtentInChunks, ExtentInFiles;
   extent VolExtentInBricks, VolExtentInChunks, VolExtentInFiles;
   //ComputeExtentsForTraversal(Idx2,
