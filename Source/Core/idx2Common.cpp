@@ -36,6 +36,12 @@ namespace idx2
 free_list_allocator BrickAlloc_;
 
 
+idx2_file::idx2_file()
+{
+  memset(DimensionMap.Arr, -1, DimensionMap.Capacity());
+}
+
+
 /*---------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------*/
@@ -361,13 +367,15 @@ Guess the transform template.
 template_str
 GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
 {
+  // TODO NEXT: 'f' is not used?
   template_str Template;
   nd_size DimsLog = Log2Ceil(Idx2.Dims);
   i8 Level = 0;
   i8 Pos = 0;
+  i8 NDims = (i8)Size(Idx2.DimensionInfo);
   while (Sum<i32>(DimsLog) != 0)
   {
-    bool Used[3] = {};
+    bool Used[nd_size::Size()] = {};
     i32 DimMax = 0;
     i8 DMax = -1;
     while (true) // loop for one level
@@ -375,7 +383,7 @@ GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
       DMax = -1;
       if (Hint == template_hint::Anisotropic)
       {
-        for (i8 D = 0; D < 3; ++D)
+        for (i8 D = 0; D < NDims; ++D)
         {
           if (DimsLog[D] > DimMax && !Used[D])
           {
@@ -386,7 +394,7 @@ GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
       }
       else if (Hint == template_hint::Isotropic)
       {
-        for (i8 D = 2; D >= 0; --D)
+        for (i8 D = NDims - 1; D >= 0; --D)
         {
           if (DimsLog[D] > 0 && !Used[D])
           {
@@ -405,10 +413,11 @@ GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
         Used[DMax] = true;
         --DimsLog[DMax];
         --DimMax;
-        Template[Pos++] = 'x' + DMax; // TODO NEXT: we need to translate from number to char
+        Template[Pos++] = Idx2.DimensionMapInverse[DMax];
       }
       else // done with the current level
       {
+        // TODO NEXT: how about 2D?
         if (Sum<i32>(DimsLog) >= 21) // so that the coarsest level is at least 128^3-equivalent
           Template[Pos++] = ':';
         break;
@@ -520,9 +529,10 @@ Verify the integrity of the parameters in idx2_file and compute necessary auxili
 structures for use during encoding or decoding.
 ---------------------------------------------------------------------------------------------*/
 error<err_code>
-Finalize(idx2_file* Idx2, params* P)
+Finalize(idx2_file* Idx2)
 {
   ProcessTransformTemplate(Idx2);
+  VerifyTransformTemplate(*Idx2);
   ComputeSubbandsForAllLevels(Idx2);
   ComputeIndexingInfo(Idx2);
   // TODO NEXT: compute SubbandMasks

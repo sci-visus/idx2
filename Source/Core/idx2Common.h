@@ -33,11 +33,11 @@ namespace idx2
 {
 
 
+/**********************************************************************************************
+BASIC TYPES
+**********************************************************************************************/
 
 using name_str = stack_string<MaxNameLength_>;
-
-
-/* ---------------------- TYPES ----------------------*/
 
 struct dimension_info
 {
@@ -50,25 +50,13 @@ struct dimension_info
 };
 
 
-idx2_Inline void
-Dealloc(dimension_info* DimInfo)
-{ Dealloc(&DimInfo->Names); }
-
-
-idx2_Inline i32
-Size(const dimension_info& Dim)
-{
-  return Size(Dim.Names) > 0 ? i32(Size(Dim.Names)) : Dim.Limit;
-}
-
-
 struct file_id
 {
   stref Name;
   u64 Id = 0;
 };
 
-
+// TODO NEXT: get rid of this
 struct params
 {
   volume NasaMask;
@@ -132,9 +120,8 @@ struct brick_indexing_per_level
   nd_size NBricksPerChunk; // power of two
   template_view Template;
   template_view IndexTemplate; // the part that precedes the BrickTemplate
-  template_view IndexTemplateInChunk; // the part that precedes the BrickTemplate but restricted to a chunk
+  template_view IndexTemplateInChunk; //Indextemplate restricted to a chunk
 };
-
 
 struct chunk_indexing_per_level
 {
@@ -145,7 +132,6 @@ struct chunk_indexing_per_level
   template_view IndexTemplate;
   template_view IndexTemplateInFile;
 };
-
 
 struct file_indexing_per_level
 {
@@ -169,8 +155,9 @@ struct idx2_file
   f64 Tolerance = 0;
   v2d ValueRange = v2d(traits<f64>::Max, traits<f64>::Min);
 
-  array<dimension_info> DimensionInfo; // TODO NEXT: initialize this
-  stack_array<i8, 'z' - 'a' + 1> DimensionMap; // map from ['a' - 'a', 'z' - 'a'] -> [0, Size(Idx2->Dimensions)]
+  array<dimension_info> DimensionInfo;
+  stack_array<i8, 'z' - 'a' + 1> DimensionMap;
+  stack_array<u8, nd_size::Size()> DimensionMapInverse;
   transform_template Template;
   array<subbands_per_level> Subbands;
   array<brick_indexing_per_level> BrickIndexing;
@@ -183,19 +170,51 @@ struct idx2_file
   i8 FileBitsPerDir = 9;
   i8 BitPlanesPerChunk = 1;
   i8 BitPlanesPerFile = 16;
+
+  idx2_file();
 };
 
 
-/* ---------------------- GLOBALS ----------------------*/
-extern free_list_allocator BrickAlloc_;
+/**********************************************************************************************
+SEUP AND TEAR DOWN STUFFS
+**********************************************************************************************/
+
+void
+Dealloc(params* P);
 
 
-/* ---------------------- FUNCTIONS ----------------------*/
+idx2_Inline void
+Dealloc(dimension_info* DimInfo)
+{ Dealloc(&DimInfo->Names); }
 
 
-/* e.g., xyzxyz -> v3i(4, 4, 4) */
-nd_size
-Dims(const template_view& Template);
+error<err_code>
+Finalize(idx2_file* Idx2);
+
+
+idx2_Inline void
+Dealloc(idx2_file* Idx2)
+{
+  idx2_ForEach (DimInfo, Idx2->DimensionInfo)
+  {
+    Dealloc(&*DimInfo);
+  }
+}
+
+
+/**********************************************************************************************
+CONFIGURATION-RELATED STUFFS
+**********************************************************************************************/
+
+enum class template_hint
+{
+  Isotropic, // alternate the dimensions at the end of the template
+  Anisotropic, // alternate the dimensions at the beginning of the template
+  Size
+};
+
+template_str
+GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint);
 
 
 void // TODO: should also return an error?
@@ -210,52 +229,10 @@ error<err_code>
 ReadMetaFileFromBuffer(idx2_file* Idx2, buffer& Buf);
 
 
-enum class template_hint
-{
-  Isotropic, // alternate the dimensions at the end of the template
-  Anisotropic, // alternate the dimensions at the beginning of the template
-  Size
-};
 
-
-template_str
-GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint);
-
-
-/* Compute the output grid (from, dims, strides) */
-grid
-GetGrid(const idx2_file& Idx2, const nd_extent& Ext);
-
-
-void
-Dealloc(params* P);
-
-
-error<err_code>
-Finalize(idx2_file* Idx2, params* P);
-
-
-void
-ComputeExtentsForTraversal(const idx2_file& Idx2,
-                           const nd_extent& Ext,
-                           i8 Level,
-                           nd_extent* ExtentInBricks,
-                           nd_extent* ExtentInChunks,
-                           nd_extent* ExtentInFiles,
-                           nd_extent* VolExtentInBricks,
-                           nd_extent* VolExtentInChunks,
-                           nd_extent* VolExtentInFiles);
-
-
-idx2_Inline void
-Dealloc(idx2_file* Idx2)
-{
-  idx2_ForEach (DimInfo, Idx2->DimensionInfo)
-  {
-    Dealloc(&*DimInfo);
-  }
-}
-
+/**********************************************************************************************
+TRAVERSAL-REALTED STUFFS
+**********************************************************************************************/
 
 struct traverse_item
 {
@@ -268,8 +245,6 @@ struct traverse_item
 
 
 struct file_chunk_brick_traversal;
-
-
 using traverse_callback = error<err_code> (const file_chunk_brick_traversal&, const traverse_item&);
 
 
@@ -301,6 +276,18 @@ struct file_chunk_brick_traversal
 };
 
 
+void
+ComputeExtentsForTraversal(const idx2_file& Idx2,
+                           const nd_extent& Ext,
+                           i8 Level,
+                           nd_extent* ExtentInBricks,
+                           nd_extent* ExtentInChunks,
+                           nd_extent* ExtentInFiles,
+                           nd_extent* VolExtentInBricks,
+                           nd_extent* VolExtentInChunks,
+                           nd_extent* VolExtentInFiles);
+
+
 error<err_code>
 TraverseFiles(const file_chunk_brick_traversal& Traversal);
 
@@ -311,6 +298,30 @@ TraverseChunks(const file_chunk_brick_traversal& Traversal, const traverse_item&
 
 error<err_code>
 TraverseBricks(const file_chunk_brick_traversal& Traversal, traverse_item& ChunkTop);
+
+
+/**********************************************************************************************
+MISC STUFFS
+**********************************************************************************************/
+
+/* Compute the output grid (from, dims, strides) */
+grid
+GetGrid(const idx2_file& Idx2, const nd_extent& Ext);
+
+
+idx2_Inline i32
+Size(const dimension_info& Dim)
+{
+  return Size(Dim.Names) > 0 ? i32(Size(Dim.Names)) : Dim.Limit;
+}
+
+
+/* e.g., xyzxyz -> v3i(4, 4, 4) */
+nd_size
+Dims(const template_view& Template);
+
+
+extern free_list_allocator BrickAlloc_;
 
 
 } // namespace idx2
