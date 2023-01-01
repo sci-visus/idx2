@@ -21,7 +21,7 @@ OptVal(i32 NArgs, cstr* Args, cstr Opt, array<dimension_info>* Dimensions)
         if (J >= NArgs || !isalpha(Args[J][0]) || !islower(Args[J][0]))
           return J > I + 1;
         Dim.ShortName = Args[J++][0];
-        if (J >= NArgs || !ToInt(Args[J++], &Dim.Limit))
+        if (J >= NArgs || !ToInt(Args[J++], &Dim.UpperLimit))
           return false;
         PushBack(Dimensions, Dim);
       }
@@ -77,17 +77,51 @@ InputFields(idx2_file* Idx2)
   while (true)
   {
     name_str Name;
-    printf("Add a field (no space): ");
-    FGets(&Name);
+    int NComponents = 1;
+    dtype Type = dtype::__Invalid__;
+    type_str TypeStr;
+    while (true)
+    {
+      printf("Add a field (e.g., pressure float64, color 3uint8, temperature float32, velocity 2uint32, etc): ");
+      input_str InputStr;
+      bool FGetOk = false;
+      FGetOk = fgets(InputStr.Data, InputStr.Capacity(), stdin);
+      FlushStdIn();
+      if (!FGetOk)
+        goto ERR;
+
+      if (3 == sscanf(InputStr.Data, "%s %d%s", Name.Data, &NComponents, TypeStr.Data))
+      {
+        Name.Size = (i8)strnlen(Name.Data, Name.Capacity() - 1);
+        Type = StringToDType(stref(TypeStr.Data));
+        if (Name.Size > 0 && NComponents > 0 && Type != dtype::__Invalid__)
+          break;
+      }
+      else if (2 == sscanf(InputStr.Data, "%s %s", Name.Data, TypeStr.Data))
+      {
+        Name.Size = (i8)strnlen(Name.Data, Name.Capacity() - 1);
+        Type = StringToDType(stref(TypeStr.Data));
+        if (Name.Size > 0 && Type != dtype::__Invalid__)
+          break;
+      }
+
+      ERR:
+      printf("Invalid input. Check that the base type is one of:\n");
+      printf("int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64\n");
+    }
+    FlushStdIn();
     LOOP:
-    printf("You entered %.*s.\n", Name.Size, Name.Data);
+    printf("You entered field name: %s, ", Name.Data);
+    printf("of type %s, ", ToString(Type));
+    printf("with %d components.\n", NComponents);
     printf("- Press [Enter] to stop adding fields,\n"
            "- Type 'r' [Enter] to re-enter, or\n"
            "- Type 'n' [Enter] to add another field.\n");
     char C = getchar();
     if (C == 'n' || C == '\n')
     {
-      PushBack(&Fields.Names, Name);
+      PushBack(&Fields.FieldNames, Name);
+      PushBack(&Fields.FiledTypes, composite_type{Type, (i8)NComponents});
       if (C == '\n')
         break;
       FlushStdIn();
@@ -103,15 +137,15 @@ InputFields(idx2_file* Idx2)
   }
 
   i8 D = (i8)Size(Idx2->DimensionInfo);
-  Idx2->Dims[D] = (i32)Size(Fields.Names);
+  Idx2->Dims[D] = (i32)Size(Fields.FieldNames);
   Idx2->DimensionMap[Fields.ShortName - 'a'] = D;
   Idx2->DimensionMapInverse[D] = Fields.ShortName;
   PushBack(&Idx2->DimensionInfo, Fields);
 
   printf("The following %d fields have been added:\n", (i32)Size(Fields));
-  idx2_ForEach (Field, Fields.Names)
+  idx2_ForEach (Field, Fields.FieldNames)
     printf("%.*s ", Field->Size, Field->Data);
-  printf("\n");
+  printf("\n\n");
 
   return idx2_Error(err_code::NoError);
 }
@@ -130,7 +164,7 @@ InputDimensions(idx2_file* Idx2)
     int Result = 0;
     while (Result != 2)
     {
-      Result = scanf("%c %d", &Dimension.ShortName, &Dimension.Limit);
+      Result = scanf("%c %d", &Dimension.ShortName, &Dimension.UpperLimit);
       FlushStdIn();
       // TODO NEXT: check the short name and the limit
     }
@@ -138,13 +172,13 @@ InputDimensions(idx2_file* Idx2)
     printf("You entered %c %d.\n"
            "- Press [Enter] to stop adding dimensions,\n"
            "- Type 'r' [Enter] to re-enter, or\n"
-           "- Type 'n' [Enter] to add another dimension.\n", Dimension.ShortName, Dimension.Limit);
+           "- Type 'n' [Enter] to add another dimension.\n", Dimension.ShortName, Dimension.UpperLimit);
     char C = getchar();
     if (C == 'n' || C == '\n')
     {
       i8 D = (i8)Size(Idx2->DimensionInfo);
       Idx2->DimensionMap[Dimension.ShortName - 'a'] = D;
-      Idx2->Dims[D] = Dimension.Limit;
+      Idx2->Dims[D] = Dimension.UpperLimit;
       Idx2->DimensionMapInverse[D] = Dimension.ShortName;
       PushBack(&Idx2->DimensionInfo, Dimension);
       if (C == '\n')
@@ -165,9 +199,9 @@ InputDimensions(idx2_file* Idx2)
   idx2_ForEach (Dim, Idx2->DimensionInfo)
   {
     if (Dim->ShortName != 'f')
-      printf("%c %d, ", Dim->ShortName, Dim->Limit);
+      printf("%c %d, ", Dim->ShortName, Dim->UpperLimit);
     else
-      printf("%c %d, ", Dim->ShortName, (i32)Size(Dim->Names));
+      printf("%c %d, ", Dim->ShortName, (i32)Size(Dim->FieldNames));
   }
   printf("\n");
 
@@ -249,8 +283,8 @@ WriteFields(const idx2_file& Idx2)
     return idx2_Error(err_code::FileOpenFailed, "Cannot open file %s\n", Idx2.Name.Data);
 
   dimension_info& Fields = Idx2.DimensionInfo[Idx2.DimensionMap['f' - 'a']];
-  fprintf(Fp, "--fields %d  ", (i32)Size(Fields.Names));
-  idx2_ForEach (Name, Fields.Names)
+  fprintf(Fp, "--fields %d  ", (i32)Size(Fields.FieldNames));
+  idx2_ForEach (Name, Fields.FieldNames)
     fprintf(Fp, "%.*s ", Name->Size, Name->Data);
   fprintf(Fp, "\n");
 
@@ -268,13 +302,15 @@ WriteDimensions(const idx2_file& Idx2)
   if (!Fp)
     return idx2_Error(err_code::FileOpenFailed, "Cannot open file %s\n", Idx2.Name.Data);
 
-  fprintf(Fp, "--dimensions %d  ", (i32)Size(Idx2.DimensionInfo) - 1);
+  // NOTE: since this function is called before InputFields, the DimensionInfo has yet to
+  // contain the fields dimension (otherwise we need Size(DimensionInfo) - 1)
+  fprintf(Fp, "--dimensions %d  ", (i32)Size(Idx2.DimensionInfo));
   idx2_ForEach (Dimension, Idx2.DimensionInfo)
   {
     if (Dimension->ShortName == 'f')
       continue;
 
-    fprintf(Fp, "%c %d  ", Dimension->ShortName, Dimension->Limit);
+    fprintf(Fp, "%c %d  ", Dimension->ShortName, Dimension->UpperLimit);
   }
   fprintf(Fp, "\n");
 

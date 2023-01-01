@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Common.h"
+#include "String.h"
 
 
 /*
@@ -24,7 +25,6 @@ namespace idx2
 enum class dtype
 {
   __Invalid__,
-  i8,
   int8,
   uint8,
   int16,
@@ -34,14 +34,14 @@ enum class dtype
   int64,
   uint64,
   float32,
-  float64
+  float64,
+  Size
 };
 
 
 constexpr cstr dtype_str[] =
 {
   "__Invalid__",
-  "i8",
   "int8",
   "uint8",
   "int16",
@@ -55,10 +55,29 @@ constexpr cstr dtype_str[] =
 };
 
 
+struct composite_type
+{
+  dtype BaseType = dtype::__Invalid__;
+  i8 NComponents = 1;
+};
+
+
 idx2_Inline constexpr cstr
 ToString(dtype DType)
 {
   return dtype_str[(int)DType];
+}
+
+
+idx2_Inline dtype
+StringToDType(stref Str)
+{
+  idx2_For (int, I, 0, (int)dtype::Size)
+  {
+    if (stref(dtype_str[I]) == Str)
+      return dtype(I);
+  }
+  return dtype::__Invalid__;
 }
 
 

@@ -38,14 +38,17 @@ BASIC TYPES
 **********************************************************************************************/
 
 using name_str = stack_string<MaxNameLength_>;
+using type_str = stack_string<8>; // e.g., f64, u8, etc
+using input_str = stack_string<64>;
 
 struct dimension_info
 {
   /* A dimension can either be numerical or categorical.
   In the latter case, each category is given a name (e.g., a field).
   In the former case, the dimension starts at 0 and has an upper limit. */
-  array<name_str> Names;
-  i32 Limit = 0; // exclusive upper limit
+  array<name_str> FieldNames; // only used when the dimension is 'f' (Fields)
+  array<composite_type> FiledTypes; // only used when the dimension is 'f' (Fields)
+  i32 UpperLimit = 0; // exclusive upper limit
   char ShortName = '?';
 };
 
@@ -185,7 +188,7 @@ Dealloc(params* P);
 
 idx2_Inline void
 Dealloc(dimension_info* DimInfo)
-{ Dealloc(&DimInfo->Names); }
+{ Dealloc(&DimInfo->FieldNames); }
 
 
 error<err_code>
@@ -312,7 +315,7 @@ GetGrid(const idx2_file& Idx2, const nd_extent& Ext);
 idx2_Inline i32
 Size(const dimension_info& Dim)
 {
-  return Size(Dim.Names) > 0 ? i32(Size(Dim.Names)) : Dim.Limit;
+  return Size(Dim.FieldNames) > 0 ? i32(Size(Dim.FieldNames)) : Dim.UpperLimit;
 }
 
 
