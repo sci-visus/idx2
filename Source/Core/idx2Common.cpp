@@ -367,10 +367,9 @@ Guess the transform template.
 template_str
 GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
 {
-  // TODO NEXT: 'f' is not used?
   template_str Template;
   nd_size DimsLog = Log2Ceil(Idx2.Dims);
-  i8 Level = 0;
+  DimsLog[Idx2.DimensionMap['f' - 'a']] = 0; // disable the "Fields" dimension
   i8 Pos = 0;
   i8 NDims = (i8)Size(Idx2.DimensionInfo);
   while (Sum<i32>(DimsLog) != 0)
@@ -424,6 +423,13 @@ GuessTransformTemplate(const idx2_file& Idx2, template_hint Hint)
       }
     }
   }
+
+  /* put the field back */
+  i8 D = Idx2.DimensionMap['f' - 'a'];
+  DimsLog[D] = Log2Ceil(Idx2.Dims[D]);
+  idx2_For (i8, I, 0, DimsLog[D])
+    Template[I + Pos] = Idx2.DimensionMapInverse[D];
+  Pos += DimsLog[D];
 
   idx2_For (i8, I, 0, Pos/2)
     Swap(&Template[I], &Template[Pos - I - 1]);

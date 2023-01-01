@@ -87,9 +87,6 @@ InputFields(idx2_file* Idx2)
     char C = getchar();
     if (C == 'n' || C == '\n')
     {
-      i8 D = (i8)Size(Idx2->DimensionInfo);
-      Idx2->DimensionMap[Fields.ShortName - 'a'] = D;
-      Idx2->DimensionMapInverse[D] = Fields.ShortName;
       PushBack(&Fields.Names, Name);
       if (C == '\n')
         break;
@@ -105,6 +102,10 @@ InputFields(idx2_file* Idx2)
     }
   }
 
+  i8 D = (i8)Size(Idx2->DimensionInfo);
+  Idx2->Dims[D] = (i32)Size(Fields.Names);
+  Idx2->DimensionMap[Fields.ShortName - 'a'] = D;
+  Idx2->DimensionMapInverse[D] = Fields.ShortName;
   PushBack(&Idx2->DimensionInfo, Fields);
 
   printf("The following %d fields have been added:\n", (i32)Size(Fields));
