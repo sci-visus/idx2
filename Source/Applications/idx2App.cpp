@@ -38,30 +38,9 @@ Ask the user to input the name of the dataset.
 static error<err_code>
 InputName(idx2_file* Idx2)
 {
-  while (true)
-  {
-    printf("Name the dataset (no space): ");
-    FGets(&Idx2->Name);
-    LOOP:
-    printf("You entered %.*s.\n", Idx2->Name.Size, Idx2->Name.Data);
-    printf("Press [Enter] to continue or type 'r' [Enter] to re-enter.\n");
-    char C = getchar();
-    if (C == 'r')
-    {
-      FlushStdIn();
-      continue;
-    }
-    else if (C == '\n')
-    {
-      break;
-    }
-    else
-    {
-      FlushStdIn();
-      goto LOOP;
-    }
-  }
-
+  printf("Name the dataset (no space): ");
+  FGets(&Idx2->Name);
+  printf("You entered %.*s.\n", Idx2->Name.Size, Idx2->Name.Data);
   return idx2_Error(err_code::NoError);
 }
 
@@ -157,49 +136,54 @@ InputDimensions(idx2_file* Idx2)
 {
   while (true)
   {
-    dimension_info Dimension;
-    printf("Add a dimension (e.g., x 512; dimension cannot be 'f'): ");
-    int Result = 0;
-    while (Result != 2)
+    printf("\n");
+    printf("Add a dimension (e.g., x 512, y 381, t 1000, etc).\n");
+    printf("Or press [Enter] to stop adding dimensions.\n");
+    input_str Input;
+    FGets(&Input);
+    if (Size(Input) == 0) // [Enter] is pressed
     {
-      Result = scanf("%c %d", &Dimension.ShortName, &Dimension.UpperLimit);
-      FlushStdIn();
-      // TODO NEXT: check the short name and the limit
-    }
-  LOOP:
-    printf("You entered %c %d.\n"
-           "- Press [Enter] to stop adding dimensions,\n"
-           "- Type 'r' [Enter] to re-enter, or\n"
-           "- Type 'n' [Enter] to add another dimension.\n", Dimension.ShortName, Dimension.UpperLimit);
-    char C = getchar();
-    if (C == 'n' || C == '\n')
-    {
-      i8 D = (i8)Size(Idx2->DimensionInfo);
-      Idx2->DimensionMap[Dimension.ShortName - 'a'] = D;
-      Idx2->Dims[D] = Dimension.UpperLimit;
-      Idx2->DimensionMapInverse[D] = Dimension.ShortName;
-      PushBack(&Idx2->DimensionInfo, Dimension);
-      if (C == '\n')
-        break;
-      FlushStdIn();
-      continue;
+      break;
     }
     else
     {
-      FlushStdIn();
-      if (C == 'r')
-        continue;
-      goto LOOP;
+      dimension_info Dimension;
+      if (2 == sscanf(Input.Data, "%c %d", &Dimension.ShortName, &Dimension.UpperLimit))
+      {
+        if (!isalpha(Dimension.ShortName) || !islower(Dimension.ShortName))
+        {
+          printf("ERROR: the dimension name must be a lowercase character of the alphabet.\n");
+        }
+        else if (Dimension.UpperLimit <= 1)
+        {
+          printf("ERROR: the dimension upper limit must be at least 2.\n");
+        }
+        else if (Dimension.ShortName == 'f')
+        {
+          printf("ERROR: dimension name cannot be 'f' (reserved for the Fields).\n");
+        }
+        else // everything is correct
+        {
+          i8 D = (i8)Size(Idx2->DimensionInfo);
+          Idx2->DimensionMap[Dimension.ShortName - 'a'] = D;
+          Idx2->Dims[D] = Dimension.UpperLimit;
+          Idx2->DimensionMapInverse[D] = Dimension.ShortName;
+          PushBack(&Idx2->DimensionInfo, Dimension);
+          printf("Dimension %c with upper limit %d added.\n", Dimension.ShortName, Dimension.UpperLimit);
+        }
+      }
+      else
+      {
+        printf("ERROR: incorrect input. Correct examples are: x 512, y 381, t 1000, etc.\n");
+      }
     }
   }
 
-  printf("%d dimensions have been added (f stands for fields): ", (i32)Size(Idx2->DimensionInfo));
+  printf("%d dimensions have been added: ", (i32)Size(Idx2->DimensionInfo));
   idx2_ForEach (Dim, Idx2->DimensionInfo)
   {
     if (Dim->ShortName != 'f')
       printf("%c %d, ", Dim->ShortName, Dim->UpperLimit);
-    else
-      printf("%c %d, ", Dim->ShortName, (i32)Size(Dim->FieldNames));
   }
   printf("\n\n");
 
@@ -358,55 +342,17 @@ DoDecode()
 Ask the user for the action they want to perform.
 ---------------------------------------------------------------------------------------------*/
 static void
-ChooseAction()
+ChooseAction(i32 Argc, cstr* Argv)
 {
-  /* prompt for the action */
-  stack_string<10> Action;
-  while (true)
-  {
-    printf("Choose action:\n");
-    printf("  1. Create dataset (create)\n");
-    printf("  2. Encode a portion or the entirety of a dataset (encode)\n");
-    printf("  3. Decode a portion or the entirety of a dataset (decode)\n");
-    printf("Enter your choice (create, encode, or decode): ");
-    FGets(&Action);
-    LOOP:
-    printf("You entered %.*s.\n", Action.Size, Action.Data);
-    printf("Press [Enter] to continue or type 'r' [Enter] to re-enter.\n");
-    char C = getchar();
-    if (C == 'r')
-    {
-      FlushStdIn();
-      continue;
-    }
-    else if (C == '\n')
-    {
-      break;
-    }
-    else
-    {
-      FlushStdIn();
-      goto LOOP;
-    }
-  }
-
   /* perform the action */
-  if (StrEqual(Action.Data, "create"))
-  {
+  if (OptExists(Argc, Argv, "--create"))
     DoCreate();
-  }
-  else if (StrEqual(Action.Data, "encode"))
-  {
+  else if (OptExists(Argc, Argv, "--encode"))
     DoEncode();
-  }
-  else if (StrEqual(Action.Data, "decode"))
-  {
+  else if (OptExists(Argc, Argv, "--decode"))
     DoDecode();
-  }
   else
-  {
     idx2_Exit("Unknown action entered (not one of --create, --encode, --decode)\n");
-  }
 }
 
 
@@ -414,10 +360,10 @@ ChooseAction()
 Main function.
 ---------------------------------------------------------------------------------------------*/
 int
-main(int Argc, cstr* Argv)
+main(i32 Argc, cstr* Argv)
 {
   SetHandleAbortSignals();
-  ChooseAction();
+  ChooseAction(Argc, Argv);
   return 0;
 
   CheckForUnsupportedOpt(Argc,
