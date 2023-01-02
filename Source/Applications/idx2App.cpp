@@ -86,7 +86,6 @@ InputFields(idx2_file* Idx2)
       input_str InputStr;
       bool FGetOk = false;
       FGetOk = fgets(InputStr.Data, InputStr.Capacity(), stdin);
-      FlushStdIn();
       if (!FGetOk)
         goto ERR;
 
@@ -109,7 +108,6 @@ InputFields(idx2_file* Idx2)
       printf("Invalid input. Check that the base type is one of:\n");
       printf("int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64\n");
     }
-    FlushStdIn();
     LOOP:
     printf("You entered field name: %s, ", Name.Data);
     printf("of type %s, ", ToString(Type));
@@ -203,7 +201,7 @@ InputDimensions(idx2_file* Idx2)
     else
       printf("%c %d, ", Dim->ShortName, (i32)Size(Dim->FieldNames));
   }
-  printf("\n");
+  printf("\n\n");
 
   return idx2_Error(err_code::NoError);
 }
