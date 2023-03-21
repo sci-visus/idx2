@@ -249,7 +249,7 @@ Idx2App(int Argc, const char* Argv[])
 
   if (P.Action == action::Encode)
   {
-    RemoveDir(idx2_PrintScratch("%s/%s", P.OutDir, P.Meta.Name));
+    RemoveDir(idx2_PrintScratch("%s/%s/%s", P.OutDir, P.Meta.Name, P.Meta.Field));
     idx2_ExitIfError(SetParams(&Idx2, &P));
 
 #if VISUS_IDX2
