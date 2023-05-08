@@ -273,7 +273,9 @@ Idx2App(int Argc, const char* Argv[])
 
       dataset = std::dynamic_pointer_cast<Visus::IdxDataset2>(Visus::LoadDataset(url));
       access = dataset->createAccess();
-      access->setWritingMode();
+      access->disableWriteLocks();
+      access->disableCompression();
+
       dataset->enableExternalWrite(Idx2, access);
       dataset->enableExternalRead(Idx2, access);
     }
